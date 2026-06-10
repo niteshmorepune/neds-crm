@@ -1,9 +1,12 @@
 <?php
 
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\DealController;
+use App\Http\Controllers\LeadController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StubController;
 use App\Livewire\ClientImport;
+use App\Livewire\DealsBoard;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -32,6 +35,25 @@ Route::middleware('auth')->group(function () {
     });
 
     /*
+     * Leads — Milestone 2. Gated by menu.access:lead-generation.
+     */
+    Route::middleware('menu.access:lead-generation')->group(function () {
+        Route::post('leads/{lead}/convert', [LeadController::class, 'convert'])->name('leads.convert');
+        Route::resource('leads', LeadController::class)->parameters(['leads' => 'lead']);
+    });
+
+    /*
+     * Deals / pipeline — Milestone 2. Gated by menu.access:sales-department.
+     * The Kanban board is a full-page Livewire component.
+     */
+    Route::middleware('menu.access:sales-department')->group(function () {
+        Route::get('deals', DealsBoard::class)->name('deals.index');
+        Route::get('deals/{deal}', [DealController::class, 'show'])->name('deals.show');
+        Route::put('deals/{deal}', [DealController::class, 'update'])->name('deals.update');
+        Route::delete('deals/{deal}', [DealController::class, 'destroy'])->name('deals.destroy');
+    });
+
+    /*
      * Milestone 0 stub pages. Each is protected by menu.access:<key>, which
      * enforces role-based access regardless of whether the item shows in the
      * sidebar. Route name == menu key so the sidebar can link via route(key).
@@ -39,8 +61,6 @@ Route::middleware('auth')->group(function () {
      */
     $stubs = [
         'attendance' => '/attendance',
-        'lead-generation' => '/lead-generation',
-        'sales-department' => '/sales-department',
         'account' => '/account',
         'project-updates' => '/project-updates',
         'categories' => '/categories',
