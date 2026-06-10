@@ -53,9 +53,19 @@
                     <div class="text-sm text-gray-500">
                         {{ collect([$contact->designation, $contact->email, $contact->phone])->filter()->join(' · ') ?: '—' }}
                     </div>
+                    @if ($contact->portal_enabled)
+                        <span class="mt-1 inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                            {{ $contact->password_set_at ? 'Portal active' : 'Portal invited' }}
+                        </span>
+                    @endif
                 </div>
                 @if ($canManage)
                     <div class="flex items-center gap-3 text-sm">
+                        @if ($contact->portal_enabled)
+                            <button wire:click="revoke({{ $contact->id }})" wire:confirm="Revoke portal access?" class="text-amber-600 hover:text-amber-500">Revoke portal</button>
+                        @elseif ($contact->email)
+                            <button wire:click="invite({{ $contact->id }})" class="text-emerald-600 hover:text-emerald-500">Invite to portal</button>
+                        @endif
                         @unless ($contact->is_primary)
                             <button wire:click="makePrimary({{ $contact->id }})" class="text-gray-500 hover:text-gray-700">Make primary</button>
                         @endunless

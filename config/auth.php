@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Contact;
 use App\Models\User;
 
 return [
@@ -42,6 +43,12 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        // Customer portal — authenticates Contacts with portal access.
+        'portal' => [
+            'driver' => 'session',
+            'provider' => 'contacts',
+        ],
     ],
 
     /*
@@ -65,6 +72,11 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', User::class),
+        ],
+
+        'contacts' => [
+            'driver' => 'eloquent',
+            'model' => Contact::class,
         ],
 
         // 'users' => [

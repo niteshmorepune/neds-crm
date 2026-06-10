@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Models\Contact;
 use App\Models\Customer;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Facades\Hash;
 
 /**
  * @extends Factory<Contact>
@@ -28,5 +29,17 @@ class ContactFactory extends Factory
     public function primary(): static
     {
         return $this->state(fn () => ['is_primary' => true]);
+    }
+
+    /**
+     * A contact with active portal access (password "password").
+     */
+    public function portalUser(): static
+    {
+        return $this->state(fn () => [
+            'portal_enabled' => true,
+            'password' => Hash::make('password'),
+            'password_set_at' => now(),
+        ]);
     }
 }
