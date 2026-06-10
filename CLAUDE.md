@@ -17,7 +17,7 @@ This app deploys to **Hostinger shared hosting (Business plan)**. That means:
 - No websockets. Use polling for "real-time-ish" features.
 
 ## Tech stack (do not deviate without asking)
-- Laravel 11, PHP 8.2
+- Laravel 12, PHP 8.2 (see Decisions log — originally specced as Laravel 11)
 - MySQL 8 (use only features available on shared hosting MySQL)
 - Frontend: Blade + Livewire 3 + Alpine.js + Tailwind CSS (no separate SPA,
   no Inertia, no React — keeps the Hostinger deploy simple)
@@ -132,3 +132,26 @@ is the word the team uses.
 - Do not store customer PII in logs.
 - Do not bypass Policies "temporarily".
 - Do not delete or modify data in seeders that may run in production.
+
+## Decisions log
+Record every "we chose X because Y" here — this is the project's memory.
+
+- **2026-06-10 — Laravel 12 instead of Laravel 11 (Milestone 0).** The spec
+  called for Laravel 11, but every Laravel 11 release is blocked by an
+  unpatched High-severity advisory (GHSA-5vg9-5847-vvmq, CVSS 8.9 — CRLF
+  injection in email validation; no auth/debug needed). It was fixed only in
+  12.60.0+/13.10.0+, and the 11.x line will not be patched. Since this CRM
+  emails user/contact-supplied addresses throughout (portal invites, ticket
+  notifications, follow-up/payment reminders), staying on 11 would knowingly
+  ship that vuln. Chose Laravel **12.62.0** — same stack (Breeze Blade +
+  Livewire 3 + Tailwind + Pest), PHP 8.2+, fully Hostinger-compatible.
+- **2026-06-10 — Livewire pinned to ^3.0 (v3.8.1).** Composer's latest is
+  Livewire 4; spec mandates Livewire 3 and nothing forces an upgrade (v3 runs
+  on Laravel 12), so pinned to ^3.0.
+- **2026-06-10 — Per-user menu overrides (`menu_item_user`) are cosmetic
+  only.** They show/hide sidebar items per user; actual route access is always
+  role-based and enforced by middleware/Policies. Confirmed with owner.
+- **Local dev MySQL:** MySQL 8.4 (service `MySQL84`), DB `neds_crm`. The
+  `mysql` CLI is not on PATH on the dev machine — use the full path under
+  `C:\Program Files\MySQL\MySQL Server 8.4\bin\` if needed; Laravel itself uses
+  the `pdo_mysql` driver and is unaffected.
