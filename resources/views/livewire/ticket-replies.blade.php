@@ -1,12 +1,13 @@
 <div>
     <ul class="space-y-3">
         @forelse ($replies as $reply)
-            <li class="rounded-md border-l-2 pl-3 {{ $reply->is_internal ? 'border-amber-300 bg-amber-50' : 'border-gray-200' }}">
+            <li class="rounded-md border-l-2 pl-3 {{ $reply->is_internal ? 'border-amber-300 bg-amber-50' : ($reply->isFromCustomer() ? 'border-blue-300 bg-blue-50' : 'border-gray-200') }}">
                 <div class="py-2">
                     <div class="text-sm text-gray-800 whitespace-pre-line">{{ $reply->body }}</div>
                     <div class="mt-0.5 text-xs text-gray-400">
-                        {{ $reply->author?->name ?? 'System' }} · {{ $reply->created_at->timezone(config('app.timezone'))->format('d M Y, g:i A') }}
-                        @if ($reply->is_internal)<span class="ml-1 font-medium text-amber-600">Internal note</span>@endif
+                        {{ $reply->authorName() }} · {{ $reply->created_at->timezone(config('app.timezone'))->format('d M Y, g:i A') }}
+                        @if ($reply->is_internal)<span class="ml-1 font-medium text-amber-600">Internal note</span>
+                        @elseif ($reply->isFromCustomer())<span class="ml-1 font-medium text-blue-600">Client</span>@endif
                     </div>
                 </div>
             </li>

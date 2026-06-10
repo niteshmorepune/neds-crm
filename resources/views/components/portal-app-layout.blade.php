@@ -19,6 +19,7 @@
                     <a href="{{ route('portal.home') }}" class="text-gray-600 hover:text-gray-900">Profile</a>
                     <a href="{{ route('portal.invoices.index') }}" class="text-gray-600 hover:text-gray-900">Invoices</a>
                     <a href="{{ route('portal.projects.index') }}" class="text-gray-600 hover:text-gray-900">Projects</a>
+                    <a href="{{ route('portal.tickets.index') }}" class="text-gray-600 hover:text-gray-900">Tickets</a>
                 </nav>
             </div>
             <div class="flex items-center gap-3 text-sm">

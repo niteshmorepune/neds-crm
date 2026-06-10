@@ -48,7 +48,7 @@ class TicketReplies extends Component
     public function render()
     {
         return view('livewire.ticket-replies', [
-            'replies' => $this->ticket->replies()->with('author')->get(),
+            'replies' => $this->ticket->replies()->with(['author', 'contact'])->get(),
         ]);
     }
 }

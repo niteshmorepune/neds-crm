@@ -47,7 +47,10 @@ trait LogsActivity
     protected function recordActivity(string $event, ?array $changes): void
     {
         Activity::create([
-            'user_id' => Auth::id(),
+            // Activity actors are internal users only. Read the web guard
+            // explicitly so a portal-contact-initiated change (portal guard)
+            // logs no user rather than a contact id (which isn't a users row).
+            'user_id' => Auth::guard('web')->id(),
             'subject_type' => $this->getMorphClass(),
             'subject_id' => $this->getKey(),
             'event' => $event,
