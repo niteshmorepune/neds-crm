@@ -6,10 +6,12 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LeadController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\QuotationController;
+use App\Http\Controllers\RecurringInvoiceController;
 use App\Http\Controllers\StubController;
 use App\Livewire\ClientImport;
 use App\Livewire\DealsBoard;
 use App\Livewire\QuotationBuilder;
+use App\Livewire\RecurringInvoiceBuilder;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -74,6 +76,13 @@ Route::middleware('auth')->group(function () {
      * Invoices & payments — Milestone 3. Gated by menu.access:invoices.
      */
     Route::middleware('menu.access:invoices')->group(function () {
+        // Recurring invoice templates (declared before invoices/{invoice}).
+        Route::get('recurring-invoices', [RecurringInvoiceController::class, 'index'])->name('recurring-invoices.index');
+        Route::get('recurring-invoices/create', RecurringInvoiceBuilder::class)->name('recurring-invoices.create');
+        Route::get('recurring-invoices/{recurring}/edit', RecurringInvoiceBuilder::class)->name('recurring-invoices.edit');
+        Route::put('recurring-invoices/{recurring}/toggle', [RecurringInvoiceController::class, 'toggle'])->name('recurring-invoices.toggle');
+        Route::delete('recurring-invoices/{recurring}', [RecurringInvoiceController::class, 'destroy'])->name('recurring-invoices.destroy');
+
         Route::get('invoices', [InvoiceController::class, 'index'])->name('invoices.index');
         Route::get('invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
         Route::get('invoices/{invoice}/pdf', [InvoiceController::class, 'pdf'])->name('invoices.pdf');

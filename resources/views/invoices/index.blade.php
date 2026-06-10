@@ -6,15 +6,18 @@
             <div class="rounded-md bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-800">{{ session('status') }}</div>
         @endif
 
-        <form method="GET" class="flex items-center gap-2">
-            <select name="status" class="rounded-md border-gray-300 text-sm shadow-sm">
-                <option value="">All statuses</option>
-                @foreach ($statuses as $status)
-                    <option value="{{ $status->value }}" @selected(($filters['status'] ?? '') === $status->value)>{{ $status->label() }}</option>
-                @endforeach
-            </select>
-            <button class="rounded-md bg-gray-800 px-3 py-2 text-sm font-medium text-white hover:bg-gray-700">Filter</button>
-        </form>
+        <div class="flex items-center justify-between">
+            <form method="GET" class="flex items-center gap-2">
+                <select name="status" class="rounded-md border-gray-300 text-sm shadow-sm">
+                    <option value="">All statuses</option>
+                    @foreach ($statuses as $status)
+                        <option value="{{ $status->value }}" @selected(($filters['status'] ?? '') === $status->value)>{{ $status->label() }}</option>
+                    @endforeach
+                </select>
+                <button class="rounded-md bg-gray-800 px-3 py-2 text-sm font-medium text-white hover:bg-gray-700">Filter</button>
+            </form>
+            <a href="{{ route('recurring-invoices.index') }}" class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Recurring invoices</a>
+        </div>
 
         <div class="overflow-hidden rounded-lg bg-white shadow-sm">
             <table class="min-w-full divide-y divide-gray-200 text-sm">

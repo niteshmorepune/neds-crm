@@ -58,6 +58,11 @@ class Quotation extends Model
         return $this->hasOne(Invoice::class);
     }
 
+    public function milestones(): HasMany
+    {
+        return $this->hasMany(QuotationMilestone::class)->orderBy('sort_order');
+    }
+
     public function isEditable(): bool
     {
         return $this->status === QuotationStatus::Draft;
