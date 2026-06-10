@@ -26,6 +26,19 @@
                     <a href="{{ route('deals.index') }}" class="text-sm text-gray-500 hover:text-gray-700">Back to board</a>
                 </div>
 
+                @if ($deal->stage === \App\Enums\DealStage::Won)
+                    <div class="mt-3">
+                        @if ($deal->project)
+                            <a href="{{ route('projects.show', $deal->project) }}" class="text-sm font-medium text-indigo-600 hover:underline">View project →</a>
+                        @elseif (auth()->user()->can('create', \App\Models\Project::class))
+                            <form method="POST" action="{{ route('projects.from-deal', $deal) }}">
+                                @csrf
+                                <button class="rounded-md bg-green-600 px-3 py-2 text-sm font-medium text-white hover:bg-green-500">Create project</button>
+                            </form>
+                        @endif
+                    </div>
+                @endif
+
                 <dl class="mt-4 grid grid-cols-2 gap-y-2 text-sm text-gray-600">
                     <div><span class="text-gray-400">Stage:</span> {{ $deal->stage->label() }}</div>
                     <div><span class="text-gray-400">Value:</span> {{ \App\Support\Money::format($deal->value) }}</div>

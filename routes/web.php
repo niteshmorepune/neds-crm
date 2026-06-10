@@ -1,13 +1,16 @@
 <?php
 
+use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DealController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LeadController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\RecurringInvoiceController;
 use App\Http\Controllers\StubController;
+use App\Http\Controllers\TaskController;
 use App\Livewire\ClientImport;
 use App\Livewire\DealsBoard;
 use App\Livewire\QuotationBuilder;
@@ -97,6 +100,27 @@ Route::middleware('auth')->group(function () {
     });
 
     /*
+     * Projects — Milestone 4. Gated by menu.access:project-updates.
+     */
+    Route::middleware('menu.access:project-updates')->group(function () {
+        Route::post('projects/from-deal/{deal}', [ProjectController::class, 'storeFromDeal'])->name('projects.from-deal');
+        Route::resource('projects', ProjectController::class)->except(['destroy']);
+    });
+
+    /*
+     * Tasks ("Emptask") — Milestone 4. Gated by menu.access:emptask.
+     */
+    Route::middleware('menu.access:emptask')->group(function () {
+        Route::patch('tasks/{task}/status', [TaskController::class, 'updateStatus'])->name('tasks.status');
+        Route::post('tasks/{task}/attachments', [TaskController::class, 'storeAttachment'])->name('tasks.attachments.store');
+        Route::resource('tasks', TaskController::class);
+    });
+
+    // Attachment download/remove (authorized against the parent record).
+    Route::get('attachments/{attachment}/download', [AttachmentController::class, 'download'])->name('attachments.download');
+    Route::delete('attachments/{attachment}', [AttachmentController::class, 'destroy'])->name('attachments.destroy');
+
+    /*
      * Milestone 0 stub pages. Each is protected by menu.access:<key>, which
      * enforces role-based access regardless of whether the item shows in the
      * sidebar. Route name == menu key so the sidebar can link via route(key).
@@ -104,10 +128,8 @@ Route::middleware('auth')->group(function () {
      */
     $stubs = [
         'attendance' => '/attendance',
-        'project-updates' => '/project-updates',
         'categories' => '/categories',
         'calling' => '/calling',
-        'emptask' => '/emptask',
         'menu-controller' => '/menu-controller',
     ];
 
