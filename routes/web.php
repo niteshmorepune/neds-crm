@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StubController;
+use App\Livewire\ClientImport;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -18,6 +20,18 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     /*
+     * Clients (Customers) — Milestone 1. Gated by menu.access:customer (the
+     * menu key stays "customer"; the URL/route names use "clients" per the
+     * team's UI terminology). The import route is declared before the resource
+     * so /clients/import isn't captured by the {client} wildcard.
+     */
+    Route::middleware('menu.access:customer')->group(function () {
+        Route::get('clients/import', ClientImport::class)->name('clients.import');
+        Route::resource('clients', CustomerController::class)
+            ->parameters(['clients' => 'client']);
+    });
+
+    /*
      * Milestone 0 stub pages. Each is protected by menu.access:<key>, which
      * enforces role-based access regardless of whether the item shows in the
      * sidebar. Route name == menu key so the sidebar can link via route(key).
@@ -31,7 +45,6 @@ Route::middleware('auth')->group(function () {
         'project-updates' => '/project-updates',
         'categories' => '/categories',
         'quotations' => '/quotations',
-        'customer' => '/clients',
         'invoices' => '/invoices',
         'calling' => '/calling',
         'emptask' => '/emptask',
