@@ -31,7 +31,7 @@ class MenuItemsSeeder extends Seeder
             ['key' => 'project-updates',  'label' => 'Project Updates',  'route' => 'project-updates',  'icon' => 'briefcase',  'roles' => [UserRole::Manager, UserRole::Sales, UserRole::Support]],
             ['key' => 'categories',       'label' => 'Categories',       'route' => 'categories',       'icon' => 'tag',        'roles' => [UserRole::Manager]],
             ['key' => 'quotations',       'label' => 'Quotations',       'route' => 'quotations',       'icon' => 'document',   'roles' => [UserRole::Manager, UserRole::Sales, UserRole::Accounts]],
-            ['key' => 'customer',         'label' => 'Clients',          'route' => 'customer',         'icon' => 'users',      'roles' => $all],
+            ['key' => 'customer',         'label' => 'Clients',          'route' => 'clients.index',    'icon' => 'users',      'roles' => $all],
             ['key' => 'invoices',         'label' => 'Invoices',         'route' => 'invoices',         'icon' => 'receipt',    'roles' => [UserRole::Manager, UserRole::Accounts]],
             ['key' => 'calling',          'label' => 'Calling',          'route' => 'calling',          'icon' => 'phone',      'roles' => [UserRole::Manager, UserRole::Sales, UserRole::Support]],
             ['key' => 'emptask',          'label' => 'Emptask',          'route' => 'emptask',          'icon' => 'check',      'roles' => $all],

@@ -81,11 +81,15 @@ class MenuResolver
 
     /**
      * Invalidate all cached menu data (call after editing menu items,
-     * role defaults, or per-user overrides).
+     * role defaults, or per-user overrides). Bumps a version counter so every
+     * versioned key is bypassed. We read-then-write with forever() rather than
+     * Cache::increment(), because increment() is a no-op on a never-initialised
+     * key in the database/file cache stores used on shared hosting.
      */
     public function flush(): void
     {
-        Cache::increment(self::VERSION_KEY);
+        $version = (int) Cache::get(self::VERSION_KEY, 1);
+        Cache::forever(self::VERSION_KEY, $version + 1);
     }
 
     /**
