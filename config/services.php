@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    // Shared secret for the public website lead-capture API endpoint.
+    'lead_capture' => [
+        'token' => env('LEAD_CAPTURE_TOKEN'),
+    ],
+
 ];

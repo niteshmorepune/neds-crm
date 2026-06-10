@@ -24,7 +24,7 @@ it('blocks a hidden menu route via middleware even though it is not in the sideb
 it('allows a role to reach a route it is granted', function () {
     $sales = User::factory()->role(UserRole::Sales)->create();
 
-    $this->actingAs($sales)->get('/lead-generation')->assertOk();
+    $this->actingAs($sales)->get('/leads')->assertOk();
 });
 
 it('lets an admin reach every route', function () {
@@ -58,5 +58,5 @@ it('treats a per-user revoke as cosmetic only — it hides the menu but keeps ac
     $this->actingAs($sales)->get('/dashboard')->assertOk()->assertDontSee('Lead Generation');
 
     // ...yet the route remains reachable, since the role still grants access.
-    $this->actingAs($sales)->get('/lead-generation')->assertOk();
+    $this->actingAs($sales)->get('/leads')->assertOk();
 });

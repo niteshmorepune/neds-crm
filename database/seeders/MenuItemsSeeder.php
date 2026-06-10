@@ -25,8 +25,8 @@ class MenuItemsSeeder extends Seeder
         $this->items = [
             ['key' => 'dashboard',        'label' => 'Dashboard',        'route' => 'dashboard',        'icon' => 'dashboard',  'roles' => $all],
             ['key' => 'attendance',       'label' => 'Attendance',       'route' => 'attendance',       'icon' => 'clock',      'roles' => $all],
-            ['key' => 'lead-generation',  'label' => 'Lead Generation',  'route' => 'lead-generation',  'icon' => 'funnel',     'roles' => [UserRole::Manager, UserRole::Sales]],
-            ['key' => 'sales-department', 'label' => 'Sales Department',  'route' => 'sales-department', 'icon' => 'trending',   'roles' => [UserRole::Manager, UserRole::Sales]],
+            ['key' => 'lead-generation',  'label' => 'Lead Generation',  'route' => 'leads.index',      'icon' => 'funnel',     'roles' => [UserRole::Manager, UserRole::Sales]],
+            ['key' => 'sales-department', 'label' => 'Sales Department',  'route' => 'deals.index',      'icon' => 'trending',   'roles' => [UserRole::Manager, UserRole::Sales]],
             ['key' => 'account',          'label' => 'Account',          'route' => 'account',          'icon' => 'wallet',     'roles' => [UserRole::Manager, UserRole::Accounts]],
             ['key' => 'project-updates',  'label' => 'Project Updates',  'route' => 'project-updates',  'icon' => 'briefcase',  'roles' => [UserRole::Manager, UserRole::Sales, UserRole::Support]],
             ['key' => 'categories',       'label' => 'Categories',       'route' => 'categories',       'icon' => 'tag',        'roles' => [UserRole::Manager]],
