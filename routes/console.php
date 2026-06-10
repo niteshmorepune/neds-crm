@@ -12,3 +12,9 @@ Artisan::command('inspire', function () {
 Schedule::command('app:send-followup-reminders')
     ->dailyAt('09:00')
     ->timezone('Asia/Kolkata');
+
+// Billing schedule (India time): generate recurring invoices, flag overdue,
+// then send payment reminders.
+Schedule::command('app:generate-recurring-invoices')->dailyAt('06:00')->timezone('Asia/Kolkata');
+Schedule::command('app:mark-overdue-invoices')->dailyAt('07:00')->timezone('Asia/Kolkata');
+Schedule::command('app:send-payment-reminders')->dailyAt('07:30')->timezone('Asia/Kolkata');

@@ -64,6 +64,15 @@ class Customer extends Model
     }
 
     /**
+     * Best email for billing correspondence: the primary contact's, else the
+     * customer's own. Null if neither is set.
+     */
+    public function billingEmail(): ?string
+    {
+        return $this->primaryContact?->email ?: $this->email;
+    }
+
+    /**
      * Limit a query to the customers a user is allowed to see. Sales see their
      * own + unassigned; everyone else (admin/manager/support/accounts) sees all.
      * Mirrors CustomerPolicy::view — keep them in sync.

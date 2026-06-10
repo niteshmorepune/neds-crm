@@ -91,5 +91,9 @@
                 <div class="mt-4 border-t border-gray-100 pt-4 text-sm text-gray-600"><span class="font-medium">Terms:</span> {{ $quotation->terms }}</div>
             @endif
         </div>
+
+        @if (in_array($quotation->status, [\App\Enums\QuotationStatus::Accepted, \App\Enums\QuotationStatus::Sent], true))
+            <livewire:milestone-manager :quotation="$quotation" :can-manage="auth()->user()->can('convert', $quotation)" />
+        @endif
     </div>
 </x-app-layout>
