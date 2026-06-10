@@ -18,3 +18,6 @@ Schedule::command('app:send-followup-reminders')
 Schedule::command('app:generate-recurring-invoices')->dailyAt('06:00')->timezone('Asia/Kolkata');
 Schedule::command('app:mark-overdue-invoices')->dailyAt('07:00')->timezone('Asia/Kolkata');
 Schedule::command('app:send-payment-reminders')->dailyAt('07:30')->timezone('Asia/Kolkata');
+
+// Ticket SLA breach escalation — check hourly during the working day.
+Schedule::command('app:check-ticket-sla')->hourly();

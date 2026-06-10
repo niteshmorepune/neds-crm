@@ -29,6 +29,7 @@ class MenuItemsSeeder extends Seeder
             ['key' => 'sales-department', 'label' => 'Sales Department',  'route' => 'deals.index',      'icon' => 'trending',   'roles' => [UserRole::Manager, UserRole::Sales]],
             ['key' => 'account',          'label' => 'Account',          'route' => 'reports.receivables', 'icon' => 'wallet',  'roles' => [UserRole::Manager, UserRole::Accounts]],
             ['key' => 'project-updates',  'label' => 'Project Updates',  'route' => 'projects.index',   'icon' => 'briefcase',  'roles' => [UserRole::Manager, UserRole::Sales, UserRole::Support]],
+            ['key' => 'tickets',          'label' => 'Tickets',          'route' => 'tickets.index',    'icon' => 'lifebuoy',   'roles' => [UserRole::Manager, UserRole::Support, UserRole::Sales]],
             ['key' => 'categories',       'label' => 'Categories',       'route' => 'categories',       'icon' => 'tag',        'roles' => [UserRole::Manager]],
             ['key' => 'quotations',       'label' => 'Quotations',       'route' => 'quotations.index', 'icon' => 'document',   'roles' => [UserRole::Manager, UserRole::Sales, UserRole::Accounts]],
             ['key' => 'customer',         'label' => 'Clients',          'route' => 'clients.index',    'icon' => 'users',      'roles' => $all],
