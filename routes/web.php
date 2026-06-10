@@ -2,11 +2,14 @@
 
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DealController;
+use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LeadController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\StubController;
 use App\Livewire\ClientImport;
 use App\Livewire\DealsBoard;
+use App\Livewire\QuotationBuilder;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -54,6 +57,37 @@ Route::middleware('auth')->group(function () {
     });
 
     /*
+     * Quotations — Milestone 3. Gated by menu.access:quotations. Builder is a
+     * full-page Livewire component (create + edit).
+     */
+    Route::middleware('menu.access:quotations')->group(function () {
+        Route::get('quotations', [QuotationController::class, 'index'])->name('quotations.index');
+        Route::get('quotations/create', QuotationBuilder::class)->name('quotations.create');
+        Route::get('quotations/{quotation}', [QuotationController::class, 'show'])->name('quotations.show');
+        Route::get('quotations/{quotation}/edit', QuotationBuilder::class)->name('quotations.edit');
+        Route::post('quotations/{quotation}/status', [QuotationController::class, 'transition'])->name('quotations.status');
+        Route::post('quotations/{quotation}/convert', [QuotationController::class, 'convert'])->name('quotations.convert');
+        Route::delete('quotations/{quotation}', [QuotationController::class, 'destroy'])->name('quotations.destroy');
+    });
+
+    /*
+     * Invoices & payments — Milestone 3. Gated by menu.access:invoices.
+     */
+    Route::middleware('menu.access:invoices')->group(function () {
+        Route::get('invoices', [InvoiceController::class, 'index'])->name('invoices.index');
+        Route::get('invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
+        Route::get('invoices/{invoice}/pdf', [InvoiceController::class, 'pdf'])->name('invoices.pdf');
+        Route::post('invoices/{invoice}/payments', [InvoiceController::class, 'storePayment'])->name('invoices.payments.store');
+    });
+
+    /*
+     * Accounts landing — outstanding receivables report. Gated by menu.access:account.
+     */
+    Route::middleware('menu.access:account')->group(function () {
+        Route::get('account/receivables', [InvoiceController::class, 'receivables'])->name('reports.receivables');
+    });
+
+    /*
      * Milestone 0 stub pages. Each is protected by menu.access:<key>, which
      * enforces role-based access regardless of whether the item shows in the
      * sidebar. Route name == menu key so the sidebar can link via route(key).
@@ -61,11 +95,8 @@ Route::middleware('auth')->group(function () {
      */
     $stubs = [
         'attendance' => '/attendance',
-        'account' => '/account',
         'project-updates' => '/project-updates',
         'categories' => '/categories',
-        'quotations' => '/quotations',
-        'invoices' => '/invoices',
         'calling' => '/calling',
         'emptask' => '/emptask',
         'menu-controller' => '/menu-controller',
