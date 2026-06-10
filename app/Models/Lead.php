@@ -6,6 +6,8 @@ use App\Enums\LeadSource;
 use App\Enums\LeadStatus;
 use App\Enums\UserRole;
 use App\Models\Concerns\LogsActivity;
+use App\Observers\LeadObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+#[ObservedBy(LeadObserver::class)]
 class Lead extends Model
 {
     use HasFactory, LogsActivity, SoftDeletes;
@@ -32,6 +35,15 @@ class Lead extends Model
         'converted_deal_id',
     ];
 
+    /**
+     * AI score columns are written by the ScoreLead job, not user forms, and are
+     * noise in the activity log — exclude them so an automated re-score isn't
+     * recorded as a user "update".
+     *
+     * @var list<string>
+     */
+    protected array $activityExcept = ['ai_score', 'ai_score_reason', 'ai_scored_at'];
+
     protected function casts(): array
     {
         return [
@@ -39,6 +51,8 @@ class Lead extends Model
             'status' => LeadStatus::class,
             'estimated_value' => 'integer',
             'next_follow_up_at' => 'datetime',
+            'ai_score' => 'integer',
+            'ai_scored_at' => 'datetime',
         ];
     }
 

@@ -9,7 +9,13 @@
         <div class="rounded-lg bg-white p-6 shadow-sm">
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                    <h1 class="text-xl font-semibold text-gray-900">{{ $lead->name }}</h1>
+                    <div class="flex items-center gap-3">
+                        <h1 class="text-xl font-semibold text-gray-900">{{ $lead->name }}</h1>
+                        <x-lead-score :lead="$lead" />
+                    </div>
+                    @if (! is_null($lead->ai_score) && $lead->ai_score_reason)
+                        <p class="mt-1 text-xs text-gray-500">AI: {{ $lead->ai_score_reason }}</p>
+                    @endif
                     <dl class="mt-3 grid grid-cols-1 gap-x-8 gap-y-1 text-sm text-gray-600 sm:grid-cols-2">
                         <div><span class="text-gray-400">Company:</span> {{ $lead->company ?: '—' }}</div>
                         <div><span class="text-gray-400">Status:</span> {{ $lead->status->label() }}</div>

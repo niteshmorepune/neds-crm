@@ -40,4 +40,16 @@ return [
         'token' => env('LEAD_CAPTURE_TOKEN'),
     ],
 
+    /*
+     | Anthropic (Claude) API — Phase 5 AI features. All AI is gated by the
+     | `enabled` flag (AI_ENABLED). The key is never hardcoded; request/response
+     | bodies are never logged (they contain customer data). Model defaults to
+     | the spec-mandated claude-sonnet-4-20250514 and is overridable per .env.
+     */
+    'anthropic' => [
+        'key' => env('ANTHROPIC_API_KEY'),
+        'model' => env('ANTHROPIC_MODEL', 'claude-sonnet-4-20250514'),
+        'enabled' => env('AI_ENABLED', false),
+    ],
+
 ];
