@@ -4,6 +4,7 @@ use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\CallLogController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\DailyReportController;
 use App\Http\Controllers\DealController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LeadController;
@@ -153,6 +154,15 @@ Route::middleware('auth')->group(function () {
         Route::get('calls', [CallLogController::class, 'index'])->name('calls.index');
         Route::get('calls/create', [CallLogController::class, 'create'])->name('calls.create');
         Route::post('calls', [CallLogController::class, 'store'])->name('calls.store');
+    });
+
+    /*
+     * Daily reports — Milestone 4b (PR B). Gated by menu.access:daily-reports.
+     */
+    Route::middleware('menu.access:daily-reports')->group(function () {
+        Route::get('daily-reports', [DailyReportController::class, 'index'])->name('daily-reports.index');
+        Route::post('daily-reports', [DailyReportController::class, 'store'])->name('daily-reports.store');
+        Route::get('daily-reports/team', [DailyReportController::class, 'team'])->name('daily-reports.team');
     });
 
     /*

@@ -66,15 +66,15 @@ class AttendanceController extends Controller
 
         $date = Carbon::parse($data['date']);
 
-        Attendance::updateOrCreate(
-            ['user_id' => $data['user_id'], 'date' => $date->toDateString()],
-            [
-                'status' => $data['status'],
-                'check_in_at' => ! empty($data['check_in_at']) ? $date->copy()->setTimeFromTimeString($data['check_in_at']) : null,
-                'check_out_at' => ! empty($data['check_out_at']) ? $date->copy()->setTimeFromTimeString($data['check_out_at']) : null,
-                'notes' => $data['notes'] ?? null,
-            ],
-        );
+        $attendance = Attendance::where('user_id', $data['user_id'])->whereDate('date', $date)->first()
+            ?? new Attendance(['user_id' => $data['user_id'], 'date' => $date->toDateString()]);
+
+        $attendance->fill([
+            'status' => $data['status'],
+            'check_in_at' => ! empty($data['check_in_at']) ? $date->copy()->setTimeFromTimeString($data['check_in_at']) : null,
+            'check_out_at' => ! empty($data['check_out_at']) ? $date->copy()->setTimeFromTimeString($data['check_out_at']) : null,
+            'notes' => $data['notes'] ?? null,
+        ])->save();
 
         return back()->with('status', 'Attendance corrected.');
     }

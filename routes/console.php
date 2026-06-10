@@ -21,3 +21,6 @@ Schedule::command('app:send-payment-reminders')->dailyAt('07:30')->timezone('Asi
 
 // Ticket SLA breach escalation — check hourly during the working day.
 Schedule::command('app:check-ticket-sla')->hourly();
+
+// Remind staff to submit their daily report at 6pm India time.
+Schedule::command('app:send-daily-report-reminders')->dailyAt('18:00')->timezone('Asia/Kolkata');
