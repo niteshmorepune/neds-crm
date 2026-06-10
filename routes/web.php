@@ -8,6 +8,9 @@ use App\Http\Controllers\DailyReportController;
 use App\Http\Controllers\DealController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LeadController;
+use App\Http\Controllers\Portal\HomeController;
+use App\Http\Controllers\Portal\LoginController;
+use App\Http\Controllers\Portal\SetPasswordController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\QuotationController;
@@ -181,6 +184,29 @@ Route::middleware('auth')->group(function () {
             ->middleware("menu.access:{$key}")
             ->name($key);
     }
+});
+
+/*
+ * Customer Portal — Milestone 5. Separate "portal" guard (Contacts). Every
+ * authed route is scoped to the contact's own customer (see PortalController).
+ */
+Route::prefix('portal')->name('portal.')->group(function () {
+    Route::middleware('guest:portal')->group(function () {
+        Route::get('login', [LoginController::class, 'show'])->name('login');
+        Route::post('login', [LoginController::class, 'login']);
+        Route::get('set-password/{token}', [SetPasswordController::class, 'show'])->name('password.setup');
+        Route::post('set-password/{token}', [SetPasswordController::class, 'store'])->name('password.store');
+    });
+
+    Route::middleware('auth:portal')->group(function () {
+        Route::post('logout', [LoginController::class, 'logout'])->name('logout');
+        Route::get('/', [HomeController::class, 'index'])->name('home');
+        Route::get('invoices', [App\Http\Controllers\Portal\InvoiceController::class, 'index'])->name('invoices.index');
+        Route::get('invoices/{invoice}', [App\Http\Controllers\Portal\InvoiceController::class, 'show'])->name('invoices.show');
+        Route::get('invoices/{invoice}/pdf', [App\Http\Controllers\Portal\InvoiceController::class, 'pdf'])->name('invoices.pdf');
+        Route::get('projects', [App\Http\Controllers\Portal\ProjectController::class, 'index'])->name('projects.index');
+        Route::get('projects/{project}', [App\Http\Controllers\Portal\ProjectController::class, 'show'])->name('projects.show');
+    });
 });
 
 require __DIR__.'/auth.php';

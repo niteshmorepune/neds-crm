@@ -2,8 +2,10 @@
 
 namespace App\Livewire;
 
+use App\Mail\PortalInvitation;
 use App\Models\Contact;
 use App\Models\Customer;
+use Illuminate\Support\Facades\Mail;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 
@@ -104,6 +106,34 @@ class ContactsManager extends Component
     public function cancel(): void
     {
         $this->resetForm();
+    }
+
+    /**
+     * Grant portal access and email a set-password invitation.
+     */
+    public function invite(int $contactId): void
+    {
+        $this->authorizeManage();
+        $contact = $this->customer->contacts()->findOrFail($contactId);
+
+        if (! $contact->email) {
+            $this->dispatch('contact-invite-failed');
+
+            return;
+        }
+
+        $token = $contact->inviteToPortal();
+        Mail::to($contact->email)
+            ->send(new PortalInvitation($contact, $token));
+
+        $this->dispatch('contacts-updated');
+    }
+
+    public function revoke(int $contactId): void
+    {
+        $this->authorizeManage();
+        $this->customer->contacts()->findOrFail($contactId)->revokePortalAccess();
+        $this->dispatch('contacts-updated');
     }
 
     public function render()
