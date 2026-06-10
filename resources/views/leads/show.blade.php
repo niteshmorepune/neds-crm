@@ -36,6 +36,7 @@
 
                 <div class="flex items-center gap-2">
                     <a href="{{ route('leads.index') }}" class="text-sm text-gray-500 hover:text-gray-700">Back</a>
+                    <a href="{{ route('calls.create', ['lead_id' => $lead->id]) }}" class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Log a call</a>
                     @if ($canConvert)
                         <form method="POST" action="{{ route('leads.convert', $lead) }}">
                             @csrf

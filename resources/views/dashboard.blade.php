@@ -6,11 +6,7 @@
     </x-slot>
 
     <div class="max-w-7xl mx-auto space-y-6">
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-            <div class="p-6 text-gray-900">
-                {{ __("You're logged in!") }}
-            </div>
-        </div>
+        <livewire:attendance-widget />
 
         @if (auth()->user()->hasRole(\App\Enums\UserRole::Admin, \App\Enums\UserRole::Manager, \App\Enums\UserRole::Sales))
             <livewire:overdue-follow-ups />

@@ -67,6 +67,11 @@ class Lead extends Model
         return $this->morphMany(Note::class, 'notable')->latest();
     }
 
+    public function callLogs(): MorphMany
+    {
+        return $this->morphMany(CallLog::class, 'callable')->latest('called_at');
+    }
+
     /**
      * Sales see their own + unassigned; managers/admins see all.
      * Keep in sync with LeadPolicy::view.

@@ -70,7 +70,11 @@ class CustomerController extends Controller
     {
         $this->authorize('view', $client);
 
-        $client->load(['owner', 'contacts' => fn ($q) => $q->orderByDesc('is_primary')->orderBy('name')]);
+        $client->load([
+            'owner',
+            'contacts' => fn ($q) => $q->orderByDesc('is_primary')->orderBy('name'),
+            'callLogs.user',
+        ]);
 
         return view('clients.show', [
             'client' => $client,

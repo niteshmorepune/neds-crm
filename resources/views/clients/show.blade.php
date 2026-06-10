@@ -60,7 +60,7 @@
         <div class="rounded-lg bg-white shadow-sm">
             <div class="border-b border-gray-200 px-6">
                 <nav class="-mb-px flex gap-6 text-sm font-medium">
-                    @foreach (['notes' => 'Notes', 'deals' => 'Deals', 'invoices' => 'Invoices', 'tickets' => 'Tickets'] as $key => $label)
+                    @foreach (['notes' => 'Notes', 'calls' => 'Calls', 'deals' => 'Deals', 'invoices' => 'Invoices', 'tickets' => 'Tickets'] as $key => $label)
                         <button type="button" @click="tab = '{{ $key }}'"
                                 :class="tab === '{{ $key }}' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
                                 class="border-b-2 py-3">
@@ -73,6 +73,24 @@
             <div class="p-6">
                 <div x-show="tab === 'notes'">
                     <livewire:client-notes :customer="$client" :can-manage="$canManage" />
+                </div>
+                <div x-show="tab === 'calls'" x-cloak>
+                    <div class="mb-3 flex justify-end">
+                        <a href="{{ route('calls.create', ['customer_id' => $client->id]) }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">+ Log a call</a>
+                    </div>
+                    <ul class="divide-y divide-gray-100 text-sm">
+                        @forelse ($client->callLogs as $call)
+                            <li class="py-2">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-gray-700">{{ $call->direction->label() }} · {{ $call->outcome->label() }}{{ $call->duration_minutes ? " · {$call->duration_minutes}m" : '' }}</span>
+                                    <span class="text-xs text-gray-400">{{ $call->called_at->timezone(config('app.timezone'))->format('d M, g:i A') }} · {{ $call->user?->name }}</span>
+                                </div>
+                                @if ($call->notes)<p class="mt-1 text-gray-500">{{ $call->notes }}</p>@endif
+                            </li>
+                        @empty
+                            <li class="py-2 text-gray-400">No calls logged.</li>
+                        @endforelse
+                    </ul>
                 </div>
                 <div x-show="tab === 'deals'" x-cloak class="text-sm text-gray-400">Deals will appear here (Milestone 2).</div>
                 <div x-show="tab === 'invoices'" x-cloak class="text-sm text-gray-400">Invoices will appear here (Milestone 3).</div>

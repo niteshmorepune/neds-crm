@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\AttachmentController;
+use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\CallLogController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DealController;
 use App\Http\Controllers\InvoiceController;
@@ -135,15 +137,32 @@ Route::middleware('auth')->group(function () {
     Route::delete('attachments/{attachment}', [AttachmentController::class, 'destroy'])->name('attachments.destroy');
 
     /*
+     * Attendance — Milestone 4b. Gated by menu.access:attendance.
+     */
+    Route::middleware('menu.access:attendance')->group(function () {
+        Route::get('attendance', [AttendanceController::class, 'index'])->name('attendance.index');
+        Route::get('attendance/export', [AttendanceController::class, 'export'])->name('attendance.export');
+        Route::get('attendance/corrections', [AttendanceController::class, 'corrections'])->name('attendance.corrections');
+        Route::post('attendance/corrections', [AttendanceController::class, 'storeCorrection'])->name('attendance.corrections.store');
+    });
+
+    /*
+     * Call logs ("Calling") — Milestone 4b. Gated by menu.access:calling.
+     */
+    Route::middleware('menu.access:calling')->group(function () {
+        Route::get('calls', [CallLogController::class, 'index'])->name('calls.index');
+        Route::get('calls/create', [CallLogController::class, 'create'])->name('calls.create');
+        Route::post('calls', [CallLogController::class, 'store'])->name('calls.store');
+    });
+
+    /*
      * Milestone 0 stub pages. Each is protected by menu.access:<key>, which
      * enforces role-based access regardless of whether the item shows in the
      * sidebar. Route name == menu key so the sidebar can link via route(key).
      * Real modules replace these in later milestones.
      */
     $stubs = [
-        'attendance' => '/attendance',
         'categories' => '/categories',
-        'calling' => '/calling',
         'menu-controller' => '/menu-controller',
     ];
 
