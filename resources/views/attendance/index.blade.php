@@ -1,0 +1,39 @@
+<x-app-layout>
+    <x-slot name="header">My Attendance</x-slot>
+
+    <div class="max-w-4xl mx-auto space-y-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <a href="{{ route('attendance.index', ['month' => $month->copy()->subMonth()->format('Y-m')]) }}" class="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm">←</a>
+                <span class="text-lg font-semibold text-gray-900">{{ $month->format('F Y') }}</span>
+                <a href="{{ route('attendance.index', ['month' => $month->copy()->addMonth()->format('Y-m')]) }}" class="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm">→</a>
+            </div>
+            <div class="flex items-center gap-2">
+                <a href="{{ route('attendance.export', ['month' => $month->format('Y-m')]) }}" class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Export CSV</a>
+                @can('correct', \App\Models\Attendance::class)
+                    <a href="{{ route('attendance.corrections') }}" class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">Corrections</a>
+                @endcan
+            </div>
+        </div>
+
+        <div class="overflow-hidden rounded-lg bg-white shadow-sm">
+            <table class="min-w-full divide-y divide-gray-200 text-sm">
+                <thead class="bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                    <tr><th class="px-4 py-3">Date</th><th class="px-4 py-3">Status</th><th class="px-4 py-3">In</th><th class="px-4 py-3">Out</th><th class="px-4 py-3">Notes</th></tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @for ($day = $month->copy()->startOfMonth(); $day->lte($month->copy()->endOfMonth()) && $day->lte(now()); $day->addDay())
+                        @php($rec = $records->get($day->toDateString()))
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-2 text-gray-700">{{ $day->format('d M (D)') }}</td>
+                            <td class="px-4 py-2 text-gray-600">{{ $rec?->status?->label() ?? '—' }}</td>
+                            <td class="px-4 py-2 text-gray-600">{{ $rec?->check_in_at?->timezone(config('app.timezone'))->format('g:i A') ?? '—' }}</td>
+                            <td class="px-4 py-2 text-gray-600">{{ $rec?->check_out_at?->timezone(config('app.timezone'))->format('g:i A') ?? '—' }}</td>
+                            <td class="px-4 py-2 text-gray-500">{{ $rec?->notes ?? '' }}</td>
+                        </tr>
+                    @endfor
+                </tbody>
+            </table>
+        </div>
+    </div>
+</x-app-layout>

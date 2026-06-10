@@ -63,6 +63,11 @@ class Customer extends Model
         return $this->morphMany(Note::class, 'notable')->latest();
     }
 
+    public function callLogs(): MorphMany
+    {
+        return $this->morphMany(CallLog::class, 'callable')->latest('called_at');
+    }
+
     /**
      * Best email for billing correspondence: the primary contact's, else the
      * customer's own. Null if neither is set.
