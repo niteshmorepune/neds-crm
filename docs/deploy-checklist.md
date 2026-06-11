@@ -1,5 +1,11 @@
 # Deployment checklist — Hostinger Business (shared hosting)
 
+> **Automated deploys** run via GitHub Actions on every push to `master`
+> (`.github/workflows/deploy.yml`) — same method as the Apex Brains app. See
+> **`docs/deploy-github-actions.md`** for the required secrets and the one-time
+> server bootstrap. This checklist is the manual / first-principles reference
+> and the post-deploy smoke check.
+
 Target: PHP 8.2+, MySQL only. No Node, Redis, Docker, or long-running daemons.
 Queue/cache/session = database; scheduler + queue run from cron.
 
