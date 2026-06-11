@@ -28,6 +28,12 @@
                             @endisset
                         </div>
 
+                        <form method="GET" action="{{ route('search') }}" class="hidden flex-1 px-6 md:block">
+                            <input type="search" name="q" value="{{ request('q') }}" placeholder="Search clients, leads, deals, invoices, tickets…"
+                                   class="w-full max-w-md rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
+                        </form>
+
+                        <div class="flex items-center">
                         @if (Auth::user()->hasRole(\App\Enums\UserRole::Admin, \App\Enums\UserRole::Manager, \App\Enums\UserRole::Sales, \App\Enums\UserRole::Support))
                             <a href="{{ route('calls.create') }}" class="mr-4 rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
                                 ☎ Log a call
@@ -61,6 +67,7 @@
                                 </form>
                             </x-slot>
                         </x-dropdown>
+                        </div>
                     </div>
                 </header>
 

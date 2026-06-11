@@ -1,0 +1,52 @@
+<?php
+
+use App\Enums\UserRole;
+use App\Models\Customer;
+use App\Models\Invoice;
+use App\Models\Lead;
+use App\Models\User;
+use Database\Seeders\MenuItemsSeeder;
+
+beforeEach(function () {
+    $this->seed(MenuItemsSeeder::class);
+});
+
+it('finds records across sections for an admin', function () {
+    $admin = User::factory()->role(UserRole::Admin)->create();
+    Customer::factory()->create(['company_name' => 'Zephyr Tech Pvt Ltd']);
+    Lead::factory()->create(['name' => 'Zephyr lead', 'company' => 'Zephyr']);
+
+    $this->actingAs($admin)->get(route('search', ['q' => 'Zephyr']))->assertOk()
+        ->assertSee('Zephyr Tech Pvt Ltd')
+        ->assertSee('Zephyr lead')
+        ->assertSee('Clients')
+        ->assertSee('Leads');
+});
+
+it('ignores a query shorter than two characters', function () {
+    $admin = User::factory()->role(UserRole::Admin)->create();
+    Customer::factory()->create(['company_name' => 'Z Corp']);
+
+    $this->actingAs($admin)->get(route('search', ['q' => 'Z']))->assertOk()
+        ->assertSee('No results');
+});
+
+it('does not search sections the user cannot access', function () {
+    // Sales has no Invoices access, so a matching invoice number must not show.
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    Invoice::factory()->create(['invoice_number' => 'INV-QUASAR-1']);
+    Lead::factory()->ownedBy($sales->id)->create(['name' => 'Quasar prospect']);
+
+    $this->actingAs($sales)->get(route('search', ['q' => 'Quasar']))->assertOk()
+        ->assertSee('Quasar prospect')
+        ->assertDontSee('INV-QUASAR-1');
+});
+
+it('respects row-level visibility for sales on leads', function () {
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    $other = User::factory()->role(UserRole::Sales)->create();
+    Lead::factory()->ownedBy($other->id)->create(['name' => 'Nebula hidden']); // owned by someone else
+
+    $this->actingAs($sales)->get(route('search', ['q' => 'Nebula']))->assertOk()
+        ->assertDontSee('Nebula hidden');
+});
