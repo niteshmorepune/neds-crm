@@ -3,9 +3,11 @@
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\AuditLogController;
+use App\Http\Controllers\Auth\TwoFactorChallengeController;
 use App\Http\Controllers\CallLogController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DailyReportController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DealController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LeadController;
@@ -21,6 +23,7 @@ use App\Http\Controllers\SearchController;
 use App\Http\Controllers\StubController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TicketController;
+use App\Http\Controllers\TwoFactorSetupController;
 use App\Livewire\ClientImport;
 use App\Livewire\DealsBoard;
 use App\Livewire\MenuManager;
@@ -32,13 +35,26 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])
-    ->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified', 'two-factor'])->name('dashboard');
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'two-factor'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    /*
+     * Two-factor (TOTP) — Milestone 7 PR C2. Enrolment is self-service from the
+     * profile; the challenge gate + admin/manager enforcement live in the
+     * RequireTwoFactor middleware. These routes are on its allow-list.
+     */
+    Route::post('two-factor/enable', [TwoFactorSetupController::class, 'enable'])->name('two-factor.enable');
+    Route::post('two-factor/confirm', [TwoFactorSetupController::class, 'confirm'])->name('two-factor.confirm');
+    Route::delete('two-factor', [TwoFactorSetupController::class, 'disable'])->name('two-factor.disable');
+    Route::post('two-factor/recovery-codes', [TwoFactorSetupController::class, 'regenerateRecoveryCodes'])->name('two-factor.recovery');
+
+    Route::get('two-factor/challenge', [TwoFactorChallengeController::class, 'show'])->name('two-factor.challenge');
+    Route::post('two-factor/challenge', [TwoFactorChallengeController::class, 'store'])->name('two-factor.challenge.store');
 
     /*
      * Clients (Customers) — Milestone 1. Gated by menu.access:customer (the
