@@ -31,8 +31,9 @@ use App\Livewire\QuotationBuilder;
 use App\Livewire\RecurringInvoiceBuilder;
 use Illuminate\Support\Facades\Route;
 
+// Internal CRM — no public landing page. Send visitors to the right place.
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route(auth()->check() ? 'dashboard' : 'login');
 });
 
 Route::get('/dashboard', [DashboardController::class, 'index'])
