@@ -3,6 +3,13 @@
 Target: PHP 8.2+, MySQL only. No Node, Redis, Docker, or long-running daemons.
 Queue/cache/session = database; scheduler + queue run from cron.
 
+**Production domain:** `crm.talktonitesh.com` (Hostinger subdomain).
+Create it in hPanel → Subdomains, then read the **Document Root** it assigns —
+for a subdomain that is NOT the account's main `public_html`. It's typically
+something like `~/domains/talktonitesh.com/public_html/crm` (or a dedicated
+folder shown in hPanel). Wherever this checklist says `public_html`, use that
+subdomain document root instead.
+
 ---
 
 ## 0. Before you start (local)
@@ -53,9 +60,9 @@ Overview donut renders (Chart.js is loaded from CDN, so it needs outbound HTTPS)
 ## 4. Environment
 - [ ] Create `~/neds-crm/.env` from `.env.production.example` and fill real values.
 - [ ] `php artisan key:generate` (sets `APP_KEY`).
-- [ ] Confirm: `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL=https://…`,
-      `SESSION_SECURE_COOKIE=true`, `SESSION_LIFETIME=480`,
-      `ENFORCE_TWO_FACTOR_ENROLLMENT=true`.
+- [ ] Confirm: `APP_ENV=production`, `APP_DEBUG=false`,
+      `APP_URL=https://crm.talktonitesh.com`, `SESSION_SECURE_COOKIE=true`,
+      `SESSION_LIFETIME=480`, `ENFORCE_TWO_FACTOR_ENROLLMENT=true`.
 - [ ] If the DB password contains `#`, wrap it in quotes: `DB_PASSWORD="…#…"`.
 
 ## 5. Install & migrate (SSH)
