@@ -24,3 +24,6 @@ Schedule::command('app:check-ticket-sla')->hourly();
 
 // Remind staff to submit their daily report at 6pm India time.
 Schedule::command('app:send-daily-report-reminders')->dailyAt('18:00')->timezone('Asia/Kolkata');
+
+// Nightly database backup at 02:00 India time (quiet hours).
+Schedule::command('app:backup-database')->dailyAt('02:00')->timezone('Asia/Kolkata');
