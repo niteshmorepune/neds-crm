@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
 
@@ -42,5 +43,24 @@ it('dumps, gzips, and writes a daily and weekly backup on mysql', function () {
         && collect($process->command)->contains(fn ($a) => str_contains($a, 'mysqldump')));
 
     // Restore the sqlite default so RefreshDatabase tears down cleanly.
+    config(['database.default' => 'sqlite']);
+});
+
+it('still succeeds and writes the backup when the confirmation email fails', function () {
+    Storage::fake('local');
+    Process::fake(['*' => Process::result(output: '-- DUMP --')]);
+    // The dump succeeds, but sending the notification throws (e.g. SMTP rejected).
+    Mail::shouldReceive('raw')->once()->andThrow(new RuntimeException('554 Client host rejected'));
+
+    config([
+        'database.default' => 'mysql',
+        'database.connections.mysql.database' => 'neds_crm',
+        'backup.notify_email' => 'ops@neds.test',
+    ]);
+
+    $this->artisan('app:backup-database')->assertSuccessful();
+
+    expect(Storage::disk('local')->files('backups'))->toHaveCount(1);
+
     config(['database.default' => 'sqlite']);
 });
