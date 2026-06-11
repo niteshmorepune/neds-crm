@@ -18,3 +18,13 @@ Start with **Getting Started**, then read the guide for your role.
 > Some AI helpers (lead scoring, "Draft with AI", "Summarize") only appear when
 > an administrator has enabled AI for the workspace. If you don't see them,
 > they're simply turned off — everything else works the same.
+
+## Printable handouts (PDF)
+Branded PDF versions for sharing with staff/clients live in
+[`pdf/`](pdf/). To regenerate them after editing a guide (needs Node + a
+Chromium-based browser such as Chrome or Edge installed):
+
+```
+npm run handouts
+```
+
