@@ -1,7 +1,14 @@
 <?php
 
-it('returns a successful response', function () {
-    $response = $this->get('/');
+use App\Enums\UserRole;
+use App\Models\User;
 
-    $response->assertStatus(200);
+it('redirects the root to the login page for guests', function () {
+    $this->get('/')->assertRedirect(route('login'));
+});
+
+it('redirects the root to the dashboard for authenticated users', function () {
+    $this->actingAs(User::factory()->role(UserRole::Admin)->create());
+
+    $this->get('/')->assertRedirect(route('dashboard'));
 });
