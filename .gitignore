@@ -13,7 +13,9 @@
 /.zed
 /auth.json
 /node_modules
-/public/build
+# Compiled assets are committed so the Git/SSH deploy ships them (Hostinger has
+# no Node). CI rebuilds and re-commits them on push to master. See deploy.yml.
+#/public/build
 /public/hot
 /public/storage
 /storage/*.key
