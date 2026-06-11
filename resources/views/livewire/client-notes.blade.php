@@ -1,4 +1,24 @@
 <div>
+    @if ($aiEnabled)
+        <div class="mb-3 flex justify-end">
+            <button type="button" wire:click="summarize" wire:loading.attr="disabled" wire:target="summarize"
+                    class="inline-flex items-center gap-1 rounded-md border border-indigo-200 bg-indigo-50 px-2.5 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-100 disabled:opacity-50">
+                <span wire:loading.remove wire:target="summarize">✨ Summarize activity</span>
+                <span wire:loading wire:target="summarize">Summarizing…</span>
+            </button>
+        </div>
+
+        @if (! is_null($summary))
+            <div class="mb-4 rounded-md border border-indigo-200 bg-indigo-50 p-4">
+                <div class="flex items-start justify-between gap-3">
+                    <h3 class="text-xs font-semibold uppercase tracking-wide text-indigo-700">AI summary</h3>
+                    <button type="button" wire:click="dismissSummary" class="text-xs text-indigo-500 hover:text-indigo-700">Dismiss</button>
+                </div>
+                <div class="mt-2 whitespace-pre-line text-sm text-gray-700">{{ $summary }}</div>
+            </div>
+        @endif
+    @endif
+
     @if ($canManage)
         <div class="mb-4">
             <textarea wire:model="body" rows="3"
