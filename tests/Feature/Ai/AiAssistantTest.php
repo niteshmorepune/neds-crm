@@ -1,0 +1,83 @@
+<?php
+
+use App\Models\AiUsage;
+use App\Models\Customer;
+use App\Models\Lead;
+use App\Models\Ticket;
+use App\Services\AiAssistant;
+use Illuminate\Support\Facades\Http;
+
+function fakeAiText(string $text): void
+{
+    Http::fake([
+        'api.anthropic.com/*' => Http::response([
+            'content' => [['type' => 'text', 'text' => $text]],
+            'usage' => ['input_tokens' => 50, 'output_tokens' => 30],
+        ]),
+    ]);
+}
+
+function aiOn(): void
+{
+    config(['services.anthropic.enabled' => true, 'services.anthropic.key' => 'sk-test']);
+}
+
+it('returns null and makes no call when AI is disabled', function () {
+    config(['services.anthropic.enabled' => false]);
+    Http::fake();
+    $ticket = Ticket::factory()->create();
+
+    expect(app(AiAssistant::class)->draftTicketReply($ticket))->toBeNull();
+    Http::assertNothingSent();
+});
+
+it('drafts a ticket reply and records usage under its feature', function () {
+    aiOn();
+    fakeAiText('Hi, we have reset your access. Please try again.');
+    $ticket = Ticket::factory()->create();
+    $ticket->replies()->create(['user_id' => null, 'contact_id' => null, 'body' => 'I cannot log in', 'is_internal' => false]);
+
+    $draft = app(AiAssistant::class)->draftTicketReply($ticket->load('replies'));
+
+    expect($draft)->toBe('Hi, we have reset your access. Please try again.');
+    expect(AiUsage::where('feature', 'draft_ticket_reply')->exists())->toBeTrue();
+});
+
+it('drafts a lead follow-up message', function () {
+    aiOn();
+    fakeAiText('Hi Ravi, just following up on the SEO plan — shall we hop on a quick call?');
+    $lead = Lead::factory()->create(['name' => 'Ravi']);
+
+    $draft = app(AiAssistant::class)->draftLeadFollowUp($lead);
+
+    expect($draft)->toContain('Ravi');
+    expect(AiUsage::where('feature', 'draft_lead_followup')->exists())->toBeTrue();
+});
+
+it('summarizes a customer timeline', function () {
+    aiOn();
+    fakeAiText('- Long-time client. - One open ticket about billing. - Next: follow up on renewal.');
+    $customer = Customer::factory()->create();
+
+    $summary = app(AiAssistant::class)->summarizeCustomer($customer);
+
+    expect($summary)->toContain('open ticket');
+    expect(AiUsage::where('feature', 'summarize_customer')->exists())->toBeTrue();
+});
+
+it('returns null (not an exception) when the API fails', function () {
+    aiOn();
+    Http::fake(['api.anthropic.com/*' => Http::response('boom', 500)]);
+    $ticket = Ticket::factory()->create();
+
+    expect(app(AiAssistant::class)->summarizeTicket($ticket))->toBeNull();
+    expect(AiUsage::count())->toBe(0);
+});
+
+it('treats a blank model response as no result', function () {
+    aiOn();
+    fakeAiText('   ');
+    $ticket = Ticket::factory()->create();
+
+    expect(app(AiAssistant::class)->draftTicketReply($ticket))->toBeNull();
+});
