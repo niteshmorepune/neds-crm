@@ -25,9 +25,30 @@ class Task extends Model
     {
         return [
             'due_date' => 'date',
+            'completed_at' => 'datetime',
             'priority' => TaskPriority::class,
             'status' => TaskStatus::class,
         ];
+    }
+
+    /**
+     * Stamp completed_at when a task transitions to Done (and clear it if it's
+     * reopened), so the Employee Performance Report can measure completions and
+     * on-time delivery regardless of which screen made the change.
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (Task $task) {
+            if (! $task->isDirty('status')) {
+                return;
+            }
+
+            if ($task->status === TaskStatus::Done) {
+                $task->completed_at ??= now();
+            } else {
+                $task->completed_at = null;
+            }
+        });
     }
 
     public function project(): BelongsTo
