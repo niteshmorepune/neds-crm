@@ -57,6 +57,7 @@ class ConvertLead
                 'status' => LeadStatus::Converted->value,
                 'converted_customer_id' => $customer->id,
                 'converted_deal_id' => $deal->id,
+                'converted_at' => now(),
             ]);
 
             // Preserve a breadcrumb on the new client's timeline.

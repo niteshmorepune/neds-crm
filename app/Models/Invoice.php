@@ -16,7 +16,7 @@ class Invoice extends Model
     use HasFactory, HasGstTotals, LogsActivity, SoftDeletes;
 
     protected $fillable = [
-        'invoice_number', 'financial_year', 'customer_id', 'deal_id', 'quotation_id',
+        'invoice_number', 'financial_year', 'customer_id', 'deal_id', 'quotation_id', 'recurring_invoice_id',
         'status', 'issue_date', 'due_date', 'place_of_supply_state_code', 'is_intra_state',
         'subtotal', 'discount', 'taxable_total', 'cgst_total', 'sgst_total', 'igst_total',
         'round_off', 'total', 'amount_paid',
@@ -54,6 +54,17 @@ class Invoice extends Model
     public function quotation(): BelongsTo
     {
         return $this->belongsTo(Quotation::class);
+    }
+
+    public function recurringInvoice(): BelongsTo
+    {
+        return $this->belongsTo(RecurringInvoice::class);
+    }
+
+    /** True when this invoice was generated from a recurring template. */
+    public function isRecurring(): bool
+    {
+        return $this->recurring_invoice_id !== null;
     }
 
     public function items(): HasMany

@@ -33,6 +33,7 @@ class Lead extends Model
         'next_follow_up_at',
         'converted_customer_id',
         'converted_deal_id',
+        'converted_at',
     ];
 
     /**
@@ -51,6 +52,7 @@ class Lead extends Model
             'status' => LeadStatus::class,
             'estimated_value' => 'integer',
             'next_follow_up_at' => 'datetime',
+            'converted_at' => 'datetime',
             'ai_score' => 'integer',
             'ai_scored_at' => 'datetime',
         ];

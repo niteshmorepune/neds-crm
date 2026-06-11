@@ -15,6 +15,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\RecurringInvoiceController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\StubController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TicketController;
@@ -28,9 +29,8 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -105,6 +105,16 @@ Route::middleware('auth')->group(function () {
     Route::middleware('menu.access:account')->group(function () {
         Route::get('account/receivables', [InvoiceController::class, 'receivables'])->name('reports.receivables');
     });
+
+    /*
+     * Management reports — Milestone 7. Role-gated inside the controller
+     * (Employee Performance: admin/manager; Revenue: admin/manager/accounts);
+     * linked from the dashboard rather than the sidebar.
+     */
+    Route::get('reports/employee-performance', [ReportController::class, 'employeePerformance'])->name('reports.employee-performance');
+    Route::get('reports/employee-performance/export', [ReportController::class, 'exportEmployeePerformance'])->name('reports.employee-performance.export');
+    Route::get('reports/revenue', [ReportController::class, 'revenue'])->name('reports.revenue');
+    Route::get('reports/revenue/export', [ReportController::class, 'exportRevenue'])->name('reports.revenue.export');
 
     /*
      * Projects — Milestone 4. Gated by menu.access:project-updates.
