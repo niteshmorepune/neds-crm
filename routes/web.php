@@ -16,11 +16,13 @@ use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\RecurringInvoiceController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\StubController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TicketController;
 use App\Livewire\ClientImport;
 use App\Livewire\DealsBoard;
+use App\Livewire\MenuManager;
 use App\Livewire\QuotationBuilder;
 use App\Livewire\RecurringInvoiceBuilder;
 use Illuminate\Support\Facades\Route;
@@ -186,7 +188,6 @@ Route::middleware('auth')->group(function () {
      */
     $stubs = [
         'categories' => '/categories',
-        'menu-controller' => '/menu-controller',
     ];
 
     foreach ($stubs as $key => $path) {
@@ -194,6 +195,19 @@ Route::middleware('auth')->group(function () {
             ->middleware("menu.access:{$key}")
             ->name($key);
     }
+
+    /*
+     * Menu Controller admin — Milestone 7. Admin-only (the menu-controller item
+     * has no role defaults, so only admin's all-access bypass reaches it).
+     */
+    Route::get('/menu-controller', MenuManager::class)
+        ->middleware('menu.access:menu-controller')
+        ->name('menu-controller');
+
+    /*
+     * Global search across the core records, scoped to what the user may see.
+     */
+    Route::get('/search', [SearchController::class, 'index'])->name('search');
 });
 
 /*
