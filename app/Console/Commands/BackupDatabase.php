@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
@@ -115,8 +116,15 @@ class BackupDatabase extends Command
             return;
         }
 
-        Mail::raw("Database backup completed.\n\nFile: {$filename}\nSize: {$sizeKb} KB\nTime: ".now()->toDateTimeString(), function ($message) use ($to) {
-            $message->to($to)->subject('NEDS CRM — database backup OK');
-        });
+        // Best-effort: a mail/SMTP problem must never fail an otherwise-good
+        // backup (the dump is already written at this point).
+        try {
+            Mail::raw("Database backup completed.\n\nFile: {$filename}\nSize: {$sizeKb} KB\nTime: ".now()->toDateTimeString(), function ($message) use ($to) {
+                $message->to($to)->subject('NEDS CRM — database backup OK');
+            });
+        } catch (\Throwable $e) {
+            $this->warn('Backup succeeded but the confirmation email could not be sent: '.$e->getMessage());
+            Log::warning('Backup notification email failed.', ['exception' => $e->getMessage()]);
+        }
     }
 }
