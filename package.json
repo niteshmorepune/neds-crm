@@ -4,7 +4,8 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite",
+        "handouts": "node docs/user-guides/_tools/make-handouts.mjs"
     },
     "devDependencies": {
         "@tailwindcss/forms": "^0.5.2",
