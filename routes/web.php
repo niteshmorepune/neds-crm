@@ -20,10 +20,11 @@ use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\RecurringInvoiceController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SearchController;
-use App\Http\Controllers\StubController;
+use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\TwoFactorSetupController;
+use App\Http\Controllers\UserController;
 use App\Livewire\ClientImport;
 use App\Livewire\DealsBoard;
 use App\Livewire\MenuManager;
@@ -204,15 +205,17 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
      * sidebar. Route name == menu key so the sidebar can link via route(key).
      * Real modules replace these in later milestones.
      */
-    $stubs = [
-        'categories' => '/categories',
-    ];
-
-    foreach ($stubs as $key => $path) {
-        Route::get($path, StubController::class)
-            ->middleware("menu.access:{$key}")
-            ->name($key);
-    }
+    /*
+     * Services (service-line taxonomy) — Milestone 7. Keeps the "categories"
+     * menu key (so per-user overrides survive) but is now real Service mgmt,
+     * admin/manager via menu.access:categories.
+     */
+    Route::middleware('menu.access:categories')->group(function () {
+        Route::get('services', [ServiceController::class, 'index'])->name('services.index');
+        Route::post('services', [ServiceController::class, 'store'])->name('services.store');
+        Route::put('services/{service}', [ServiceController::class, 'update'])->name('services.update');
+        Route::delete('services/{service}', [ServiceController::class, 'destroy'])->name('services.destroy');
+    });
 
     /*
      * Menu Controller admin — Milestone 7. Admin-only (the menu-controller item
@@ -231,6 +234,14 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
      * Audit log — Milestone 7. Admin-only (enforced in the controller).
      */
     Route::get('/audit-log', [AuditLogController::class, 'index'])->name('audit-log');
+
+    /*
+     * Staff user management — admin-only (menu.access:users → admin bypass only).
+     * Public registration is disabled, so this is how accounts are created.
+     */
+    Route::middleware('menu.access:users')->group(function () {
+        Route::resource('users', UserController::class)->except(['show']);
+    });
 });
 
 /*

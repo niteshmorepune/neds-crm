@@ -30,13 +30,14 @@ class MenuItemsSeeder extends Seeder
             ['key' => 'account',          'label' => 'Account',          'route' => 'reports.receivables', 'icon' => 'wallet',  'roles' => [UserRole::Manager, UserRole::Accounts]],
             ['key' => 'project-updates',  'label' => 'Project Updates',  'route' => 'projects.index',   'icon' => 'briefcase',  'roles' => [UserRole::Manager, UserRole::Sales, UserRole::Support]],
             ['key' => 'tickets',          'label' => 'Tickets',          'route' => 'tickets.index',    'icon' => 'lifebuoy',   'roles' => [UserRole::Manager, UserRole::Support, UserRole::Sales]],
-            ['key' => 'categories',       'label' => 'Categories',       'route' => 'categories',       'icon' => 'tag',        'roles' => [UserRole::Manager]],
+            ['key' => 'categories',       'label' => 'Services',         'route' => 'services.index',   'icon' => 'tag',        'roles' => [UserRole::Manager]],
             ['key' => 'quotations',       'label' => 'Quotations',       'route' => 'quotations.index', 'icon' => 'document',   'roles' => [UserRole::Manager, UserRole::Sales, UserRole::Accounts]],
             ['key' => 'customer',         'label' => 'Clients',          'route' => 'clients.index',    'icon' => 'users',      'roles' => $all],
             ['key' => 'invoices',         'label' => 'Invoices',         'route' => 'invoices.index',   'icon' => 'receipt',    'roles' => [UserRole::Manager, UserRole::Accounts]],
             ['key' => 'calling',          'label' => 'Calling',          'route' => 'calls.index',      'icon' => 'phone',      'roles' => [UserRole::Manager, UserRole::Sales, UserRole::Support]],
-            ['key' => 'emptask',          'label' => 'Emptask',          'route' => 'tasks.index',      'icon' => 'check',      'roles' => $all],
+            ['key' => 'emptask',          'label' => 'Employee Task',    'route' => 'tasks.index',      'icon' => 'check',      'roles' => $all],
             ['key' => 'daily-reports',    'label' => 'Daily Reports',    'route' => 'daily-reports.index', 'icon' => 'clipboard', 'roles' => $all],
+            ['key' => 'users',            'label' => 'Users',            'route' => 'users.index',      'icon' => 'users',      'roles' => []], // admin only
             ['key' => 'menu-controller',  'label' => 'Menu Controller',  'route' => 'menu-controller',  'icon' => 'sliders',    'roles' => []], // admin only
         ];
     }
