@@ -53,7 +53,10 @@
                     @forelse ($leads as $lead)
                         <tr class="hover:bg-gray-50">
                             <td class="px-4 py-3">
-                                <a href="{{ route('leads.show', $lead) }}" class="font-medium text-indigo-600 hover:underline">{{ $lead->name }}</a>
+                                <div class="flex items-center gap-2">
+                                    <a href="{{ route('leads.show', $lead) }}" class="font-medium text-indigo-600 hover:underline">{{ $lead->name }}</a>
+                                    <x-lead-score :lead="$lead" />
+                                </div>
                                 <div class="text-xs text-gray-400">{{ $lead->company ?: '—' }}</div>
                             </td>
                             <td class="px-4 py-3 text-gray-600">{{ $lead->source->label() }}</td>
