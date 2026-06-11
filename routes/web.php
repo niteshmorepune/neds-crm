@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\CallLogController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DailyReportController;
@@ -208,6 +209,11 @@ Route::middleware('auth')->group(function () {
      * Global search across the core records, scoped to what the user may see.
      */
     Route::get('/search', [SearchController::class, 'index'])->name('search');
+
+    /*
+     * Audit log — Milestone 7. Admin-only (enforced in the controller).
+     */
+    Route::get('/audit-log', [AuditLogController::class, 'index'])->name('audit-log');
 });
 
 /*
