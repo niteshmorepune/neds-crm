@@ -1,9 +1,9 @@
 <x-app-layout>
     <x-slot name="header">Help — {{ $title }}</x-slot>
 
-    <div class="max-w-6xl mx-auto grid grid-cols-1 gap-6 lg:grid-cols-4">
+    <div class="max-w-6xl mx-auto flex flex-col gap-6 lg:flex-row lg:items-start">
         {{-- Guide nav --}}
-        <aside class="lg:col-span-1">
+        <aside class="w-full lg:w-64 lg:flex-shrink-0">
             <div class="rounded-lg bg-white p-4 shadow-sm">
                 <a href="{{ route('help') }}" class="text-xs font-medium text-gray-500 hover:text-gray-700">← All help</a>
                 <ul class="mt-3 space-y-1 text-sm">
@@ -22,9 +22,7 @@
         </aside>
 
         {{-- Rendered guide --}}
-        <div class="lg:col-span-3">
-            <article class="help-content rounded-lg bg-white p-6 shadow-sm sm:p-8">{!! $html !!}</article>
-        </div>
+        <article class="help-content min-w-0 flex-1 rounded-lg bg-white p-6 shadow-sm sm:p-8">{!! $html !!}</article>
     </div>
 
     @push('scripts')
