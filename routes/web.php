@@ -9,6 +9,7 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DailyReportController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DealController;
+use App\Http\Controllers\HelpController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LeadController;
 use App\Http\Controllers\Portal\HomeController;
@@ -229,6 +230,12 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
      * Global search across the core records, scoped to what the user may see.
      */
     Route::get('/search', [SearchController::class, 'index'])->name('search');
+
+    /*
+     * In-app help — renders the Markdown user guides. Available to everyone.
+     */
+    Route::get('/help', [HelpController::class, 'index'])->name('help');
+    Route::get('/help/{guide}', [HelpController::class, 'show'])->name('help.show');
 
     /*
      * Audit log — Milestone 7. Admin-only (enforced in the controller).
