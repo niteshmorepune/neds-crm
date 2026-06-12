@@ -71,3 +71,35 @@ installed but not logged in — pass a token per-command from the git credential
 store. Smoke-test by running `php artisan serve` and driving HTTP with a cookie
 jar (scrape the `_token` from the form). Commit only when the user asks;
 `.env` is gitignored.
+
+## Maintenance / post-launch (the app is LIVE)
+
+M0–M7 are built, merged, and **deployed live** at https://crm.talktonitesh.com
+(Hostinger; details + one-time bootstrap in `docs/deploy-checklist.md`,
+`docs/deploy-github-actions.md`, and the [[deployment]] memory). The build phase
+is done; new work is maintenance.
+
+- **CI/CD:** `.github/workflows/deploy.yml` auto-deploys on **push to `master`**
+  (build assets → commit `public/build` → SSH `git reset --hard origin/master` +
+  `migrate --force` + caches). **Merging a PR ships it.** Verify live after a
+  deploy with `curl` (e.g. `/` → 302 login; a page → 200).
+- **Per-change loop (minus the milestone plan):** branch off `master` → build →
+  `php artisan test` + `pint` → PR → merge (auto-deploys). Smoke-test on live
+  MySQL the same way, wrapping anything that writes in a rolled-back
+  `DB::transaction`.
+- **`public/build` is committed/tracked** (un-ignored) so assets ship via git.
+  Adding **uncommon Tailwind utilities** on a new page? `npm run build` locally
+  and commit the fresh build — a class used only on one new page can be missing
+  from the shipped CSS (prefer app-wide classes like `flex-1` over `col-span-*`).
+  See the asset gotcha in [[deployment]].
+- **Menu changes need a server re-seed:** deploy runs `migrate` but NOT seeders.
+  After editing `MenuItemsSeeder`, run once on the server:
+  `php artisan db:seed --class=MenuItemsSeeder --force`.
+- **Editing `.env` on the server requires `php artisan config:cache`** (config is
+  cached). Hostinger disables `exec()` (so `storage:link` is a manual `ln -s`),
+  but `proc_open`/`mysqldump` work.
+- **Help & user guides:** single source = `docs/user-guides/*.md` → in-app
+  `/help` (HelpController via league/commonmark) AND PDF handouts
+  (`npm run handouts`, headless Chrome — no Playwright dep). Edit the .md once.
+- **Staff accounts:** public registration is disabled; admins add users via the
+  **Users** screen. Service lines via **Services** (was the Categories stub).
