@@ -61,11 +61,11 @@
 
                                 <input wire:model="items.{{ $i }}.sac_code" placeholder="SAC/HSN"
                                        class="w-24 shrink-0 min-w-0 rounded-md border-gray-300 text-sm shadow-sm" />
-                                <input wire:model.live="items.{{ $i }}.quantity" type="number" step="0.01" placeholder="Qty"
+                                <input wire:model.live="items.{{ $i }}.quantity" type="number" step="1" min="0" placeholder="Qty"
                                        class="w-14 shrink-0 min-w-0 rounded-md border-gray-300 text-sm shadow-sm" />
-                                <input wire:model.live="items.{{ $i }}.rate" type="number" step="0.01" placeholder="Rate ₹"
+                                <input wire:model.live="items.{{ $i }}.rate" type="number" step="any" min="0" placeholder="Rate ₹"
                                        class="flex-1 2xl:w-28 2xl:flex-none min-w-0 rounded-md border-gray-300 text-sm shadow-sm" />
-                                <input wire:model.live="items.{{ $i }}.gst_rate" type="number" step="0.01" placeholder="GST %"
+                                <input wire:model.live="items.{{ $i }}.gst_rate" type="number" step="any" min="0" placeholder="GST %"
                                        class="w-16 shrink-0 min-w-0 rounded-md border-gray-300 text-sm shadow-sm" />
                                 <span class="w-24 shrink-0 text-right text-sm text-gray-600 font-medium">
                                     {{ \App\Support\Money::format($t['lines'][$i]['amount'] ?? 0) }}

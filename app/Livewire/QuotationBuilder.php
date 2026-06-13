@@ -62,7 +62,7 @@ class QuotationBuilder extends Component
 
     public function addItem(): void
     {
-        $this->items[] = ['description' => '', 'sac_code' => '', 'quantity' => '1', 'rate' => '0', 'gst_rate' => '18'];
+        $this->items[] = ['description' => '', 'sac_code' => '', 'quantity' => '', 'rate' => '', 'gst_rate' => ''];
     }
 
     public function removeItem(int $index): void
