@@ -8,6 +8,11 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
+// Morning digest — personalised day-ahead email to every active user at 09:00 IST.
+Schedule::command('app:send-morning-digest')
+    ->dailyAt('09:00')
+    ->timezone('Asia/Kolkata');
+
 // Daily follow-up reminder emails at 09:00 India time.
 Schedule::command('app:send-followup-reminders')
     ->dailyAt('09:00')
