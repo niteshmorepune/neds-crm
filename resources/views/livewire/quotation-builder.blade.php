@@ -41,11 +41,11 @@
                                        class="block w-full rounded-md border-gray-300 text-sm shadow-sm" />
                                 @error("items.$i.description") <span class="text-xs text-red-600">{{ $message }}</span> @enderror
                             </div>
-                            <div class="col-span-4 md:col-span-2">
+                            <div class="col-span-4 md:col-span-1">
                                 <input wire:model="items.{{ $i }}.sac_code" placeholder="SAC/HSN"
                                        class="block w-full rounded-md border-gray-300 text-sm shadow-sm" />
                             </div>
-                            <div class="col-span-2 md:col-span-1">
+                            <div class="col-span-2 md:col-span-2">
                                 <input wire:model.live="items.{{ $i }}.quantity" type="number" step="0.01" placeholder="Qty"
                                        class="block w-full rounded-md border-gray-300 text-sm shadow-sm" />
                             </div>
