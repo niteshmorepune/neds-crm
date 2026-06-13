@@ -33,36 +33,51 @@
                 </div>
                 @error('items') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
 
-                <div class="mt-4 space-y-3">
+                {{-- Column headers — desktop only; mirrors the flex+grid row structure --}}
+                <div class="hidden md:flex items-center gap-2 mt-4 mb-1 text-xs font-medium uppercase tracking-wide text-gray-400">
+                    <div class="flex-1 grid grid-cols-12 gap-2">
+                        <div class="col-span-4">Description</div>
+                        <div class="col-span-1">SAC/HSN</div>
+                        <div class="col-span-1">Qty</div>
+                        <div class="col-span-2">Rate ₹</div>
+                        <div class="col-span-2">GST %</div>
+                        <div class="col-span-2">Amount</div>
+                    </div>
+                    <div class="shrink-0 w-5"></div>{{-- spacer matching the × button --}}
+                </div>
+
+                <div class="mt-0 space-y-3">
                     @foreach ($items as $i => $item)
-                        <div class="grid grid-cols-12 gap-2 border-b border-gray-100 pb-3" wire:key="item-{{ $i }}">
-                            <div class="col-span-12 md:col-span-3">
-                                <input wire:model="items.{{ $i }}.description" placeholder="Description"
-                                       class="block w-full rounded-md border-gray-300 text-sm shadow-sm" />
-                                @error("items.$i.description") <span class="text-xs text-red-600">{{ $message }}</span> @enderror
+                        {{-- Desktop grid: 4+1+1+2+2+2 = 12; delete sits outside via flex wrapper --}}
+                        <div class="flex items-start gap-2 border-b border-gray-100 pb-3" wire:key="item-{{ $i }}">
+                            <div class="flex-1 grid grid-cols-12 gap-2">
+                                <div class="col-span-12 md:col-span-4">
+                                    <input wire:model="items.{{ $i }}.description" placeholder="Description"
+                                           class="block w-full rounded-md border-gray-300 text-sm shadow-sm" />
+                                    @error("items.$i.description") <span class="text-xs text-red-600">{{ $message }}</span> @enderror
+                                </div>
+                                <div class="col-span-4 md:col-span-1">
+                                    <input wire:model="items.{{ $i }}.sac_code" placeholder="SAC/HSN"
+                                           class="block w-full rounded-md border-gray-300 text-sm shadow-sm" />
+                                </div>
+                                <div class="col-span-2 md:col-span-1">
+                                    <input wire:model.live="items.{{ $i }}.quantity" type="number" step="0.01" placeholder="Qty"
+                                           class="block w-full rounded-md border-gray-300 text-sm shadow-sm" />
+                                </div>
+                                <div class="col-span-3 md:col-span-2">
+                                    <input wire:model.live="items.{{ $i }}.rate" type="number" step="0.01" placeholder="Rate ₹"
+                                           class="block w-full rounded-md border-gray-300 text-sm shadow-sm" />
+                                </div>
+                                <div class="col-span-3 md:col-span-2">
+                                    <input wire:model.live="items.{{ $i }}.gst_rate" type="number" step="0.01" placeholder="GST %"
+                                           class="block w-full rounded-md border-gray-300 text-sm shadow-sm" />
+                                </div>
+                                <div class="col-span-12 md:col-span-2 flex items-center text-sm text-gray-600 font-medium">
+                                    {{ \App\Support\Money::format($t['lines'][$i]['amount'] ?? 0) }}
+                                </div>
                             </div>
-                            <div class="col-span-4 md:col-span-1">
-                                <input wire:model="items.{{ $i }}.sac_code" placeholder="SAC/HSN"
-                                       class="block w-full rounded-md border-gray-300 text-sm shadow-sm" />
-                            </div>
-                            <div class="col-span-2 md:col-span-2">
-                                <input wire:model.live="items.{{ $i }}.quantity" type="number" step="0.01" placeholder="Qty"
-                                       class="block w-full rounded-md border-gray-300 text-sm shadow-sm" />
-                            </div>
-                            <div class="col-span-3 md:col-span-2">
-                                <input wire:model.live="items.{{ $i }}.rate" type="number" step="0.01" placeholder="Rate ₹"
-                                       class="block w-full rounded-md border-gray-300 text-sm shadow-sm" />
-                            </div>
-                            <div class="col-span-3 md:col-span-2">
-                                <input wire:model.live="items.{{ $i }}.gst_rate" type="number" step="0.01" placeholder="GST %"
-                                       class="block w-full rounded-md border-gray-300 text-sm shadow-sm" />
-                            </div>
-                            <div class="col-span-9 md:col-span-1 flex items-center text-sm text-gray-600 font-medium">
-                                {{ \App\Support\Money::format($t['lines'][$i]['amount'] ?? 0) }}
-                            </div>
-                            <div class="col-span-3 md:col-span-1 flex items-center justify-end">
-                                <button wire:click="removeItem({{ $i }})" type="button" class="text-red-600 hover:text-red-500">&times;</button>
-                            </div>
+                            <button wire:click="removeItem({{ $i }})" type="button"
+                                    class="mt-1 shrink-0 text-red-600 hover:text-red-500 text-lg leading-none">&times;</button>
                         </div>
                     @endforeach
                 </div>
