@@ -19,7 +19,7 @@
             <a href="{{ route('recurring-invoices.index') }}" class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Recurring invoices</a>
         </div>
 
-        <div class="overflow-hidden rounded-lg bg-white shadow-sm">
+        <div class="overflow-hidden overflow-x-auto rounded-lg bg-white shadow-sm">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
                     <tr>

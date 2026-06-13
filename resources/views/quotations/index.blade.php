@@ -21,7 +21,7 @@
             @endcan
         </div>
 
-        <div class="overflow-hidden rounded-lg bg-white shadow-sm">
+        <div class="overflow-hidden overflow-x-auto rounded-lg bg-white shadow-sm">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
                     <tr>

@@ -23,7 +23,7 @@
 
         {{-- My tasks (active) --}}
         @if ($myTasks->isNotEmpty())
-        <div class="overflow-hidden rounded-lg bg-white shadow-sm">
+        <div class="overflow-hidden overflow-x-auto rounded-lg bg-white shadow-sm">
             <div class="border-b border-gray-100 px-6 py-4">
                 <h3 class="text-base font-semibold text-gray-900">My Tasks</h3>
             </div>
@@ -82,7 +82,7 @@
         </div>
 
         {{-- History --}}
-        <div class="overflow-hidden rounded-lg bg-white shadow-sm">
+        <div class="overflow-hidden overflow-x-auto rounded-lg bg-white shadow-sm">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
                     <tr><th class="px-4 py-3">Date</th><th class="px-4 py-3 text-right">Tasks</th><th class="px-4 py-3 text-right">Calls</th><th class="px-4 py-3 text-right">Leads</th><th class="px-4 py-3">Summary</th></tr>

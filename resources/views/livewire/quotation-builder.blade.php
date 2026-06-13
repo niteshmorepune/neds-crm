@@ -36,7 +36,7 @@
                 <div class="mt-4 space-y-3">
                     @foreach ($items as $i => $item)
                         <div class="grid grid-cols-12 gap-2 border-b border-gray-100 pb-3" wire:key="item-{{ $i }}">
-                            <div class="col-span-12 md:col-span-4">
+                            <div class="col-span-12 md:col-span-3">
                                 <input wire:model="items.{{ $i }}.description" placeholder="Description"
                                        class="block w-full rounded-md border-gray-300 text-sm shadow-sm" />
                                 @error("items.$i.description") <span class="text-xs text-red-600">{{ $message }}</span> @enderror
@@ -53,14 +53,14 @@
                                 <input wire:model.live="items.{{ $i }}.rate" type="number" step="0.01" placeholder="Rate ₹"
                                        class="block w-full rounded-md border-gray-300 text-sm shadow-sm" />
                             </div>
-                            <div class="col-span-2 md:col-span-1">
-                                <input wire:model.live="items.{{ $i }}.gst_rate" type="number" step="0.01" placeholder="GST%"
+                            <div class="col-span-3 md:col-span-2">
+                                <input wire:model.live="items.{{ $i }}.gst_rate" type="number" step="0.01" placeholder="GST %"
                                        class="block w-full rounded-md border-gray-300 text-sm shadow-sm" />
                             </div>
-                            <div class="col-span-10 md:col-span-1 flex items-center text-sm text-gray-600">
+                            <div class="col-span-9 md:col-span-1 flex items-center text-sm text-gray-600 font-medium">
                                 {{ \App\Support\Money::format($t['lines'][$i]['amount'] ?? 0) }}
                             </div>
-                            <div class="col-span-2 md:col-span-1 flex items-center justify-end">
+                            <div class="col-span-3 md:col-span-1 flex items-center justify-end">
                                 <button wire:click="removeItem({{ $i }})" type="button" class="text-red-600 hover:text-red-500">&times;</button>
                             </div>
                         </div>

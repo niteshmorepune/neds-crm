@@ -41,7 +41,7 @@
         @if ($grouped)
             {{-- Grouped view --}}
             @forelse ($grouped as $groupName => $groupProjects)
-                <div class="overflow-hidden rounded-lg bg-white shadow-sm">
+                <div class="overflow-hidden overflow-x-auto rounded-lg bg-white shadow-sm">
                     <div class="border-b border-gray-100 bg-gray-50 px-4 py-2">
                         <h3 class="text-sm font-semibold text-gray-700">{{ $groupLabel }}: {{ $groupName }} <span class="text-gray-400">({{ $groupProjects->count() }})</span></h3>
                     </div>
@@ -75,7 +75,7 @@
             @endforelse
         @else
             {{-- Flat paginated view --}}
-            <div class="overflow-hidden rounded-lg bg-white shadow-sm">
+            <div class="overflow-hidden overflow-x-auto rounded-lg bg-white shadow-sm">
                 <table class="min-w-full divide-y divide-gray-200 text-sm">
                     <thead class="bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
                         <tr>

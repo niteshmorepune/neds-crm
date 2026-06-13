@@ -6,7 +6,7 @@
             <div class="rounded-md bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-800">{{ session('status') }}</div>
         @endif
 
-        <div class="overflow-hidden rounded-lg bg-white shadow-sm divide-y divide-gray-100">
+        <div class="overflow-hidden overflow-x-auto rounded-lg bg-white shadow-sm divide-y divide-gray-100">
             @forelse ($notifications as $notification)
                 @php($data = $notification->data)
                 @php($type = $data['type'] ?? 'task_assigned')

@@ -10,22 +10,29 @@
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+        <style>[x-cloak]{display:none!important}</style>
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="font-sans antialiased">
-        <div class="min-h-screen bg-gray-100 flex">
+        <div class="min-h-screen bg-gray-100 flex" x-data="{ sidebarOpen: false }">
             @include('layouts.sidebar')
 
             <div class="flex-1 flex flex-col min-w-0">
                 <!-- Top bar -->
                 <header class="bg-white shadow-sm">
                     <div class="h-16 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-                        <div class="font-semibold text-gray-800">
-                            @isset($header)
-                                {{ $header }}
-                            @endisset
+                        <div class="flex items-center gap-3">
+                            <!-- Hamburger — mobile only -->
+                            <button @click="sidebarOpen = true" class="md:hidden rounded-md p-1.5 text-gray-500 hover:bg-gray-100" aria-label="Open menu">
+                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                                </svg>
+                            </button>
+                            <span class="font-semibold text-gray-800">
+                                @isset($header){{ $header }}@endisset
+                            </span>
                         </div>
 
                         <form method="GET" action="{{ route('search') }}" class="hidden flex-1 px-6 md:block">
@@ -34,7 +41,7 @@
                         </form>
 
                         <div class="flex items-center">
-                        <a href="{{ route('help') }}" class="mr-4 rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                        <a href="{{ route('help') }}" class="hidden sm:inline-flex mr-4 rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
                             ? Help
                         </a>
                         @php($unreadCount = auth()->user()->unreadNotifications()->count())
@@ -48,7 +55,7 @@
                             </a>
                         @endif
                         @if (Auth::user()->hasRole(\App\Enums\UserRole::Admin, \App\Enums\UserRole::Manager, \App\Enums\UserRole::Sales, \App\Enums\UserRole::Support))
-                            <a href="{{ route('calls.create') }}" class="mr-4 rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            <a href="{{ route('calls.create') }}" class="hidden sm:inline-flex mr-4 rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
                                 ☎ Log a call
                             </a>
                         @endif
