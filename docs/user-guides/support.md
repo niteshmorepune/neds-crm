@@ -43,6 +43,17 @@ current.
 Use **☎ Log a call** (top bar) or **Calling** to record calls you make to
 clients about their tickets or projects.
 
+## 5. Notifications
+When a task is assigned to you, a **bell notification** appears in the top bar.
+Click it to go straight to the task. Dismiss notifications once you've read them.
+
+## 6. Morning digest email
+At **9 AM** you'll receive a daily email listing your overdue tasks, tasks due
+today, and open tickets assigned to you — so you know exactly where to focus
+before you open the CRM.
+
 ## Tips
 - Always set the right **priority** on a ticket — it sets the SLA clock.
 - Use **internal notes** for hand-offs between team members.
+- Keep task statuses current — it feeds the performance report and the morning
+  digest accurately reflects what's still open.

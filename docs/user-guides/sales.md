@@ -20,7 +20,13 @@ When you log in you'll see:
 - Open the lead to add **notes**, see the timeline, and log activity.
 - **Log a call** (top bar or the lead page) after you phone them — record the
   outcome (connected, no answer, follow-up needed).
-- Set a **next follow-up date** so it shows up in your "follow-ups due".
+- When logging a call, click **Add follow-up reminder** to set a date/time and a
+  one-line next action (e.g. "Send proposal", "Call back at 3 PM"). The CRM will
+  send you a bell notification when that time arrives, and it appears in your
+  morning digest. Call follow-ups that are overdue show in red on the **Calling**
+  page — use the **Pending follow-ups** button to filter to just those.
+- Set a **next follow-up date** on the lead itself so it shows up in your
+  "follow-ups due" dashboard widget.
 - If AI is enabled, **Draft follow-up** writes a first-draft message you can
   edit before sending.
 
@@ -53,7 +59,23 @@ The **Sales Department** board shows your deals in columns by stage:
 deals, invoices and tickets in one place. New clients can also be added directly,
 or imported in bulk via **Clients → Import**.
 
+## 5. Quotations — sending to clients
+Once a quotation is ready, open it and click **Send to Client**. This emails the
+quotation details to the client's billing address and marks it as Sent. The client
+can then accept or request changes.
+
+## Email alerts
+The CRM sends you two types of automated emails to help you stay on top of things:
+
+**Morning digest (9 AM daily)** — a summary of your day: overdue tasks, tasks due
+today, call follow-ups due, lead follow-ups, deal follow-ups, and open tickets.
+No email means your slate is clean.
+
+**Stagnation alert (10 AM daily)** — if any of your leads haven't had any
+activity (note, call, or edit) for **7 days**, or any of your deals for
+**10 days**, you'll get a reminder. Even adding a brief note resets the clock.
+
 ## Tips
 - Use the **search bar** to jump straight to any lead, client or deal.
 - Keep **notes** and **call outcomes** up to date — they drive your follow-up
-  list and your performance report.
+  list, your performance report, and the stagnation clock.

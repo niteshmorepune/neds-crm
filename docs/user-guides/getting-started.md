@@ -33,6 +33,9 @@ password only you know.
 - **Search bar** (top) — find any client, lead, deal, invoice, ticket or project
   by name or number.
 - **☎ Log a call** (top) — quickly record a phone call with a client or lead.
+- **🔔 Bell icon** (top) — your notification centre. Shows unread alerts such as
+  tasks assigned to you and call follow-up reminders. Click a notification to go
+  straight to the record; click **Dismiss** to clear it.
 - **Your name** (top-right) — Profile and Log out.
 
 ## 5. Attendance — check in and out
@@ -48,7 +51,13 @@ At the end of the day, open **Daily Reports** and submit a short "what I did
 today". Some numbers (tasks completed, calls made) are filled in automatically;
 add a sentence or two on your day and submit. You'll get a reminder at 6 PM.
 
-## 7. Logging out
+## 7. Morning digest email
+Every morning at **9 AM** you'll receive a personalised email summarising your
+day — overdue tasks, tasks due today, call follow-ups, and any open tickets
+assigned to you. No email means you have a clean plate for the day.
+
+## 8. Logging out
+
 Click your **name** (top-right) → **Log Out**. Always log out on shared devices.
 
 ---

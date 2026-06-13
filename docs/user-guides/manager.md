@@ -37,10 +37,23 @@ anywhere. Use the **search bar** to jump to any record.
 
 ## Daily reports & attendance
 - **Daily Reports → Team** shows what each person submitted.
-- Attendance for the team feeds the performance report. You (and admins) can
-  correct an attendance entry if someone forgets to check in — corrections are
-  logged.
+- **Attendance** — use the dropdown on the Attendance page to switch between team
+  members and view their monthly record. You can see all employees except admins.
+- To correct an entry (e.g. someone forgot to check in), go to **Corrections**,
+  pick the date, and update the **status** and **notes**. Times are set by
+  the employee's own check-in/check-out and cannot be edited here — corrections
+  are logged to the audit trail.
+
+## Email alerts
+**Morning digest (9 AM daily)** — your own personalised summary: overdue tasks,
+tasks due today, call follow-ups, lead/deal follow-ups, and open tickets assigned
+to you.
+
+**Stagnation alerts (10 AM daily)** — if any lead owned by a team member has had
+no activity for 7 days, or a deal for 10 days, the owner is emailed automatically.
+You don't need to chase people — the system does it.
 
 ## Tip
-Check the **SLA at-risk** tickets and the **follow-ups due** across the team
-regularly — both are leading indicators of service and sales health.
+Check the **SLA at-risk** tickets and the **Overdue follow-ups** widget on the
+dashboard regularly — both are leading indicators of service and sales health.
+The stagnation alert emails give you a daily safety net for cold leads and deals.
