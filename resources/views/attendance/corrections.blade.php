@@ -1,4 +1,4 @@
-<x-app-layout>
+﻿<x-app-layout>
     <x-slot name="header">Attendance Corrections</x-slot>
 
     <div class="max-w-5xl mx-auto space-y-4">
@@ -29,8 +29,8 @@
                                 <td class="px-4 py-2 text-gray-500 text-xs">
                                     @if ($e)
                                         {{ $e->status->label() }}
-                                        @if ($e->check_in_at) · in {{ $e->check_in_at->timezone(config('app.timezone'))->format('g:i A') }} @endif
-                                        @if ($e->check_out_at) · out {{ $e->check_out_at->timezone(config('app.timezone'))->format('g:i A') }} @endif
+                                        @if ($e->check_in_at) Â· in {{ $e->check_in_at->timezone(config('app.display_timezone'))->format('g:i A') }} @endif
+                                        @if ($e->check_out_at) Â· out {{ $e->check_out_at->timezone(config('app.display_timezone'))->format('g:i A') }} @endif
                                     @else
                                         Not marked
                                     @endif
@@ -52,3 +52,4 @@
         </div>
     </div>
 </x-app-layout>
+

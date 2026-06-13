@@ -1,4 +1,4 @@
-<x-app-layout>
+﻿<x-app-layout>
     <x-slot name="header">Audit Log</x-slot>
 
     <div class="max-w-7xl mx-auto space-y-4">
@@ -35,7 +35,7 @@
                 <tbody class="divide-y divide-gray-100">
                     @forelse ($activities as $activity)
                         <tr class="hover:bg-gray-50 align-top">
-                            <td class="px-4 py-3 whitespace-nowrap text-gray-500">{{ $activity->created_at->timezone(config('app.timezone'))->format('d M Y, g:i A') }}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-gray-500">{{ $activity->created_at->timezone(config('app.display_timezone'))->format('d M Y, g:i A') }}</td>
                             <td class="px-4 py-3 text-gray-700">{{ $activity->user?->name ?? 'System' }}</td>
                             <td class="px-4 py-3">
                                 <span @class([
@@ -50,7 +50,7 @@
                                 @if (is_array($activity->changes) && $activity->changes !== [])
                                     <span class="text-xs">{{ implode(', ', array_keys($activity->changes)) }}</span>
                                 @else
-                                    <span class="text-xs text-gray-300">—</span>
+                                    <span class="text-xs text-gray-300">â€”</span>
                                 @endif
                             </td>
                         </tr>
@@ -64,3 +64,4 @@
         <div>{{ $activities->links() }}</div>
     </div>
 </x-app-layout>
+

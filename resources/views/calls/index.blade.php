@@ -1,4 +1,4 @@
-<x-app-layout>
+﻿<x-app-layout>
     <x-slot name="header">Calling</x-slot>
 
     <div class="max-w-7xl mx-auto space-y-4">
@@ -36,18 +36,18 @@
                 <tbody class="divide-y divide-gray-100">
                     @forelse ($calls as $call)
                         <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-2 text-gray-600">{{ $call->called_at->timezone(config('app.timezone'))->format('d M, g:i A') }}</td>
+                            <td class="px-4 py-2 text-gray-600">{{ $call->called_at->timezone(config('app.display_timezone'))->format('d M, g:i A') }}</td>
                             <td class="px-4 py-2 text-gray-600">{{ $call->user?->name }}</td>
                             <td class="px-4 py-2 text-gray-600">
                                 @if ($call->callable instanceof \App\Models\Customer)
                                     <a href="{{ route('clients.show', $call->callable) }}" class="text-indigo-600 hover:underline">{{ $call->callable->company_name }}</a>
                                 @elseif ($call->callable instanceof \App\Models\Lead)
                                     <a href="{{ route('leads.show', $call->callable) }}" class="text-indigo-600 hover:underline">{{ $call->callable->name }}</a>
-                                @else — @endif
+                                @else â€” @endif
                             </td>
                             <td class="px-4 py-2 text-gray-600">{{ $call->direction->label() }}</td>
                             <td class="px-4 py-2 text-gray-600">{{ $call->outcome->label() }}</td>
-                            <td class="px-4 py-2 text-gray-600">{{ $call->duration_minutes ?? '—' }}</td>
+                            <td class="px-4 py-2 text-gray-600">{{ $call->duration_minutes ?? 'â€”' }}</td>
                             <td class="px-4 py-2 text-gray-500">{{ \Illuminate\Support\Str::limit($call->notes, 60) }}</td>
                         </tr>
                     @empty
@@ -59,3 +59,4 @@
         <div>{{ $calls->links() }}</div>
     </div>
 </x-app-layout>
+

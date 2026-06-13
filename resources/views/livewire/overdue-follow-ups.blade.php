@@ -1,4 +1,4 @@
-<div class="rounded-lg bg-white p-6 shadow-sm">
+﻿<div class="rounded-lg bg-white p-6 shadow-sm">
     <h2 class="text-base font-semibold text-gray-900">
         Overdue follow-ups
         @if ($leads->count() + $deals->count() > 0)
@@ -7,25 +7,26 @@
     </h2>
 
     @if ($leads->isEmpty() && $deals->isEmpty())
-        <p class="mt-3 text-sm text-gray-400">Nothing overdue. 🎉</p>
+        <p class="mt-3 text-sm text-gray-400">Nothing overdue. ðŸŽ‰</p>
     @else
         <ul class="mt-3 divide-y divide-gray-100 text-sm">
             @foreach ($leads as $lead)
                 <li class="flex items-center justify-between py-2">
                     <a href="{{ route('leads.show', $lead) }}" class="text-indigo-600 hover:underline">
-                        Lead: {{ $lead->name }}{{ $lead->company ? ' — '.$lead->company : '' }}
+                        Lead: {{ $lead->name }}{{ $lead->company ? ' â€” '.$lead->company : '' }}
                     </a>
-                    <span class="text-xs text-red-600">due {{ $lead->next_follow_up_at->timezone(config('app.timezone'))->format('d M') }}</span>
+                    <span class="text-xs text-red-600">due {{ $lead->next_follow_up_at->timezone(config('app.display_timezone'))->format('d M') }}</span>
                 </li>
             @endforeach
             @foreach ($deals as $deal)
                 <li class="flex items-center justify-between py-2">
                     <a href="{{ route('deals.show', $deal) }}" class="text-indigo-600 hover:underline">
-                        Deal: {{ $deal->title }} — {{ $deal->customer->company_name }}
+                        Deal: {{ $deal->title }} â€” {{ $deal->customer->company_name }}
                     </a>
-                    <span class="text-xs text-red-600">due {{ $deal->next_follow_up_at->timezone(config('app.timezone'))->format('d M') }}</span>
+                    <span class="text-xs text-red-600">due {{ $deal->next_follow_up_at->timezone(config('app.display_timezone'))->format('d M') }}</span>
                 </li>
             @endforeach
         </ul>
     @endif
 </div>
+

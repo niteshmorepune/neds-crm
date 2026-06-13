@@ -1,4 +1,4 @@
-<x-app-layout>
+﻿<x-app-layout>
     <x-slot name="header">{{ $lead->name }}</x-slot>
 
     <div class="max-w-5xl mx-auto space-y-6">
@@ -17,24 +17,24 @@
                         <p class="mt-1 text-xs text-gray-500">AI: {{ $lead->ai_score_reason }}</p>
                     @endif
                     <dl class="mt-3 grid grid-cols-1 gap-x-8 gap-y-1 text-sm text-gray-600 sm:grid-cols-2">
-                        <div><span class="text-gray-400">Company:</span> {{ $lead->company ?: '—' }}</div>
+                        <div><span class="text-gray-400">Company:</span> {{ $lead->company ?: 'â€”' }}</div>
                         <div><span class="text-gray-400">Status:</span> {{ $lead->status->label() }}</div>
-                        <div><span class="text-gray-400">Email:</span> {{ $lead->email ?? '—' }}</div>
-                        <div><span class="text-gray-400">Phone:</span> {{ $lead->phone ?? '—' }}</div>
+                        <div><span class="text-gray-400">Email:</span> {{ $lead->email ?? 'â€”' }}</div>
+                        <div><span class="text-gray-400">Phone:</span> {{ $lead->phone ?? 'â€”' }}</div>
                         <div><span class="text-gray-400">Source:</span> {{ $lead->source->label() }}</div>
-                        <div><span class="text-gray-400">Service:</span> {{ $lead->service?->name ?? '—' }}</div>
+                        <div><span class="text-gray-400">Service:</span> {{ $lead->service?->name ?? 'â€”' }}</div>
                         <div><span class="text-gray-400">Est. value:</span> {{ \App\Support\Money::format($lead->estimated_value) }}</div>
                         <div><span class="text-gray-400">Owner:</span> {{ $lead->owner?->name ?? 'Unassigned' }}</div>
                         <div><span class="text-gray-400">Next follow-up:</span>
-                            {{ $lead->next_follow_up_at?->timezone(config('app.timezone'))->format('d M Y, g:i A') ?? '—' }}</div>
+                            {{ $lead->next_follow_up_at?->timezone(config('app.display_timezone'))->format('d M Y, g:i A') ?? 'â€”' }}</div>
                     </dl>
 
                     @if ($lead->convertedCustomer)
                         <div class="mt-3 rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">
-                            Converted →
+                            Converted â†’
                             <a href="{{ route('clients.show', $lead->convertedCustomer) }}" class="font-medium underline">{{ $lead->convertedCustomer->company_name }}</a>
                             @if ($lead->convertedDeal)
-                                · <a href="{{ route('deals.show', $lead->convertedDeal) }}" class="font-medium underline">View deal</a>
+                                Â· <a href="{{ route('deals.show', $lead->convertedDeal) }}" class="font-medium underline">View deal</a>
                             @endif
                         </div>
                     @endif
@@ -63,3 +63,4 @@
         </div>
     </div>
 </x-app-layout>
+

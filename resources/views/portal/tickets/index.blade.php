@@ -1,4 +1,4 @@
-<x-portal-app-layout header="My Tickets">
+﻿<x-portal-app-layout header="My Tickets">
     <div class="mb-4 flex justify-end">
         <a href="{{ route('portal.tickets.create') }}" class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">New ticket</a>
     </div>
@@ -14,7 +14,7 @@
                         <td class="px-4 py-3"><a href="{{ route('portal.tickets.show', $ticket->id) }}" class="font-medium text-indigo-600 hover:underline">{{ $ticket->subject }}</a></td>
                         <td class="px-4 py-3 text-gray-600">{{ $ticket->priority->label() }}</td>
                         <td class="px-4 py-3 text-gray-600">{{ $ticket->status->label() }}</td>
-                        <td class="px-4 py-3 text-gray-600">{{ $ticket->created_at->timezone(config('app.timezone'))->format('d M Y') }}</td>
+                        <td class="px-4 py-3 text-gray-600">{{ $ticket->created_at->timezone(config('app.display_timezone'))->format('d M Y') }}</td>
                     </tr>
                 @empty
                     <tr><td colspan="4" class="px-4 py-10 text-center text-gray-400">No tickets yet.</td></tr>
@@ -24,3 +24,4 @@
     </div>
     <div class="mt-4">{{ $tickets->links() }}</div>
 </x-portal-app-layout>
+

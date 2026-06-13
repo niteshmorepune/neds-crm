@@ -1,10 +1,10 @@
-<div>
+﻿<div>
     @if ($aiEnabled)
         <div class="mb-3 flex items-center justify-between">
             <button type="button" wire:click="summarize" wire:loading.attr="disabled" wire:target="summarize"
                     class="inline-flex items-center gap-1 rounded-md border border-indigo-200 bg-indigo-50 px-2.5 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-100 disabled:opacity-50">
-                <span wire:loading.remove wire:target="summarize">✨ Summarize thread</span>
-                <span wire:loading wire:target="summarize">Summarizing…</span>
+                <span wire:loading.remove wire:target="summarize">âœ¨ Summarize thread</span>
+                <span wire:loading wire:target="summarize">Summarizingâ€¦</span>
             </button>
         </div>
 
@@ -25,7 +25,7 @@
                 <div class="py-2">
                     <div class="text-sm text-gray-800 whitespace-pre-line">{{ $reply->body }}</div>
                     <div class="mt-0.5 text-xs text-gray-400">
-                        {{ $reply->authorName() }} · {{ $reply->created_at->timezone(config('app.timezone'))->format('d M Y, g:i A') }}
+                        {{ $reply->authorName() }} Â· {{ $reply->created_at->timezone(config('app.display_timezone'))->format('d M Y, g:i A') }}
                         @if ($reply->is_internal)<span class="ml-1 font-medium text-amber-600">Internal note</span>
                         @elseif ($reply->isFromCustomer())<span class="ml-1 font-medium text-blue-600">Client</span>@endif
                     </div>
@@ -38,7 +38,7 @@
 
     @if ($canManage)
         <div class="mt-4 border-t border-gray-100 pt-4">
-            <textarea wire:model="body" rows="3" placeholder="Write a reply…"
+            <textarea wire:model="body" rows="3" placeholder="Write a replyâ€¦"
                       class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
             @error('body') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
             <div class="mt-2 flex flex-wrap items-center justify-between gap-2">
@@ -50,8 +50,8 @@
                     @if ($aiEnabled)
                         <button type="button" wire:click="draftReply" wire:loading.attr="disabled" wire:target="draftReply"
                                 class="inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">
-                            <span wire:loading.remove wire:target="draftReply">✨ Draft with AI</span>
-                            <span wire:loading wire:target="draftReply">Drafting…</span>
+                            <span wire:loading.remove wire:target="draftReply">âœ¨ Draft with AI</span>
+                            <span wire:loading wire:target="draftReply">Draftingâ€¦</span>
                         </button>
                     @endif
                     <x-primary-button wire:click="addReply" type="button">Send reply</x-primary-button>
@@ -60,3 +60,4 @@
         </div>
     @endif
 </div>
+

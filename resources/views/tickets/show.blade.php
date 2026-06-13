@@ -1,4 +1,4 @@
-<x-app-layout>
+﻿<x-app-layout>
     <x-slot name="header">Ticket #{{ $ticket->id }}</x-slot>
 
     <div class="max-w-5xl mx-auto space-y-6">
@@ -14,7 +14,7 @@
                             <h1 class="text-xl font-semibold text-gray-900">{{ $ticket->subject }}</h1>
                             <p class="mt-1 text-sm text-gray-500">
                                 <a href="{{ route('clients.show', $ticket->customer) }}" class="text-indigo-600 hover:underline">{{ $ticket->customer->company_name }}</a>
-                                · {{ $ticket->priority->label() }} · {{ $ticket->status->label() }}
+                                Â· {{ $ticket->priority->label() }} Â· {{ $ticket->status->label() }}
                             </p>
                         </div>
                         <a href="{{ route('tickets.index') }}" class="text-sm text-gray-500 hover:text-gray-700">Back</a>
@@ -22,10 +22,10 @@
 
                     @if ($ticket->isSlaBreached())
                         <div class="mt-3 rounded-md bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
-                            SLA breached — was due {{ $ticket->sla_due_at->timezone(config('app.timezone'))->format('d M Y, g:i A') }}.
+                            SLA breached â€” was due {{ $ticket->sla_due_at->timezone(config('app.display_timezone'))->format('d M Y, g:i A') }}.
                         </div>
                     @elseif ($ticket->sla_due_at)
-                        <div class="mt-3 text-sm text-gray-500">SLA due {{ $ticket->sla_due_at->timezone(config('app.timezone'))->format('d M Y, g:i A') }}.</div>
+                        <div class="mt-3 text-sm text-gray-500">SLA due {{ $ticket->sla_due_at->timezone(config('app.display_timezone'))->format('d M Y, g:i A') }}.</div>
                     @endif
 
                     <p class="mt-4 whitespace-pre-line text-sm text-gray-700">{{ $ticket->description }}</p>
@@ -103,3 +103,4 @@
         </div>
     </div>
 </x-app-layout>
+
