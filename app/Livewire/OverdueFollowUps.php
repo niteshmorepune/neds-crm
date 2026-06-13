@@ -4,12 +4,13 @@ namespace App\Livewire;
 
 use App\Enums\DealStage;
 use App\Enums\LeadStatus;
+use App\Models\CallLog;
 use App\Models\Deal;
 use App\Models\Lead;
 use Livewire\Component;
 
 /**
- * Dashboard widget: the current user's overdue (open) leads and deals.
+ * Dashboard widget: the current user's overdue leads, deals, and call follow-ups.
  */
 class OverdueFollowUps extends Component
 {
@@ -35,9 +36,18 @@ class OverdueFollowUps extends Component
             ->orderBy('next_follow_up_at')
             ->get();
 
+        $callFollowUps = CallLog::query()
+            ->where('user_id', $user->id)
+            ->whereNotNull('follow_up_at')
+            ->where('follow_up_at', '<=', $now)
+            ->with('callable')
+            ->orderBy('follow_up_at')
+            ->get();
+
         return view('livewire.overdue-follow-ups', [
             'leads' => $leads,
             'deals' => $deals,
+            'callFollowUps' => $callFollowUps,
         ]);
     }
 }

@@ -12,6 +12,7 @@ use App\Models\Lead;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 
 class CallLogController extends Controller
@@ -29,6 +30,7 @@ class CallLogController extends Controller
             ->when($isManager && $request->filled('user_id'), fn ($q) => $q->where('user_id', $request->integer('user_id')))
             ->when($request->filled('outcome'), fn ($q) => $q->where('outcome', $request->input('outcome')))
             ->when($request->filled('date'), fn ($q) => $q->whereDate('called_at', $request->date('date')))
+            ->when($request->boolean('pending_followup'), fn ($q) => $q->whereNotNull('follow_up_at')->whereNull('follow_up_notified_at'))
             ->latest('called_at')
             ->paginate(20)
             ->withQueryString();
@@ -37,7 +39,7 @@ class CallLogController extends Controller
             'calls' => $calls,
             'staff' => $isManager ? User::orderBy('name')->get(['id', 'name']) : collect(),
             'outcomes' => CallOutcome::cases(),
-            'filters' => $request->only(['user_id', 'outcome', 'date']),
+            'filters' => $request->only(['user_id', 'outcome', 'date', 'pending_followup']),
             'isManager' => $isManager,
         ]);
     }
@@ -68,6 +70,8 @@ class CallLogController extends Controller
             default => [null, null],
         };
 
+        $tz = config('app.display_timezone');
+
         $call = CallLog::create([
             'user_id' => $request->user()->id,
             'callable_type' => $type,
@@ -76,7 +80,11 @@ class CallLogController extends Controller
             'outcome' => $data['outcome'],
             'duration_minutes' => $data['duration_minutes'] ?? null,
             'notes' => $data['notes'] ?? null,
-            'called_at' => $data['called_at'],
+            'called_at' => Carbon::parse($data['called_at'], $tz)->utc(),
+            'next_action' => $data['next_action'] ?? null,
+            'follow_up_at' => filled($data['follow_up_at'] ?? null)
+                ? Carbon::parse($data['follow_up_at'], $tz)->utc()
+                : null,
         ]);
 
         // Return to the linked record's page when logged from there.

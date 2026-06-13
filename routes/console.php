@@ -19,6 +19,9 @@ Schedule::command('app:generate-recurring-invoices')->dailyAt('06:00')->timezone
 Schedule::command('app:mark-overdue-invoices')->dailyAt('07:00')->timezone('Asia/Kolkata');
 Schedule::command('app:send-payment-reminders')->dailyAt('07:30')->timezone('Asia/Kolkata');
 
+// Call follow-up reminders — check every 5 minutes so notifications fire close to the scheduled time.
+Schedule::command('app:send-call-followup-reminders')->everyFiveMinutes();
+
 // Ticket SLA breach escalation — check hourly during the working day.
 Schedule::command('app:check-ticket-sla')->hourly();
 

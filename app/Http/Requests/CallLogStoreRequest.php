@@ -24,6 +24,8 @@ class CallLogStoreRequest extends FormRequest
             'duration_minutes' => ['nullable', 'integer', 'min:0', 'max:1440'],
             'notes' => ['nullable', 'string', 'max:2000'],
             'called_at' => ['required', 'date'],
+            'next_action' => ['nullable', 'string', 'max:255'],
+            'follow_up_at' => ['nullable', 'date'],
         ];
     }
 }

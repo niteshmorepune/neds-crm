@@ -9,16 +9,33 @@
         <div class="overflow-hidden rounded-lg bg-white shadow-sm divide-y divide-gray-100">
             @forelse ($notifications as $notification)
                 @php($data = $notification->data)
+                @php($type = $data['type'] ?? 'task_assigned')
                 <div class="flex items-start justify-between gap-4 px-6 py-4">
                     <div>
-                        <p class="text-sm font-medium text-gray-900">
-                            Task assigned: <a href="{{ $data['url'] }}" class="text-indigo-600 hover:underline">{{ $data['task_title'] }}</a>
-                        </p>
-                        <p class="mt-0.5 text-xs text-gray-500">
-                            @if ($data['project']) {{ $data['project'] }} · @endif
-                            @if ($data['due_date']) Due {{ \Illuminate\Support\Carbon::parse($data['due_date'])->format('d M Y') }} · @endif
-                            {{ $notification->created_at->timezone(config('app.display_timezone'))->diffForHumans() }}
-                        </p>
+                        @if ($type === 'call_follow_up')
+                            <p class="text-sm font-medium text-gray-900">
+                                ⏰ Call follow-up:
+                                <a href="{{ $data['url'] }}" class="text-indigo-600 hover:underline">
+                                    {{ $data['callable_name'] ?? 'Unknown' }}
+                                </a>
+                            </p>
+                            @if (! empty($data['next_action']))
+                                <p class="mt-0.5 text-xs text-gray-700">{{ $data['next_action'] }}</p>
+                            @endif
+                            <p class="mt-0.5 text-xs text-gray-500">
+                                Was due {{ \Illuminate\Support\Carbon::parse($data['follow_up_at'])->timezone(config('app.display_timezone'))->format('d M Y, g:i A') }}
+                                · {{ $notification->created_at->timezone(config('app.display_timezone'))->diffForHumans() }}
+                            </p>
+                        @else
+                            <p class="text-sm font-medium text-gray-900">
+                                Task assigned: <a href="{{ $data['url'] }}" class="text-indigo-600 hover:underline">{{ $data['task_title'] }}</a>
+                            </p>
+                            <p class="mt-0.5 text-xs text-gray-500">
+                                @if ($data['project']) {{ $data['project'] }} · @endif
+                                @if ($data['due_date']) Due {{ \Illuminate\Support\Carbon::parse($data['due_date'])->format('d M Y') }} · @endif
+                                {{ $notification->created_at->timezone(config('app.display_timezone'))->diffForHumans() }}
+                            </p>
+                        @endif
                     </div>
                     <form method="POST" action="{{ route('notifications.destroy', $notification->id) }}" class="shrink-0">
                         @csrf @method('DELETE')
