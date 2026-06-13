@@ -1,4 +1,4 @@
-﻿<x-app-layout>
+<x-app-layout>
     <x-slot name="header">Audit Log</x-slot>
 
     <div class="max-w-7xl mx-auto space-y-4">
@@ -50,7 +50,7 @@
                                 @if (is_array($activity->changes) && $activity->changes !== [])
                                     <span class="text-xs">{{ implode(', ', array_keys($activity->changes)) }}</span>
                                 @else
-                                    <span class="text-xs text-gray-300">â€”</span>
+                                    <span class="text-xs text-gray-300">—</span>
                                 @endif
                             </td>
                         </tr>
@@ -64,4 +64,3 @@
         <div>{{ $activities->links() }}</div>
     </div>
 </x-app-layout>
-

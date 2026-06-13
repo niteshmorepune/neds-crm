@@ -1,4 +1,4 @@
-﻿<x-app-layout>
+<x-app-layout>
     <x-slot name="header">Notifications</x-slot>
 
     <div class="max-w-3xl mx-auto space-y-4">
@@ -15,8 +15,8 @@
                             Task assigned: <a href="{{ $data['url'] }}" class="text-indigo-600 hover:underline">{{ $data['task_title'] }}</a>
                         </p>
                         <p class="mt-0.5 text-xs text-gray-500">
-                            @if ($data['project']) {{ $data['project'] }} Â· @endif
-                            @if ($data['due_date']) Due {{ \Illuminate\Support\Carbon::parse($data['due_date'])->format('d M Y') }} Â· @endif
+                            @if ($data['project']) {{ $data['project'] }} · @endif
+                            @if ($data['due_date']) Due {{ \Illuminate\Support\Carbon::parse($data['due_date'])->format('d M Y') }} · @endif
                             {{ $notification->created_at->timezone(config('app.display_timezone'))->diffForHumans() }}
                         </p>
                     </div>
@@ -33,4 +33,3 @@
         <div>{{ $notifications->links() }}</div>
     </div>
 </x-app-layout>
-

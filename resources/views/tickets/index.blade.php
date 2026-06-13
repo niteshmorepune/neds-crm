@@ -1,4 +1,4 @@
-﻿<x-app-layout>
+<x-app-layout>
     <x-slot name="header">Tickets</x-slot>
 
     <div class="max-w-7xl mx-auto space-y-4">
@@ -51,8 +51,8 @@
                             <td class="px-4 py-3 text-gray-600">{{ $ticket->status->label() }}</td>
                             <td class="px-4 py-3 text-gray-600">{{ $ticket->assignee?->name ?? 'Unassigned' }}</td>
                             <td class="px-4 py-3 {{ $ticket->isSlaBreached() ? 'font-medium text-red-600' : 'text-gray-600' }}">
-                                {{ $ticket->sla_due_at?->timezone(config('app.display_timezone'))->format('d M, g:i A') ?? 'â€”' }}
-                                {{ $ticket->isSlaBreached() ? 'Â· breached' : '' }}
+                                {{ $ticket->sla_due_at?->timezone(config('app.display_timezone'))->format('d M, g:i A') ?? '—' }}
+                                {{ $ticket->isSlaBreached() ? '· breached' : '' }}
                             </td>
                         </tr>
                     @empty
@@ -64,4 +64,3 @@
         <div>{{ $tickets->links() }}</div>
     </div>
 </x-app-layout>
-

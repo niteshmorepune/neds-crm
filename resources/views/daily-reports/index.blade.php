@@ -1,4 +1,4 @@
-﻿<x-app-layout>
+<x-app-layout>
     <x-slot name="header">Daily Reports</x-slot>
 
     <div class="max-w-4xl mx-auto space-y-6">
@@ -7,7 +7,7 @@
         @endif
 
         <div class="flex items-center justify-between">
-            <h2 class="text-lg font-semibold text-gray-900">Today â€” {{ now()->timezone(config('app.display_timezone'))->format('d M Y') }}</h2>
+            <h2 class="text-lg font-semibold text-gray-900">Today — {{ now()->timezone(config('app.display_timezone'))->format('d M Y') }}</h2>
             @if ($canViewTeam)
                 <a href="{{ route('daily-reports.team') }}" class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">Team reports</a>
             @endif
@@ -18,7 +18,7 @@
             <div class="rounded-lg bg-white p-4 shadow-sm"><div class="text-xs text-gray-500">Tasks completed</div><div class="text-xl font-semibold">{{ $metrics['tasks_completed'] }}</div></div>
             <div class="rounded-lg bg-white p-4 shadow-sm"><div class="text-xs text-gray-500">Calls made</div><div class="text-xl font-semibold">{{ $metrics['calls_made'] }}</div></div>
             <div class="rounded-lg bg-white p-4 shadow-sm"><div class="text-xs text-gray-500">Leads touched</div><div class="text-xl font-semibold">{{ $metrics['leads_touched'] }}</div></div>
-            <div class="rounded-lg bg-white p-4 shadow-sm"><div class="text-xs text-gray-500">Attendance</div><div class="text-xl font-semibold">{{ $metrics['attendance_status'] ? \App\Enums\AttendanceStatus::from($metrics['attendance_status'])->label() : 'â€”' }}</div></div>
+            <div class="rounded-lg bg-white p-4 shadow-sm"><div class="text-xs text-gray-500">Attendance</div><div class="text-xl font-semibold">{{ $metrics['attendance_status'] ? \App\Enums\AttendanceStatus::from($metrics['attendance_status'])->label() : '—' }}</div></div>
         </div>
 
         {{-- My tasks (active) --}}
@@ -42,11 +42,11 @@
                     @foreach ($myTasks as $task)
                         <tr class="hover:bg-gray-50">
                             <td class="px-4 py-2"><a href="{{ route('tasks.show', $task) }}" class="font-medium text-indigo-600 hover:underline">{{ $task->title }}</a></td>
-                            <td class="px-4 py-2 text-gray-500">{{ $task->project?->name ?? 'â€”' }}</td>
+                            <td class="px-4 py-2 text-gray-500">{{ $task->project?->name ?? '—' }}</td>
                             <td class="px-4 py-2 text-gray-600">{{ $task->status->label() }}</td>
                             <td class="px-4 py-2 text-gray-600">{{ $task->priority->label() }}</td>
                             <td class="px-4 py-2 {{ $task->isOverdue() ? 'font-medium text-red-600' : 'text-gray-600' }}">
-                                {{ $task->due_date?->format('d M Y') ?? 'â€”' }}
+                                {{ $task->due_date?->format('d M Y') ?? '—' }}
                             </td>
                             <td class="px-4 py-2">
                                 <form method="POST" action="{{ route('tasks.status', $task) }}">
@@ -74,7 +74,7 @@
                 <x-input-error :messages="$errors->get('summary')" class="mt-1" />
                 <div class="mt-3 flex items-center justify-between">
                     <span class="text-xs text-gray-400">
-                        @if ($todayReport?->submitted_at) Submitted {{ $todayReport->submitted_at->timezone(config('app.display_timezone'))->format('g:i A') }} â€” saving again updates it. @endif
+                        @if ($todayReport?->submitted_at) Submitted {{ $todayReport->submitted_at->timezone(config('app.display_timezone'))->format('g:i A') }} — saving again updates it. @endif
                     </span>
                     <x-primary-button>{{ $todayReport ? 'Update report' : 'Submit report' }}</x-primary-button>
                 </div>
@@ -105,4 +105,3 @@
         <div>{{ $history->links() }}</div>
     </div>
 </x-app-layout>
-

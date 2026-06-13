@@ -1,12 +1,12 @@
-﻿<x-app-layout>
+<x-app-layout>
     <x-slot name="header">{{ $isManager ? 'Team Attendance' : 'My Attendance' }}</x-slot>
 
     <div class="max-w-4xl mx-auto space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div class="flex items-center gap-2">
-                <a href="{{ route('attendance.index', array_filter(['month' => $month->copy()->subMonth()->format('Y-m'), 'user_id' => $isManager ? $viewingUser->id : null])) }}" class="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm">â†</a>
+                <a href="{{ route('attendance.index', array_filter(['month' => $month->copy()->subMonth()->format('Y-m'), 'user_id' => $isManager ? $viewingUser->id : null])) }}" class="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm">←</a>
                 <span class="text-lg font-semibold text-gray-900">{{ $month->format('F Y') }}</span>
-                <a href="{{ route('attendance.index', array_filter(['month' => $month->copy()->addMonth()->format('Y-m'), 'user_id' => $isManager ? $viewingUser->id : null])) }}" class="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm">â†’</a>
+                <a href="{{ route('attendance.index', array_filter(['month' => $month->copy()->addMonth()->format('Y-m'), 'user_id' => $isManager ? $viewingUser->id : null])) }}" class="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm">→</a>
             </div>
             <div class="flex flex-wrap items-center gap-2">
                 @if ($isManager)
@@ -42,9 +42,9 @@
                         @php($rec = $records->get($day->toDateString()))
                         <tr class="hover:bg-gray-50">
                             <td class="px-4 py-2 text-gray-700">{{ $day->format('d M (D)') }}</td>
-                            <td class="px-4 py-2 text-gray-600">{{ $rec?->status?->label() ?? 'â€”' }}</td>
-                            <td class="px-4 py-2 text-gray-600">{{ $rec?->check_in_at?->timezone(config('app.display_timezone'))->format('g:i A') ?? 'â€”' }}</td>
-                            <td class="px-4 py-2 text-gray-600">{{ $rec?->check_out_at?->timezone(config('app.display_timezone'))->format('g:i A') ?? 'â€”' }}</td>
+                            <td class="px-4 py-2 text-gray-600">{{ $rec?->status?->label() ?? '—' }}</td>
+                            <td class="px-4 py-2 text-gray-600">{{ $rec?->check_in_at?->timezone(config('app.display_timezone'))->format('g:i A') ?? '—' }}</td>
+                            <td class="px-4 py-2 text-gray-600">{{ $rec?->check_out_at?->timezone(config('app.display_timezone'))->format('g:i A') ?? '—' }}</td>
                             <td class="px-4 py-2 text-gray-500">{{ $rec?->notes ?? '' }}</td>
                         </tr>
                     @endfor
@@ -53,4 +53,3 @@
         </div>
     </div>
 </x-app-layout>
-

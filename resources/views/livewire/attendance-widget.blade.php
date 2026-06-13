@@ -1,11 +1,11 @@
-﻿<div class="rounded-lg bg-white p-6 shadow-sm">
+<div class="rounded-lg bg-white p-6 shadow-sm">
     <div class="flex items-center justify-between">
         <div>
-            <h2 class="text-base font-semibold text-gray-900">Attendance â€” {{ now()->timezone(config('app.display_timezone'))->format('d M Y') }}</h2>
+            <h2 class="text-base font-semibold text-gray-900">Attendance — {{ now()->timezone(config('app.display_timezone'))->format('d M Y') }}</h2>
             <p class="mt-1 text-sm text-gray-500">
                 @if ($attendance && $attendance->check_in_at)
                     Checked in at {{ $attendance->check_in_at->timezone(config('app.display_timezone'))->format('g:i A') }}
-                    @if ($attendance->check_out_at) Â· out at {{ $attendance->check_out_at->timezone(config('app.display_timezone'))->format('g:i A') }} @endif
+                    @if ($attendance->check_out_at) · out at {{ $attendance->check_out_at->timezone(config('app.display_timezone'))->format('g:i A') }} @endif
                 @else
                     Not checked in yet.
                 @endif
@@ -23,4 +23,3 @@
         </div>
     </div>
 </div>
-

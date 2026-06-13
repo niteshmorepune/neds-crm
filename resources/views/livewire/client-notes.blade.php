@@ -1,10 +1,10 @@
-﻿<div>
+<div>
     @if ($aiEnabled)
         <div class="mb-3 flex justify-end">
             <button type="button" wire:click="summarize" wire:loading.attr="disabled" wire:target="summarize"
                     class="inline-flex items-center gap-1 rounded-md border border-indigo-200 bg-indigo-50 px-2.5 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-100 disabled:opacity-50">
-                <span wire:loading.remove wire:target="summarize">âœ¨ Summarize activity</span>
-                <span wire:loading wire:target="summarize">Summarizingâ€¦</span>
+                <span wire:loading.remove wire:target="summarize">✨ Summarize activity</span>
+                <span wire:loading wire:target="summarize">Summarizing…</span>
             </button>
         </div>
 
@@ -22,7 +22,7 @@
     @if ($canManage)
         <div class="mb-4">
             <textarea wire:model="body" rows="3"
-                      placeholder="Add a noteâ€¦ use @name to mention a teammate"
+                      placeholder="Add a note… use @name to mention a teammate"
                       class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
             @error('body') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
             <div class="mt-2 flex justify-end">
@@ -36,7 +36,7 @@
             <li class="border-l-2 border-gray-200 pl-4">
                 <div class="text-sm text-gray-800 whitespace-pre-line">{{ $note->body }}</div>
                 <div class="mt-1 text-xs text-gray-400">
-                    {{ $note->author?->name ?? 'System' }} Â· {{ $note->created_at->timezone(config('app.display_timezone'))->format('d M Y, g:i A') }}
+                    {{ $note->author?->name ?? 'System' }} · {{ $note->created_at->timezone(config('app.display_timezone'))->format('d M Y, g:i A') }}
                 </div>
             </li>
         @empty
@@ -44,4 +44,3 @@
         @endforelse
     </ul>
 </div>
-

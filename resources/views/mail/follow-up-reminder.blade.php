@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <body style="font-family: Arial, sans-serif; color: #1f2937;">
     <h2>Hi {{ $user->name }},</h2>
@@ -9,7 +9,7 @@
         <ul>
             @foreach ($leads as $lead)
                 <li>
-                    {{ $lead->name }}{{ $lead->company ? ' â€” '.$lead->company : '' }}
+                    {{ $lead->name }}{{ $lead->company ? ' — '.$lead->company : '' }}
                     (due {{ $lead->next_follow_up_at?->timezone(config('app.display_timezone'))->format('d M Y') }})
                 </li>
             @endforeach
@@ -21,7 +21,7 @@
         <ul>
             @foreach ($deals as $deal)
                 <li>
-                    {{ $deal->title }} â€” {{ $deal->stage->label() }}
+                    {{ $deal->title }} — {{ $deal->stage->label() }}
                     (due {{ $deal->next_follow_up_at?->timezone(config('app.display_timezone'))->format('d M Y') }})
                 </li>
             @endforeach
@@ -31,4 +31,3 @@
     <p style="color:#6b7280;font-size:12px;">NEDS CRM</p>
 </body>
 </html>
-

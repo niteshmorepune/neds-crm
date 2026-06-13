@@ -1,4 +1,4 @@
-﻿<x-portal-app-layout header="My Tickets">
+<x-portal-app-layout header="My Tickets">
     <div class="mb-4 flex justify-end">
         <a href="{{ route('portal.tickets.create') }}" class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">New ticket</a>
     </div>
@@ -24,4 +24,3 @@
     </div>
     <div class="mt-4">{{ $tickets->links() }}</div>
 </x-portal-app-layout>
-

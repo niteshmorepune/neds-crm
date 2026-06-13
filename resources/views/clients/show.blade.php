@@ -1,4 +1,4 @@
-﻿<x-app-layout>
+<x-app-layout>
     <x-slot name="header">{{ $client->company_name }}</x-slot>
 
     <div class="max-w-7xl mx-auto space-y-6" x-data="{ tab: 'notes' }">
@@ -21,15 +21,15 @@
                         ])>{{ $client->status->label() }}</span>
                     </div>
                     <dl class="mt-3 grid grid-cols-1 gap-x-8 gap-y-1 text-sm text-gray-600 sm:grid-cols-2">
-                        <div><span class="text-gray-400">GSTIN:</span> {{ $client->gstin ?? 'â€”' }}</div>
+                        <div><span class="text-gray-400">GSTIN:</span> {{ $client->gstin ?? '—' }}</div>
                         <div><span class="text-gray-400">Owner:</span> {{ $client->owner?->name ?? 'Unassigned' }}</div>
-                        <div><span class="text-gray-400">Email:</span> {{ $client->email ?? 'â€”' }}</div>
-                        <div><span class="text-gray-400">Phone:</span> {{ $client->phone ?? 'â€”' }}</div>
-                        <div><span class="text-gray-400">Website:</span> {{ $client->website ?? 'â€”' }}</div>
-                        <div><span class="text-gray-400">State:</span> {{ $client->state ?? 'â€”' }}</div>
+                        <div><span class="text-gray-400">Email:</span> {{ $client->email ?? '—' }}</div>
+                        <div><span class="text-gray-400">Phone:</span> {{ $client->phone ?? '—' }}</div>
+                        <div><span class="text-gray-400">Website:</span> {{ $client->website ?? '—' }}</div>
+                        <div><span class="text-gray-400">State:</span> {{ $client->state ?? '—' }}</div>
                         <div class="sm:col-span-2">
                             <span class="text-gray-400">Address:</span>
-                            {{ collect([$client->address_line1, $client->address_line2, $client->city, $client->state, $client->pincode])->filter()->join(', ') ?: 'â€”' }}
+                            {{ collect([$client->address_line1, $client->address_line2, $client->city, $client->state, $client->pincode])->filter()->join(', ') ?: '—' }}
                         </div>
                     </dl>
                     @if ($client->tags)
@@ -82,8 +82,8 @@
                         @forelse ($client->callLogs as $call)
                             <li class="py-2">
                                 <div class="flex items-center justify-between">
-                                    <span class="text-gray-700">{{ $call->direction->label() }} Â· {{ $call->outcome->label() }}{{ $call->duration_minutes ? " Â· {$call->duration_minutes}m" : '' }}</span>
-                                    <span class="text-xs text-gray-400">{{ $call->called_at->timezone(config('app.display_timezone'))->format('d M, g:i A') }} Â· {{ $call->user?->name }}</span>
+                                    <span class="text-gray-700">{{ $call->direction->label() }} · {{ $call->outcome->label() }}{{ $call->duration_minutes ? " · {$call->duration_minutes}m" : '' }}</span>
+                                    <span class="text-xs text-gray-400">{{ $call->called_at->timezone(config('app.display_timezone'))->format('d M, g:i A') }} · {{ $call->user?->name }}</span>
                                 </div>
                                 @if ($call->notes)<p class="mt-1 text-gray-500">{{ $call->notes }}</p>@endif
                             </li>
@@ -99,4 +99,3 @@
         </div>
     </div>
 </x-app-layout>
-
