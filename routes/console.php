@@ -18,6 +18,11 @@ Schedule::command('app:send-followup-reminders')
     ->dailyAt('09:00')
     ->timezone('Asia/Kolkata');
 
+// Stagnation alerts at 10:00 IST — leads untouched 7d, deals untouched 10d.
+Schedule::command('app:send-stagnation-alerts')
+    ->dailyAt('10:00')
+    ->timezone('Asia/Kolkata');
+
 // Billing schedule (India time): generate recurring invoices, flag overdue,
 // then send payment reminders.
 Schedule::command('app:generate-recurring-invoices')->dailyAt('06:00')->timezone('Asia/Kolkata');
