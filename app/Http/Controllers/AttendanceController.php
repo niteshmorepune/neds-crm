@@ -121,8 +121,8 @@ class AttendanceController extends Controller
                     $r->user?->name,
                     $r->date->toDateString(),
                     $r->status->label(),
-                    $r->check_in_at?->timezone(config('app.timezone'))->format('H:i'),
-                    $r->check_out_at?->timezone(config('app.timezone'))->format('H:i'),
+                    $r->check_in_at?->timezone(config('app.display_timezone'))->format('H:i'),
+                    $r->check_out_at?->timezone(config('app.display_timezone'))->format('H:i'),
                 ]);
             }
             fclose($out);
