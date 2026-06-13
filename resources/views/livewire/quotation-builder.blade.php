@@ -7,9 +7,9 @@
         <a href="{{ route('quotations.index') }}" class="text-sm text-gray-500 hover:text-gray-700">Back</a>
     </div>
 
-    {{-- Totals fixed to xl:w-52 so the form section gets maximum room --}}
-    <div class="flex flex-col xl:flex-row gap-6 items-start">
-        <div class="w-full xl:flex-1 min-w-0 space-y-6">
+    {{-- Totals fixed to lg:w-52 so the form section gets maximum room --}}
+    <div class="flex flex-col lg:flex-row gap-6 items-start">
+        <div class="w-full lg:flex-1 min-w-0 space-y-6">
 
             <div class="rounded-lg bg-white p-6 shadow-sm grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
@@ -35,8 +35,8 @@
                 </div>
                 @error('items') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
 
-                {{-- Column labels — only visible in single-row mode (xl+) --}}
-                <div class="hidden xl:flex flex-nowrap items-center gap-2 mt-4 mb-1 text-xs font-medium uppercase tracking-wide text-gray-400">
+                {{-- Column labels — only visible in single-row mode (2xl+) --}}
+                <div class="hidden 2xl:flex flex-nowrap items-center gap-2 mt-4 mb-1 text-xs font-medium uppercase tracking-wide text-gray-400">
                     <div class="flex-1 min-w-0">Description</div>
                     <div class="w-24 shrink-0">SAC/HSN</div>
                     <div class="w-14 shrink-0">Qty</div>
@@ -54,9 +54,9 @@
                                              other fields wrap to the next line with Rate taking flex-1.
                                 xl:flex-nowrap → wide screens: all fields in one row, Description is flex-1.
                             --}}
-                            <div class="flex flex-wrap xl:flex-nowrap items-center gap-2">
+                            <div class="flex flex-wrap 2xl:flex-nowrap items-center gap-2">
                                 <input wire:model="items.{{ $i }}.description" placeholder="Description"
-                                       class="w-full xl:flex-1 xl:w-auto min-w-0 rounded-md border-gray-300 text-sm shadow-sm" />
+                                       class="w-full 2xl:flex-1 2xl:w-auto min-w-0 rounded-md border-gray-300 text-sm shadow-sm" />
                                 @error("items.$i.description") <span class="w-full text-xs text-red-600">{{ $message }}</span> @enderror
 
                                 <input wire:model="items.{{ $i }}.sac_code" placeholder="SAC/HSN"
@@ -64,7 +64,7 @@
                                 <input wire:model.live="items.{{ $i }}.quantity" type="number" step="0.01" placeholder="Qty"
                                        class="w-14 shrink-0 min-w-0 rounded-md border-gray-300 text-sm shadow-sm" />
                                 <input wire:model.live="items.{{ $i }}.rate" type="number" step="0.01" placeholder="Rate ₹"
-                                       class="flex-1 xl:w-28 xl:flex-none min-w-0 rounded-md border-gray-300 text-sm shadow-sm" />
+                                       class="flex-1 2xl:w-28 2xl:flex-none min-w-0 rounded-md border-gray-300 text-sm shadow-sm" />
                                 <input wire:model.live="items.{{ $i }}.gst_rate" type="number" step="0.01" placeholder="GST %"
                                        class="w-16 shrink-0 min-w-0 rounded-md border-gray-300 text-sm shadow-sm" />
                                 <span class="w-24 shrink-0 text-right text-sm text-gray-600 font-medium">
@@ -91,8 +91,8 @@
             </div>
         </div>
 
-        {{-- Live totals — fixed narrow width on xl+, full width below --}}
-        <div class="w-full xl:w-52 shrink-0 rounded-lg bg-white p-6 shadow-sm">
+        {{-- Live totals — fixed narrow width on lg+, full width below --}}
+        <div class="w-full lg:w-52 shrink-0 rounded-lg bg-white p-6 shadow-sm">
             <h2 class="text-base font-semibold text-gray-900">Totals</h2>
             <dl class="mt-4 space-y-2 text-sm">
                 <div class="flex justify-between"><dt class="text-gray-500">Subtotal</dt><dd>{{ \App\Support\Money::format($t['subtotal']) }}</dd></div>
