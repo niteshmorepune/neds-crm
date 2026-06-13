@@ -7,8 +7,10 @@
         <a href="{{ route('quotations.index') }}" class="text-sm text-gray-500 hover:text-gray-700">Back</a>
     </div>
 
-    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div class="lg:col-span-2 space-y-6">
+    {{-- Totals fixed to xl:w-52 so the form section gets maximum room --}}
+    <div class="flex flex-col xl:flex-row gap-6 items-start">
+        <div class="w-full xl:flex-1 min-w-0 space-y-6">
+
             <div class="rounded-lg bg-white p-6 shadow-sm grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
                     <x-input-label value="Client *" />
@@ -33,29 +35,43 @@
                 </div>
                 @error('items') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
 
+                {{-- Column labels — only visible in single-row mode (xl+) --}}
+                <div class="hidden xl:flex flex-nowrap items-center gap-2 mt-4 mb-1 text-xs font-medium uppercase tracking-wide text-gray-400">
+                    <div class="flex-1 min-w-0">Description</div>
+                    <div class="w-24 shrink-0">SAC/HSN</div>
+                    <div class="w-14 shrink-0">Qty</div>
+                    <div class="w-28 shrink-0">Rate ₹</div>
+                    <div class="w-16 shrink-0">GST %</div>
+                    <div class="w-24 shrink-0 text-right">Amount</div>
+                    <div class="w-5 shrink-0"></div>
+                </div>
+
                 <div class="mt-4 space-y-3">
                     @foreach ($items as $i => $item)
-                        <div class="space-y-2 border-b border-gray-100 pb-3" wire:key="item-{{ $i }}">
-                            {{-- Row 1: description full width --}}
-                            <input wire:model="items.{{ $i }}.description" placeholder="Description"
-                                   class="block w-full rounded-md border-gray-300 text-sm shadow-sm" />
-                            @error("items.$i.description") <span class="text-xs text-red-600">{{ $message }}</span> @enderror
+                        <div class="border-b border-gray-100 pb-3" wire:key="item-{{ $i }}">
+                            {{--
+                                flex-wrap  → small screens: Description forces its own row (w-full),
+                                             other fields wrap to the next line with Rate taking flex-1.
+                                xl:flex-nowrap → wide screens: all fields in one row, Description is flex-1.
+                            --}}
+                            <div class="flex flex-wrap xl:flex-nowrap items-center gap-2">
+                                <input wire:model="items.{{ $i }}.description" placeholder="Description"
+                                       class="w-full xl:flex-1 xl:w-auto min-w-0 rounded-md border-gray-300 text-sm shadow-sm" />
+                                @error("items.$i.description") <span class="w-full text-xs text-red-600">{{ $message }}</span> @enderror
 
-                            {{-- Row 2: small fields in a flex row --}}
-                            <div class="flex items-center gap-2">
                                 <input wire:model="items.{{ $i }}.sac_code" placeholder="SAC/HSN"
-                                       class="w-24 min-w-0 rounded-md border-gray-300 text-sm shadow-sm" />
+                                       class="w-24 shrink-0 min-w-0 rounded-md border-gray-300 text-sm shadow-sm" />
                                 <input wire:model.live="items.{{ $i }}.quantity" type="number" step="0.01" placeholder="Qty"
-                                       class="w-16 min-w-0 rounded-md border-gray-300 text-sm shadow-sm" />
+                                       class="w-14 shrink-0 min-w-0 rounded-md border-gray-300 text-sm shadow-sm" />
                                 <input wire:model.live="items.{{ $i }}.rate" type="number" step="0.01" placeholder="Rate ₹"
-                                       class="flex-1 min-w-0 rounded-md border-gray-300 text-sm shadow-sm" />
+                                       class="flex-1 xl:w-28 xl:flex-none min-w-0 rounded-md border-gray-300 text-sm shadow-sm" />
                                 <input wire:model.live="items.{{ $i }}.gst_rate" type="number" step="0.01" placeholder="GST %"
-                                       class="w-20 min-w-0 rounded-md border-gray-300 text-sm shadow-sm" />
+                                       class="w-16 shrink-0 min-w-0 rounded-md border-gray-300 text-sm shadow-sm" />
                                 <span class="w-24 shrink-0 text-right text-sm text-gray-600 font-medium">
                                     {{ \App\Support\Money::format($t['lines'][$i]['amount'] ?? 0) }}
                                 </span>
                                 <button wire:click="removeItem({{ $i }})" type="button"
-                                        class="shrink-0 text-red-600 hover:text-red-500 text-lg leading-none">&times;</button>
+                                        class="w-5 shrink-0 text-red-600 hover:text-red-500 text-lg leading-none text-center">&times;</button>
                             </div>
                         </div>
                     @endforeach
@@ -75,8 +91,8 @@
             </div>
         </div>
 
-        {{-- Live totals --}}
-        <div class="rounded-lg bg-white p-6 shadow-sm h-fit">
+        {{-- Live totals — fixed narrow width on xl+, full width below --}}
+        <div class="w-full xl:w-52 shrink-0 rounded-lg bg-white p-6 shadow-sm">
             <h2 class="text-base font-semibold text-gray-900">Totals</h2>
             <dl class="mt-4 space-y-2 text-sm">
                 <div class="flex justify-between"><dt class="text-gray-500">Subtotal</dt><dd>{{ \App\Support\Money::format($t['subtotal']) }}</dd></div>
