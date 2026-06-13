@@ -6,6 +6,7 @@ use App\Enums\UserRole;
 use App\Http\Requests\UserStoreRequest;
 use App\Http\Requests\UserUpdateRequest;
 use App\Models\User;
+use App\Services\MenuResolver;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -57,14 +58,17 @@ class UserController extends Controller
         ]);
     }
 
-    public function update(UserUpdateRequest $request, User $user): RedirectResponse
+    public function update(UserUpdateRequest $request, User $user, MenuResolver $menu): RedirectResponse
     {
         $data = $request->validated();
+
+        $roleChanging = isset($data['role']) && $data['role'] !== $user->role->value;
 
         // An admin can't demote or disable their own account.
         if ($user->id === $request->user()->id) {
             $data['role'] = $user->role->value;
             $data['is_active'] = true;
+            $roleChanging = false;
         }
 
         if (filled($data['password'] ?? null)) {
@@ -74,6 +78,10 @@ class UserController extends Controller
         }
 
         $user->update($data);
+
+        if ($roleChanging) {
+            $menu->flush();
+        }
 
         return redirect()->route('users.index')->with('status', 'User updated.');
     }
