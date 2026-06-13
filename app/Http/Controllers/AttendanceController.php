@@ -27,7 +27,10 @@ class AttendanceController extends Controller
         $viewingUser = $user;
         $users = null;
         if ($isManager) {
-            $users = User::orderBy('name')->get(['id', 'name']);
+            // Admins see everyone; managers see everyone except admins.
+            $users = User::orderBy('name')
+                ->when(! $user->hasRole(UserRole::Admin), fn ($q) => $q->where('role', '!=', UserRole::Admin->value))
+                ->get(['id', 'name']);
             $selectedId = $request->integer('user_id', $user->id);
             $viewingUser = $users->firstWhere('id', $selectedId) ?? $user;
         }
@@ -54,7 +57,9 @@ class AttendanceController extends Controller
 
         $date = $request->date('date') ?? Carbon::today();
 
-        $users = User::orderBy('name')->get();
+        $users = User::orderBy('name')
+            ->when(! $request->user()->hasRole(UserRole::Admin), fn ($q) => $q->where('role', '!=', UserRole::Admin->value))
+            ->get();
         $entries = Attendance::whereDate('date', $date)->get()->keyBy('user_id');
 
         return view('attendance.corrections', [
