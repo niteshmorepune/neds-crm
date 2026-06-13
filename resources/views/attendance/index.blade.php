@@ -1,20 +1,36 @@
 <x-app-layout>
-    <x-slot name="header">My Attendance</x-slot>
+    <x-slot name="header">{{ $isManager ? 'Team Attendance' : 'My Attendance' }}</x-slot>
 
     <div class="max-w-4xl mx-auto space-y-4">
-        <div class="flex items-center justify-between">
+        <div class="flex flex-wrap items-center justify-between gap-3">
             <div class="flex items-center gap-2">
-                <a href="{{ route('attendance.index', ['month' => $month->copy()->subMonth()->format('Y-m')]) }}" class="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm">←</a>
+                <a href="{{ route('attendance.index', array_filter(['month' => $month->copy()->subMonth()->format('Y-m'), 'user_id' => $isManager ? $viewingUser->id : null])) }}" class="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm">←</a>
                 <span class="text-lg font-semibold text-gray-900">{{ $month->format('F Y') }}</span>
-                <a href="{{ route('attendance.index', ['month' => $month->copy()->addMonth()->format('Y-m')]) }}" class="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm">→</a>
+                <a href="{{ route('attendance.index', array_filter(['month' => $month->copy()->addMonth()->format('Y-m'), 'user_id' => $isManager ? $viewingUser->id : null])) }}" class="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm">→</a>
             </div>
-            <div class="flex items-center gap-2">
-                <a href="{{ route('attendance.export', ['month' => $month->format('Y-m')]) }}" class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Export CSV</a>
+            <div class="flex flex-wrap items-center gap-2">
+                @if ($isManager)
+                    <form method="GET" class="flex items-center gap-2">
+                        <input type="hidden" name="month" value="{{ $month->format('Y-m') }}" />
+                        <select name="user_id" class="rounded-md border-gray-300 text-sm shadow-sm" onchange="this.form.submit()">
+                            @foreach ($users as $u)
+                                <option value="{{ $u->id }}" @selected($u->id === $viewingUser->id)>{{ $u->name }}</option>
+                            @endforeach
+                        </select>
+                    </form>
+                @endif
+                <a href="{{ route('attendance.export', array_filter(['month' => $month->format('Y-m'), 'user_id' => $isManager ? $viewingUser->id : null])) }}" class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Export CSV</a>
                 @can('correct', \App\Models\Attendance::class)
                     <a href="{{ route('attendance.corrections') }}" class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">Corrections</a>
                 @endcan
             </div>
         </div>
+
+        @if ($isManager)
+            <div class="rounded-md bg-indigo-50 border border-indigo-100 px-4 py-2 text-sm text-indigo-700">
+                Viewing: <strong>{{ $viewingUser->name }}</strong>
+            </div>
+        @endif
 
         <div class="overflow-hidden rounded-lg bg-white shadow-sm">
             <table class="min-w-full divide-y divide-gray-200 text-sm">

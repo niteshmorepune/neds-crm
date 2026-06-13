@@ -20,7 +20,13 @@
                         @if ($invoice->due_date) · Due {{ $invoice->due_date->format('d M Y') }} @endif
                     </p>
                 </div>
-                <div class="flex items-center gap-2">
+                <div class="flex flex-wrap items-center gap-2">
+                    @can('view', $invoice)
+                        <form method="POST" action="{{ route('invoices.send', $invoice) }}">
+                            @csrf
+                            <button class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">Send Invoice</button>
+                        </form>
+                    @endcan
                     <a href="{{ route('invoices.pdf', $invoice) }}" target="_blank" class="rounded-md bg-gray-800 px-3 py-2 text-sm font-medium text-white hover:bg-gray-700">Download PDF</a>
                 </div>
             </div>

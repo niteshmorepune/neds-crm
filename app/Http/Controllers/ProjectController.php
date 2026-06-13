@@ -23,22 +23,49 @@ class ProjectController extends Controller
         $this->authorize('viewAny', Project::class);
 
         $user = $request->user();
+        $group = $request->input('group'); // 'client' | 'owner' | 'service' | null
 
-        $projects = Project::query()
-            ->with(['customer', 'owner'])
+        $baseQuery = Project::query()
+            ->with(['customer', 'owner', 'service'])
             ->withCount('tasks')
             ->unless($user->hasRole(UserRole::Admin, UserRole::Manager), fn ($q) => $q->where(function ($w) use ($user) {
                 $w->where('owner_id', $user->id)
                     ->orWhereHas('assignees', fn ($a) => $a->whereKey($user->id));
             }))
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->input('status')))
-            ->latest()
-            ->paginate(15)
-            ->withQueryString();
+            ->latest();
+
+        if ($group) {
+            $allProjects = $baseQuery->get();
+            $grouped = match ($group) {
+                'client'  => $allProjects->groupBy(fn ($p) => $p->customer->company_name ?? 'No Client'),
+                'owner'   => $allProjects->groupBy(fn ($p) => $p->owner?->name ?? 'Unassigned'),
+                'service' => $allProjects->groupBy(fn ($p) => $p->service?->name ?? 'No Service'),
+                default   => null,
+            };
+
+            return view('projects.index', $this->formData() + [
+                'projects' => null,
+                'grouped' => $grouped,
+                'groupLabel' => match ($group) {
+                    'client'  => 'Client',
+                    'owner'   => 'Employee',
+                    'service' => 'Service',
+                    default   => '',
+                },
+                'filters' => $request->only('status'),
+                'activeGroup' => $group,
+            ]);
+        }
+
+        $projects = $baseQuery->paginate(15)->withQueryString();
 
         return view('projects.index', $this->formData() + [
             'projects' => $projects,
+            'grouped' => null,
+            'groupLabel' => null,
             'filters' => $request->only('status'),
+            'activeGroup' => null,
         ]);
     }
 

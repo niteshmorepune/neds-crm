@@ -22,6 +22,7 @@ use App\Http\Controllers\RecurringInvoiceController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\ServiceController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\TwoFactorSetupController;
@@ -67,6 +68,16 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
      */
     Route::middleware('menu.access:customer')->group(function () {
         Route::get('clients/import', ClientImport::class)->name('clients.import');
+        Route::get('clients/import/template', function () {
+            $headers = ['company_name', 'email', 'phone', 'gstin', 'website', 'address_line1', 'city', 'state_code', 'pincode', 'status'];
+            $sample = ['Acme Pvt Ltd', 'billing@acme.in', '9876543210', '27ABCDE1234F1Z5', 'https://acme.in', '123 MG Road', 'Pune', '27', '411001', 'active'];
+            return response()->streamDownload(function () use ($headers, $sample) {
+                $f = fopen('php://output', 'w');
+                fputcsv($f, $headers);
+                fputcsv($f, $sample);
+                fclose($f);
+            }, 'clients-import-template.csv', ['Content-Type' => 'text/csv']);
+        })->name('clients.import.template');
         Route::resource('clients', CustomerController::class)
             ->parameters(['clients' => 'client']);
     });
@@ -99,6 +110,7 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
         Route::get('quotations/create', QuotationBuilder::class)->name('quotations.create');
         Route::get('quotations/{quotation}', [QuotationController::class, 'show'])->name('quotations.show');
         Route::get('quotations/{quotation}/edit', QuotationBuilder::class)->name('quotations.edit');
+        Route::post('quotations/{quotation}/send', [QuotationController::class, 'send'])->name('quotations.send');
         Route::post('quotations/{quotation}/status', [QuotationController::class, 'transition'])->name('quotations.status');
         Route::post('quotations/{quotation}/convert', [QuotationController::class, 'convert'])->name('quotations.convert');
         Route::delete('quotations/{quotation}', [QuotationController::class, 'destroy'])->name('quotations.destroy');
@@ -118,6 +130,7 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
         Route::get('invoices', [InvoiceController::class, 'index'])->name('invoices.index');
         Route::get('invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
         Route::get('invoices/{invoice}/pdf', [InvoiceController::class, 'pdf'])->name('invoices.pdf');
+        Route::post('invoices/{invoice}/send', [InvoiceController::class, 'send'])->name('invoices.send');
         Route::post('invoices/{invoice}/payments', [InvoiceController::class, 'storePayment'])->name('invoices.payments.store');
     });
 
@@ -199,6 +212,12 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
         Route::post('daily-reports', [DailyReportController::class, 'store'])->name('daily-reports.store');
         Route::get('daily-reports/team', [DailyReportController::class, 'team'])->name('daily-reports.team');
     });
+
+    /*
+     * Notifications — task assignments and other in-app alerts.
+     */
+    Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::delete('notifications/{id}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
 
     /*
      * Milestone 0 stub pages. Each is protected by menu.access:<key>, which

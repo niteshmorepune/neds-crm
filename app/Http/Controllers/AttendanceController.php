@@ -19,10 +19,21 @@ class AttendanceController extends Controller
     {
         $this->authorize('viewAny', Attendance::class);
 
+        $user = $request->user();
+        $isManager = $user->hasRole(UserRole::Admin, UserRole::Manager);
         $month = $this->month($request);
 
+        // Managers/admins may select any user; employees always see their own.
+        $viewingUser = $user;
+        $users = null;
+        if ($isManager) {
+            $users = User::orderBy('name')->get(['id', 'name']);
+            $selectedId = $request->integer('user_id', $user->id);
+            $viewingUser = $users->firstWhere('id', $selectedId) ?? $user;
+        }
+
         $records = Attendance::query()
-            ->where('user_id', $request->user()->id)
+            ->where('user_id', $viewingUser->id)
             ->whereBetween('date', [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()])
             ->orderBy('date')
             ->get()
@@ -31,6 +42,9 @@ class AttendanceController extends Controller
         return view('attendance.index', [
             'month' => $month,
             'records' => $records,
+            'isManager' => $isManager,
+            'users' => $users,
+            'viewingUser' => $viewingUser,
         ]);
     }
 
@@ -59,8 +73,6 @@ class AttendanceController extends Controller
             'user_id' => ['required', Rule::exists('users', 'id')],
             'date' => ['required', 'date'],
             'status' => ['required', Rule::enum(AttendanceStatus::class)],
-            'check_in_at' => ['nullable', 'date_format:H:i'],
-            'check_out_at' => ['nullable', 'date_format:H:i'],
             'notes' => ['nullable', 'string', 'max:255'],
         ]);
 
@@ -71,8 +83,6 @@ class AttendanceController extends Controller
 
         $attendance->fill([
             'status' => $data['status'],
-            'check_in_at' => ! empty($data['check_in_at']) ? $date->copy()->setTimeFromTimeString($data['check_in_at']) : null,
-            'check_out_at' => ! empty($data['check_out_at']) ? $date->copy()->setTimeFromTimeString($data['check_out_at']) : null,
             'notes' => $data['notes'] ?? null,
         ])->save();
 
@@ -84,11 +94,14 @@ class AttendanceController extends Controller
         $this->authorize('viewAny', Attendance::class);
 
         $month = $this->month($request);
-        $isManager = $request->user()->hasRole(UserRole::Admin, UserRole::Manager);
+        $currentUser = $request->user();
+        $isManager = $currentUser->hasRole(UserRole::Admin, UserRole::Manager);
+        $filterUserId = $isManager && $request->filled('user_id') ? $request->integer('user_id') : null;
 
         $records = Attendance::query()
             ->with('user')
-            ->when(! $isManager, fn ($q) => $q->where('user_id', $request->user()->id))
+            ->when(! $isManager, fn ($q) => $q->where('user_id', $currentUser->id))
+            ->when($isManager && $filterUserId, fn ($q) => $q->where('user_id', $filterUserId))
             ->whereBetween('date', [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()])
             ->orderBy('date')
             ->get();

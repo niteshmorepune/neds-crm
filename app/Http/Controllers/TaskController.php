@@ -9,6 +9,7 @@ use App\Http\Requests\TaskStoreRequest;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\User;
+use App\Notifications\TaskAssigned;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -62,7 +63,9 @@ class TaskController extends Controller
 
         $task = Task::create($request->validated() + ['created_by' => $request->user()->id]);
 
-        return redirect()->route('tasks.show', $task)->with('status', 'Task created.');
+        $this->notifyAssignee($task, null);
+
+        return redirect()->route('tasks.index')->with('status', 'Task created.');
     }
 
     public function show(Task $task): View
@@ -88,7 +91,10 @@ class TaskController extends Controller
     {
         $this->authorize('update', $task);
 
+        $previousAssigneeId = $task->assignee_id;
         $task->update($request->validated());
+
+        $this->notifyAssignee($task, $previousAssigneeId);
 
         return redirect()->route('tasks.show', $task)->with('status', 'Task updated.');
     }
@@ -149,5 +155,19 @@ class TaskController extends Controller
     private function user(): User
     {
         return auth()->user();
+    }
+
+    private function notifyAssignee(Task $task, ?int $previousAssigneeId): void
+    {
+        if (! $task->assignee_id) {
+            return;
+        }
+
+        $assigneeChanged = $task->assignee_id !== $previousAssigneeId;
+        $notSelf = $task->assignee_id !== $this->user()->id;
+
+        if ($assigneeChanged && $notSelf && $task->assignee) {
+            $task->assignee->notify(new TaskAssigned($task));
+        }
     }
 }

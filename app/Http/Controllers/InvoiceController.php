@@ -5,12 +5,14 @@ namespace App\Http\Controllers;
 use App\Enums\InvoiceStatus;
 use App\Enums\PaymentMode;
 use App\Http\Requests\PaymentStoreRequest;
+use App\Mail\InvoiceIssued;
 use App\Models\Invoice;
 use App\Support\Money;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
 
 class InvoiceController extends Controller
@@ -57,6 +59,25 @@ class InvoiceController extends Controller
         $filename = str_replace('/', '-', $invoice->invoice_number).'.pdf';
 
         return $pdf->stream($filename);
+    }
+
+    public function send(Invoice $invoice): RedirectResponse
+    {
+        $this->authorize('view', $invoice);
+
+        $email = $invoice->customer->load('contacts')->billingEmail();
+
+        if (! $email) {
+            return back()->withErrors(['send' => 'No billing email found for this client.']);
+        }
+
+        Mail::to($email)->send(new InvoiceIssued($invoice->load(['customer', 'items'])));
+
+        if ($invoice->status === InvoiceStatus::Draft) {
+            $invoice->update(['status' => InvoiceStatus::Sent]);
+        }
+
+        return back()->with('status', "Invoice sent to {$email}.");
     }
 
     public function storePayment(PaymentStoreRequest $request, Invoice $invoice): RedirectResponse

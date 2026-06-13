@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\TaskStatus;
 use App\Models\DailyReport;
+use App\Models\Task;
 use App\Models\User;
 use App\Services\DailyReportMetrics;
 use Illuminate\Http\RedirectResponse;
@@ -19,11 +21,19 @@ class DailyReportController extends Controller
         $user = $request->user();
         $today = Carbon::today();
 
+        $myTasks = Task::where('assignee_id', $user->id)
+            ->where('status', '!=', TaskStatus::Done->value)
+            ->with('project')
+            ->latest()
+            ->get();
+
         return view('daily-reports.index', [
             'metrics' => $metrics->for($user, $today),
             'todayReport' => DailyReport::where('user_id', $user->id)->whereDate('date', $today)->first(),
             'history' => DailyReport::where('user_id', $user->id)->latest('date')->paginate(15),
             'canViewTeam' => $user->can('viewTeam', DailyReport::class),
+            'myTasks' => $myTasks,
+            'taskStatuses' => TaskStatus::cases(),
         ]);
     }
 

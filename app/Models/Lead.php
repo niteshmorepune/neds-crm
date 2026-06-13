@@ -89,15 +89,12 @@ class Lead extends Model
     }
 
     /**
-     * Sales see their own + unassigned; managers/admins see all.
+     * All roles see all leads. Access to the leads page is controlled by
+     * the menu.access:lead-generation middleware; visibility within is unrestricted.
      * Keep in sync with LeadPolicy::view.
      */
     public function scopeVisibleTo(Builder $query, User $user): Builder
     {
-        if ($user->hasRole(UserRole::Sales)) {
-            return $query->where(fn (Builder $q) => $q->where('owner_id', $user->id)->orWhereNull('owner_id'));
-        }
-
         return $query;
     }
 }

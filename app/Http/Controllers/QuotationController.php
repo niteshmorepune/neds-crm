@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Actions\ConvertQuotationToInvoice;
 use App\Enums\QuotationStatus;
 use App\Enums\UserRole;
+use App\Mail\QuotationSent;
 use App\Models\Quotation;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -43,6 +45,25 @@ class QuotationController extends Controller
         $quotation->load(['customer', 'items', 'deal', 'invoice']);
 
         return view('quotations.show', ['quotation' => $quotation]);
+    }
+
+    public function send(Quotation $quotation): RedirectResponse
+    {
+        $this->authorize('view', $quotation);
+
+        $email = $quotation->customer->load('contacts')->billingEmail();
+
+        if (! $email) {
+            return back()->withErrors(['send' => 'No billing email found for this client.']);
+        }
+
+        Mail::to($email)->send(new QuotationSent($quotation->load(['customer', 'items'])));
+
+        if ($quotation->status === QuotationStatus::Draft) {
+            $quotation->update(['status' => QuotationStatus::Sent]);
+        }
+
+        return back()->with('status', "Quotation sent to {$email}.");
     }
 
     public function transition(Request $request, Quotation $quotation): RedirectResponse

@@ -42,11 +42,12 @@ it('does not search sections the user cannot access', function () {
         ->assertDontSee('INV-QUASAR-1');
 });
 
-it('respects row-level visibility for sales on leads', function () {
+it('shows all leads to sales users (no owner-based filter)', function () {
     $sales = User::factory()->role(UserRole::Sales)->create();
     $other = User::factory()->role(UserRole::Sales)->create();
-    Lead::factory()->ownedBy($other->id)->create(['name' => 'Nebula hidden']); // owned by someone else
+    Lead::factory()->ownedBy($other->id)->create(['name' => 'Nebula visible']); // owned by someone else
 
+    // Sales now sees all leads — no owner restriction.
     $this->actingAs($sales)->get(route('search', ['q' => 'Nebula']))->assertOk()
-        ->assertDontSee('Nebula hidden');
+        ->assertSee('Nebula visible');
 });

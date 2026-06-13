@@ -15,7 +15,7 @@
         <div class="overflow-hidden rounded-lg bg-white shadow-sm">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
-                    <tr><th class="px-4 py-3">User</th><th class="px-4 py-3">Status</th><th class="px-4 py-3">In (HH:MM)</th><th class="px-4 py-3">Out</th><th class="px-4 py-3">Notes</th><th></th></tr>
+                    <tr><th class="px-4 py-3">User</th><th class="px-4 py-3">Current</th><th class="px-4 py-3">Mark as</th><th class="px-4 py-3">Notes</th><th></th></tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     @foreach ($users as $person)
@@ -26,16 +26,23 @@
                                 <input type="hidden" name="user_id" value="{{ $person->id }}" />
                                 <input type="hidden" name="date" value="{{ $date->toDateString() }}" />
                                 <td class="px-4 py-2 text-gray-700">{{ $person->name }}</td>
+                                <td class="px-4 py-2 text-gray-500 text-xs">
+                                    @if ($e)
+                                        {{ $e->status->label() }}
+                                        @if ($e->check_in_at) · in {{ $e->check_in_at->timezone(config('app.timezone'))->format('g:i A') }} @endif
+                                        @if ($e->check_out_at) · out {{ $e->check_out_at->timezone(config('app.timezone'))->format('g:i A') }} @endif
+                                    @else
+                                        Not marked
+                                    @endif
+                                </td>
                                 <td class="px-4 py-2">
                                     <select name="status" class="rounded-md border-gray-300 text-sm shadow-sm">
                                         @foreach ($statuses as $status)
-                                            <option value="{{ $status->value }}" @selected(($e?->status?->value ?? 'present') === $status->value)>{{ $status->label() }}</option>
+                                            <option value="{{ $status->value }}" @selected($e?->status === $status)>{{ $status->label() }}</option>
                                         @endforeach
                                     </select>
                                 </td>
-                                <td class="px-4 py-2"><input type="time" name="check_in_at" value="{{ $e?->check_in_at?->timezone(config('app.timezone'))->format('H:i') }}" class="rounded-md border-gray-300 text-sm shadow-sm" /></td>
-                                <td class="px-4 py-2"><input type="time" name="check_out_at" value="{{ $e?->check_out_at?->timezone(config('app.timezone'))->format('H:i') }}" class="rounded-md border-gray-300 text-sm shadow-sm" /></td>
-                                <td class="px-4 py-2"><input type="text" name="notes" value="{{ $e?->notes }}" class="rounded-md border-gray-300 text-sm shadow-sm" /></td>
+                                <td class="px-4 py-2"><input type="text" name="notes" value="{{ $e?->notes }}" class="rounded-md border-gray-300 text-sm shadow-sm w-full" /></td>
                                 <td class="px-4 py-2"><button class="rounded-md bg-gray-800 px-2 py-1 text-xs font-medium text-white hover:bg-gray-700">Save</button></td>
                             </form>
                         </tr>

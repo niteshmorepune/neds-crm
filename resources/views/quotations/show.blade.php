@@ -20,9 +20,15 @@
                     </p>
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
+                    @can('view', $quotation)
+                        <form method="POST" action="{{ route('quotations.send', $quotation) }}">
+                            @csrf
+                            <button class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">Send to Client</button>
+                        </form>
+                    @endcan
                     @can('update', $quotation)
                         @if ($quotation->isEditable())
-                            <a href="{{ route('quotations.edit', $quotation) }}" class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">Edit</a>
+                            <a href="{{ route('quotations.edit', $quotation) }}" class="rounded-md bg-gray-800 px-3 py-2 text-sm font-medium text-white hover:bg-gray-700">Edit</a>
                         @endif
                     @endcan
 

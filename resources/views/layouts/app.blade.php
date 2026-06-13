@@ -37,6 +37,16 @@
                         <a href="{{ route('help') }}" class="mr-4 rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
                             ? Help
                         </a>
+                        @php($unreadCount = auth()->user()->unreadNotifications()->count())
+                        @if ($unreadCount > 0)
+                            <a href="{{ route('notifications.index') }}" class="relative mr-4 rounded-md border border-amber-300 bg-amber-50 px-3 py-1.5 text-sm font-medium text-amber-700 hover:bg-amber-100">
+                                🔔 <span class="ml-1">{{ $unreadCount }}</span>
+                            </a>
+                        @else
+                            <a href="{{ route('notifications.index') }}" class="mr-4 rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                🔔
+                            </a>
+                        @endif
                         @if (Auth::user()->hasRole(\App\Enums\UserRole::Admin, \App\Enums\UserRole::Manager, \App\Enums\UserRole::Sales, \App\Enums\UserRole::Support))
                             <a href="{{ route('calls.create') }}" class="mr-4 rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
                                 ☎ Log a call

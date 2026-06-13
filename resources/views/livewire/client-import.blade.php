@@ -11,6 +11,11 @@
                 Upload a CSV file (first row = column headers). You'll map columns to fields on the next step.
                 Rows with a duplicate email or GSTIN (already in the system or repeated in the file) are skipped.
             </p>
+            <p class="mt-2 text-sm text-gray-500">
+                Not sure of the format?
+                <a href="{{ route('clients.import.template') }}" class="text-indigo-600 hover:underline font-medium">Download the CSV template</a>
+                to see required columns and a sample row.
+            </p>
             <div class="mt-4">
                 <input type="file" wire:model="file" accept=".csv,.txt"
                        class="block w-full text-sm text-gray-700 file:mr-4 file:rounded-md file:border-0 file:bg-indigo-50 file:px-4 file:py-2 file:text-sm file:font-medium file:text-indigo-700" />

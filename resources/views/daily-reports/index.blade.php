@@ -21,12 +21,56 @@
             <div class="rounded-lg bg-white p-4 shadow-sm"><div class="text-xs text-gray-500">Attendance</div><div class="text-xl font-semibold">{{ $metrics['attendance_status'] ? \App\Enums\AttendanceStatus::from($metrics['attendance_status'])->label() : '—' }}</div></div>
         </div>
 
+        {{-- My tasks (active) --}}
+        @if ($myTasks->isNotEmpty())
+        <div class="overflow-hidden rounded-lg bg-white shadow-sm">
+            <div class="border-b border-gray-100 px-6 py-4">
+                <h3 class="text-base font-semibold text-gray-900">My Tasks</h3>
+            </div>
+            <table class="min-w-full divide-y divide-gray-200 text-sm">
+                <thead class="bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                    <tr>
+                        <th class="px-4 py-3">Task</th>
+                        <th class="px-4 py-3">Project</th>
+                        <th class="px-4 py-3">Status</th>
+                        <th class="px-4 py-3">Priority</th>
+                        <th class="px-4 py-3">Due</th>
+                        <th class="px-4 py-3">Update status</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @foreach ($myTasks as $task)
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-2"><a href="{{ route('tasks.show', $task) }}" class="font-medium text-indigo-600 hover:underline">{{ $task->title }}</a></td>
+                            <td class="px-4 py-2 text-gray-500">{{ $task->project?->name ?? '—' }}</td>
+                            <td class="px-4 py-2 text-gray-600">{{ $task->status->label() }}</td>
+                            <td class="px-4 py-2 text-gray-600">{{ $task->priority->label() }}</td>
+                            <td class="px-4 py-2 {{ $task->isOverdue() ? 'font-medium text-red-600' : 'text-gray-600' }}">
+                                {{ $task->due_date?->format('d M Y') ?? '—' }}
+                            </td>
+                            <td class="px-4 py-2">
+                                <form method="POST" action="{{ route('tasks.status', $task) }}">
+                                    @csrf @method('PATCH')
+                                    <select name="status" class="rounded-md border-gray-300 text-xs shadow-sm" onchange="this.form.submit()">
+                                        @foreach ($taskStatuses as $s)
+                                            <option value="{{ $s->value }}" @selected($task->status === $s)>{{ $s->label() }}</option>
+                                        @endforeach
+                                    </select>
+                                </form>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        @endif
+
         {{-- EOD summary --}}
         <div class="rounded-lg bg-white p-6 shadow-sm">
             <form method="POST" action="{{ route('daily-reports.store') }}">
                 @csrf
                 <x-input-label for="summary" value="What I did today *" />
-                <textarea id="summary" name="summary" rows="5" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>{{ old('summary', $todayReport?->summary) }}</textarea>
+                <textarea id="summary" name="summary" rows="5" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>{{ old('summary') }}</textarea>
                 <x-input-error :messages="$errors->get('summary')" class="mt-1" />
                 <div class="mt-3 flex items-center justify-between">
                     <span class="text-xs text-gray-400">

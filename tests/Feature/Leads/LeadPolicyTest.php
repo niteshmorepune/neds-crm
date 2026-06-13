@@ -9,24 +9,26 @@ beforeEach(function () {
     $this->seed(MenuItemsSeeder::class);
 });
 
-it('limits sales to their own and unassigned leads', function () {
+it('lets sales see all leads, not just their own', function () {
     $sales = User::factory()->role(UserRole::Sales)->create();
     $own = Lead::factory()->ownedBy($sales->id)->create();
     $unassigned = Lead::factory()->create(['owner_id' => null]);
     $foreign = Lead::factory()->ownedBy(User::factory()->role(UserRole::Sales)->create()->id)->create();
 
+    // All roles now see all leads — no owner-based restriction.
     expect(Lead::visibleTo($sales)->pluck('id'))
-        ->toContain($own->id)->toContain($unassigned->id)->not->toContain($foreign->id);
+        ->toContain($own->id)
+        ->toContain($unassigned->id)
+        ->toContain($foreign->id);
 
-    expect($sales->can('view', $foreign))->toBeFalse();
-    $this->actingAs($sales)->get(route('leads.show', $foreign))->assertForbidden();
+    expect($sales->can('view', $foreign))->toBeTrue();
+    $this->actingAs($sales)->get(route('leads.show', $foreign))->assertOk();
 });
 
-it('denies support and accounts any lead access', function (UserRole $role) {
+it('denies support and accounts access when menu is not granted', function (UserRole $role) {
     $user = User::factory()->role($role)->create();
 
-    expect($user->can('viewAny', Lead::class))->toBeFalse();
-    // menu.access:lead-generation also blocks the route for these roles.
+    // menu.access:lead-generation blocks the route for roles without access.
     $this->actingAs($user)->get(route('leads.index'))->assertForbidden();
 })->with([
     'support' => UserRole::Support,
