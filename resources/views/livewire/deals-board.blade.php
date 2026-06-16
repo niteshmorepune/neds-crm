@@ -73,7 +73,7 @@
                             <a href="{{ route('deals.show', $deal) }}" class="text-sm font-medium text-indigo-600 hover:underline">
                                 {{ $deal->title }}
                             </a>
-                            <div class="mt-1 text-xs text-gray-500">{{ $deal->customer->company_name }}</div>
+                            <div class="mt-1 text-xs text-gray-500">{{ $deal->customer?->company_name ?? 'Client removed' }}</div>
                             <div class="mt-1 text-xs font-medium text-gray-700">{{ \App\Support\Money::format($deal->value) }}</div>
                             <div class="mt-1 text-xs text-gray-400">
                                 {{ $deal->service?->name ?? 'No service' }} · {{ $deal->owner?->name ?? 'Unassigned' }}

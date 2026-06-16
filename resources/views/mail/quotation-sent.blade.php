@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <body style="font-family: Arial, sans-serif; color: #1f2937;">
-    <p>Dear {{ $quotation->customer->company_name }},</p>
+    <p>Dear {{ $quotation->customer?->company_name ?? 'Customer' }},</p>
     <p>Please find your quotation <strong>{{ $quotation->number }}</strong> for <strong>{{ $total }}</strong>.</p>
     <table style="width:100%; border-collapse:collapse; margin: 16px 0; font-size: 14px;">
         <thead>

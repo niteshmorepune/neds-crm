@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <body style="font-family: Arial, sans-serif; color: #1f2937;">
-    <p>Dear {{ $ticket->customer->company_name }},</p>
+    <p>Dear {{ $ticket->customer?->company_name ?? 'Customer' }},</p>
 
     @switch($kind)
         @case('created')

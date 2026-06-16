@@ -85,3 +85,19 @@ it('soft deletes a client', function () {
 
     $this->assertSoftDeleted($customer);
 });
+
+it('blocks deleting a client with a dependent deal/project/quotation/invoice/ticket', function () {
+    $withDeal = Customer::factory()->create();
+    \App\Models\Deal::factory()->create(['customer_id' => $withDeal->id]);
+
+    $withTicket = Customer::factory()->create();
+    \App\Models\Ticket::factory()->create(['customer_id' => $withTicket->id]);
+
+    foreach ([$withDeal, $withTicket] as $customer) {
+        $this->actingAs($this->admin)
+            ->delete(route('clients.destroy', $customer))
+            ->assertRedirect();
+
+        $this->assertNotSoftDeleted($customer);
+    }
+});

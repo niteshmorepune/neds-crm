@@ -1,7 +1,11 @@
 <x-app-layout>
     <x-slot name="header">Edit Client</x-slot>
 
-    <div class="max-w-4xl mx-auto">
+    <div class="max-w-4xl mx-auto space-y-4">
+        @if (session('status'))
+            <div class="rounded-md bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-800">{{ session('status') }}</div>
+        @endif
+
         <form method="POST" action="{{ route('clients.update', $customer) }}" class="rounded-lg bg-white p-6 shadow-sm">
             @csrf
             @method('PUT')

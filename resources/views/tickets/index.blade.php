@@ -46,7 +46,7 @@
                     @forelse ($tickets as $ticket)
                         <tr class="hover:bg-gray-50">
                             <td class="px-4 py-3"><a href="{{ route('tickets.show', $ticket) }}" class="font-medium text-indigo-600 hover:underline">{{ $ticket->subject }}</a></td>
-                            <td class="px-4 py-3 text-gray-600">{{ $ticket->customer->company_name }}</td>
+                            <td class="px-4 py-3 text-gray-600">{{ $ticket->customer?->company_name ?? 'Client removed' }}</td>
                             <td class="px-4 py-3 text-gray-600">{{ $ticket->priority->label() }}</td>
                             <td class="px-4 py-3 text-gray-600">{{ $ticket->status->label() }}</td>
                             <td class="px-4 py-3 text-gray-600">{{ $ticket->assignee?->name ?? 'Unassigned' }}</td>

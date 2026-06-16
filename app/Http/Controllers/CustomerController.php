@@ -117,6 +117,10 @@ class CustomerController extends Controller
     {
         $this->authorize('delete', $client);
 
+        if ($client->hasDependentRecords()) {
+            return back()->with('status', 'This client has deals, projects, quotations, invoices, or tickets attached — remove or reassign those first.');
+        }
+
         $client->delete();
 
         return redirect()

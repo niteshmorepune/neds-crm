@@ -46,14 +46,18 @@
         <tr>
             <td>
                 <strong>Bill To</strong><br>
-                {{ $invoice->customer->company_name }}<br>
-                @if ($invoice->customer->address_line1){{ $invoice->customer->address_line1 }}<br>@endif
-                @if ($invoice->customer->city){{ $invoice->customer->city }}, @endif{{ $invoice->customer->state }}<br>
-                GSTIN: {{ $invoice->customer->gstin ?? 'Unregistered' }}
+                @if ($invoice->customer)
+                    {{ $invoice->customer->company_name }}<br>
+                    @if ($invoice->customer->address_line1){{ $invoice->customer->address_line1 }}<br>@endif
+                    @if ($invoice->customer->city){{ $invoice->customer->city }}, @endif{{ $invoice->customer->state }}<br>
+                    GSTIN: {{ $invoice->customer->gstin ?? 'Unregistered' }}
+                @else
+                    Client removed
+                @endif
             </td>
             <td class="right">
                 <strong>Place of supply</strong><br>
-                {{ $invoice->customer->state ?? '—' }} ({{ $invoice->place_of_supply_state_code }})<br>
+                {{ $invoice->customer?->state ?? '—' }} ({{ $invoice->place_of_supply_state_code }})<br>
                 {{ $invoice->is_intra_state ? 'Intra-state — CGST + SGST' : 'Inter-state — IGST' }}
             </td>
         </tr>

@@ -11,7 +11,13 @@
                 <div>
                     <h1 class="text-xl font-semibold text-gray-900">{{ $project->name }}</h1>
                     <dl class="mt-3 grid grid-cols-1 gap-x-8 gap-y-1 text-sm text-gray-600 sm:grid-cols-2">
-                        <div><span class="text-gray-400">Client:</span> <a href="{{ route('clients.show', $project->customer) }}" class="text-indigo-600 hover:underline">{{ $project->customer->company_name }}</a></div>
+                        <div><span class="text-gray-400">Client:</span>
+                            @if ($project->customer)
+                                <a href="{{ route('clients.show', $project->customer) }}" class="text-indigo-600 hover:underline">{{ $project->customer->company_name }}</a>
+                            @else
+                                Client removed
+                            @endif
+                        </div>
                         <div><span class="text-gray-400">Status:</span> {{ $project->status->label() }}</div>
                         <div><span class="text-gray-400">Owner:</span> {{ $project->owner?->name ?? '—' }}</div>
                         <div><span class="text-gray-400">Service:</span> {{ $project->service?->name ?? '—' }}</div>

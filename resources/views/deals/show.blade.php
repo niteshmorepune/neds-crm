@@ -17,7 +17,11 @@
                     <div>
                         <h1 class="text-xl font-semibold text-gray-900">{{ $deal->title }}</h1>
                         <p class="mt-1 text-sm text-gray-500">
-                            <a href="{{ route('clients.show', $deal->customer) }}" class="text-indigo-600 hover:underline">{{ $deal->customer->company_name }}</a>
+                            @if ($deal->customer)
+                                <a href="{{ route('clients.show', $deal->customer) }}" class="text-indigo-600 hover:underline">{{ $deal->customer->company_name }}</a>
+                            @else
+                                Client removed
+                            @endif
                             @if ($deal->lead)
                                 · from <a href="{{ route('leads.show', $deal->lead) }}" class="text-indigo-600 hover:underline">lead</a>
                             @endif

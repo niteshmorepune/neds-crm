@@ -73,6 +73,11 @@ class Customer extends Model
         return $this->hasMany(Deal::class);
     }
 
+    public function quotations(): HasMany
+    {
+        return $this->hasMany(Quotation::class);
+    }
+
     public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class);
@@ -95,6 +100,20 @@ class Customer extends Model
     public function billingEmail(): ?string
     {
         return $this->primaryContact?->email ?: $this->email;
+    }
+
+    /**
+     * Deleting a customer with live deals/projects/quotations/invoices/tickets
+     * would orphan them (soft-deleted customers are excluded from belongsTo
+     * lookups, so every list/show page referencing them breaks). Block it.
+     */
+    public function hasDependentRecords(): bool
+    {
+        return $this->deals()->exists()
+            || $this->projects()->exists()
+            || $this->quotations()->exists()
+            || $this->invoices()->exists()
+            || $this->tickets()->exists();
     }
 
     /**

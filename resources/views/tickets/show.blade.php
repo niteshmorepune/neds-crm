@@ -13,7 +13,11 @@
                         <div>
                             <h1 class="text-xl font-semibold text-gray-900">{{ $ticket->subject }}</h1>
                             <p class="mt-1 text-sm text-gray-500">
-                                <a href="{{ route('clients.show', $ticket->customer) }}" class="text-indigo-600 hover:underline">{{ $ticket->customer->company_name }}</a>
+                                @if ($ticket->customer)
+                                    <a href="{{ route('clients.show', $ticket->customer) }}" class="text-indigo-600 hover:underline">{{ $ticket->customer->company_name }}</a>
+                                @else
+                                    Client removed
+                                @endif
                                 · {{ $ticket->priority->label() }} · {{ $ticket->status->label() }}
                             </p>
                         </div>

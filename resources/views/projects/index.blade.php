@@ -60,7 +60,7 @@
                             @foreach ($groupProjects as $project)
                                 <tr class="hover:bg-gray-50">
                                     <td class="px-4 py-3"><a href="{{ route('projects.show', $project) }}" class="font-medium text-indigo-600 hover:underline">{{ $project->name }}</a></td>
-                                    @if ($activeGroup !== 'client') <td class="px-4 py-3 text-gray-600">{{ $project->customer->company_name }}</td> @endif
+                                    @if ($activeGroup !== 'client') <td class="px-4 py-3 text-gray-600">{{ $project->customer?->company_name ?? 'Client removed' }}</td> @endif
                                     @if ($activeGroup !== 'owner') <td class="px-4 py-3 text-gray-600">{{ $project->owner?->name ?? '—' }}</td> @endif
                                     @if ($activeGroup !== 'service') <td class="px-4 py-3 text-gray-600">{{ $project->service?->name ?? '—' }}</td> @endif
                                     <td class="px-4 py-3 text-gray-600">{{ $project->status->label() }}</td>
@@ -90,7 +90,7 @@
                         @forelse ($projects as $project)
                             <tr class="hover:bg-gray-50">
                                 <td class="px-4 py-3"><a href="{{ route('projects.show', $project) }}" class="font-medium text-indigo-600 hover:underline">{{ $project->name }}</a></td>
-                                <td class="px-4 py-3 text-gray-600">{{ $project->customer->company_name }}</td>
+                                <td class="px-4 py-3 text-gray-600">{{ $project->customer?->company_name ?? 'Client removed' }}</td>
                                 <td class="px-4 py-3 text-gray-600">{{ $project->owner?->name ?? '—' }}</td>
                                 <td class="px-4 py-3 text-gray-600">{{ $project->status->label() }}</td>
                                 <td class="px-4 py-3 text-right text-gray-600">{{ $project->tasks_count }}</td>

@@ -79,14 +79,39 @@ M0–M7 are built, merged, and **deployed live** at https://crm.talktonitesh.com
 `docs/deploy-github-actions.md`, and the [[deployment]] memory). The build phase
 is done; new work is maintenance.
 
-- **CI/CD:** `.github/workflows/deploy.yml` auto-deploys on **push to `master`**
-  (build assets → commit `public/build` → SSH `git reset --hard origin/master` +
-  `migrate --force` + caches). **Merging a PR ships it.** Verify live after a
-  deploy with `curl` (e.g. `/` → 302 login; a page → 200).
-- **Per-change loop (minus the milestone plan):** branch off `master` → build →
-  `php artisan test` + `pint` → PR → merge (auto-deploys). Smoke-test on live
-  MySQL the same way, wrapping anything that writes in a rolled-back
-  `DB::transaction`.
+- **Deploy is MANUAL, not CI/CD.** `.github/workflows/deploy.yml` was deleted
+  2026-06-13 (Hostinger SSH kept timing out). After pushing to `master`:
+  `ssh -i ~/.ssh/hostinger_deploy -p 65002 u314035009@89.117.188.107` (key is on
+  the local dev box), then `cd /home/u314035009/neds-crm && git pull`. Run
+  `php artisan view:clear && php artisan view:cache`; also `route:clear` +
+  `route:cache` if routes changed, `migrate --force` if there are new
+  migrations, `config:cache` after `.env` edits, and the `MenuItemsSeeder`
+  re-seed (below) after menu changes. `public/build` is committed, so the
+  `git pull` carries the compiled assets — no separate upload step needed.
+  Verify live with `curl` (e.g. `/login` → 200, `/build/manifest.json` shows the
+  new asset hash).
+- **Per-change loop (minus the milestone plan):** branch or commit on `master` →
+  build → `php artisan test` + `pint` → push → manual deploy (above) →
+  smoke-test live.
+- **Live smoke-testing via curl (no browser, no SSH writes to prod):** drive the
+  real app over HTTP with a cookie jar, never `php artisan tinker` against
+  production data (the permission system will — correctly — block raw DB
+  writes that bypass policies/validation). Steps: fetch `/login`, scrape
+  `_token`, POST credentials; if 2FA is enforced you'll land on
+  `/two-factor/challenge` — get a fresh TOTP code from the owner and POST it
+  immediately (it expires in ~30s). For **Livewire full-page components**
+  (`QuotationBuilder`, `InvoiceBuilder`, etc.) there's no plain form to POST:
+  parse the `wire:snapshot="…"` attribute out of the rendered HTML (it's
+  HTML-entity-encoded JSON), then POST to `/livewire/update` with
+  `{_token, components: [{snapshot, updates: {...}, calls: [{method:"save",...}]}]}`
+  and header `X-Livewire: true`. The response's `effects.redirect` confirms
+  success. Label any throwaway record `SMOKETEST …` and delete it through the
+  app's own destroy routes when done — and note that **not every model has
+  one** (Tickets and Deals currently don't), so plan cleanup before creating.
+  Treat anything that writes to a real financial ledger (recording a payment)
+  or flips a real role's production access (Menu Controller role toggles) as
+  out of bounds for a "create + delete" smoke test — fall back to the Pest
+  suite for those paths and say so explicitly in the report.
 - **`public/build` is committed/tracked** (un-ignored) so assets ship via git.
   Adding **uncommon Tailwind utilities** on a new page? `npm run build` locally
   and commit the fresh build — a class used only on one new page can be missing

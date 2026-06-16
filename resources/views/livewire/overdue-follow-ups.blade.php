@@ -22,7 +22,7 @@
             @foreach ($deals as $deal)
                 <li class="flex items-center justify-between py-2">
                     <a href="{{ route('deals.show', $deal) }}" class="text-indigo-600 hover:underline">
-                        Deal: {{ $deal->title }} — {{ $deal->customer->company_name }}
+                        Deal: {{ $deal->title }} — {{ $deal->customer?->company_name ?? 'Client removed' }}
                     </a>
                     <span class="text-xs text-red-600">due {{ $deal->next_follow_up_at->timezone(config('app.display_timezone'))->format('d M') }}</span>
                 </li>

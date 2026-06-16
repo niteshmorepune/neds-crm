@@ -14,7 +14,7 @@
                 <div>
                     <h1 class="text-xl font-semibold text-gray-900">{{ $quotation->number }}</h1>
                     <p class="mt-1 text-sm text-gray-500">
-                        {{ $quotation->customer->company_name }} ·
+                        {{ $quotation->customer?->company_name ?? 'Client removed' }} ·
                         <span class="font-medium">{{ $quotation->status->label() }}</span> ·
                         {{ $quotation->is_intra_state ? 'Intra-state (CGST+SGST)' : 'Inter-state (IGST)' }}
                     </p>

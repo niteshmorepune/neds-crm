@@ -131,6 +131,7 @@ class InvoiceController extends Controller
                 InvoiceStatus::Draft->value, InvoiceStatus::Sent->value,
                 InvoiceStatus::PartiallyPaid->value, InvoiceStatus::Overdue->value,
             ])
+            ->whereHas('customer')
             ->with('customer')
             ->get()
             ->groupBy('customer_id')

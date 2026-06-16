@@ -6,7 +6,7 @@
     <ul>
         @foreach ($tickets as $ticket)
             <li>
-                #{{ $ticket->id }} — {{ $ticket->subject }} ({{ $ticket->customer->company_name }}),
+                #{{ $ticket->id }} — {{ $ticket->subject }} ({{ $ticket->customer?->company_name ?? 'Client removed' }}),
                 {{ $ticket->priority->label() }}, due {{ $ticket->sla_due_at?->timezone(config('app.display_timezone'))->format('d M Y, g:i A') }},
                 assignee: {{ $ticket->assignee?->name ?? 'Unassigned' }}
             </li>

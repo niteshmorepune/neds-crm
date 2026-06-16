@@ -14,7 +14,7 @@
                 <div>
                     <h1 class="text-xl font-semibold text-gray-900">{{ $invoice->invoice_number }}</h1>
                     <p class="mt-1 text-sm text-gray-500">
-                        {{ $invoice->customer->company_name }} ·
+                        {{ $invoice->customer?->company_name ?? 'Client removed' }} ·
                         <span class="font-medium">{{ $invoice->status->label() }}</span> ·
                         Issued {{ $invoice->issue_date->format('d M Y') }}
                         @if ($invoice->due_date) · Due {{ $invoice->due_date->format('d M Y') }} @endif
