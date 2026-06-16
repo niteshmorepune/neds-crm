@@ -68,6 +68,11 @@ class Customer extends Model
         return $this->morphMany(CallLog::class, 'callable')->latest('called_at');
     }
 
+    public function deals(): HasMany
+    {
+        return $this->hasMany(Deal::class);
+    }
+
     public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class);

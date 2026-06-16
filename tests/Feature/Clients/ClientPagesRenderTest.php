@@ -3,6 +3,8 @@
 use App\Enums\UserRole;
 use App\Models\Contact;
 use App\Models\Customer;
+use App\Models\Deal;
+use App\Models\Ticket;
 use App\Models\User;
 use Database\Seeders\MenuItemsSeeder;
 
@@ -40,6 +42,28 @@ it('renders the client detail page with contacts and tabs', function () {
         ->assertSee('Primary Person')
         ->assertSee('Contacts')
         ->assertSee('Notes');
+});
+
+it('shows real deals and tickets data on the client tabs', function () {
+    $client = Customer::factory()->create(['company_name' => 'Render Co']);
+    $deal = Deal::factory()->create(['customer_id' => $client->id, 'title' => 'Website Revamp']);
+    $ticket = Ticket::factory()->create(['customer_id' => $client->id, 'subject' => 'Login issue']);
+
+    $this->actingAs($this->admin)
+        ->get(route('clients.show', $client))
+        ->assertOk()
+        ->assertSee('Website Revamp')
+        ->assertSee('Login issue');
+});
+
+it('hides invoice data on the client tab from a role without invoice access', function () {
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    $client = Customer::factory()->create(['owner_id' => $sales->id]);
+
+    $this->actingAs($sales)
+        ->get(route('clients.show', $client))
+        ->assertOk()
+        ->assertSee('have access to invoices');
 });
 
 it('renders the edit form', function () {

@@ -77,9 +77,21 @@ class Invoice extends Model
         return $this->hasMany(Payment::class)->latest('paid_on');
     }
 
+    public function milestones(): HasMany
+    {
+        return $this->hasMany(QuotationMilestone::class);
+    }
+
     public function balance(): int
     {
         return max(0, (int) $this->total - (int) $this->amount_paid);
+    }
+
+    /** Editable/deletable only before any payment is recorded. */
+    public function isEditable(): bool
+    {
+        return in_array($this->status, [InvoiceStatus::Draft, InvoiceStatus::Sent, InvoiceStatus::Overdue], true)
+            && $this->payments()->doesntExist();
     }
 
     /**

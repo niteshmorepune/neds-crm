@@ -25,6 +25,8 @@ class InvoiceIssued extends Mailable
 
     public function content(): Content
     {
+        $this->invoice->loadMissing('milestones');
+
         return new Content(
             view: 'mail.invoice-issued',
             with: [

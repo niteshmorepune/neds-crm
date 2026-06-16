@@ -28,6 +28,13 @@
                         </form>
                     @endcan
                     <a href="{{ route('invoices.pdf', $invoice) }}" target="_blank" class="rounded-md bg-gray-800 px-3 py-2 text-sm font-medium text-white hover:bg-gray-700">Download PDF</a>
+                    @can('update', $invoice)
+                        <a href="{{ route('invoices.edit', $invoice) }}" class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Edit</a>
+                    @endcan
+                    @can('delete', $invoice)
+                        <button type="submit" form="delete-invoice" class="text-sm font-medium text-red-600 hover:text-red-500"
+                                onclick="return confirm('Delete this invoice?')">Delete</button>
+                    @endcan
                 </div>
             </div>
 
@@ -122,5 +129,12 @@
                 @endif
             @endcan
         </div>
+
+        @can('delete', $invoice)
+            <form id="delete-invoice" method="POST" action="{{ route('invoices.destroy', $invoice) }}" class="hidden">
+                @csrf
+                @method('DELETE')
+            </form>
+        @endcan
     </div>
 </x-app-layout>

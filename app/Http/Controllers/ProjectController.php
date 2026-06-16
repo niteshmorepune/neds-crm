@@ -139,6 +139,15 @@ class ProjectController extends Controller
         return redirect()->route('projects.show', $project)->with('status', 'Project updated.');
     }
 
+    public function destroy(Project $project): RedirectResponse
+    {
+        $this->authorize('delete', $project);
+
+        $project->delete();
+
+        return redirect()->route('projects.index')->with('status', 'Project deleted.');
+    }
+
     /**
      * @return array<string, mixed>
      */

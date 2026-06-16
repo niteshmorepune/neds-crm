@@ -100,3 +100,12 @@ it('renders quotation index, create and show pages', function () {
     $this->actingAs($this->admin)->get(route('quotations.create'))->assertOk()->assertSee('Line items');
     $this->actingAs($this->admin)->get(route('quotations.show', $quotation))->assertOk()->assertSee($quotation->number);
 });
+
+it('shows a delete button on the quotation show page and deletes it', function () {
+    $quotation = quotationWithLine();
+
+    $this->actingAs($this->admin)->get(route('quotations.show', $quotation))->assertOk()->assertSee('Delete');
+
+    $this->actingAs($this->admin)->delete(route('quotations.destroy', $quotation))->assertRedirect(route('quotations.index'));
+    expect(Quotation::find($quotation->id))->toBeNull();
+});

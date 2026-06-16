@@ -31,6 +31,10 @@
                     @can('update', $project)
                         <a href="{{ route('projects.edit', $project) }}" class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">Edit</a>
                     @endcan
+                    @can('delete', $project)
+                        <button type="submit" form="delete-project" class="text-sm font-medium text-red-600 hover:text-red-500"
+                                onclick="return confirm('Delete this project?')">Delete</button>
+                    @endcan
                 </div>
             </div>
         </div>
@@ -51,5 +55,12 @@
                 @endforelse
             </ul>
         </div>
+
+        @can('delete', $project)
+            <form id="delete-project" method="POST" action="{{ route('projects.destroy', $project) }}" class="hidden">
+                @csrf
+                @method('DELETE')
+            </form>
+        @endcan
     </div>
 </x-app-layout>

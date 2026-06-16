@@ -54,6 +54,11 @@
                     @if ($quotation->invoice)
                         <a href="{{ route('invoices.show', $quotation->invoice) }}" class="rounded-md bg-gray-800 px-3 py-2 text-sm font-medium text-white hover:bg-gray-700">View invoice</a>
                     @endif
+
+                    @can('delete', $quotation)
+                        <button type="submit" form="delete-quotation" class="text-sm font-medium text-red-600 hover:text-red-500"
+                                onclick="return confirm('Delete this quotation?')">Delete</button>
+                    @endcan
                 </div>
             </div>
         </div>
@@ -101,5 +106,12 @@
         @if (in_array($quotation->status, [\App\Enums\QuotationStatus::Accepted, \App\Enums\QuotationStatus::Sent], true))
             <livewire:milestone-manager :quotation="$quotation" :can-manage="auth()->user()->can('convert', $quotation)" />
         @endif
+
+        @can('delete', $quotation)
+            <form id="delete-quotation" method="POST" action="{{ route('quotations.destroy', $quotation) }}" class="hidden">
+                @csrf
+                @method('DELETE')
+            </form>
+        @endcan
     </div>
 </x-app-layout>

@@ -7,6 +7,7 @@ use App\Enums\UserRole;
 use App\Http\Requests\CustomerStoreRequest;
 use App\Http\Requests\CustomerUpdateRequest;
 use App\Models\Customer;
+use App\Models\Invoice;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -74,11 +75,18 @@ class CustomerController extends Controller
             'owner',
             'contacts' => fn ($q) => $q->orderByDesc('is_primary')->orderBy('name'),
             'callLogs.user',
+            'deals.owner',
+            'tickets.assignee',
         ]);
+
+        if ($this->user()->can('viewAny', Invoice::class)) {
+            $client->load('invoices');
+        }
 
         return view('clients.show', [
             'client' => $client,
             'canManage' => $this->user()->can('manage', $client),
+            'canViewInvoices' => $this->user()->can('viewAny', Invoice::class),
         ]);
     }
 

@@ -92,9 +92,46 @@
                         @endforelse
                     </ul>
                 </div>
-                <div x-show="tab === 'deals'" x-cloak class="text-sm text-gray-400">Deals will appear here (Milestone 2).</div>
-                <div x-show="tab === 'invoices'" x-cloak class="text-sm text-gray-400">Invoices will appear here (Milestone 3).</div>
-                <div x-show="tab === 'tickets'" x-cloak class="text-sm text-gray-400">Tickets will appear here (Milestone 4).</div>
+                <div x-show="tab === 'deals'" x-cloak>
+                    <ul class="divide-y divide-gray-100 text-sm">
+                        @forelse ($client->deals as $deal)
+                            <li class="flex items-center justify-between py-2">
+                                <a href="{{ route('deals.show', $deal) }}" class="font-medium text-indigo-600 hover:underline">{{ $deal->title }}</a>
+                                <span class="text-gray-500">{{ $deal->stage->label() }} · {{ $deal->owner?->name ?? 'Unassigned' }}</span>
+                            </li>
+                        @empty
+                            <li class="py-2 text-gray-400">No deals yet.</li>
+                        @endforelse
+                    </ul>
+                </div>
+                <div x-show="tab === 'invoices'" x-cloak>
+                    @if ($canViewInvoices)
+                        <ul class="divide-y divide-gray-100 text-sm">
+                            @forelse ($client->invoices as $invoice)
+                                <li class="flex items-center justify-between py-2">
+                                    <a href="{{ route('invoices.show', $invoice) }}" class="font-medium text-indigo-600 hover:underline">{{ $invoice->invoice_number }}</a>
+                                    <span class="text-gray-500">{{ \App\Support\Money::format($invoice->total) }} · {{ $invoice->status->label() }}</span>
+                                </li>
+                            @empty
+                                <li class="py-2 text-gray-400">No invoices yet.</li>
+                            @endforelse
+                        </ul>
+                    @else
+                        <p class="text-sm text-gray-400">You don't have access to invoices.</p>
+                    @endif
+                </div>
+                <div x-show="tab === 'tickets'" x-cloak>
+                    <ul class="divide-y divide-gray-100 text-sm">
+                        @forelse ($client->tickets as $ticket)
+                            <li class="flex items-center justify-between py-2">
+                                <a href="{{ route('tickets.show', $ticket) }}" class="font-medium text-indigo-600 hover:underline">{{ $ticket->subject }}</a>
+                                <span class="text-gray-500">{{ $ticket->status->label() }} · {{ $ticket->assignee?->name ?? 'Unassigned' }}</span>
+                            </li>
+                        @empty
+                            <li class="py-2 text-gray-400">No tickets yet.</li>
+                        @endforelse
+                    </ul>
+                </div>
             </div>
         </div>
     </div>

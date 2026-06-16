@@ -72,3 +72,14 @@ it('renders project index, create and show pages', function () {
     $this->actingAs($this->manager)->get(route('projects.create'))->assertOk()->assertSee('Project name');
     $this->actingAs($this->manager)->get(route('projects.show', $project))->assertOk()->assertSee($project->name);
 });
+
+it('lets a manager delete a project but blocks a sales rep who only owns it', function () {
+    $owner = User::factory()->role(UserRole::Sales)->create();
+    $project = Project::factory()->create(['owner_id' => $owner->id]);
+
+    $this->actingAs($owner)->delete(route('projects.destroy', $project))->assertForbidden();
+    expect(Project::find($project->id))->not->toBeNull();
+
+    $this->actingAs($this->manager)->delete(route('projects.destroy', $project))->assertRedirect(route('projects.index'));
+    expect(Project::find($project->id))->toBeNull();
+});

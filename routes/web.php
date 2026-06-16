@@ -30,6 +30,7 @@ use App\Http\Controllers\UserController;
 use App\Livewire\ClientImport;
 use App\Livewire\DealsBoard;
 use App\Livewire\MenuManager;
+use App\Livewire\InvoiceBuilder;
 use App\Livewire\QuotationBuilder;
 use App\Livewire\RecurringInvoiceBuilder;
 use Illuminate\Support\Facades\Route;
@@ -129,9 +130,11 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
 
         Route::get('invoices', [InvoiceController::class, 'index'])->name('invoices.index');
         Route::get('invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
+        Route::get('invoices/{invoice}/edit', InvoiceBuilder::class)->name('invoices.edit');
         Route::get('invoices/{invoice}/pdf', [InvoiceController::class, 'pdf'])->name('invoices.pdf');
         Route::post('invoices/{invoice}/send', [InvoiceController::class, 'send'])->name('invoices.send');
         Route::post('invoices/{invoice}/payments', [InvoiceController::class, 'storePayment'])->name('invoices.payments.store');
+        Route::delete('invoices/{invoice}', [InvoiceController::class, 'destroy'])->name('invoices.destroy');
     });
 
     /*
@@ -156,7 +159,7 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
      */
     Route::middleware('menu.access:project-updates')->group(function () {
         Route::post('projects/from-deal/{deal}', [ProjectController::class, 'storeFromDeal'])->name('projects.from-deal');
-        Route::resource('projects', ProjectController::class)->except(['destroy']);
+        Route::resource('projects', ProjectController::class);
     });
 
     /*

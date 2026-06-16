@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\InvoiceStatus;
 use App\Enums\PaymentMode;
+use App\Enums\UserRole;
 use App\Http\Requests\PaymentStoreRequest;
 use App\Mail\InvoiceIssued;
 use App\Models\Invoice;
@@ -21,8 +22,13 @@ class InvoiceController extends Controller
     {
         $this->authorize('viewAny', Invoice::class);
 
+        $user = $request->user();
+
         $invoices = Invoice::query()
             ->with('customer')
+            ->when($user->hasRole(UserRole::Sales)
+                && ! $user->hasRole(UserRole::Admin, UserRole::Manager, UserRole::Accounts),
+                fn ($q) => $q->whereHas('customer', fn ($c) => $c->visibleTo($user)))
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->input('status')))
             ->latest()
             ->paginate(15)
@@ -101,6 +107,16 @@ class InvoiceController extends Controller
         $invoice->refreshPaymentStatus();
 
         return back()->with('status', 'Payment recorded.');
+    }
+
+    public function destroy(Invoice $invoice): RedirectResponse
+    {
+        $this->authorize('delete', $invoice);
+
+        $invoice->items()->delete();
+        $invoice->delete();
+
+        return redirect()->route('invoices.index')->with('status', 'Invoice deleted.');
     }
 
     /**
