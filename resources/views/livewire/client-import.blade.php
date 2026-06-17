@@ -17,14 +17,16 @@
                 to see required columns and a sample row.
             </p>
             <div class="mt-4">
-                <input type="file" wire:model="file" accept=".csv,.txt"
+                <input type="file" wire:model.live="file" accept=".csv,.txt"
                        class="block w-full text-sm text-gray-700 file:mr-4 file:rounded-md file:border-0 file:bg-indigo-50 file:px-4 file:py-2 file:text-sm file:font-medium file:text-indigo-700" />
                 @error('file') <p class="mt-1 text-sm font-medium text-red-600">{{ $message }}</p> @enderror
             </div>
+            {{-- Upload progress indicator (separate from the button so the button is never stuck disabled) --}}
+            <div wire:loading wire:target="file" class="mt-2 text-sm text-indigo-600">Uploading file…</div>
             <div class="mt-4">
-                <x-primary-button wire:click="parse" wire:loading.attr="disabled" wire:target="parse,file">
-                    <span wire:loading.remove wire:target="file">Continue</span>
-                    <span wire:loading wire:target="file">Uploading…</span>
+                <x-primary-button wire:click="parse" wire:loading.attr="disabled" wire:target="parse" type="button">
+                    <span wire:loading.remove wire:target="parse">Continue</span>
+                    <span wire:loading wire:target="parse">Processing…</span>
                 </x-primary-button>
             </div>
         </div>
