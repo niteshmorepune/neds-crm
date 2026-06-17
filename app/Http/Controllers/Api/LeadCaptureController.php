@@ -18,6 +18,8 @@ class LeadCaptureController extends Controller
      */
     public function store(LeadCaptureRequest $request): JsonResponse
     {
+        \Log::warning('[lead-api] incoming fields: '.json_encode($request->except(['token'])));
+
         $data = $request->validated();
 
         // Prefer an explicit service_id; fall back to matching service name from
