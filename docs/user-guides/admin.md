@@ -38,16 +38,29 @@ The **Menu Controller** has two parts:
 
 Changes apply on the user's next page load.
 
-## 4. Audit Log
+## 4. Clients — bulk import & deletion
+**Import (Clients → Import):** upload a CSV. The template (downloadable from the
+import page) has 13 columns including `address_line2`, `owner` (user's full name),
+and `tags` (comma-separated). Leave `owner` blank to assign the client to the
+importing user. Duplicate emails and GSTINs (including soft-deleted records) are
+skipped automatically.
+
+**Deleting a client:** removes the client **and all related records** — deals,
+quotations, invoices, projects, tasks, tickets, contacts, notes, and call logs.
+This cannot be undone. Use this only when the company record should be wiped
+entirely; consider making a client **Inactive** instead if you may need the
+history later.
+
+## 5. Audit Log
 **Audit Log** (admin) shows who created, updated or deleted records, and when.
 Filter by record type or event. Use it to investigate "who changed this?".
 
-## 5. Backups
+## 6. Backups
 The database is **backed up automatically every night at 2 AM** (kept 14 daily +
 8 weekly copies on the server). You don't need to do anything. To restore from a
 backup, follow `docs/backup-restore.md`.
 
-## 6. AI features (optional)
+## 7. AI features (optional)
 Lead scoring, "Draft with AI" and "Summarize" are **off by default**. To turn
 them on, an administrator sets `AI_ENABLED=true` and an Anthropic API key in the
 server `.env` (see the deployment docs). If they're off, the buttons simply don't

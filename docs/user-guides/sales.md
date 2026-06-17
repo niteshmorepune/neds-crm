@@ -55,9 +55,17 @@ The **Sales Department** board shows your deals in columns by stage:
    invoice** — accounts takes it from there.
 
 ## 4. Clients
-**Clients** lists all companies. Open one to see its contacts, notes, calls,
-deals, invoices and tickets in one place. New clients can also be added directly,
-or imported in bulk via **Clients → Import**.
+**Clients** lists the companies assigned to you, plus any unassigned ones. Only
+your clients and unassigned clients appear in your list — clients owned by other
+sales reps are not shown. Open a client to see its contacts, notes, calls, deals,
+invoices and tickets in one place.
+
+**Adding clients:** use **Clients → Add** for a single client, or **Clients → Import**
+to upload a CSV file in bulk. Download the template from the Import page — it
+includes columns for address, owner (type a user's name exactly), and tags
+(comma-separated, e.g. `seo, retainer`). If you leave the **Owner** column blank,
+the client is assigned to you automatically. Click **Continue** and wait for
+"Uploading…" to clear before the step advances — large files take a moment.
 
 ## 5. Quotations — sending to clients
 Once a quotation is ready, open it and click **Send to Client**. This emails the
