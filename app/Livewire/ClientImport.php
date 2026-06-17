@@ -65,7 +65,7 @@ class ClientImport extends Component
 
     public function parse(): void
     {
-        \Log::info('[import-debug] parse() called', [
+        \Log::error('[import-debug] parse() called', [
             'file_present' => $this->file !== null,
             'file_class' => $this->file ? get_class($this->file) : null,
         ]);
@@ -80,7 +80,7 @@ class ClientImport extends Component
             throw $e;
         }
 
-        \Log::info('[import-debug] parse() validation passed, reading file');
+        \Log::error('[import-debug] parse() validation passed, reading file');
 
         $handle = fopen($this->file->getRealPath(), 'r');
         $this->headers = array_map('trim', (array) fgetcsv($handle));
@@ -95,7 +95,7 @@ class ClientImport extends Component
         }
         fclose($handle);
 
-        \Log::info('[import-debug] parse() done', ['rows' => count($this->rows), 'headers' => $this->headers]);
+        \Log::error('[import-debug] parse() done', ['rows' => count($this->rows), 'headers' => $this->headers]);
 
         $this->mapping = $this->guessMapping();
         $this->file = null;
@@ -104,7 +104,7 @@ class ClientImport extends Component
 
     public function import(): void
     {
-        \Log::info('[import-debug] import() called', ['rows_count' => count($this->rows)]);
+        \Log::error('[import-debug] import() called', ['rows_count' => count($this->rows)]);
 
         abort_unless(auth()->user()?->can('create', Customer::class), 403);
 
