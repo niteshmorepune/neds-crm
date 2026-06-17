@@ -13,76 +13,138 @@ class LeadCaptureRequest extends FormRequest
     }
 
     /**
-     * Normalise field name aliases from Elementor / WPForms / CF7 / n8n before
-     * validation runs. Maps common alternative keys to the canonical API keys.
+     * Normalise incoming fields before validation.
+     *
+     * Strategy (applied in order):
+     * 1. Explicit aliases — map known alternative key names to canonical fields.
+     * 2. Heuristic scan — if canonical fields are still missing, walk all
+     *    remaining (non-system) fields and classify by value shape:
+     *    email-shaped → email, digit-heavy → phone, plain string → name.
+     * 3. Dump all unrecognised fields into the message note so nothing is lost.
+     * 4. Final fallback — name defaults to "Website Inquiry" so validation never
+     *    fails on a real form submission.
      */
     protected function prepareForValidation(): void
     {
         $merge = [];
 
-        // name aliases: full_name, full-name, your-name, contact_name
+        // ── 1. Explicit aliases ──────────────────────────────────────────────
+
         if (! $this->has('name')) {
-            $alias = $this->input('full_name')
+            $v = $this->input('full_name')
                 ?? $this->input('full-name')
                 ?? $this->input('your-name')
                 ?? $this->input('contact_name')
-                ?? $this->input('contact-name');
-            if ($alias !== null) {
-                $merge['name'] = $alias;
+                ?? $this->input('contact-name')
+                ?? $this->input('your_name');
+            if ($v !== null) {
+                $merge['name'] = $v;
             }
         }
 
-        // phone aliases: contact_number, contact-number, whatsapp, whatsapp_no,
-        //                whatsapp-no, mobile, mobile_number, phone_number
         if (! $this->has('phone')) {
-            $alias = $this->input('contact_number')
+            $v = $this->input('contact_number')
                 ?? $this->input('contact-number')
                 ?? $this->input('whatsapp')
                 ?? $this->input('whatsapp_no')
                 ?? $this->input('whatsapp-no')
                 ?? $this->input('mobile')
                 ?? $this->input('mobile_number')
-                ?? $this->input('phone_number');
-            if ($alias !== null) {
-                $merge['phone'] = $alias;
+                ?? $this->input('mobile-number')
+                ?? $this->input('phone_number')
+                ?? $this->input('phone-number');
+            if ($v !== null) {
+                $merge['phone'] = $v;
             }
         }
 
-        // service aliases: search_engine_optimization → SEO, etc.
-        // Also accept a "subject" or "enquiry_type" as the service name.
         if (! $this->has('service') && ! $this->has('service_id')) {
-            $alias = $this->input('subject')
+            $v = $this->input('subject')
                 ?? $this->input('enquiry_type')
                 ?? $this->input('enquiry-type')
                 ?? $this->input('service_name')
                 ?? $this->input('service-name');
-            if ($alias !== null) {
-                $merge['service'] = $alias;
+            if ($v !== null) {
+                $merge['service'] = $v;
             }
         }
 
-        // message aliases: requirement, your-message, your_message, description
         if (! $this->has('message')) {
-            $alias = $this->input('requirement')
+            $v = $this->input('requirement')
                 ?? $this->input('your-message')
                 ?? $this->input('your_message')
                 ?? $this->input('description')
                 ?? $this->input('enquiry')
-                ?? $this->input('details');
-            if ($alias !== null) {
-                $merge['message'] = $alias;
+                ?? $this->input('details')
+                ?? $this->input('comments')
+                ?? $this->input('comment');
+            if ($v !== null) {
+                $merge['message'] = $v;
             }
         }
 
-        // company aliases: company_name, company-name, organization, organisation
         if (! $this->has('company')) {
-            $alias = $this->input('company_name')
+            $v = $this->input('company_name')
                 ?? $this->input('company-name')
                 ?? $this->input('organization')
                 ?? $this->input('organisation');
-            if ($alias !== null) {
-                $merge['company'] = $alias;
+            if ($v !== null) {
+                $merge['company'] = $v;
             }
+        }
+
+        // ── 2. Heuristic scan of unknown fields ─────────────────────────────
+        // Fields that are either standard API fields or Elementor/form system fields.
+        $knownKeys = [
+            'name', 'email', 'phone', 'company', 'service', 'service_id',
+            'estimated_value', 'message', 'token',
+            // Elementor webhook system fields
+            'form_id', 'form_name', 'referer', 'queried_id', 'post_id',
+            'remote_ip', 'submitted_on',
+        ];
+
+        $unknown = collect($this->except($knownKeys))
+            ->filter(fn ($v) => is_string($v) && trim($v) !== '');
+
+        if ($unknown->isNotEmpty()) {
+            foreach ($unknown as $val) {
+                $val = trim($val);
+
+                // Email-shaped value
+                if (! $this->has('email') && ! isset($merge['email'])
+                    && filter_var($val, FILTER_VALIDATE_EMAIL)) {
+                    $merge['email'] = $val;
+                    continue;
+                }
+
+                // Phone-shaped value (7–15 chars, mostly digits/spaces/+/-)
+                if (! $this->has('phone') && ! isset($merge['phone'])
+                    && preg_match('/^[\d\s\+\-\(\)]{7,15}$/', $val)) {
+                    $merge['phone'] = $val;
+                    continue;
+                }
+
+                // First plain string → name
+                if (! $this->has('name') && ! isset($merge['name'])
+                    && strlen($val) <= 255) {
+                    $merge['name'] = $val;
+                    continue;
+                }
+            }
+
+            // Append all unknown fields to message so nothing is lost.
+            $rawLines = $unknown->map(fn ($v, $k) => "{$k}: {$v}")->implode("\n");
+            $existing = $merge['message'] ?? $this->input('message', '');
+            $merge['message'] = $existing
+                ? $existing."\n\n[Form fields]\n".$rawLines
+                : "[Form fields]\n".$rawLines;
+        }
+
+        // ── 3. Final fallback ────────────────────────────────────────────────
+        // Ensure name is never empty so a real form submission always creates a
+        // lead rather than returning 422 to the form plugin (which shows an error).
+        if (! $this->has('name') && empty($merge['name'])) {
+            $merge['name'] = 'Website Inquiry';
         }
 
         if ($merge) {
@@ -93,14 +155,14 @@ class LeadCaptureRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255'],
-            'company' => ['nullable', 'string', 'max:255'],
-            'email' => ['nullable', 'email', 'max:255', 'required_without:phone'],
-            'phone' => ['nullable', 'string', 'max:20', 'required_without:email'],
-            'service_id' => ['nullable', Rule::exists('services', 'id')],
-            'service'    => ['nullable', 'string', 'max:255'], // name from website dropdown; resolved to service_id in controller
+            'name'            => ['required', 'string', 'max:255'],
+            'company'         => ['nullable', 'string', 'max:255'],
+            'email'           => ['nullable', 'email', 'max:255'],
+            'phone'           => ['nullable', 'string', 'max:20'],
+            'service_id'      => ['nullable', Rule::exists('services', 'id')],
+            'service'         => ['nullable', 'string', 'max:255'],
             'estimated_value' => ['nullable', 'numeric', 'min:0', 'max:999999999'],
-            'message' => ['nullable', 'string', 'max:5000'],
+            'message'         => ['nullable', 'string', 'max:5000'],
         ];
     }
 }

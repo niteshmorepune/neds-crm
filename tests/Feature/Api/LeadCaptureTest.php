@@ -45,11 +45,17 @@ it('also accepts the X-Lead-Token header', function () {
 });
 
 it('validates the payload', function () {
-    // Missing name.
-    $this->postJson('/api/leads', ['email' => 'a@b.test'], ['Authorization' => 'Bearer secret-token'])
-        ->assertStatus(422)->assertJsonValidationErrors('name');
+    // Completely empty body → name falls back to "Website Inquiry" via prepareForValidation,
+    // so even a blank submission creates a lead (avoids 422 breaking the form UI).
+    $this->postJson('/api/leads', [], ['Authorization' => 'Bearer secret-token'])
+        ->assertCreated();
 
-    // Name but neither email nor phone.
+    // Explicit name with no contact info is also accepted.
     $this->postJson('/api/leads', ['name' => 'Solo'], ['Authorization' => 'Bearer secret-token'])
-        ->assertStatus(422)->assertJsonValidationErrors(['email', 'phone']);
+        ->assertCreated();
+
+    // Invalid email still fails.
+    $this->postJson('/api/leads', ['name' => 'Bad Email', 'email' => 'not-an-email'], [
+        'Authorization' => 'Bearer secret-token',
+    ])->assertStatus(422)->assertJsonValidationErrors('email');
 });
