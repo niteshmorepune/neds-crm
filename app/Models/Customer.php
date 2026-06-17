@@ -127,6 +127,11 @@ class Customer extends Model
         return $this->hasMany(Ticket::class);
     }
 
+    public function recurringInvoices(): HasMany
+    {
+        return $this->hasMany(RecurringInvoice::class);
+    }
+
     /**
      * Best email for billing correspondence: the primary contact's, else the
      * customer's own. Null if neither is set.

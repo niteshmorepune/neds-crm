@@ -40,3 +40,7 @@ Schedule::command('app:send-daily-report-reminders')->dailyAt('18:00')->timezone
 
 // Nightly database backup at 02:00 India time (quiet hours).
 Schedule::command('app:backup-database')->dailyAt('02:00')->timezone('Asia/Kolkata');
+
+// Monthly report reminder — fires daily at 09:00 IST but the command exits early
+// unless today is the last non-Sunday of the month (the last working day).
+Schedule::command('app:send-monthly-report-reminder')->dailyAt('09:00')->timezone('Asia/Kolkata');
