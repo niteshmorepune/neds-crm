@@ -117,6 +117,12 @@ class ClientImport extends Component
             $line = $i + 2; // +1 header, +1 for 1-based display
             $data = $this->mapRow($row);
 
+            // Normalise single-digit state codes (e.g. '2' → '02') so that
+            // GST state codes entered without a leading zero still validate.
+            if (isset($data['state_code']) && preg_match('/^[1-9]$/', $data['state_code'])) {
+                $data['state_code'] = str_pad($data['state_code'], 2, '0', STR_PAD_LEFT);
+            }
+
             $validator = Validator::make($data, [
                 'company_name' => ['required', 'string', 'max:255'],
                 'email' => ['nullable', 'email', 'max:255'],
