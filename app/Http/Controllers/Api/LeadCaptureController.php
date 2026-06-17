@@ -51,6 +51,6 @@ class LeadCaptureController extends Controller
         return response()->json([
             'message' => 'Lead received.',
             'id' => $lead->id,
-        ], 201);
+        ], 200);
     }
 }

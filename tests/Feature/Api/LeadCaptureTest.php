@@ -26,7 +26,7 @@ it('creates an unassigned website lead with a valid token', function () {
         'email' => 'visitor@site.test',
         'message' => 'Interested in SEO',
     ], ['Authorization' => 'Bearer secret-token'])
-        ->assertCreated()
+        ->assertOk()
         ->assertJsonStructure(['message', 'id']);
 
     $lead = Lead::firstWhere('email', 'visitor@site.test');
@@ -41,18 +41,18 @@ it('creates an unassigned website lead with a valid token', function () {
 it('also accepts the X-Lead-Token header', function () {
     $this->postJson('/api/leads', ['name' => 'Hdr', 'phone' => '9999999999'], [
         'X-Lead-Token' => 'secret-token',
-    ])->assertCreated();
+    ])->assertOk();
 });
 
 it('validates the payload', function () {
     // Completely empty body → name falls back to "Website Inquiry" via prepareForValidation,
     // so even a blank submission creates a lead (avoids 422 breaking the form UI).
     $this->postJson('/api/leads', [], ['Authorization' => 'Bearer secret-token'])
-        ->assertCreated();
+        ->assertOk();
 
     // Explicit name with no contact info is also accepted.
     $this->postJson('/api/leads', ['name' => 'Solo'], ['Authorization' => 'Bearer secret-token'])
-        ->assertCreated();
+        ->assertOk();
 
     // Invalid email still fails.
     $this->postJson('/api/leads', ['name' => 'Bad Email', 'email' => 'not-an-email'], [
