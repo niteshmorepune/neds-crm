@@ -75,6 +75,7 @@ class ClientImport extends Component
         fclose($handle);
 
         $this->mapping = $this->guessMapping();
+        $this->file = null;
         $this->step = 2;
     }
 

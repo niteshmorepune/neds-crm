@@ -43,6 +43,40 @@ class Customer extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::deleting(function (self $customer) {
+            // Notes attached to the customer's deals (polymorphic — no SoftDeletes on Note)
+            Note::where('notable_type', Deal::class)
+                ->whereIn('notable_id', $customer->deals()->pluck('id'))
+                ->delete();
+            // Soft-delete deals (Deal has SoftDeletes)
+            $customer->deals()->delete();
+
+            // Hard-delete quotation sub-rows, then the quotations themselves (no SoftDeletes)
+            $quotationIds = $customer->quotations()->pluck('id');
+            QuotationItem::whereIn('quotation_id', $quotationIds)->delete();
+            QuotationMilestone::whereIn('quotation_id', $quotationIds)->delete();
+            $customer->quotations()->delete();
+
+            // Hard-delete tasks, then soft-delete projects (Project has SoftDeletes)
+            Task::whereIn('project_id', $customer->projects()->pluck('id'))->delete();
+            $customer->projects()->delete();
+
+            // Hard-delete ticket replies, then soft-delete tickets (Ticket has SoftDeletes)
+            TicketReply::whereIn('ticket_id', $customer->tickets()->pluck('id'))->delete();
+            $customer->tickets()->delete();
+
+            // Soft-delete invoices; items/payments kept for financial audit (Invoice has SoftDeletes)
+            $customer->invoices()->delete();
+
+            // Hard-delete contacts, notes on the customer, and call logs
+            $customer->contacts()->delete();
+            $customer->notes()->delete();
+            $customer->callLogs()->delete();
+        });
+    }
+
     public function contacts(): HasMany
     {
         return $this->hasMany(Contact::class);
@@ -100,20 +134,6 @@ class Customer extends Model
     public function billingEmail(): ?string
     {
         return $this->primaryContact?->email ?: $this->email;
-    }
-
-    /**
-     * Deleting a customer with live deals/projects/quotations/invoices/tickets
-     * would orphan them (soft-deleted customers are excluded from belongsTo
-     * lookups, so every list/show page referencing them breaks). Block it.
-     */
-    public function hasDependentRecords(): bool
-    {
-        return $this->deals()->exists()
-            || $this->projects()->exists()
-            || $this->quotations()->exists()
-            || $this->invoices()->exists()
-            || $this->tickets()->exists();
     }
 
     /**

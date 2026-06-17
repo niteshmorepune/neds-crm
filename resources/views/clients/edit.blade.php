@@ -16,7 +16,7 @@
                     <button type="submit"
                             form="delete-client"
                             class="text-sm font-medium text-red-600 hover:text-red-500"
-                            onclick="return confirm('Delete this client? This can be restored by an admin.')">
+                            onclick="return confirm('Delete this client? All related deals, quotations, invoices, projects, tasks, and tickets will also be removed. This action cannot be undone.')">
                         Delete client
                     </button>
                 @else

@@ -2,6 +2,7 @@
 
 use App\Enums\InvoiceStatus;
 use App\Enums\UserRole;
+use App\Models\Customer;
 use App\Models\Deal;
 use App\Models\Invoice;
 use App\Models\Project;
@@ -14,10 +15,11 @@ use Database\Seeders\MenuItemsSeeder;
  * Regression coverage for the 2026-06-16 incident: a customer with live
  * deals/projects/quotations/invoices/tickets got soft-deleted, and every
  * index/show page that did $record->customer->company_name (no null check)
- * 500'd for the whole team. CustomerController::destroy now blocks deleting
- * a customer with dependents (see CustomerCrudTest), but these tests guard
- * the other half: views must render gracefully if an orphan ever exists
- * (e.g. data fixed by hand, or a future code path that misses the guard).
+ * 500'd for the whole team. Customer deletion now cascades (see CustomerCrudTest),
+ * but these tests guard that views render gracefully if an orphan ever exists
+ * (e.g. data fixed by hand, or a future code path that misses the cascade).
+ * We use Customer::withoutEvents() to soft-delete the customer without triggering
+ * the cascade, intentionally creating orphaned records.
  */
 beforeEach(function () {
     $this->seed(MenuItemsSeeder::class);
@@ -26,19 +28,19 @@ beforeEach(function () {
 
 it('renders deals board, projects, quotations, invoices, tickets and receivables when a customer is soft-deleted', function () {
     $deal = Deal::factory()->create();
-    $deal->customer->delete();
+    Customer::withoutEvents(fn () => $deal->customer->delete());
 
     $project = Project::factory()->create();
-    $project->customer->delete();
+    Customer::withoutEvents(fn () => $project->customer->delete());
 
     $quotation = Quotation::factory()->create();
-    $quotation->customer->delete();
+    Customer::withoutEvents(fn () => $quotation->customer->delete());
 
     $invoice = Invoice::factory()->create(['status' => InvoiceStatus::Sent]);
-    $invoice->customer->delete();
+    Customer::withoutEvents(fn () => $invoice->customer->delete());
 
     $ticket = Ticket::factory()->create();
-    $ticket->customer->delete();
+    Customer::withoutEvents(fn () => $ticket->customer->delete());
 
     $this->actingAs($this->admin)->get(route('deals.index'))->assertOk();
     $this->actingAs($this->admin)->get(route('projects.index'))->assertOk()->assertSee('Client removed');
@@ -56,7 +58,7 @@ it('renders deals board, projects, quotations, invoices, tickets and receivables
 
 it('excludes an invoice with a deleted customer from the receivables report instead of crashing', function () {
     $invoice = Invoice::factory()->create(['status' => InvoiceStatus::Sent]);
-    $invoice->customer->delete();
+    Customer::withoutEvents(fn () => $invoice->customer->delete());
 
     $this->actingAs($this->admin)
         ->get(route('reports.receivables'))

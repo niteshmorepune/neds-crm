@@ -86,18 +86,16 @@ it('soft deletes a client', function () {
     $this->assertSoftDeleted($customer);
 });
 
-it('blocks deleting a client with a dependent deal/project/quotation/invoice/ticket', function () {
-    $withDeal = Customer::factory()->create();
-    \App\Models\Deal::factory()->create(['customer_id' => $withDeal->id]);
+it('cascade-deletes related records when a client is deleted', function () {
+    $customer = Customer::factory()->create();
+    $deal = \App\Models\Deal::factory()->create(['customer_id' => $customer->id]);
+    $ticket = \App\Models\Ticket::factory()->create(['customer_id' => $customer->id]);
 
-    $withTicket = Customer::factory()->create();
-    \App\Models\Ticket::factory()->create(['customer_id' => $withTicket->id]);
+    $this->actingAs($this->admin)
+        ->delete(route('clients.destroy', $customer))
+        ->assertRedirect(route('clients.index'));
 
-    foreach ([$withDeal, $withTicket] as $customer) {
-        $this->actingAs($this->admin)
-            ->delete(route('clients.destroy', $customer))
-            ->assertRedirect();
-
-        $this->assertNotSoftDeleted($customer);
-    }
+    $this->assertSoftDeleted($customer);
+    $this->assertSoftDeleted($deal);
+    $this->assertSoftDeleted($ticket);
 });
