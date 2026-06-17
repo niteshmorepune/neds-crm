@@ -65,10 +65,22 @@ class ClientImport extends Component
 
     public function parse(): void
     {
+        \Log::info('[import-debug] parse() called', [
+            'file_present' => $this->file !== null,
+            'file_class' => $this->file ? get_class($this->file) : null,
+        ]);
+
         // extensions: validates by file extension only (not MIME sniffing), so
         // Excel/Google Sheets-exported CSV files are accepted regardless of
         // whatever MIME type PHP detects.
-        $this->validate(['file' => ['required', 'file', 'extensions:csv,txt', 'max:5120']]);
+        try {
+            $this->validate(['file' => ['required', 'file', 'extensions:csv,txt', 'max:5120']]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::warning('[import-debug] parse() validation failed', ['errors' => $e->errors()]);
+            throw $e;
+        }
+
+        \Log::info('[import-debug] parse() validation passed, reading file');
 
         $handle = fopen($this->file->getRealPath(), 'r');
         $this->headers = array_map('trim', (array) fgetcsv($handle));
@@ -83,6 +95,8 @@ class ClientImport extends Component
         }
         fclose($handle);
 
+        \Log::info('[import-debug] parse() done', ['rows' => count($this->rows), 'headers' => $this->headers]);
+
         $this->mapping = $this->guessMapping();
         $this->file = null;
         $this->step = 2;
@@ -90,6 +104,8 @@ class ClientImport extends Component
 
     public function import(): void
     {
+        \Log::info('[import-debug] import() called', ['rows_count' => count($this->rows)]);
+
         abort_unless(auth()->user()?->can('create', Customer::class), 403);
 
         if (($this->mapping['company_name'] ?? '') === '') {
