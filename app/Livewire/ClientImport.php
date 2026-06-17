@@ -224,6 +224,9 @@ class ClientImport extends Component
         }
         if ($errors) {
             $msg .= ", {$errors} row(s) had errors";
+            foreach ($results['errors'] as $err) {
+                $msg .= " | Row {$err['row']}: {$err['message']}";
+            }
         }
         $msg .= '.';
 
