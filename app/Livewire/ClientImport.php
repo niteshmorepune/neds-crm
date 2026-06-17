@@ -114,12 +114,14 @@ class ClientImport extends Component
             $email = $data['email'] ? strtolower($data['email']) : null;
             $gstin = $data['gstin'] ?: null;
 
-            if ($email && (in_array($email, $seenEmails, true) || Customer::where('email', $data['email'])->exists())) {
+            // withTrashed() so the check matches the DB unique constraint (which
+            // applies to soft-deleted rows too), preventing a constraint violation.
+            if ($email && (in_array($email, $seenEmails, true) || Customer::withTrashed()->where('email', $data['email'])->exists())) {
                 $results['skipped'][] = ['row' => $line, 'reason' => "Duplicate email: {$data['email']}"];
 
                 continue;
             }
-            if ($gstin && (in_array($gstin, $seenGstins, true) || Customer::where('gstin', $gstin)->exists())) {
+            if ($gstin && (in_array($gstin, $seenGstins, true) || Customer::withTrashed()->where('gstin', $gstin)->exists())) {
                 $results['skipped'][] = ['row' => $line, 'reason' => "Duplicate GSTIN: {$gstin}"];
 
                 continue;
