@@ -8,11 +8,10 @@ use App\Models\User;
 
 /**
  * Client (Customer) access rules:
- *  - All roles: can view any client (see + list).
- *  - sales: can only edit/manage clients they own or that are unassigned.
+ *  - admin/manager/support/accounts: can view and list all clients.
+ *  - sales: can only view/edit/manage clients they own or that are unassigned.
  *  - admin / manager: full access including delete.
  *
- * Sales can see all clients so admin-created clients are not invisible to them.
  * Keep scopeVisibleTo() on the Customer model in sync with view().
  */
 class CustomerPolicy
@@ -24,7 +23,11 @@ class CustomerPolicy
 
     public function view(User $user, Customer $customer): bool
     {
-        return true;
+        if (! $user->hasRole(UserRole::Sales)) {
+            return true;
+        }
+
+        return $this->salesOwnsOrUnassigned($user, $customer);
     }
 
     public function create(User $user): bool

@@ -141,10 +141,18 @@ class Customer extends Model
     }
 
     /**
-     * All internal users can see all clients. Mirrors CustomerPolicy::view.
+     * Admins/managers/support/accounts see all clients.
+     * Sales reps see only clients they own or that are unassigned.
+     * Mirrors CustomerPolicy::view.
      */
     public function scopeVisibleTo(Builder $query, User $user): Builder
     {
+        if ($user->role === \App\Enums\UserRole::Sales) {
+            $query->where(function (Builder $q) use ($user) {
+                $q->where('owner_id', $user->id)->orWhereNull('owner_id');
+            });
+        }
+
         return $query;
     }
 }

@@ -19,12 +19,12 @@
             <div class="mt-4">
                 <input type="file" wire:model="file" accept=".csv,.txt"
                        class="block w-full text-sm text-gray-700 file:mr-4 file:rounded-md file:border-0 file:bg-indigo-50 file:px-4 file:py-2 file:text-sm file:font-medium file:text-indigo-700" />
-                @error('file') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
-                <div wire:loading wire:target="file" class="mt-1 text-xs text-gray-400">Uploading…</div>
+                @error('file') <p class="mt-1 text-sm font-medium text-red-600">{{ $message }}</p> @enderror
             </div>
             <div class="mt-4">
-                <x-primary-button wire:click="parse" wire:loading.attr="disabled" wire:target="parse">
-                    Continue
+                <x-primary-button wire:click="parse" wire:loading.attr="disabled" wire:target="parse,file">
+                    <span wire:loading.remove wire:target="file">Continue</span>
+                    <span wire:loading wire:target="file">Uploading…</span>
                 </x-primary-button>
             </div>
         </div>
