@@ -7,6 +7,7 @@ use App\Enums\LeadStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LeadCaptureRequest;
 use App\Models\Lead;
+use App\Models\Service;
 use App\Support\Money;
 use Illuminate\Http\JsonResponse;
 
@@ -19,16 +20,25 @@ class LeadCaptureController extends Controller
     {
         $data = $request->validated();
 
+        // Prefer an explicit service_id; fall back to matching service name from
+        // a website dropdown (case-insensitive).
+        $serviceId = $data['service_id'] ?? null;
+        if (! $serviceId && ! empty($data['service'])) {
+            $serviceId = Service::where('is_active', true)
+                ->whereRaw('LOWER(name) = ?', [strtolower(trim($data['service']))])
+                ->value('id');
+        }
+
         $lead = Lead::create([
-            'name' => $data['name'],
-            'company' => $data['company'] ?? null,
-            'email' => $data['email'] ?? null,
-            'phone' => $data['phone'] ?? null,
-            'service_id' => $data['service_id'] ?? null,
+            'name'            => $data['name'],
+            'company'         => $data['company'] ?? null,
+            'email'           => $data['email'] ?? null,
+            'phone'           => $data['phone'] ?? null,
+            'service_id'      => $serviceId,
             'estimated_value' => Money::toPaise($data['estimated_value'] ?? null),
-            'source' => LeadSource::Website->value,
-            'status' => LeadStatus::New->value,
-            'owner_id' => null,
+            'source'          => LeadSource::Website->value,
+            'status'          => LeadStatus::New->value,
+            'owner_id'        => null,
         ]);
 
         if (! empty($data['message'])) {

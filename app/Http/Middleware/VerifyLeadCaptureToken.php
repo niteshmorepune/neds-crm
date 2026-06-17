@@ -15,7 +15,9 @@ class VerifyLeadCaptureToken
     public function handle(Request $request, Closure $next): Response
     {
         $expected = (string) config('services.lead_capture.token');
-        $provided = (string) ($request->bearerToken() ?: $request->header('X-Lead-Token', ''));
+        $provided = (string) ($request->bearerToken()
+            ?: $request->header('X-Lead-Token', '')
+            ?: $request->query('token', ''));
 
         if ($expected === '' || ! hash_equals($expected, $provided)) {
             return response()->json(['message' => 'Invalid or missing API token.'], 401);

@@ -8,5 +8,5 @@ use Illuminate\Support\Facades\Route;
 // (no CSRF/session). POST /api/leads with an Authorization: Bearer <token>
 // or X-Lead-Token header.
 Route::post('/leads', [LeadCaptureController::class, 'store'])
-    ->middleware(VerifyLeadCaptureToken::class)
+    ->middleware(['throttle:30,1', VerifyLeadCaptureToken::class])
     ->name('api.leads.store');
