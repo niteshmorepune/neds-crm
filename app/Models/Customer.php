@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Enums\CustomerStatus;
-use App\Enums\UserRole;
 use App\Models\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -142,18 +141,10 @@ class Customer extends Model
     }
 
     /**
-     * Limit a query to the customers a user is allowed to see. Sales see their
-     * own + unassigned; everyone else (admin/manager/support/accounts) sees all.
-     * Mirrors CustomerPolicy::view — keep them in sync.
+     * All internal users can see all clients. Mirrors CustomerPolicy::view.
      */
     public function scopeVisibleTo(Builder $query, User $user): Builder
     {
-        if ($user->hasRole(UserRole::Sales)) {
-            return $query->where(function (Builder $q) use ($user) {
-                $q->where('owner_id', $user->id)->orWhereNull('owner_id');
-            });
-        }
-
         return $query;
     }
 }
