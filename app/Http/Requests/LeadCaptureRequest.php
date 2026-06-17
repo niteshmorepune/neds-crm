@@ -28,6 +28,21 @@ class LeadCaptureRequest extends FormRequest
     {
         $merge = [];
 
+        // ── 0. Strip Elementor's "No_Label_" key prefix ─────────────────────
+        // Elementor sends field IDs as-is. If the field label wasn't set,
+        // Elementor prefixes each key with "No_Label_" (e.g. No_Label_name,
+        // No_Label_phone). Strip the prefix so subsequent alias + heuristic
+        // logic sees clean keys.
+        $stripped = [];
+        foreach ($this->all() as $key => $value) {
+            if (str_starts_with((string) $key, 'No_Label_')) {
+                $stripped[substr($key, 9)] = $value;
+            }
+        }
+        if ($stripped) {
+            $this->merge($stripped);
+        }
+
         // ── 1. Explicit aliases ──────────────────────────────────────────────
 
         if (! $this->has('name')) {
