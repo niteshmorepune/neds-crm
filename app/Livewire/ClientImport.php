@@ -126,17 +126,35 @@ class ClientImport extends Component
             $email = $data['email'] ? strtolower($data['email']) : null;
             $gstin = $data['gstin'] ?: null;
 
-            // withTrashed() so the check matches the DB unique constraint (which
-            // applies to soft-deleted rows too), preventing a constraint violation.
-            if ($email && (in_array($email, $seenEmails, true) || Customer::withTrashed()->where('email', $data['email'])->exists())) {
+            // Email: check only active (non-deleted) customers. There's no unique
+            // constraint on email, so soft-deleted rows don't cause a DB violation
+            // and shouldn't block a fresh import of the same contact.
+            if ($email && (in_array($email, $seenEmails, true) || Customer::where('email', $data['email'])->exists())) {
                 $results['skipped'][] = ['row' => $line, 'reason' => "Duplicate email: {$data['email']}"];
 
                 continue;
             }
-            if ($gstin && (in_array($gstin, $seenGstins, true) || Customer::withTrashed()->where('gstin', $gstin)->exists())) {
+
+            // GSTIN has a DB unique constraint that covers soft-deleted rows too.
+            // If an in-file duplicate or an ACTIVE DB record matches, skip the row.
+            // If the only DB match is a soft-deleted record, force-delete it so the
+            // fresh import can proceed without hitting the constraint violation.
+            if ($gstin && in_array($gstin, $seenGstins, true)) {
                 $results['skipped'][] = ['row' => $line, 'reason' => "Duplicate GSTIN: {$gstin}"];
 
                 continue;
+            }
+            if ($gstin) {
+                $existingGstin = Customer::withTrashed()->where('gstin', $gstin)->first();
+                if ($existingGstin) {
+                    if ($existingGstin->trashed()) {
+                        $existingGstin->forceDelete();
+                    } else {
+                        $results['skipped'][] = ['row' => $line, 'reason' => "Duplicate GSTIN: {$gstin}"];
+
+                        continue;
+                    }
+                }
             }
 
             try {
