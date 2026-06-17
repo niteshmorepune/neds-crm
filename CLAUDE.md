@@ -103,7 +103,7 @@ is the word the team uses.
 - Draft replies: button on Lead/Ticket → Claude drafts a reply using the
   interaction history; user edits before sending. Never auto-send.
 - Thread summary: button on Customer/Ticket timeline → Claude summarizes.
-- Use model `claude-sonnet-4-20250514` unless told otherwise. Max ~1000 output
+- Use model `claude-haiku-4-5-20251001` unless told otherwise. Max ~1000 output
   tokens per call. Wrap all AI calls in try/catch; AI failure must never break
   a core workflow.
 
