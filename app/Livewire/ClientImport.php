@@ -80,6 +80,13 @@ class ClientImport extends Component
             if (count(array_filter($row, fn ($v) => trim((string) $v) !== '')) === 0) {
                 continue;
             }
+            // CSV files exported from Excel on Windows are often Windows-1252 encoded.
+            // Convert any cell that isn't valid UTF-8 so MySQL doesn't reject the row.
+            $row = array_map(function (string $cell): string {
+                return mb_check_encoding($cell, 'UTF-8')
+                    ? $cell
+                    : mb_convert_encoding($cell, 'UTF-8', 'Windows-1252');
+            }, $row);
             $rows[] = $row;
         }
         fclose($handle);
@@ -184,17 +191,17 @@ class ClientImport extends Component
 
             try {
                 Customer::create([
-                    'company_name'  => $data['company_name'],
-                    'email'         => $data['email'] ?: null,
-                    'phone'         => substr($data['phone'] ?: '', 0, 20) ?: null,
+                    'company_name'  => mb_substr($data['company_name'], 0, 255),
+                    'email'         => $data['email'] ? mb_substr($data['email'], 0, 255) : null,
+                    'phone'         => $data['phone'] ? mb_substr($data['phone'], 0, 20) : null,
                     'gstin'         => $gstin,
-                    'website'       => $data['website'] ?: null,
-                    'address_line1' => $data['address_line1'] ?: null,
-                    'address_line2' => $data['address_line2'] ?: null,
-                    'city'          => $data['city'] ?: null,
+                    'website'       => $data['website'] ? mb_substr($data['website'], 0, 255) : null,
+                    'address_line1' => $data['address_line1'] ? mb_substr($data['address_line1'], 0, 255) : null,
+                    'address_line2' => $data['address_line2'] ? mb_substr($data['address_line2'], 0, 255) : null,
+                    'city'          => $data['city'] ? mb_substr($data['city'], 0, 255) : null,
                     'state_code'    => $data['state_code'] ?: null,
                     'state'         => $data['state_code'] ? config("india.states.{$data['state_code']}") : null,
-                    'pincode'       => substr($data['pincode'] ?: '', 0, 10) ?: null,
+                    'pincode'       => $data['pincode'] ? mb_substr($data['pincode'], 0, 10) : null,
                     'status'        => $this->normaliseStatus($data['status']),
                     'owner_id'      => $this->resolveOwner($data['owner'] ?? '', $users) ?? auth()->id(),
                     'tags'          => $this->normaliseTags($data['tags'] ?? ''),
