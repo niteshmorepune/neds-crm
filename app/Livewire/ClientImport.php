@@ -25,8 +25,9 @@ class ClientImport extends Component
     /** @var array<int, string> */
     public array $headers = [];
 
-    /** @var array<int, array<int, string>> */
-    public array $rows = [];
+    // Row count only — the actual rows are stored in the PHP session to keep
+    // the Livewire snapshot small (long address strings make it too large).
+    public int $rowCount = 0;
 
     /** @var array<string, string> field => header index ('' = skip) */
     public array $mapping = [];
@@ -65,38 +66,29 @@ class ClientImport extends Component
 
     public function parse(): void
     {
-        \Log::error('[import-debug] parse() called', [
-            'file_present' => $this->file !== null,
-            'file_class' => $this->file ? get_class($this->file) : null,
-        ]);
-
         // extensions: validates by file extension only (not MIME sniffing), so
         // Excel/Google Sheets-exported CSV files are accepted regardless of
         // whatever MIME type PHP detects.
-        try {
-            $this->validate(['file' => ['required', 'file', 'extensions:csv,txt', 'max:5120']]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            \Log::warning('[import-debug] parse() validation failed', ['errors' => $e->errors()]);
-            throw $e;
-        }
-
-        \Log::error('[import-debug] parse() validation passed, reading file');
+        $this->validate(['file' => ['required', 'file', 'extensions:csv,txt', 'max:5120']]);
 
         $handle = fopen($this->file->getRealPath(), 'r');
         $this->headers = array_map('trim', (array) fgetcsv($handle));
 
-        $this->rows = [];
+        $rows = [];
         while (($row = fgetcsv($handle)) !== false) {
             // Skip fully empty lines.
             if (count(array_filter($row, fn ($v) => trim((string) $v) !== '')) === 0) {
                 continue;
             }
-            $this->rows[] = $row;
+            $rows[] = $row;
         }
         fclose($handle);
 
-        \Log::error('[import-debug] parse() done', ['rows' => count($this->rows), 'headers' => $this->headers]);
+        // Store rows in session — keeps them out of the Livewire snapshot so
+        // the response payload stays small even with long address strings.
+        session(['client_import_rows' => $rows]);
 
+        $this->rowCount = count($rows);
         $this->mapping = $this->guessMapping();
         $this->file = null;
         $this->step = 2;
@@ -104,8 +96,6 @@ class ClientImport extends Component
 
     public function import(): void
     {
-        \Log::error('[import-debug] import() called', ['rows_count' => count($this->rows)]);
-
         abort_unless(auth()->user()?->can('create', Customer::class), 403);
 
         if (($this->mapping['company_name'] ?? '') === '') {
@@ -114,6 +104,8 @@ class ClientImport extends Component
             return;
         }
 
+        $rows = session('client_import_rows', []);
+
         $results = ['imported' => 0, 'skipped' => [], 'errors' => []];
         $seenEmails = [];
         $seenGstins = [];
@@ -121,7 +113,7 @@ class ClientImport extends Component
         // Load all active users once for owner name look-up.
         $users = User::where('is_active', true)->get(['id', 'name']);
 
-        foreach ($this->rows as $i => $row) {
+        foreach ($rows as $i => $row) {
             $line = $i + 2; // +1 header, +1 for 1-based display
             $data = $this->mapRow($row);
 
@@ -205,13 +197,15 @@ class ClientImport extends Component
             $results['imported']++;
         }
 
+        session()->forget('client_import_rows');
         $this->results = $results;
         $this->step = 3;
     }
 
     public function startOver(): void
     {
-        $this->reset(['step', 'file', 'headers', 'rows', 'mapping', 'results']);
+        session()->forget('client_import_rows');
+        $this->reset(['step', 'file', 'headers', 'rowCount', 'mapping', 'results']);
         $this->step = 1;
         $this->results = ['imported' => 0, 'skipped' => [], 'errors' => []];
     }

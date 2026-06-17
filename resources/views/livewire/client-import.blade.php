@@ -36,7 +36,7 @@
     @if ($step === 2)
         <div class="rounded-lg bg-white p-6 shadow-sm">
             <h2 class="text-base font-semibold text-gray-900">Map columns</h2>
-            <p class="mt-1 text-sm text-gray-500">{{ count($rows) }} data row(s) found.</p>
+            <p class="mt-1 text-sm text-gray-500">{{ $rowCount }} data row(s) found.</p>
             @error('mapping') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
 
             <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -54,8 +54,8 @@
             </div>
 
             <div class="mt-6 flex items-center gap-3">
-                <x-primary-button wire:click="import" wire:loading.attr="disabled" wire:target="import">
-                    Import {{ count($rows) }} row(s)
+                <x-primary-button wire:click="import" wire:loading.attr="disabled" wire:target="import" type="button">
+                    Import {{ $rowCount }} row(s)
                 </x-primary-button>
                 <button wire:click="startOver" type="button" class="text-sm text-gray-500 hover:text-gray-700">Start over</button>
             </div>

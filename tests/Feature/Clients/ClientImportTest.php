@@ -30,6 +30,7 @@ it('imports valid rows, reports errors, and skips duplicates', function () {
         ->set('file', $file)
         ->call('parse')
         ->assertSet('step', 2)
+        ->assertSet('rowCount', 6)
         ->call('import')
         ->assertSet('step', 3);
 
