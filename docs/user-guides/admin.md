@@ -51,16 +51,32 @@ This cannot be undone. Use this only when the company record should be wiped
 entirely; consider making a client **Inactive** instead if you may need the
 history later.
 
-## 5. Audit Log
+## 5. Website lead capture
+The **niranjanenterprises.com** contact form automatically creates a lead in the
+CRM whenever someone submits it. No manual action is needed.
+
+- New leads land in **Lead Generation** with source **Website** and status **New**,
+  unassigned.
+- Assign them to a sales person as soon as possible so the enquiry doesn't sit
+  cold.
+- The message the visitor typed appears in the lead's **Notes** tab.
+- Service and company fields are captured when the visitor fills them in.
+
+This integration is configured once on the server (a secret token in `.env`).
+You don't need to touch anything — if the contact form stops creating leads,
+check that the server's `LEAD_CAPTURE_TOKEN` matches what's configured in the
+Elementor webhook URL.
+
+## 6. Audit Log
 **Audit Log** (admin) shows who created, updated or deleted records, and when.
 Filter by record type or event. Use it to investigate "who changed this?".
 
-## 6. Backups
+## 7. Backups
 The database is **backed up automatically every night at 2 AM** (kept 14 daily +
 8 weekly copies on the server). You don't need to do anything. To restore from a
 backup, follow `docs/backup-restore.md`.
 
-## 7. AI features (optional)
+## 8. AI features (optional)
 Lead scoring, "Draft with AI" and "Summarize" are **off by default**. To turn
 them on, an administrator sets `AI_ENABLED=true` and an Anthropic API key in the
 server `.env` (see the deployment docs). If they're off, the buttons simply don't
