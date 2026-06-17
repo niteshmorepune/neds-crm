@@ -4,7 +4,9 @@ namespace App\Livewire;
 
 use App\Enums\CustomerStatus;
 use App\Models\Customer;
+use App\Models\User;
 use App\Rules\Gstin;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Validator;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -39,16 +41,19 @@ class ClientImport extends Component
     public function fields(): array
     {
         return [
-            'company_name' => 'Company name (required)',
-            'email' => 'Email',
-            'phone' => 'Phone',
-            'gstin' => 'GSTIN',
-            'website' => 'Website',
-            'address_line1' => 'Address',
-            'city' => 'City',
-            'state_code' => 'State code',
-            'pincode' => 'Pincode',
-            'status' => 'Status',
+            'company_name'  => 'Company name (required)',
+            'email'         => 'Email',
+            'phone'         => 'Phone',
+            'gstin'         => 'GSTIN',
+            'website'       => 'Website',
+            'address_line1' => 'Address line 1',
+            'address_line2' => 'Address line 2',
+            'city'          => 'City',
+            'state_code'    => 'State code',
+            'pincode'       => 'Pincode',
+            'status'        => 'Status',
+            'owner'         => 'Owner (user name)',
+            'tags'          => 'Tags (comma-separated)',
         ];
     }
 
@@ -93,6 +98,9 @@ class ClientImport extends Component
         $seenEmails = [];
         $seenGstins = [];
 
+        // Load all active users once for owner name look-up.
+        $users = User::where('is_active', true)->get(['id', 'name']);
+
         foreach ($this->rows as $i => $row) {
             $line = $i + 2; // +1 header, +1 for 1-based display
             $data = $this->mapRow($row);
@@ -128,18 +136,20 @@ class ClientImport extends Component
             }
 
             Customer::create([
-                'company_name' => $data['company_name'],
-                'email' => $data['email'] ?: null,
-                'phone' => $data['phone'] ?: null,
-                'gstin' => $gstin,
-                'website' => $data['website'] ?: null,
+                'company_name'  => $data['company_name'],
+                'email'         => $data['email'] ?: null,
+                'phone'         => $data['phone'] ?: null,
+                'gstin'         => $gstin,
+                'website'       => $data['website'] ?: null,
                 'address_line1' => $data['address_line1'] ?: null,
-                'city' => $data['city'] ?: null,
-                'state_code' => $data['state_code'] ?: null,
-                'state' => $data['state_code'] ? config("india.states.{$data['state_code']}") : null,
-                'pincode' => $data['pincode'] ?: null,
-                'status' => $this->normaliseStatus($data['status']),
-                'owner_id' => auth()->id(),
+                'address_line2' => $data['address_line2'] ?: null,
+                'city'          => $data['city'] ?: null,
+                'state_code'    => $data['state_code'] ?: null,
+                'state'         => $data['state_code'] ? config("india.states.{$data['state_code']}") : null,
+                'pincode'       => $data['pincode'] ?: null,
+                'status'        => $this->normaliseStatus($data['status']),
+                'owner_id'      => $this->resolveOwner($data['owner'] ?? '', $users) ?? auth()->id(),
+                'tags'          => $this->normaliseTags($data['tags'] ?? ''),
             ]);
 
             if ($email) {
@@ -211,5 +221,29 @@ class ClientImport extends Component
     {
         return CustomerStatus::tryFrom(strtolower(trim($value)))?->value
             ?? CustomerStatus::Active->value;
+    }
+
+    /** Match owner name case-insensitively; returns user ID or null if blank/unmatched. */
+    private function resolveOwner(string $name, Collection $users): ?int
+    {
+        $name = trim($name);
+        if ($name === '') {
+            return null;
+        }
+
+        return $users->first(
+            fn (User $u) => strcasecmp($u->name, $name) === 0
+        )?->id;
+    }
+
+    /** Parse "seo, retainer, priority" → ['seo', 'retainer', 'priority'], or null if blank. */
+    private function normaliseTags(string $value): ?array
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return null;
+        }
+
+        return array_values(array_filter(array_map('trim', explode(',', $value))));
     }
 }

@@ -70,8 +70,8 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
     Route::middleware('menu.access:customer')->group(function () {
         Route::get('clients/import', ClientImport::class)->name('clients.import');
         Route::get('clients/import/template', function () {
-            $headers = ['company_name', 'email', 'phone', 'gstin', 'website', 'address_line1', 'city', 'state_code', 'pincode', 'status'];
-            $sample = ['Acme Pvt Ltd', 'billing@acme.in', '9876543210', '27ABCDE1234F1Z5', 'https://acme.in', '123 MG Road', 'Pune', '27', '411001', 'active'];
+            $headers = ['company_name', 'email', 'phone', 'gstin', 'website', 'address_line1', 'address_line2', 'city', 'state_code', 'pincode', 'status', 'owner', 'tags'];
+            $sample = ['Acme Pvt Ltd', 'billing@acme.in', '9876543210', '27ABCDE1234F1Z5', 'https://acme.in', '123 MG Road', 'Unit 4', 'Pune', '27', '411001', 'active', 'Kiran Katte', 'seo, retainer'];
             return response()->streamDownload(function () use ($headers, $sample) {
                 $f = fopen('php://output', 'w');
                 fputcsv($f, $headers);
