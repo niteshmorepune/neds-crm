@@ -6,6 +6,7 @@ use App\Enums\CustomerStatus;
 use App\Models\Customer;
 use App\Models\User;
 use App\Rules\Gstin;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Validator;
 use Livewire\Attributes\Layout;
@@ -64,7 +65,10 @@ class ClientImport extends Component
 
     public function parse(): void
     {
-        $this->validate(['file' => ['required', 'file', 'mimes:csv,txt', 'max:5120']]);
+        // extensions: validates by file extension only (not MIME sniffing), so
+        // Excel/Google Sheets-exported CSV files are accepted regardless of
+        // whatever MIME type PHP detects.
+        $this->validate(['file' => ['required', 'file', 'extensions:csv,txt', 'max:5120']]);
 
         $handle = fopen($this->file->getRealPath(), 'r');
         $this->headers = array_map('trim', (array) fgetcsv($handle));
@@ -135,22 +139,28 @@ class ClientImport extends Component
                 continue;
             }
 
-            Customer::create([
-                'company_name'  => $data['company_name'],
-                'email'         => $data['email'] ?: null,
-                'phone'         => $data['phone'] ?: null,
-                'gstin'         => $gstin,
-                'website'       => $data['website'] ?: null,
-                'address_line1' => $data['address_line1'] ?: null,
-                'address_line2' => $data['address_line2'] ?: null,
-                'city'          => $data['city'] ?: null,
-                'state_code'    => $data['state_code'] ?: null,
-                'state'         => $data['state_code'] ? config("india.states.{$data['state_code']}") : null,
-                'pincode'       => $data['pincode'] ?: null,
-                'status'        => $this->normaliseStatus($data['status']),
-                'owner_id'      => $this->resolveOwner($data['owner'] ?? '', $users) ?? auth()->id(),
-                'tags'          => $this->normaliseTags($data['tags'] ?? ''),
-            ]);
+            try {
+                Customer::create([
+                    'company_name'  => $data['company_name'],
+                    'email'         => $data['email'] ?: null,
+                    'phone'         => substr($data['phone'] ?: '', 0, 20) ?: null,
+                    'gstin'         => $gstin,
+                    'website'       => $data['website'] ?: null,
+                    'address_line1' => $data['address_line1'] ?: null,
+                    'address_line2' => $data['address_line2'] ?: null,
+                    'city'          => $data['city'] ?: null,
+                    'state_code'    => $data['state_code'] ?: null,
+                    'state'         => $data['state_code'] ? config("india.states.{$data['state_code']}") : null,
+                    'pincode'       => substr($data['pincode'] ?: '', 0, 10) ?: null,
+                    'status'        => $this->normaliseStatus($data['status']),
+                    'owner_id'      => $this->resolveOwner($data['owner'] ?? '', $users) ?? auth()->id(),
+                    'tags'          => $this->normaliseTags($data['tags'] ?? ''),
+                ]);
+            } catch (QueryException $e) {
+                $results['errors'][] = ['row' => $line, 'message' => 'Database error: '.$e->getMessage()];
+
+                continue;
+            }
 
             if ($email) {
                 $seenEmails[] = $email;
