@@ -25,22 +25,16 @@ it('imports valid rows, reports errors, and skips duplicates', function () {
 
     $file = UploadedFile::fake()->createWithContent('clients.csv', $csv);
 
-    $component = Livewire::actingAs($admin)
+    Livewire::actingAs($admin)
         ->test(ClientImport::class)
         ->set('file', $file)
         ->call('parse')
         ->assertSet('step', 2)
         ->assertSet('rowCount', 6)
         ->call('import')
-        ->assertSet('step', 3);
-
-    $results = $component->get('results');
+        ->assertRedirect(route('clients.index'));
 
     // Acme + Gamma import; missing-name and bad-GSTIN error; file-dup + db-dup skipped.
-    expect($results['imported'])->toBe(2)
-        ->and($results['errors'])->toHaveCount(2)
-        ->and($results['skipped'])->toHaveCount(2);
-
     expect(Customer::where('company_name', 'Acme Digital')->exists())->toBeTrue()
         ->and(Customer::where('company_name', 'Gamma Soft')->exists())->toBeTrue()
         ->and(Customer::where('company_name', 'Beta Labs')->exists())->toBeFalse();

@@ -198,8 +198,20 @@ class ClientImport extends Component
         }
 
         session()->forget('client_import_rows');
-        $this->results = $results;
-        $this->step = 3;
+
+        $skipped = count($results['skipped']);
+        $errors  = count($results['errors']);
+        $msg = $results['imported'].' client(s) imported';
+        if ($skipped) {
+            $msg .= ", {$skipped} skipped (duplicates)";
+        }
+        if ($errors) {
+            $msg .= ", {$errors} row(s) had errors";
+        }
+        $msg .= '.';
+
+        session()->flash('status', $msg);
+        $this->redirect(route('clients.index'), navigate: false);
     }
 
     public function startOver(): void
