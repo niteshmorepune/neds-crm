@@ -143,6 +143,17 @@ class ClientImport extends Component
                 continue;
             }
 
+            // Fallback: when a row has no email and no GSTIN, use company name as
+            // the duplicate key so repeated import clicks don't create extra copies.
+            if (! $email && ! $gstin) {
+                $name = $data['company_name'];
+                if (Customer::whereRaw('LOWER(company_name) = ?', [strtolower($name)])->exists()) {
+                    $results['skipped'][] = ['row' => $line, 'reason' => "Duplicate company: {$name}"];
+
+                    continue;
+                }
+            }
+
             // GSTIN has a DB unique constraint that covers soft-deleted rows too.
             // If an in-file duplicate or an ACTIVE DB record matches, skip the row.
             // If the only DB match is a soft-deleted record, force-delete it so the
