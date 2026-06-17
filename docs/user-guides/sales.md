@@ -13,8 +13,13 @@ When you log in you'll see:
 1. **Lead Generation → Add Lead**.
 2. Fill in name, company, phone/email, **source**, the **service** they're
    interested in, and an **estimated value**. Assign an **owner** (usually you).
-3. Save. (If AI is enabled, a score badge appears suggesting how promising the
-   lead looks.)
+3. Save. A **score badge** (0–100) appears on the leads list within a minute —
+   higher means more promising. Hover over it to see the one-line reason
+   (e.g. "Company provided, specific service request, phone available — follow
+   up promptly"). The score updates automatically whenever you edit the lead.
+
+> **Note:** leads that existed before AI was enabled show no badge until you
+> open them, make any edit (even adding a note), and save.
 
 **Working a lead:**
 - Open the lead to add **notes**, see the timeline, and log activity.
@@ -27,8 +32,10 @@ When you log in you'll see:
   page — use the **Pending follow-ups** button to filter to just those.
 - Set a **next follow-up date** on the lead itself so it shows up in your
   "follow-ups due" dashboard widget.
-- If AI is enabled, **Draft follow-up** writes a first-draft message you can
-  edit before sending.
+- **Draft follow-up (✨)** — click this button to have AI write a suggested
+  follow-up message based on the lead's details and history. Read it, edit it to
+  match your voice, then send it yourself (WhatsApp, email, or call). The AI
+  never sends anything automatically.
 
 **Converting a lead:** when it's real business, open the lead and click
 **Convert**. This creates a **Client** and a **Deal** automatically and links

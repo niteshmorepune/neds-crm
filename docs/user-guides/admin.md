@@ -77,10 +77,33 @@ The database is **backed up automatically every night at 2 AM** (kept 14 daily +
 backup, follow `docs/backup-restore.md`.
 
 ## 8. AI features (optional)
-Lead scoring, "Draft with AI" and "Summarize" are **off by default**. To turn
-them on, an administrator sets `AI_ENABLED=true` and an Anthropic API key in the
-server `.env` (see the deployment docs). If they're off, the buttons simply don't
-appear and nothing else changes.
+Three AI helpers are built into the CRM, powered by Anthropic's Claude. They are
+**off by default** and never take action automatically — they only assist staff.
+
+**Lead scoring** — when a lead is created or edited, the CRM automatically sends
+its details to Claude and stores a **0–100 score** with a one-line reason
+(e.g. "Specific service requested, phone and company provided — high intent").
+The score badge appears on the leads list so sales staff can prioritise without
+reading every entry. Existing leads (created before AI was enabled) get scored
+the next time they are edited and saved.
+
+**Draft follow-up / Draft reply (✨)** — a button on leads and tickets. When
+clicked, Claude reads the lead/ticket details and history, then writes a suggested
+message. The staff member edits it and sends it themselves. Claude never sends
+anything automatically.
+
+**Summarize** — a button on client pages and tickets. Claude reads the full
+timeline (notes, calls, interactions) and produces a short paragraph summarising
+the situation. Useful when picking up a colleague's account.
+
+**To turn on:** add these two lines to the server `.env`, then run
+`php artisan config:cache`:
+```
+AI_ENABLED=true
+ANTHROPIC_API_KEY=sk-ant-...
+```
+If the features are off, the buttons simply don't appear and nothing else changes.
+Usage is billed by Anthropic per request (very low cost for this volume).
 
 ## Tip
 Adding a new module/menu item or changing a label is a code change that deploys
