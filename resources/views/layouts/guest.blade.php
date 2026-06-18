@@ -18,7 +18,7 @@
         <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-100">
             <div>
                 <a href="/">
-                    <img src="{{ asset('images/neds-logo-square.png') }}" alt="Niranjan Enterprises Digital Solutions" class="w-36 h-auto mx-auto">
+                    <img src="{{ asset('images/neds-logo-square.png') }}" alt="Niranjan Enterprises Digital Solutions" style="width:120px;height:auto;display:block;margin:0 auto">
                 </a>
             </div>
 

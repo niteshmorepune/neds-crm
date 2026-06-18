@@ -17,7 +17,7 @@
 
         <div class="flex items-center justify-between px-4 py-3 border-b border-gray-800 bg-white">
             <a href="{{ route('dashboard') }}">
-                <img src="{{ asset('images/neds-logo.png') }}" alt="Niranjan Enterprises Digital Solutions" class="h-10 w-auto">
+                <img src="{{ asset('images/neds-logo.png') }}" alt="Niranjan Enterprises Digital Solutions" style="height:40px;width:auto">
             </a>
             <button @click="sidebarOpen = false" class="text-gray-400 hover:text-white p-1" aria-label="Close menu">
                 <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -77,7 +77,7 @@
 <aside class="hidden md:flex md:flex-col w-64 shrink-0 bg-gray-900 text-gray-300 min-h-screen">
     <div class="flex items-center px-4 py-3 border-b border-gray-800 bg-white">
         <a href="{{ route('dashboard') }}">
-            <img src="{{ asset('images/neds-logo.png') }}" alt="Niranjan Enterprises Digital Solutions" class="h-10 w-auto">
+            <img src="{{ asset('images/neds-logo.png') }}" alt="Niranjan Enterprises Digital Solutions" style="height:40px;width:auto">
         </a>
     </div>
 
