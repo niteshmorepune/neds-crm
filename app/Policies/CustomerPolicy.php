@@ -36,7 +36,6 @@ class CustomerPolicy
             UserRole::Admin,
             UserRole::Manager,
             UserRole::Sales,
-            UserRole::Support,
             UserRole::Accounts,
         );
     }

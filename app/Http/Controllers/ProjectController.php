@@ -26,7 +26,7 @@ class ProjectController extends Controller
         $group = $request->input('group'); // 'client' | 'owner' | 'service' | null
 
         $baseQuery = Project::query()
-            ->with(['customer', 'owner', 'service'])
+            ->with(['customer', 'owner', 'service', 'assignees'])
             ->withCount('tasks')
             ->unless($user->hasRole(UserRole::Admin, UserRole::Manager), fn ($q) => $q->where(function ($w) use ($user) {
                 $w->where('owner_id', $user->id)
@@ -39,7 +39,10 @@ class ProjectController extends Controller
             $allProjects = $baseQuery->get();
             $grouped = match ($group) {
                 'client'  => $allProjects->groupBy(fn ($p) => $p->customer->company_name ?? 'No Client'),
-                'owner'   => $allProjects->groupBy(fn ($p) => $p->owner?->name ?? 'Unassigned'),
+                'owner'   => $allProjects->flatMap(fn ($p) => $p->assignees->isNotEmpty()
+                    ? $p->assignees->map(fn ($a) => ['key' => $a->name, 'project' => $p])
+                    : [['key' => 'Unassigned', 'project' => $p]]
+                )->groupBy('key')->map(fn ($items) => $items->pluck('project')),
                 'service' => $allProjects->groupBy(fn ($p) => $p->service?->name ?? 'No Service'),
                 default   => null,
             };

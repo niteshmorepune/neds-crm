@@ -65,6 +65,8 @@
                             <button wire:click="revoke({{ $contact->id }})" wire:confirm="Revoke portal access?" class="text-amber-600 hover:text-amber-500">Revoke portal</button>
                         @elseif ($contact->email)
                             <button wire:click="invite({{ $contact->id }})" class="text-emerald-600 hover:text-emerald-500">Invite to portal</button>
+                        @else
+                            <span class="text-xs italic text-gray-400">Add email to enable portal invite</span>
                         @endif
                         @unless ($contact->is_primary)
                             <button wire:click="makePrimary({{ $contact->id }})" class="text-gray-500 hover:text-gray-700">Make primary</button>
