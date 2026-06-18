@@ -132,13 +132,22 @@
                         <td class="px-4 py-3 text-gray-600">{{ $project->start_date?->format('d M Y') ?? '—' }}</td>
                         <td class="px-4 py-3 text-gray-600">{{ $project->end_date?->format('d M Y') ?? '—' }}</td>
                         <td class="px-4 py-3">
-                            @php $status = $project->status; @endphp
-                            <span @class([
-                                'inline-flex rounded-full px-2 py-0.5 text-xs font-medium',
-                                'bg-emerald-50 text-emerald-700' => $status === \App\Enums\ProjectStatus::Active,
-                                'bg-amber-50 text-amber-700'    => $status === \App\Enums\ProjectStatus::OnHold,
-                                'bg-gray-100 text-gray-600'     => $status === \App\Enums\ProjectStatus::Completed,
-                            ])>{{ $status->label() }}</span>
+                            @php
+                                $status   = $project->status;
+                                $overdue  = $status === \App\Enums\ProjectStatus::Active
+                                    && $project->end_date
+                                    && $project->end_date->isPast();
+                            @endphp
+                            @if ($overdue)
+                                <span class="inline-flex rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700">Overdue</span>
+                            @else
+                                <span @class([
+                                    'inline-flex rounded-full px-2 py-0.5 text-xs font-medium',
+                                    'bg-emerald-50 text-emerald-700' => $status === \App\Enums\ProjectStatus::Active,
+                                    'bg-amber-50 text-amber-700'    => $status === \App\Enums\ProjectStatus::OnHold,
+                                    'bg-gray-100 text-gray-600'     => $status === \App\Enums\ProjectStatus::Completed,
+                                ])>{{ $status->label() }}</span>
+                            @endif
                         </td>
                         <td class="px-4 py-3 text-gray-600">{{ $project->owner?->name ?? '—' }}</td>
                     </tr>
