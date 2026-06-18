@@ -42,7 +42,7 @@ class InvoicePolicy
 
     public function create(User $user): bool
     {
-        return $this->accountsTeam($user);
+        return $this->accountsTeam($user) || $user->hasRole(UserRole::Sales);
     }
 
     public function update(User $user, Invoice $invoice): bool

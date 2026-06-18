@@ -43,7 +43,7 @@ class QuotationPolicy
 
     public function convert(User $user, Quotation $quotation): bool
     {
-        return $user->hasRole(UserRole::Admin, UserRole::Manager, UserRole::Accounts);
+        return $this->view($user, $quotation);
     }
 
     private function salesCanSeeCustomer(User $user, Quotation $quotation): bool
