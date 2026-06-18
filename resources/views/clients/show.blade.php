@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">{{ $client->company_name }}</x-slot>
 
-    <div class="max-w-7xl mx-auto space-y-6" x-data="{ tab: 'notes' }">
+    <div class="max-w-7xl mx-auto space-y-6" x-data="{ tab: 'services' }">
         @if (session('status'))
             <div class="rounded-md bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-800">
                 {{ session('status') }}
@@ -60,7 +60,7 @@
         <div class="rounded-lg bg-white shadow-sm">
             <div class="border-b border-gray-200 px-6">
                 <nav class="-mb-px flex gap-6 text-sm font-medium">
-                    @foreach (['notes' => 'Notes', 'calls' => 'Calls', 'deals' => 'Deals', 'invoices' => 'Invoices', 'tickets' => 'Tickets'] as $key => $label)
+                    @foreach (['services' => 'Services', 'notes' => 'Notes', 'calls' => 'Calls', 'deals' => 'Deals', 'invoices' => 'Invoices', 'tickets' => 'Tickets'] as $key => $label)
                         <button type="button" @click="tab = '{{ $key }}'"
                                 :class="tab === '{{ $key }}' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
                                 class="border-b-2 py-3">
@@ -71,7 +71,10 @@
             </div>
 
             <div class="p-6">
-                <div x-show="tab === 'notes'">
+                <div x-show="tab === 'services'">
+                    @include('clients._services_tab', ['client' => $client, 'canViewInvoices' => $canViewInvoices])
+                </div>
+                <div x-show="tab === 'notes'" x-cloak>
                     <livewire:client-notes :customer="$client" :can-manage="$canManage" />
                 </div>
                 <div x-show="tab === 'calls'" x-cloak>

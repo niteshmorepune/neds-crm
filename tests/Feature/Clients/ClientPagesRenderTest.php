@@ -1,9 +1,13 @@
 <?php
 
+use App\Enums\RecurringFrequency;
 use App\Enums\UserRole;
 use App\Models\Contact;
 use App\Models\Customer;
 use App\Models\Deal;
+use App\Models\Project;
+use App\Models\RecurringInvoice;
+use App\Models\Service;
 use App\Models\Ticket;
 use App\Models\User;
 use Database\Seeders\MenuItemsSeeder;
@@ -64,6 +68,37 @@ it('hides invoice data on the client tab from a role without invoice access', fu
         ->get(route('clients.show', $client))
         ->assertOk()
         ->assertSee('have access to invoices');
+});
+
+it('renders the services tab with recurring services and projects', function () {
+    $service = Service::factory()->create(['name' => 'SEO']);
+    $client = Customer::factory()->create(['company_name' => 'Services Co']);
+
+    RecurringInvoice::factory()->create([
+        'customer_id' => $client->id,
+        'service_id' => $service->id,
+        'is_active' => true,
+        'frequency' => RecurringFrequency::Monthly,
+        'start_date' => now()->subMonths(3),
+        'next_run_on' => now()->addDays(10),
+    ]);
+
+    Project::factory()->create([
+        'customer_id' => $client->id,
+        'service_id' => $service->id,
+        'name' => 'SEO Launch',
+    ]);
+
+    $this->actingAs($this->admin)
+        ->get(route('clients.show', $client))
+        ->assertOk()
+        ->assertSee('Services Co')
+        ->assertSee('Recurring Services')
+        ->assertSee('SEO')
+        ->assertSee('Active')
+        ->assertSee('Monthly')
+        ->assertSee('Projects')
+        ->assertSee('SEO Launch');
 });
 
 it('renders the edit form', function () {

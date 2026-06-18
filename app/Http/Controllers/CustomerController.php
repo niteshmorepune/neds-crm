@@ -77,6 +77,10 @@ class CustomerController extends Controller
             'callLogs.user',
             'deals.owner',
             'tickets.assignee',
+            'projects.service',
+            'projects.owner',
+            'recurringInvoices.service',
+            'recurringInvoices.items',
         ]);
 
         if ($this->user()->can('viewAny', Invoice::class)) {
