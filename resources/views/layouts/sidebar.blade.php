@@ -15,9 +15,9 @@
          x-transition:leave-start="translate-x-0"
          x-transition:leave-end="-translate-x-full">
 
-        <div class="h-16 flex items-center justify-between px-6 border-b border-gray-800">
-            <a href="{{ route('dashboard') }}" class="text-lg font-semibold text-white">
-                {{ config('app.name', 'NEDS CRM') }}
+        <div class="flex items-center justify-between px-4 py-3 border-b border-gray-800 bg-white">
+            <a href="{{ route('dashboard') }}">
+                <img src="{{ asset('images/neds-logo.png') }}" alt="Niranjan Enterprises Digital Solutions" class="h-10 w-auto">
             </a>
             <button @click="sidebarOpen = false" class="text-gray-400 hover:text-white p-1" aria-label="Close menu">
                 <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -75,9 +75,9 @@
 
 {{-- ── Desktop sidebar (md and above) ── --}}
 <aside class="hidden md:flex md:flex-col w-64 shrink-0 bg-gray-900 text-gray-300 min-h-screen">
-    <div class="h-16 flex items-center px-6 border-b border-gray-800">
-        <a href="{{ route('dashboard') }}" class="text-lg font-semibold text-white">
-            {{ config('app.name', 'NEDS CRM') }}
+    <div class="flex items-center px-4 py-3 border-b border-gray-800 bg-white">
+        <a href="{{ route('dashboard') }}">
+            <img src="{{ asset('images/neds-logo.png') }}" alt="Niranjan Enterprises Digital Solutions" class="h-10 w-auto">
         </a>
     </div>
 
