@@ -123,6 +123,14 @@ is done; new work is maintenance.
 - **Editing `.env` on the server requires `php artisan config:cache`** (config is
   cached). Hostinger disables `exec()` (so `storage:link` is a manual `ln -s`),
   but `proc_open`/`mysqldump` work.
+- **OPcache serves stale PHP bytecode after `git pull`.** If a class change
+  doesn't behave as expected on production, OPcache may be serving the old
+  version. Confirm with `\Log::error('[tag] v2 running')`. Fix: `touch` the
+  changed file to prompt OPcache revalidation. **Config-file exception:** if the
+  stale file is a `config/*.php`, `touch` + `config:cache` is NOT enough —
+  `config:cache` itself `require`s the file and gets the stale bytecode. Bypass:
+  set the value in server `.env` so `env()` resolves it directly, then re-run
+  `config:cache`. See [[feedback-gotchas]] for details.
 - **Help & user guides:** single source = `docs/user-guides/*.md` → in-app
   `/help` (HelpController via league/commonmark) AND PDF handouts
   (`npm run handouts`, headless Chrome — no Playwright dep). Edit the .md once.
