@@ -46,7 +46,13 @@ touching money, GST, or permissions.
 - **GSTIN:** validate with `App\Rules\Gstin`. State codes in `config/india.php`
   (Maharashtra = 27 drives intra/inter-state GST).
 - **Notes:** reuse the generic `RecordNotes` Livewire component (polymorphic
-  `notes()` morphMany).
+  `notes()` morphMany). On project pages pass `showPortalToggle=true` — this
+  shows a "Share with client" checkbox and defaults it ON so updates reach the
+  portal. `notes` table has a `visible_to_client` boolean; portal queries filter
+  to `where('visible_to_client', true)`.
+- **Customer status:** `CustomerStatus` enum = Active / Prospect / Inactive.
+  Lead conversion creates Prospect; Deal Won promotes Prospect→Active via
+  `Deal::booted()` updated hook. Clients index defaults to Active filter.
 
 ## Sidebar / route gating (read carefully)
 
@@ -134,5 +140,19 @@ is done; new work is maintenance.
 - **Help & user guides:** single source = `docs/user-guides/*.md` → in-app
   `/help` (HelpController via league/commonmark) AND PDF handouts
   (`npm run handouts`, headless Chrome — no Playwright dep). Edit the .md once.
+  Guides: getting-started, sales, support, accounts, manager, admin,
+  client-portal. Always update the relevant guide after any feature change.
 - **Staff accounts:** public registration is disabled; admins add users via the
   **Users** screen. Service lines via **Services** (was the Categories stub).
+- **Client portal layout:** `portal-app-layout.blade.php` uses a fixed left
+  sidebar on desktop (`lg:w-64`, `lg:pl-64`) and a hamburger Alpine.js overlay
+  on mobile. The `@php` setup block (nav links, contact initials) MUST be at the
+  very top after `@props` — never inside HTML elements (Blade scoping bug).
+  Accepts `header` (page H1 + browser title) and `title` (browser title only).
+- **WhatsApp integration:** `tickets.channel` (default 'web') +
+  `tickets.whatsapp_conversation_id` (unique). Inbound webhook:
+  `POST /api/webhook/whatsapp` → `WhatsappWebhookController`, gated by
+  `VerifyWhatsappWebhookToken` middleware (Bearer token from
+  `services.whatsapp_webhook.token`). Phone lookup: exact → `+`-prefixed →
+  last-10-digit LIKE. wadesk.in fires a fire-and-forget fetch on new/reopened
+  conversations. Tier 3 (CRM reply → WhatsApp) is backlogged.
