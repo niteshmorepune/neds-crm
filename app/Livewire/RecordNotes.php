@@ -31,6 +31,7 @@ class RecordNotes extends Component
         $this->record = $record;
         $this->canManage = $canManage;
         $this->showPortalToggle = $showPortalToggle;
+        $this->visibleToClient = $showPortalToggle; // default ON when portal toggle is shown
     }
 
     /** AI follow-up drafting is offered on leads only, when AI is on and the user can write. */
@@ -65,7 +66,8 @@ class RecordNotes extends Component
             'visible_to_client' => $this->showPortalToggle && $this->visibleToClient,
         ]);
 
-        $this->reset('body', 'visibleToClient');
+        $this->reset('body');
+        $this->visibleToClient = $this->showPortalToggle;
     }
 
     public function render()
