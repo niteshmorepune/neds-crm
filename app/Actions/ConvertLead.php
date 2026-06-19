@@ -31,7 +31,7 @@ class ConvertLead
                 'email' => $lead->email,
                 'phone' => $lead->phone,
                 'owner_id' => $lead->owner_id,
-                'status' => CustomerStatus::Active->value,
+                'status' => CustomerStatus::Prospect->value,
             ]);
 
             Contact::create([

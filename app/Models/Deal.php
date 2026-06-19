@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\CustomerStatus;
 use App\Enums\DealStage;
 use App\Enums\UserRole;
 use App\Models\Concerns\LogsActivity;
@@ -35,6 +36,17 @@ class Deal extends Model
             'value' => 'integer',
             'next_follow_up_at' => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::updated(function (Deal $deal) {
+            if ($deal->wasChanged('stage') && $deal->stage === DealStage::Won) {
+                Customer::where('id', $deal->customer_id)
+                    ->where('status', CustomerStatus::Prospect->value)
+                    ->update(['status' => CustomerStatus::Active->value]);
+            }
+        });
     }
 
     public function customer(): BelongsTo

@@ -15,10 +15,10 @@
                        class="rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
 
                 <select name="status" class="rounded-md border-gray-300 text-sm shadow-sm">
-                    <option value="">All statuses</option>
-                    @foreach ($statuses as $status)
-                        <option value="{{ $status->value }}" @selected(($filters['status'] ?? '') === $status->value)>
-                            {{ $status->label() }}
+                    <option value="all" @selected($statusFilter === 'all')>All statuses</option>
+                    @foreach ($statuses as $s)
+                        <option value="{{ $s->value }}" @selected($statusFilter === $s->value)>
+                            {{ $s->label() }}
                         </option>
                     @endforeach
                 </select>
@@ -81,6 +81,7 @@
                                 <span @class([
                                     'inline-flex rounded-full px-2 py-0.5 text-xs font-medium',
                                     'bg-green-100 text-green-800' => $customer->status === \App\Enums\CustomerStatus::Active,
+                                    'bg-yellow-100 text-yellow-800' => $customer->status === \App\Enums\CustomerStatus::Prospect,
                                     'bg-gray-100 text-gray-600' => $customer->status === \App\Enums\CustomerStatus::Inactive,
                                 ])>{{ $customer->status->label() }}</span>
                             </td>

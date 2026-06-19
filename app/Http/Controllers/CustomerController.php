@@ -19,6 +19,9 @@ class CustomerController extends Controller
     {
         $this->authorize('viewAny', Customer::class);
 
+        // Default to Active only; pass status=all to see everyone.
+        $statusFilter = $request->input('status', CustomerStatus::Active->value);
+
         $customers = Customer::query()
             ->visibleTo($request->user())
             ->with(['owner', 'primaryContact'])
@@ -30,7 +33,7 @@ class CustomerController extends Controller
                         ->orWhere('gstin', 'like', "%{$search}%");
                 });
             })
-            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->input('status')))
+            ->when($statusFilter !== 'all', fn ($q) => $q->where('status', $statusFilter))
             ->when($request->filled('owner_id'), fn ($q) => $q->where('owner_id', $request->integer('owner_id')))
             ->latest()
             ->paginate(15)
@@ -40,6 +43,7 @@ class CustomerController extends Controller
             'customers' => $customers,
             'owners' => $this->assignableOwners(),
             'statuses' => CustomerStatus::cases(),
+            'statusFilter' => $statusFilter,
             'filters' => $request->only(['search', 'status', 'owner_id']),
         ]);
     }

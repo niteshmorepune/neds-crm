@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\ConvertLead;
+use App\Enums\CustomerStatus;
 use App\Enums\DealStage;
 use App\Enums\LeadStatus;
 use App\Enums\UserRole;
@@ -34,6 +35,7 @@ it('converts a lead into a customer, primary contact and deal in one transaction
 
     expect($customer)->not->toBeNull()
         ->and($customer->owner_id)->toBe($owner->id)
+        ->and($customer->status)->toBe(CustomerStatus::Prospect)
         ->and($customer->primaryContact?->name)->toBe('Ravi Kumar')
         ->and($customer->contacts()->where('is_primary', true)->count())->toBe(1);
 
@@ -72,4 +74,30 @@ it('converts via the HTTP route and is idempotent', function () {
     // Second attempt should not create another customer/deal.
     $this->actingAs($admin)->post(route('leads.convert', $lead))->assertRedirect();
     expect(Customer::count())->toBe($customersAfterFirst);
+});
+
+it('promotes a prospect customer to active when their deal is marked won', function () {
+    $owner = User::factory()->role(UserRole::Sales)->create();
+    $lead = Lead::factory()->ownedBy($owner->id)->create();
+
+    $this->actingAs($owner);
+    $deal = app(ConvertLead::class)->handle($lead);
+    $customer = $deal->customer;
+
+    expect($customer->status)->toBe(CustomerStatus::Prospect);
+
+    $deal->moveToStage(DealStage::Won);
+
+    expect($customer->fresh()->status)->toBe(CustomerStatus::Active);
+});
+
+it('does not downgrade an already-active customer when a deal is won', function () {
+    $admin = User::factory()->role(UserRole::Admin)->create();
+    $customer = Customer::factory()->create(['status' => CustomerStatus::Active]);
+    $deal = Deal::factory()->for($customer)->create(['stage' => DealStage::Proposal]);
+
+    $this->actingAs($admin);
+    $deal->moveToStage(DealStage::Won);
+
+    expect($customer->fresh()->status)->toBe(CustomerStatus::Active);
 });
