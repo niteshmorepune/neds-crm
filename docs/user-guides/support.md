@@ -30,6 +30,17 @@ alerted automatically — keep an eye on the "SLA at risk" number.
 A **Project** is created from a won deal. Open **Project Updates** to see your
 projects, each with its client, service and tasks.
 
+**Posting updates to the client:** each project has a **Notes & Client Updates**
+section at the bottom. Type a note and tick **Share with client** before clicking
+**Add note** — that note will appear in the client's portal under "Updates from
+Our Team". Leave the checkbox unticked for internal notes that only staff can
+see (e.g. hand-off notes between team members). A "Visible to client" badge
+marks which notes are shared.
+
+**WhatsApp tickets:** if a client messages your WhatsApp support number, the CRM
+automatically creates a ticket with a green **WhatsApp** badge on the tickets
+list. Handle it like any other ticket — the client sees it in their portal too.
+
 ## 3. Tasks (Employee Task)
 **Employee Task** is your task list.
 - Update a task's **status** (To-do → In progress → Review → Done) as you work.

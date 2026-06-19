@@ -38,7 +38,17 @@ The **Menu Controller** has two parts:
 
 Changes apply on the user's next page load.
 
-## 4. Clients — bulk import & deletion
+## 4. Clients — status, bulk import & deletion
+
+**Client status:** clients have three statuses:
+- **Prospect** (yellow) — created when a lead is converted. Not yet a paying client.
+- **Active** (green) — promoted automatically when their deal is marked **Won**.
+- **Inactive** — set manually when a relationship ends.
+
+The Clients list defaults to showing Active clients. Use the status filter to
+view Prospects, Inactive, or all. You can also set the status manually on the
+client's edit page.
+
 **Import (Clients → Import):** upload a CSV. The template (downloadable from the
 import page) has 13 columns including `address_line2`, `owner` (user's full name),
 and `tags` (comma-separated). Leave `owner` blank to assign the client to the
@@ -51,7 +61,25 @@ This cannot be undone. Use this only when the company record should be wiped
 entirely; consider making a client **Inactive** instead if you may need the
 history later.
 
-## 5. Website lead capture
+## 5. WhatsApp integration
+The CRM is connected to **wadesk.in** (your WhatsApp dashboard). When a client
+messages your WhatsApp support number with a **new conversation** (or reopens a
+resolved one), a support ticket is automatically created in the CRM.
+
+- The ticket appears with a green **WhatsApp** badge on the Tickets list.
+- If the client's phone number matches an existing client record, the ticket is
+  linked to them. If no match is found, the ticket is still created (staff can
+  link it to a client manually).
+- Each conversation creates **one ticket** — subsequent messages in the same
+  conversation don't create duplicates.
+- Staff reply to the client from **wadesk.in** directly. Replies can also be
+  logged as ticket notes in the CRM to keep the record complete.
+
+This integration is configured via `COMPANY_WHATSAPP` and `WHATSAPP_WEBHOOK_TOKEN`
+in the server `.env`. Contact your developer if the integration stops creating
+tickets.
+
+## 7. Website lead capture
 The **niranjanenterprises.com** contact form automatically creates a lead in the
 CRM whenever someone submits it. No manual action is needed.
 
@@ -67,16 +95,16 @@ You don't need to touch anything — if the contact form stops creating leads,
 check that the server's `LEAD_CAPTURE_TOKEN` matches what's configured in the
 Elementor webhook URL.
 
-## 6. Audit Log
+## 8. Audit Log
 **Audit Log** (admin) shows who created, updated or deleted records, and when.
 Filter by record type or event. Use it to investigate "who changed this?".
 
-## 7. Backups
+## 9. Backups
 The database is **backed up automatically every night at 2 AM** (kept 14 daily +
 8 weekly copies on the server). You don't need to do anything. To restore from a
 backup, follow `docs/backup-restore.md`.
 
-## 8. AI features (optional)
+## 10. AI features (optional)
 Three AI helpers are built into the CRM, powered by Anthropic's Claude. They are
 **off by default** and never take action automatically — they only assist staff.
 

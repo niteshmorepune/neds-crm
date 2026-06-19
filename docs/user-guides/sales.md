@@ -25,11 +25,14 @@ When you log in you'll see:
 - Open the lead to add **notes**, see the timeline, and log activity.
 - **Log a call** (top bar or the lead page) after you phone them — record the
   outcome (connected, no answer, follow-up needed).
-- When logging a call, click **Add follow-up reminder** to set a date/time and a
-  one-line next action (e.g. "Send proposal", "Call back at 3 PM"). The CRM will
-  send you a bell notification when that time arrives, and it appears in your
-  morning digest. Call follow-ups that are overdue show in red on the **Calling**
-  page — use the **Pending follow-ups** button to filter to just those.
+- When logging a call, click **Add follow-up reminder** to expand the reminder
+  section. **Set the date and time manually** to the exact day you want to be
+  reminded — the field starts blank so you pick the right date (not just
+  tomorrow). Add a one-line next action (e.g. "Send proposal", "Call back at
+  3 PM"). The CRM will send you a bell notification when that time arrives, and
+  it appears in your morning digest. Call follow-ups that are overdue show in red
+  on the **Calling** page — use the **Pending follow-ups** button to filter to
+  just those.
 - Set a **next follow-up date** on the lead itself so it shows up in your
   "follow-ups due" dashboard widget.
 - **Draft follow-up (✨)** — click this button to have AI write a suggested
@@ -39,7 +42,10 @@ When you log in you'll see:
 
 **Converting a lead:** when it's real business, open the lead and click
 **Convert**. This creates a **Client** and a **Deal** automatically and links
-everything together.
+everything together. The new client appears in the **Clients** list with status
+**Prospect** (shown in yellow) — they become **Active** (green) automatically
+when you mark their deal as **Won**. Use the status filter on the Clients page
+to view Prospects, Active, or all clients.
 
 ## 2. Pipeline (Sales Department)
 The **Sales Department** board shows your deals in columns by stage:
@@ -51,15 +57,18 @@ The **Sales Department** board shows your deals in columns by stage:
 - A **won** deal can become a **Project** for the delivery team.
 
 ## 3. Quotations
-1. **Quotations → Create**.
-2. Pick the **client/deal**, add **line items** (description, HSN/SAC, quantity,
-   rate). GST is calculated per line (CGST+SGST for Maharashtra clients, IGST
-   otherwise).
+1. **Quotations → Create** — or open a **Deal** and click **+ New Quotation**
+   directly on the deal page (the client and deal are pre-filled for you).
+2. Add **line items** (description, HSN/SAC, quantity, rate). GST is calculated
+   per line (CGST+SGST for Maharashtra clients, IGST otherwise).
 3. For milestone/project work, add **milestones** (e.g. advance on signing,
    balance on delivery).
 4. Save, then **download the PDF** to send to the client.
 5. When the client agrees, mark the quotation **Accepted**, then **Convert to
    invoice** — accounts takes it from there.
+
+All quotations linked to a deal are listed on the deal's page so you can track
+which version the client accepted.
 
 ## 4. Clients
 **Clients** lists the companies assigned to you, plus any unassigned ones. Only
