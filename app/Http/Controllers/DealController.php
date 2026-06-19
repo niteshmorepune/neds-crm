@@ -17,11 +17,12 @@ class DealController extends Controller
     {
         $this->authorize('view', $deal);
 
-        $deal->load(['customer', 'service', 'owner', 'lead']);
+        $deal->load(['customer', 'service', 'owner', 'lead', 'quotations']);
 
         return view('deals.show', [
             'deal' => $deal,
             'canManage' => $this->user()->can('update', $deal),
+            'canCreateQuotation' => $this->user()->can('create', \App\Models\Quotation::class),
             'stages' => DealStage::cases(),
             'services' => Service::active()->orderBy('sort_order')->get(),
             'owners' => User::query()->orderBy('name')->get(['id', 'name']),

@@ -51,6 +51,40 @@
                 </dl>
 
                 <div class="mt-6 border-t border-gray-100 pt-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-base font-semibold text-gray-900">Quotations</h2>
+                        @if ($canCreateQuotation && $deal->customer)
+                            <a href="{{ route('quotations.create', ['customer_id' => $deal->customer_id, 'deal_id' => $deal->id]) }}"
+                               class="rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-500">
+                                + New Quotation
+                            </a>
+                        @endif
+                    </div>
+                    @forelse ($deal->quotations as $quotation)
+                        <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0 text-sm">
+                            <div>
+                                <a href="{{ route('quotations.show', $quotation) }}" class="font-medium text-indigo-600 hover:underline">
+                                    {{ $quotation->number ?? 'Draft' }}
+                                </a>
+                                <span class="ml-2 text-gray-400">{{ $quotation->created_at->format('d M Y') }}</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="text-gray-600">{{ \App\Support\Money::format($quotation->total) }}</span>
+                                <span @class([
+                                    'inline-flex rounded-full px-2 py-0.5 text-xs font-medium',
+                                    'bg-gray-100 text-gray-600'   => $quotation->status === \App\Enums\QuotationStatus::Draft,
+                                    'bg-blue-100 text-blue-700'   => $quotation->status === \App\Enums\QuotationStatus::Sent,
+                                    'bg-green-100 text-green-800' => $quotation->status === \App\Enums\QuotationStatus::Accepted,
+                                    'bg-red-100 text-red-700'     => $quotation->status === \App\Enums\QuotationStatus::Rejected,
+                                ])>{{ $quotation->status->label() }}</span>
+                            </div>
+                        </div>
+                    @empty
+                        <p class="text-sm text-gray-400">No quotations yet.</p>
+                    @endforelse
+                </div>
+
+                <div class="mt-6 border-t border-gray-100 pt-6">
                     <h2 class="mb-4 text-base font-semibold text-gray-900">Notes</h2>
                     <livewire:record-notes :record="$deal" :can-manage="$canManage" />
                 </div>

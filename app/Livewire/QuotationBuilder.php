@@ -36,7 +36,7 @@ class QuotationBuilder extends Component
     /** @var array<int, array{description:string, sac_code:?string, quantity:string, rate:string, gst_rate:string}> */
     public array $items = [];
 
-    public function mount(?Quotation $quotation = null): void
+    public function mount(?Quotation $quotation = null, ?int $customer_id = null, ?int $deal_id = null): void
     {
         if ($quotation && $quotation->exists) {
             $this->authorize('update', $quotation);
@@ -56,6 +56,12 @@ class QuotationBuilder extends Component
             ])->all();
         } else {
             $this->authorize('create', Quotation::class);
+            if ($customer_id) {
+                $this->customer_id = $customer_id;
+            }
+            if ($deal_id) {
+                $this->deal_id = $deal_id;
+            }
             $this->addItem();
         }
     }
