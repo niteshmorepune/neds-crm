@@ -16,7 +16,7 @@ class ProjectController extends PortalController
     public function show(int $project): View
     {
         $project = $this->customer()->projects()->findOrFail($project);
-        $project->load(['notes.author', 'service']);
+        $project->load(['notes' => fn ($q) => $q->where('visible_to_client', true)->with('author'), 'service']);
 
         return view('portal.projects.show', ['project' => $project]);
     }

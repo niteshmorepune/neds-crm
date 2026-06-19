@@ -19,13 +19,18 @@ class RecordNotes extends Component
 
     public bool $canManage = false;
 
+    public bool $showPortalToggle = false;
+
     #[Validate('required|string|max:5000')]
     public string $body = '';
 
-    public function mount(Model $record, bool $canManage = false): void
+    public bool $visibleToClient = false;
+
+    public function mount(Model $record, bool $canManage = false, bool $showPortalToggle = false): void
     {
         $this->record = $record;
         $this->canManage = $canManage;
+        $this->showPortalToggle = $showPortalToggle;
     }
 
     /** AI follow-up drafting is offered on leads only, when AI is on and the user can write. */
@@ -57,9 +62,10 @@ class RecordNotes extends Component
         $this->record->notes()->create([
             'user_id' => auth()->id(),
             'body' => $this->body,
+            'visible_to_client' => $this->showPortalToggle && $this->visibleToClient,
         ]);
 
-        $this->reset('body');
+        $this->reset('body', 'visibleToClient');
     }
 
     public function render()

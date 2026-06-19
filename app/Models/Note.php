@@ -14,6 +14,11 @@ class Note extends Model
     protected $fillable = [
         'user_id',
         'body',
+        'visible_to_client',
+    ];
+
+    protected $casts = [
+        'visible_to_client' => 'boolean',
     ];
 
     public function author(): BelongsTo

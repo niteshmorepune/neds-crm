@@ -62,6 +62,12 @@
             </ul>
         </div>
 
+        {{-- Notes / client updates --}}
+        <div class="rounded-lg bg-white p-6 shadow-sm">
+            <h2 class="mb-4 text-base font-semibold text-gray-900">Notes &amp; Client Updates</h2>
+            @livewire('record-notes', ['record' => $project, 'canManage' => $canManage, 'showPortalToggle' => true])
+        </div>
+
         @can('delete', $project)
             <form id="delete-project" method="POST" action="{{ route('projects.destroy', $project) }}" class="hidden">
                 @csrf
