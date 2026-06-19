@@ -17,6 +17,16 @@
         </a>
     </div>
 
+    @if (config('company.whatsapp'))
+    <div class="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-xl bg-green-50 border border-green-200 px-6 py-4">
+        <div>
+            <p class="font-semibold text-green-900 text-sm">Need help? We're on WhatsApp.</p>
+            <p class="text-xs text-green-700 mt-0.5">Chat with our after-sale support team instantly.</p>
+        </div>
+        <x-whatsapp-button label="Chat with us" class="shrink-0" />
+    </div>
+    @endif
+
     <div class="mt-6 rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
         <h2 class="text-base font-semibold text-gray-900">{{ $customer->company_name }}</h2>
         <dl class="mt-4 grid grid-cols-1 gap-x-8 gap-y-2 text-sm text-gray-600 sm:grid-cols-2">

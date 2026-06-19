@@ -1,6 +1,10 @@
 <x-portal-app-layout header="My Tickets">
-    <div class="mb-4 flex justify-end">
-        <a href="{{ route('portal.tickets.create') }}" class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">New ticket</a>
+    <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <p class="text-sm text-gray-500">Track your support requests below, or reach us instantly on WhatsApp.</p>
+        <div class="flex items-center gap-3">
+            <x-whatsapp-button label="Chat on WhatsApp" />
+            <a href="{{ route('portal.tickets.create') }}" class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">New ticket</a>
+        </div>
     </div>
 
     <div class="overflow-hidden rounded-lg bg-white shadow-sm">

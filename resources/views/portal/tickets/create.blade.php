@@ -1,4 +1,10 @@
 <x-portal-app-layout header="Raise a Ticket">
+    @if (config('company.whatsapp'))
+    <div class="mb-6 max-w-2xl flex items-center justify-between gap-4 rounded-xl bg-green-50 border border-green-200 px-5 py-3">
+        <p class="text-sm text-green-800">For urgent issues, get a faster response on WhatsApp.</p>
+        <x-whatsapp-button label="Chat now" message="Hi, I have an urgent support query." class="shrink-0 text-xs px-3 py-1.5" />
+    </div>
+    @endif
     <div class="max-w-2xl">
         <form method="POST" action="{{ route('portal.tickets.store') }}" class="rounded-lg bg-white p-6 shadow-sm space-y-4">
             @csrf

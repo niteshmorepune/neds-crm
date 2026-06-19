@@ -13,5 +13,6 @@ return [
     'state_code' => '27',
     'email' => env('COMPANY_EMAIL', 'niranjan.enterprisespune@gmail.com'),
     'phone' => env('COMPANY_PHONE', ''),
+    'whatsapp' => env('COMPANY_WHATSAPP', ''), // E.164 without +, e.g. 919028099919
 
 ];
