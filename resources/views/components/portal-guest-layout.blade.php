@@ -7,13 +7,15 @@
     <title>{{ config('company.name') }} — Client Portal</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="font-sans antialiased bg-gray-100">
-    <div class="min-h-screen flex flex-col items-center justify-center px-4">
-        <div class="mb-6 text-xl font-semibold text-gray-800">{{ config('company.name') }}</div>
-        <div class="w-full max-w-md rounded-lg bg-white p-8 shadow-sm">
+<body class="font-sans antialiased bg-gradient-to-br from-indigo-50 to-gray-100 min-h-screen">
+    <div class="min-h-screen flex flex-col items-center justify-center px-4 py-12">
+        <div class="mb-8">
+            <img src="{{ asset('images/neds-logo.png') }}" alt="{{ config('company.name') }}" style="height:56px;width:auto;display:block;margin:0 auto">
+        </div>
+        <div class="w-full max-w-md rounded-2xl bg-white p-8 shadow-md ring-1 ring-gray-100">
             {{ $slot }}
         </div>
-        <p class="mt-6 text-xs text-gray-400">Client Portal</p>
+        <p class="mt-6 text-xs text-gray-400">© {{ date('Y') }} {{ config('company.name') }} · Client Portal</p>
     </div>
 </body>
 </html>

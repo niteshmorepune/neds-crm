@@ -1,28 +1,33 @@
-<x-portal-app-layout header="Company Profile">
+<x-portal-app-layout header="Dashboard">
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <a href="{{ route('portal.invoices.index') }}" class="rounded-lg bg-white p-5 shadow-sm hover:shadow">
-            <div class="text-sm text-gray-500">Open invoices</div>
-            <div class="text-2xl font-semibold text-gray-900">{{ $openInvoices }}</div>
+        <a href="{{ route('portal.invoices.index') }}"
+           class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-100 hover:ring-indigo-200 hover:shadow transition-all group">
+            <div class="text-xs font-semibold uppercase tracking-wide text-gray-400 group-hover:text-indigo-500">Open Invoices</div>
+            <div class="mt-2 text-3xl font-bold text-gray-900">{{ $openInvoices }}</div>
         </a>
-        <a href="{{ route('portal.projects.index') }}" class="rounded-lg bg-white p-5 shadow-sm hover:shadow">
-            <div class="text-sm text-gray-500">Active projects</div>
-            <div class="text-2xl font-semibold text-gray-900">{{ $activeProjects }}</div>
+        <a href="{{ route('portal.projects.index') }}"
+           class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-100 hover:ring-indigo-200 hover:shadow transition-all group">
+            <div class="text-xs font-semibold uppercase tracking-wide text-gray-400 group-hover:text-indigo-500">Active Projects</div>
+            <div class="mt-2 text-3xl font-bold text-gray-900">{{ $activeProjects }}</div>
         </a>
-        <div class="rounded-lg bg-white p-5 shadow-sm">
-            <div class="text-sm text-gray-500">Open tickets</div>
-            <div class="text-2xl font-semibold text-gray-900">{{ $openTickets }}</div>
-        </div>
+        <a href="{{ route('portal.tickets.index') }}"
+           class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-100 hover:ring-indigo-200 hover:shadow transition-all group">
+            <div class="text-xs font-semibold uppercase tracking-wide text-gray-400 group-hover:text-indigo-500">Open Tickets</div>
+            <div class="mt-2 text-3xl font-bold text-gray-900">{{ $openTickets }}</div>
+        </a>
     </div>
 
-    <div class="mt-6 rounded-lg bg-white p-6 shadow-sm">
+    <div class="mt-6 rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
         <h2 class="text-base font-semibold text-gray-900">{{ $customer->company_name }}</h2>
-        <dl class="mt-3 grid grid-cols-1 gap-x-8 gap-y-1 text-sm text-gray-600 sm:grid-cols-2">
-            <div><span class="text-gray-400">GSTIN:</span> {{ $customer->gstin ?? '—' }}</div>
-            <div><span class="text-gray-400">Email:</span> {{ $customer->email ?? '—' }}</div>
-            <div><span class="text-gray-400">Phone:</span> {{ $customer->phone ?? '—' }}</div>
-            <div><span class="text-gray-400">Website:</span> {{ $customer->website ?? '—' }}</div>
-            <div class="sm:col-span-2"><span class="text-gray-400">Address:</span>
-                {{ collect([$customer->address_line1, $customer->city, $customer->state, $customer->pincode])->filter()->join(', ') ?: '—' }}</div>
+        <dl class="mt-4 grid grid-cols-1 gap-x-8 gap-y-2 text-sm text-gray-600 sm:grid-cols-2">
+            <div><span class="font-medium text-gray-400">GSTIN</span><span class="ml-2">{{ $customer->gstin ?? '—' }}</span></div>
+            <div><span class="font-medium text-gray-400">Email</span><span class="ml-2">{{ $customer->email ?? '—' }}</span></div>
+            <div><span class="font-medium text-gray-400">Phone</span><span class="ml-2">{{ $customer->phone ?? '—' }}</span></div>
+            <div><span class="font-medium text-gray-400">Website</span><span class="ml-2">{{ $customer->website ?? '—' }}</span></div>
+            <div class="sm:col-span-2">
+                <span class="font-medium text-gray-400">Address</span>
+                <span class="ml-2">{{ collect([$customer->address_line1, $customer->city, $customer->state, $customer->pincode])->filter()->join(', ') ?: '—' }}</span>
+            </div>
         </dl>
     </div>
 </x-portal-app-layout>
