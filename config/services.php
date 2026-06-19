@@ -40,6 +40,11 @@ return [
         'token' => env('LEAD_CAPTURE_TOKEN'),
     ],
 
+    // Shared secret for the wadesk.in → CRM WhatsApp webhook.
+    'whatsapp_webhook' => [
+        'token' => env('WHATSAPP_WEBHOOK_TOKEN'),
+    ],
+
     /*
      | Anthropic (Claude) API — Phase 5 AI features. All AI is gated by the
      | `enabled` flag (AI_ENABLED). The key is never hardcoded; request/response
