@@ -69,7 +69,7 @@
                     <div>
                         <x-input-label for="follow_up_at" value="Remind me on" />
                         <x-text-input id="follow_up_at" name="follow_up_at" type="datetime-local" class="mt-1 block w-full"
-                            :value="old('follow_up_at', now()->timezone(config('app.display_timezone'))->addDay()->setHour(9)->setMinute(0)->format('Y-m-d\TH:i'))" />
+                            :value="old('follow_up_at')" />
                         <x-input-error :messages="$errors->get('follow_up_at')" class="mt-1" />
                     </div>
                     <div>
