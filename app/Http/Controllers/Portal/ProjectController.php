@@ -9,7 +9,7 @@ class ProjectController extends PortalController
     public function index(): View
     {
         return view('portal.projects.index', [
-            'projects' => $this->customer()->projects()->with(['service', 'owner'])->latest()->paginate(15),
+            'projects' => $this->customer()->projects()->with(['service', 'owner', 'assignees'])->latest()->paginate(15),
         ]);
     }
 

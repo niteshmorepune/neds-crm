@@ -29,11 +29,15 @@
                             @if ($project->service)
                                 <span>{{ $project->service->name }}</span>
                             @endif
-                            @if ($project->owner)
-                                <span>Managed by {{ $project->owner->name }}</span>
+                            @php
+                                $handler = $project->assignees->first() ?? $project->owner;
+                            @endphp
+                            @if ($handler)
+                                @php $extra = $project->assignees->count() - 1; @endphp
+                                <span>Managed by {{ $handler->name }}{{ $extra > 0 ? " +{$extra} more" : '' }}</span>
                             @endif
-                            @if($project->start_date || $project->end_date)
-                                <span>{{ $project->start_date?->format('d M Y') ?? '—' }}@if ($project->end_date) → {{ $project->end_date->format('d M Y') }}@endif</span>
+                            @if ($project->start_date || $project->end_date)
+                                <span>{{ $project->start_date?->format('d M Y') ?? '—' }}{{ $project->end_date ? ' → ' . $project->end_date->format('d M Y') : '' }}</span>
                             @endif
                         </div>
                     </div>
