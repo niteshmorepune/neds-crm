@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Portal;
 
+use App\Http\Controllers\Controller;
 use App\Mail\PortalPasswordReset;
 use App\Models\Contact;
 use Illuminate\Http\RedirectResponse;
