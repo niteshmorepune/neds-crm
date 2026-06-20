@@ -117,7 +117,7 @@
                     <th class="px-4 py-2">Started</th>
                     <th class="px-4 py-2">End date</th>
                     <th class="px-4 py-2">Status</th>
-                    <th class="px-4 py-2">Owner</th>
+                    <th class="px-4 py-2">Team</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100 bg-white">
@@ -149,7 +149,25 @@
                                 ])>{{ $status->label() }}</span>
                             @endif
                         </td>
-                        <td class="px-4 py-3 text-gray-600">{{ $project->owner?->name ?? '—' }}</td>
+                        <td class="px-4 py-3">
+                            <div class="flex flex-wrap gap-1.5">
+                                @if ($project->owner)
+                                    <span class="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">
+                                        {{ $project->owner->name }}
+                                        <span class="rounded bg-indigo-200 px-1 text-indigo-800">Lead</span>
+                                    </span>
+                                @endif
+                                @foreach ($project->assignees as $member)
+                                    <span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
+                                        {{ $member->name }}
+                                        <span class="rounded bg-gray-200 px-1 text-gray-600">{{ ucfirst($member->pivot->role) }}</span>
+                                    </span>
+                                @endforeach
+                                @if (! $project->owner && $project->assignees->isEmpty())
+                                    <span class="text-xs text-gray-400">—</span>
+                                @endif
+                            </div>
+                        </td>
                     </tr>
                 @endforeach
             </tbody>

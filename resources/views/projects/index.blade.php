@@ -24,12 +24,16 @@
                 {{-- Group toggle links --}}
                 <div class="flex items-center gap-1 text-sm">
                     <a href="{{ route('projects.index', array_filter(['status' => $filters['status'] ?? null])) }}"
-                       class="px-2 py-1 rounded @if(!$activeGroup) bg-indigo-600 text-white @else text-gray-500 hover:bg-gray-100 @endif">All</a>
-                    <a href="{{ route('projects.index', array_filter(['group' => 'client', 'status' => $filters['status'] ?? null])) }}"
+                       class="px-2 py-1 rounded @if(!$activeGroup && !$mine) bg-indigo-600 text-white @else text-gray-500 hover:bg-gray-100 @endif">All</a>
+                    @if ($isAdminOrManager)
+                        <a href="{{ route('projects.index', array_filter(['mine' => 1, 'status' => $filters['status'] ?? null])) }}"
+                           class="px-2 py-1 rounded @if($mine) bg-indigo-600 text-white @else text-gray-500 hover:bg-gray-100 @endif">My Services</a>
+                    @endif
+                    <a href="{{ route('projects.index', array_filter(['group' => 'client', 'status' => $filters['status'] ?? null, 'mine' => $mine ?: null])) }}"
                        class="px-2 py-1 rounded @if($activeGroup === 'client') bg-indigo-600 text-white @else text-gray-500 hover:bg-gray-100 @endif">Client-wise</a>
-                    <a href="{{ route('projects.index', array_filter(['group' => 'owner', 'status' => $filters['status'] ?? null])) }}"
+                    <a href="{{ route('projects.index', array_filter(['group' => 'owner', 'status' => $filters['status'] ?? null, 'mine' => $mine ?: null])) }}"
                        class="px-2 py-1 rounded @if($activeGroup === 'owner') bg-indigo-600 text-white @else text-gray-500 hover:bg-gray-100 @endif">Employee-wise</a>
-                    <a href="{{ route('projects.index', array_filter(['group' => 'service', 'status' => $filters['status'] ?? null])) }}"
+                    <a href="{{ route('projects.index', array_filter(['group' => 'service', 'status' => $filters['status'] ?? null, 'mine' => $mine ?: null])) }}"
                        class="px-2 py-1 rounded @if($activeGroup === 'service') bg-indigo-600 text-white @else text-gray-500 hover:bg-gray-100 @endif">Service-wise</a>
                 </div>
             </div>

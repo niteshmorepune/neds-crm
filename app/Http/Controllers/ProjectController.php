@@ -25,10 +25,16 @@ class ProjectController extends Controller
         $user = $request->user();
         $group = $request->input('group'); // 'client' | 'owner' | 'service' | null
 
+        $mine = $request->boolean('mine');
+
         $baseQuery = Project::query()
             ->with(['customer', 'owner', 'service', 'assignees'])
             ->withCount('tasks')
             ->unless($user->hasRole(UserRole::Admin, UserRole::Manager), fn ($q) => $q->where(function ($w) use ($user) {
+                $w->where('owner_id', $user->id)
+                    ->orWhereHas('assignees', fn ($a) => $a->whereKey($user->id));
+            }))
+            ->when($mine && $user->hasRole(UserRole::Admin, UserRole::Manager), fn ($q) => $q->where(function ($w) use ($user) {
                 $w->where('owner_id', $user->id)
                     ->orWhereHas('assignees', fn ($a) => $a->whereKey($user->id));
             }))
@@ -38,26 +44,28 @@ class ProjectController extends Controller
         if ($group) {
             $allProjects = $baseQuery->get();
             $grouped = match ($group) {
-                'client'  => $allProjects->groupBy(fn ($p) => $p->customer->company_name ?? 'No Client'),
-                'owner'   => $allProjects->flatMap(fn ($p) => $p->assignees->isNotEmpty()
+                'client' => $allProjects->groupBy(fn ($p) => $p->customer->company_name ?? 'No Client'),
+                'owner' => $allProjects->flatMap(fn ($p) => $p->assignees->isNotEmpty()
                     ? $p->assignees->map(fn ($a) => ['key' => $a->name, 'project' => $p])
                     : [['key' => 'Unassigned', 'project' => $p]]
                 )->groupBy('key')->map(fn ($items) => $items->pluck('project')),
                 'service' => $allProjects->groupBy(fn ($p) => $p->service?->name ?? 'No Service'),
-                default   => null,
+                default => null,
             };
 
             return view('projects.index', $this->formData() + [
                 'projects' => null,
                 'grouped' => $grouped,
                 'groupLabel' => match ($group) {
-                    'client'  => 'Client',
-                    'owner'   => 'Employee',
+                    'client' => 'Client',
+                    'owner' => 'Employee',
                     'service' => 'Service',
-                    default   => '',
+                    default => '',
                 },
                 'filters' => $request->only('status'),
                 'activeGroup' => $group,
+                'mine' => $mine,
+                'isAdminOrManager' => $user->hasRole(UserRole::Admin, UserRole::Manager),
             ]);
         }
 
@@ -69,6 +77,8 @@ class ProjectController extends Controller
             'groupLabel' => null,
             'filters' => $request->only('status'),
             'activeGroup' => null,
+            'mine' => $mine,
+            'isAdminOrManager' => $user->hasRole(UserRole::Admin, UserRole::Manager),
         ]);
     }
 
