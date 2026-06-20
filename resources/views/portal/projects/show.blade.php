@@ -37,40 +37,52 @@
     </div>
 
     {{-- Your NEDS Team --}}
-    @if ($project->owner || $project->assignees->isNotEmpty())
+    @php
+        // Assignees are the real service handlers; owner is the account manager.
+        // If assignees are set, show them as the primary team. If not, fall back to owner.
+        $teamMembers = $project->assignees->isNotEmpty()
+            ? $project->assignees
+            : collect($project->owner ? [$project->owner] : []);
+        $accountManager = $project->assignees->isNotEmpty() ? $project->owner : null;
+    @endphp
+    @if ($teamMembers->isNotEmpty() || $accountManager)
         <div class="rounded-xl bg-white px-6 py-5 shadow-sm ring-1 ring-gray-100 mb-5">
             <h2 class="text-base font-semibold text-gray-900 mb-4">Your NEDS Team</h2>
             <div class="flex flex-wrap gap-4">
-                @if ($project->owner)
+                @foreach ($teamMembers as $member)
+                    @php
+                        $initials = collect(explode(' ', $member->name))->map(fn($p) => strtoupper(substr($p,0,1)))->take(2)->join('');
+                        $isFromAssignees = $project->assignees->isNotEmpty();
+                        $roleLabel = $isFromAssignees
+                            ? ucfirst($member->pivot->role ?? 'Member')
+                            : 'Lead — ' . ($project->service?->name ?? 'Project Manager');
+                    @endphp
                     <div class="flex items-center gap-3">
-                        @php
-                            $initials = collect(explode(' ', $project->owner->name))->map(fn($p) => strtoupper(substr($p,0,1)))->take(2)->join('');
-                        @endphp
                         <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-sm font-bold text-indigo-700 shrink-0">{{ $initials }}</div>
                         <div>
-                            <div class="text-sm font-semibold text-gray-900">{{ $project->owner->name }}</div>
-                            <div class="text-xs text-indigo-600 font-medium">Lead — {{ $project->service?->name ?? 'Project Manager' }}</div>
-                            @if ($project->owner->email)
-                                <a href="mailto:{{ $project->owner->email }}" class="text-xs text-gray-500 hover:text-indigo-600">{{ $project->owner->email }}</a>
-                            @endif
-                        </div>
-                    </div>
-                @endif
-                @foreach ($project->assignees as $member)
-                    <div class="flex items-center gap-3">
-                        @php
-                            $initials = collect(explode(' ', $member->name))->map(fn($p) => strtoupper(substr($p,0,1)))->take(2)->join('');
-                        @endphp
-                        <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-600 shrink-0">{{ $initials }}</div>
-                        <div>
                             <div class="text-sm font-semibold text-gray-900">{{ $member->name }}</div>
-                            <div class="text-xs text-gray-500 font-medium">{{ ucfirst($member->pivot->role) }}</div>
+                            <div class="text-xs text-indigo-600 font-medium">{{ $roleLabel }}</div>
                             @if ($member->email)
                                 <a href="mailto:{{ $member->email }}" class="text-xs text-gray-500 hover:text-indigo-600">{{ $member->email }}</a>
                             @endif
                         </div>
                     </div>
                 @endforeach
+                @if ($accountManager)
+                    @php
+                        $initials = collect(explode(' ', $accountManager->name))->map(fn($p) => strtoupper(substr($p,0,1)))->take(2)->join('');
+                    @endphp
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-600 shrink-0">{{ $initials }}</div>
+                        <div>
+                            <div class="text-sm font-semibold text-gray-900">{{ $accountManager->name }}</div>
+                            <div class="text-xs text-gray-500 font-medium">Account Manager</div>
+                            @if ($accountManager->email)
+                                <a href="mailto:{{ $accountManager->email }}" class="text-xs text-gray-500 hover:text-indigo-600">{{ $accountManager->email }}</a>
+                            @endif
+                        </div>
+                    </div>
+                @endif
             </div>
         </div>
     @endif
