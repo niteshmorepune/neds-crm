@@ -83,6 +83,7 @@ class CustomerController extends Controller
             'tickets.assignee',
             'projects.service',
             'projects.owner',
+            'projects.assignees',
             'recurringInvoices.service',
             'recurringInvoices.items',
         ]);

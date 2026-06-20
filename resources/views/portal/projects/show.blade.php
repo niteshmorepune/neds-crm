@@ -36,6 +36,45 @@
         @endif
     </div>
 
+    {{-- Your NEDS Team --}}
+    @if ($project->owner || $project->assignees->isNotEmpty())
+        <div class="rounded-xl bg-white px-6 py-5 shadow-sm ring-1 ring-gray-100 mb-5">
+            <h2 class="text-base font-semibold text-gray-900 mb-4">Your NEDS Team</h2>
+            <div class="flex flex-wrap gap-4">
+                @if ($project->owner)
+                    <div class="flex items-center gap-3">
+                        @php
+                            $initials = collect(explode(' ', $project->owner->name))->map(fn($p) => strtoupper(substr($p,0,1)))->take(2)->join('');
+                        @endphp
+                        <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-sm font-bold text-indigo-700 shrink-0">{{ $initials }}</div>
+                        <div>
+                            <div class="text-sm font-semibold text-gray-900">{{ $project->owner->name }}</div>
+                            <div class="text-xs text-indigo-600 font-medium">Lead — {{ $project->service?->name ?? 'Project Manager' }}</div>
+                            @if ($project->owner->email)
+                                <a href="mailto:{{ $project->owner->email }}" class="text-xs text-gray-500 hover:text-indigo-600">{{ $project->owner->email }}</a>
+                            @endif
+                        </div>
+                    </div>
+                @endif
+                @foreach ($project->assignees as $member)
+                    <div class="flex items-center gap-3">
+                        @php
+                            $initials = collect(explode(' ', $member->name))->map(fn($p) => strtoupper(substr($p,0,1)))->take(2)->join('');
+                        @endphp
+                        <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-600 shrink-0">{{ $initials }}</div>
+                        <div>
+                            <div class="text-sm font-semibold text-gray-900">{{ $member->name }}</div>
+                            <div class="text-xs text-gray-500 font-medium">{{ ucfirst($member->pivot->role) }}</div>
+                            @if ($member->email)
+                                <a href="mailto:{{ $member->email }}" class="text-xs text-gray-500 hover:text-indigo-600">{{ $member->email }}</a>
+                            @endif
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endif
+
     {{-- Updates from Team --}}
     <div class="mb-5">
         <h2 class="text-base font-semibold text-gray-900 mb-3">Updates from Our Team</h2>

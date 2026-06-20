@@ -52,7 +52,7 @@ class Project extends Model
 
     public function assignees(): BelongsToMany
     {
-        return $this->belongsToMany(User::class)->withTimestamps();
+        return $this->belongsToMany(User::class)->withPivot('role')->withTimestamps();
     }
 
     public function tasks(): HasMany

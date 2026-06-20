@@ -39,11 +39,15 @@ All your invoices are listed with:
 Click an invoice number to see the full breakdown of line items and payments.
 
 ## Projects
-Open **Projects** to see every project NEDS is running for you.
+Open **Projects** to see every project NEDS is running for you. Each card shows
+the service type and the name of the team member managing it.
 
 Click a project to see:
 - **Status** (Active, On Hold, Completed) and service type
 - **Timeline** — start and end dates
+- **Your NEDS Team** — the team member(s) handling this specific service,
+  with their email address so you can contact them directly. The **Lead** is your
+  primary point of contact for that service.
 - **Updates from Our Team** — progress notes posted by the NEDS team as work
   moves forward. New updates appear here automatically; you don't need to ask.
 

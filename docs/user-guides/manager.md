@@ -35,6 +35,15 @@ You have access to Leads, Deals, Quotations, Invoices, Projects, Tasks, Tickets,
 Clients, Attendance, Calls and Daily Reports so you can monitor and step in
 anywhere. Use the **search bar** to jump to any record.
 
+**Seeing who services which client:** open any client's profile and click the
+**Services** tab. The **Projects** table now has a **Team** column showing the
+Lead (primary owner) and any additional team members for each project/service.
+This is the fastest way to answer "which of our team handles GMB for ABC Corp?"
+
+**Project Updates → My Services:** the Project Updates page has a new **My Services**
+toggle that filters the list to only projects where you are the Lead or a team member.
+Useful for managers who also run their own service accounts.
+
 ## Daily reports & attendance
 - **Daily Reports → Team** shows what each person submitted.
 - **Attendance** — use the dropdown on the Attendance page to switch between team

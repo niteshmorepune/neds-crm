@@ -25,12 +25,15 @@
                    class="flex items-center justify-between rounded-xl bg-white px-5 py-4 shadow-sm ring-1 ring-gray-100 hover:ring-indigo-200 hover:shadow-md transition-all group">
                     <div class="min-w-0">
                         <div class="font-semibold text-gray-900 group-hover:text-indigo-700 transition-colors truncate">{{ $project->name }}</div>
-                        <div class="mt-0.5 text-xs text-gray-400">
+                        <div class="mt-0.5 text-xs text-gray-400 flex flex-wrap gap-x-3">
+                            @if ($project->service)
+                                <span>{{ $project->service->name }}</span>
+                            @endif
+                            @if ($project->owner)
+                                <span>Managed by {{ $project->owner->name }}</span>
+                            @endif
                             @if($project->start_date || $project->end_date)
-                                {{ $project->start_date?->format('d M Y') ?? '—' }}
-                                @if ($project->end_date) → {{ $project->end_date->format('d M Y') }} @endif
-                            @else
-                                Timeline not set
+                                <span>{{ $project->start_date?->format('d M Y') ?? '—' }}@if ($project->end_date) → {{ $project->end_date->format('d M Y') }}@endif</span>
                             @endif
                         </div>
                     </div>
