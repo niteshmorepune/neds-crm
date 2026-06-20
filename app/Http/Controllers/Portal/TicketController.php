@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Portal;
 
+use App\Enums\ProjectStatus;
 use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
+use App\Models\Project;
 use App\Services\SlaCalculator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,7 +24,16 @@ class TicketController extends PortalController
 
     public function create(): View
     {
-        return view('portal.tickets.create', ['priorities' => TicketPriority::cases()]);
+        $projects = $this->customer()->projects()
+            ->with('service')
+            ->whereNotIn('status', [ProjectStatus::Completed->value])
+            ->orderBy('name')
+            ->get(['id', 'name', 'service_id']);
+
+        return view('portal.tickets.create', [
+            'priorities' => TicketPriority::cases(),
+            'projects' => $projects,
+        ]);
     }
 
     public function store(Request $request, SlaCalculator $sla): RedirectResponse
@@ -31,9 +42,28 @@ class TicketController extends PortalController
             'subject' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string'],
             'priority' => ['required', Rule::enum(TicketPriority::class)],
+            'project_id' => ['nullable', Rule::exists('projects', 'id')],
         ]);
 
         $priority = TicketPriority::from($data['priority']);
+
+        // Resolve the project (scoped to this customer) and auto-assign to its lead.
+        $project = null;
+        $serviceId = null;
+        $assigneeId = null;
+
+        if (! empty($data['project_id'])) {
+            $project = $this->customer()->projects()
+                ->with(['assignees' => fn ($q) => $q->withPivot('role')])
+                ->find($data['project_id']);
+
+            if ($project) {
+                $serviceId = $project->service_id;
+                $lead = $project->assignees->firstWhere('pivot.role', 'lead')
+                    ?? $project->assignees->first();
+                $assigneeId = $lead?->id;
+            }
+        }
 
         $ticket = $this->customer()->tickets()->create([
             'subject' => $data['subject'],
@@ -41,6 +71,8 @@ class TicketController extends PortalController
             'priority' => $priority->value,
             'status' => TicketStatus::Open->value,
             'sla_due_at' => $sla->dueAt(Carbon::now(), $priority->slaHours()),
+            'service_id' => $serviceId,
+            'assignee_id' => $assigneeId,
         ]);
 
         return redirect()->route('portal.tickets.show', $ticket->id)->with('status', 'Ticket raised.');

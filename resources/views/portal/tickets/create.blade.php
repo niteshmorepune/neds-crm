@@ -16,6 +16,22 @@
                               :value="old('subject')" placeholder="e.g. Logo not showing on website" required />
                 <x-input-error :messages="$errors->get('subject')" class="mt-1" />
             </div>
+            @if($projects->isNotEmpty())
+            <div>
+                <x-input-label for="project_id" value="Which service is this about?" />
+                <select id="project_id" name="project_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    <option value="">General / Not sure</option>
+                    @foreach($projects as $project)
+                        <option value="{{ $project->id }}" @selected(old('project_id') == $project->id)>
+                            {{ $project->name }}{{ $project->service ? ' — '.$project->service->name : '' }}
+                        </option>
+                    @endforeach
+                </select>
+                <p class="mt-1 text-xs text-gray-400">Selecting a service routes your ticket to the right team member.</p>
+                <x-input-error :messages="$errors->get('project_id')" class="mt-1" />
+            </div>
+            @endif
+
             <div>
                 <x-input-label for="priority" value="Priority *" />
                 <select id="priority" name="priority" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">

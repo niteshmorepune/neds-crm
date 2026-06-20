@@ -125,10 +125,18 @@ class ProjectController extends Controller
         $project->load(['customer', 'owner', 'assignees', 'service', 'deal']);
         $tasks = $project->tasks()->with('assignee')->latest()->get();
 
+        $user = $this->user();
+        $canManage = $user->can('update', $project);
+        // Support members assigned to the project can post notes (incl. client-visible)
+        // without having full project-edit rights.
+        $canAddNotes = $canManage
+            || ($user->hasRole(UserRole::Support) && $project->assignees->contains($user));
+
         return view('projects.show', [
             'project' => $project,
             'tasks' => $tasks,
-            'canManage' => $this->user()->can('update', $project),
+            'canManage' => $canManage,
+            'canAddNotes' => $canAddNotes,
         ]);
     }
 

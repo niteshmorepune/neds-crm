@@ -19,6 +19,9 @@ class RecordNotes extends Component
 
     public bool $canManage = false;
 
+    /** Allows adding notes without full edit rights (e.g. Support on a project). */
+    public bool $canAddNotes = false;
+
     public bool $showPortalToggle = false;
 
     #[Validate('required|string|max:5000')]
@@ -26,10 +29,11 @@ class RecordNotes extends Component
 
     public bool $visibleToClient = false;
 
-    public function mount(Model $record, bool $canManage = false, bool $showPortalToggle = false): void
+    public function mount(Model $record, bool $canManage = false, bool $canAddNotes = false, bool $showPortalToggle = false): void
     {
         $this->record = $record;
         $this->canManage = $canManage;
+        $this->canAddNotes = $canAddNotes;
         $this->showPortalToggle = $showPortalToggle;
         $this->visibleToClient = $showPortalToggle; // default ON when portal toggle is shown
     }
@@ -56,7 +60,7 @@ class RecordNotes extends Component
 
     public function addNote(): void
     {
-        abort_unless(auth()->user()?->can('update', $this->record), 403);
+        abort_unless($this->canManage || $this->canAddNotes, 403);
 
         $this->validate();
 

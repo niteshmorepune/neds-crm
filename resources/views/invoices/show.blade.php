@@ -123,6 +123,14 @@
                                 <x-input-label for="reference" value="Reference" />
                                 <x-text-input id="reference" name="reference" type="text" class="mt-1 block w-full" :value="old('reference')" />
                             </div>
+                            @if ($invoice->customer?->contacts->where('is_primary', true)->first()?->email)
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" id="send_receipt" name="send_receipt" value="1"
+                                       class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500"
+                                       {{ old('send_receipt') ? 'checked' : '' }} />
+                                <label for="send_receipt" class="text-sm text-gray-700 select-none cursor-pointer">Send payment receipt to client</label>
+                            </div>
+                            @endif
                             <x-primary-button>Record</x-primary-button>
                         </form>
                     </div>

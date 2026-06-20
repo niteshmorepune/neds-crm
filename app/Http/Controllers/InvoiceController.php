@@ -7,6 +7,7 @@ use App\Enums\PaymentMode;
 use App\Enums\UserRole;
 use App\Http\Requests\PaymentStoreRequest;
 use App\Mail\InvoiceIssued;
+use App\Mail\PaymentReceived;
 use App\Models\Invoice;
 use App\Support\Money;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -45,7 +46,7 @@ class InvoiceController extends Controller
     {
         $this->authorize('view', $invoice);
 
-        $invoice->load(['customer', 'items', 'payments.recordedBy', 'quotation']);
+        $invoice->load(['customer.contacts', 'items', 'payments.recordedBy', 'quotation']);
 
         return view('invoices.show', [
             'invoice' => $invoice,
@@ -96,7 +97,7 @@ class InvoiceController extends Controller
             return back()->withErrors(['amount' => 'Payment exceeds the outstanding balance of '.Money::format($invoice->balance()).'.']);
         }
 
-        $invoice->payments()->create([
+        $payment = $invoice->payments()->create([
             'paid_on' => $request->validated()['paid_on'],
             'mode' => $request->validated()['mode'],
             'reference' => $request->validated()['reference'] ?? null,
@@ -106,7 +107,20 @@ class InvoiceController extends Controller
 
         $invoice->refreshPaymentStatus();
 
-        return back()->with('status', 'Payment recorded.');
+        $status = 'Payment recorded.';
+
+        if ($request->boolean('send_receipt')) {
+            $invoice->loadMissing(['customer.contacts']);
+            $email = $invoice->customer?->contacts->where('is_primary', true)->first()?->email
+                ?? $invoice->customer?->contacts->first()?->email;
+
+            if ($email) {
+                Mail::to($email)->send(new PaymentReceived($invoice, $payment));
+                $status = 'Payment recorded and receipt sent to client.';
+            }
+        }
+
+        return back()->with('status', $status);
     }
 
     public function destroy(Invoice $invoice): RedirectResponse

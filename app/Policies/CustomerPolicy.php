@@ -60,12 +60,17 @@ class CustomerPolicy
     }
 
     /**
-     * Manage nested resources (contacts, notes): allowed if the user can
-     * update the parent client.
+     * Manage nested resources (contacts): Admin/Manager full access;
+     * Sales only for their own/unassigned clients. Support and Accounts
+     * can view contacts but not add/edit/delete them.
      */
     public function manage(User $user, Customer $customer): bool
     {
-        return $this->update($user, $customer);
+        if ($user->hasRole(UserRole::Admin, UserRole::Manager)) {
+            return true;
+        }
+
+        return $user->hasRole(UserRole::Sales) && $this->salesOwnsOrUnassigned($user, $customer);
     }
 
     private function salesOwnsOrUnassigned(User $user, Customer $customer): bool

@@ -1,5 +1,5 @@
 <div>
-    @if ($canManage)
+    @if ($canManage || $canAddNotes)
         <div class="mb-4">
             <textarea wire:model="body" rows="3"
                       placeholder="Add a note… use @name to mention a teammate"
