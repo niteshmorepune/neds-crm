@@ -12,6 +12,7 @@ use App\Http\Controllers\DealController;
 use App\Http\Controllers\HelpController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LeadController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Portal\HomeController;
 use App\Http\Controllers\Portal\LoginController;
 use App\Http\Controllers\Portal\SetPasswordController;
@@ -22,15 +23,14 @@ use App\Http\Controllers\RecurringInvoiceController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\ServiceController;
-use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\TwoFactorSetupController;
 use App\Http\Controllers\UserController;
 use App\Livewire\ClientImport;
 use App\Livewire\DealsBoard;
-use App\Livewire\MenuManager;
 use App\Livewire\InvoiceBuilder;
+use App\Livewire\MenuManager;
 use App\Livewire\QuotationBuilder;
 use App\Livewire\RecurringInvoiceBuilder;
 use Illuminate\Support\Facades\Route;
@@ -72,6 +72,7 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
         Route::get('clients/import/template', function () {
             $headers = ['company_name', 'email', 'phone', 'gstin', 'website', 'address_line1', 'address_line2', 'city', 'state_code', 'pincode', 'status', 'owner', 'tags'];
             $sample = ['Acme Pvt Ltd', 'billing@acme.in', '9876543210', '27ABCDE1234F1Z5', 'https://acme.in', '123 MG Road', 'Unit 4', 'Pune', '27', '411001', 'active', 'Kiran Katte', 'seo, retainer'];
+
             return response()->streamDownload(function () use ($headers, $sample) {
                 $f = fopen('php://output', 'w');
                 fputcsv($f, $headers);
@@ -88,6 +89,7 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
      */
     Route::middleware('menu.access:lead-generation')->group(function () {
         Route::post('leads/{lead}/convert', [LeadController::class, 'convert'])->name('leads.convert');
+        Route::post('leads/{lead}/quotation', [LeadController::class, 'quotation'])->name('leads.quotation');
         Route::resource('leads', LeadController::class)->parameters(['leads' => 'lead']);
     });
 

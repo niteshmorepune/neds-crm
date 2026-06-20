@@ -40,9 +40,25 @@
                     @endif
                 </div>
 
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 flex-wrap">
                     <a href="{{ route('leads.index') }}" class="text-sm text-gray-500 hover:text-gray-700">Back</a>
                     <a href="{{ route('calls.create', ['lead_id' => $lead->id]) }}" class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Log a call</a>
+                    @can('create', \App\Models\Quotation::class)
+                        <form method="POST" action="{{ route('leads.quotation', $lead) }}">
+                            @csrf
+                            @if ($lead->status !== \App\Enums\LeadStatus::Converted)
+                                <button type="submit"
+                                        class="rounded-md border border-indigo-300 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-100"
+                                        onclick="return confirm('This lead hasn\'t been converted yet. Creating a quotation will convert them to a client and open a deal first. Continue?')">
+                                    Send Quotation
+                                </button>
+                            @else
+                                <button type="submit" class="rounded-md border border-indigo-300 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-100">
+                                    New Quotation
+                                </button>
+                            @endif
+                        </form>
+                    @endcan
                     @if ($canConvert)
                         <form method="POST" action="{{ route('leads.convert', $lead) }}">
                             @csrf

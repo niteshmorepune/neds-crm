@@ -91,6 +91,40 @@ it('promotes a prospect customer to active when their deal is marked won', funct
     expect($customer->fresh()->status)->toBe(CustomerStatus::Active);
 });
 
+it('creates a quotation from an unconverted lead, converting it first', function () {
+    $admin = User::factory()->role(UserRole::Admin)->create();
+    $lead = Lead::factory()->create(['name' => 'Priya Nair', 'company' => 'Nair Traders']);
+
+    $this->actingAs($admin)
+        ->post(route('leads.quotation', $lead))
+        ->assertRedirect();
+
+    $lead->refresh();
+    expect($lead->status)->toBe(LeadStatus::Converted)
+        ->and($lead->converted_customer_id)->not->toBeNull();
+
+    // Redirect target should be the quotation builder with the new customer pre-filled.
+    $response = $this->actingAs($admin)->post(route('leads.quotation', $lead->fresh()));
+    $response->assertRedirect();
+    expect($response->headers->get('location'))->toContain('customer_id='.$lead->converted_customer_id);
+});
+
+it('creates a quotation from an already-converted lead without re-converting', function () {
+    $admin = User::factory()->role(UserRole::Admin)->create();
+    $lead = Lead::factory()->create();
+    $deal = app(ConvertLead::class)->handle($lead);
+    $lead->refresh();
+
+    $customerCountBefore = Customer::count();
+
+    $response = $this->actingAs($admin)
+        ->post(route('leads.quotation', $lead))
+        ->assertRedirect();
+
+    expect(Customer::count())->toBe($customerCountBefore)
+        ->and($response->headers->get('location'))->toContain('customer_id='.$lead->converted_customer_id);
+});
+
 it('does not downgrade an already-active customer when a deal is won', function () {
     $admin = User::factory()->role(UserRole::Admin)->create();
     $customer = Customer::factory()->create(['status' => CustomerStatus::Active]);

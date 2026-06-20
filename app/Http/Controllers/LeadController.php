@@ -112,6 +112,24 @@ class LeadController extends Controller
             ->with('status', 'Lead converted to a client and deal.');
     }
 
+    public function quotation(Lead $lead, ConvertLead $converter): RedirectResponse
+    {
+        $this->authorize('view', $lead);
+
+        if ($lead->status !== LeadStatus::Converted) {
+            $this->authorize('convert', $lead);
+            $deal = $converter->handle($lead);
+            $lead->refresh();
+        } else {
+            $deal = $lead->convertedDeal;
+        }
+
+        return redirect()->route('quotations.create', array_filter([
+            'customer_id' => $lead->converted_customer_id,
+            'deal_id' => $deal?->id,
+        ]));
+    }
+
     /**
      * Convert the rupee-entered estimated value to integer paise.
      *
