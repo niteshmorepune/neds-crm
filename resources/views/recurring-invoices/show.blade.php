@@ -1,12 +1,30 @@
 <x-app-layout>
     <x-slot name="header">Recurring Invoice — {{ $recurring->customer?->company_name }}</x-slot>
 
+    @php
+        $alreadyGeneratedToday = $recurring->invoices()->whereDate('issue_date', today())->exists();
+        $canGenerate = $recurring->is_active && ! $alreadyGeneratedToday;
+    @endphp
+
     <div class="max-w-7xl mx-auto space-y-5">
 
         {{-- Back + Actions --}}
         <div class="flex items-center justify-between">
             <a href="{{ route('recurring-invoices.index') }}" class="text-sm text-gray-500 hover:text-gray-700">← Recurring Invoices</a>
             <div class="flex gap-2">
+                @can('create', \App\Models\Invoice::class)
+                    @if ($canGenerate)
+                        <form method="POST" action="{{ route('recurring-invoices.generate-now', $recurring) }}"
+                              onsubmit="return confirm('Generate and email an invoice to {{ addslashes($recurring->customer?->company_name) }} now?')">
+                            @csrf
+                            <button class="rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-500">
+                                Generate &amp; Send Now
+                            </button>
+                        </form>
+                    @elseif ($alreadyGeneratedToday)
+                        <span class="rounded-md border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm text-gray-400">Already generated today</span>
+                    @endif
+                @endcan
                 <a href="{{ route('recurring-invoices.edit', $recurring) }}" class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50">Edit Schedule</a>
                 <form method="POST" action="{{ route('recurring-invoices.toggle', $recurring) }}">
                     @csrf @method('PUT')
@@ -16,6 +34,13 @@
                 </form>
             </div>
         </div>
+
+        @if (session('status'))
+            <div class="rounded-md bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-800">{{ session('status') }}</div>
+        @endif
+        @if (session('error'))
+            <div class="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">{{ session('error') }}</div>
+        @endif
 
         {{-- Summary card --}}
         <div class="rounded-lg bg-white shadow-sm ring-1 ring-gray-100 p-5">
