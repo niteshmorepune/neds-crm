@@ -56,12 +56,9 @@ class QuotationBuilder extends Component
             ])->all();
         } else {
             $this->authorize('create', Quotation::class);
-            if ($customer_id) {
-                $this->customer_id = $customer_id;
-            }
-            if ($deal_id) {
-                $this->deal_id = $deal_id;
-            }
+            // mount() only receives route params; query-string values must be read from request()
+            $this->customer_id = $customer_id ?? (request()->integer('customer_id') ?: null);
+            $this->deal_id = $deal_id ?? (request()->integer('deal_id') ?: null);
             $this->addItem();
         }
     }
