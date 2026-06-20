@@ -21,10 +21,13 @@ trait HasGstTotals
                 'gst_rate' => (float) $item->gst_rate,
             ])->all();
 
+        $isOverseas = $this->customer?->isOverseas() ?? false;
+
         $gst = app(GstCalculator::class)->calculate(
             $lines,
             (int) $this->discount,
             $this->place_of_supply_state_code,
+            $isOverseas,
         );
 
         $this->forceFill([

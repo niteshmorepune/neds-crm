@@ -44,6 +44,7 @@ class CustomerStoreRequest extends FormRequest
             'city' => ['nullable', 'string', 'max:255'],
             'state_code' => ['nullable', Rule::in(array_keys(config('india.states')))],
             'pincode' => ['nullable', 'string', 'max:10'],
+            'country' => ['required', 'string', 'max:100'],
             'tags' => ['nullable', 'array'],
             'tags.*' => ['string', 'max:50'],
             'owner_id' => ['nullable', Rule::exists('users', 'id')],

@@ -24,10 +24,12 @@ class GstCalculator
      *   lines: array<int, array{amount:int, discount:int, taxable:int, cgst:int, sgst:int, igst:int}>
      * }
      */
-    public function calculate(array $lines, int $discount = 0, ?string $placeOfSupplyStateCode = null): array
+    public function calculate(array $lines, int $discount = 0, ?string $placeOfSupplyStateCode = null, bool $isOverseas = false): array
     {
         $companyState = (string) config('india.company_state_code');
-        $isIntraState = $placeOfSupplyStateCode === null || $placeOfSupplyStateCode === $companyState;
+        // Overseas clients: export of services — zero-rated, no GST at all.
+        // Domestic with no state code: treat as intra-state (conservative default).
+        $isIntraState = ! $isOverseas && ($placeOfSupplyStateCode === null || $placeOfSupplyStateCode === $companyState);
 
         // Line amounts (paise).
         $amounts = array_map(
@@ -63,13 +65,14 @@ class GstCalculator
             $discountAssigned += $lineDiscount;
 
             $taxable = $amount - $lineDiscount;
-            $tax = (int) round($taxable * ((float) $line['gst_rate']) / 100);
+            // Overseas = export of services, zero-rated: no tax regardless of line rate.
+            $tax = $isOverseas ? 0 : (int) round($taxable * ((float) $line['gst_rate']) / 100);
 
             $cgst = $sgst = $igst = 0;
-            if ($isIntraState) {
+            if (! $isOverseas && $isIntraState) {
                 $cgst = intdiv($tax, 2);
                 $sgst = $tax - $cgst; // odd paise to SGST
-            } else {
+            } elseif (! $isOverseas) {
                 $igst = $tax;
             }
 

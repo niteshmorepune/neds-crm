@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\CustomerStatus;
+use App\Enums\UserRole;
 use App\Models\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -29,6 +30,7 @@ class Customer extends Model
         'state',
         'state_code',
         'pincode',
+        'country',
         'tags',
         'owner_id',
         'status',
@@ -132,6 +134,14 @@ class Customer extends Model
     }
 
     /**
+     * True when the client is outside India — GST does not apply (export of services).
+     */
+    public function isOverseas(): bool
+    {
+        return ! empty($this->country) && strtolower(trim($this->country)) !== 'india';
+    }
+
+    /**
      * Best email for billing correspondence: the primary contact's, else the
      * customer's own. Null if neither is set.
      */
@@ -147,7 +157,7 @@ class Customer extends Model
      */
     public function scopeVisibleTo(Builder $query, User $user): Builder
     {
-        if ($user->role === \App\Enums\UserRole::Sales) {
+        if ($user->role === UserRole::Sales) {
             $query->where(function (Builder $q) use ($user) {
                 $q->where('owner_id', $user->id)->orWhereNull('owner_id');
             });

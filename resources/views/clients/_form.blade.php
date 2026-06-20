@@ -3,7 +3,13 @@
     $tagsValue = is_array($tagsValue) ? implode(', ', $tagsValue) : $tagsValue;
 @endphp
 
-<div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+@php
+    $countryValue = old('country', $customer->country ?? 'India');
+    $isOverseasInit = ! empty($countryValue) && strtolower(trim($countryValue)) !== 'india';
+@endphp
+
+<div class="grid grid-cols-1 gap-6 md:grid-cols-2"
+     x-data="{ country: {{ Js::from($countryValue) }}, get isOverseas() { return this.country.trim().toLowerCase() !== 'india' && this.country.trim() !== '' } }">
     <div class="md:col-span-2">
         <x-input-label for="company_name" value="Company name *" />
         <x-text-input id="company_name" name="company_name" type="text" class="mt-1 block w-full"
@@ -12,6 +18,16 @@
     </div>
 
     <div>
+        <x-input-label for="country" value="Country *" />
+        <x-text-input id="country" name="country" type="text" class="mt-1 block w-full"
+                      x-model="country"
+                      :value="old('country', $customer->country ?? 'India')"
+                      placeholder="India" required />
+        <p class="mt-1 text-xs text-gray-400">Set to anything other than "India" to disable GST on invoices.</p>
+        <x-input-error :messages="$errors->get('country')" class="mt-1" />
+    </div>
+
+    <div x-show="!isOverseas">
         <x-input-label for="gstin" value="GSTIN" />
         <x-text-input id="gstin" name="gstin" type="text" maxlength="15" class="mt-1 block w-full uppercase"
                       :value="old('gstin', $customer->gstin)" placeholder="27ABCDE1234F1Z5" />
@@ -69,7 +85,7 @@
                       :value="old('city', $customer->city)" />
     </div>
 
-    <div>
+    <div x-show="!isOverseas">
         <x-input-label for="state_code" value="State" />
         <select id="state_code" name="state_code" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
             <option value="">Select state</option>
@@ -82,7 +98,7 @@
         <x-input-error :messages="$errors->get('state_code')" class="mt-1" />
     </div>
 
-    <div>
+    <div x-show="!isOverseas">
         <x-input-label for="pincode" value="Pincode" />
         <x-text-input id="pincode" name="pincode" type="text" class="mt-1 block w-full"
                       :value="old('pincode', $customer->pincode)" />

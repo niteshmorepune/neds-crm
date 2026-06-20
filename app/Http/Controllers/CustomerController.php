@@ -141,9 +141,18 @@ class CustomerController extends Controller
      */
     private function payload(array $data): array
     {
-        $data['state'] = ! empty($data['state_code'])
-            ? config("india.states.{$data['state_code']}")
-            : null;
+        $isOverseas = ! empty($data['country']) && strtolower(trim($data['country'])) !== 'india';
+
+        if ($isOverseas) {
+            // Overseas clients have no GST state code or GSTIN.
+            $data['state_code'] = null;
+            $data['state'] = null;
+            $data['gstin'] = null;
+        } else {
+            $data['state'] = ! empty($data['state_code'])
+                ? config("india.states.{$data['state_code']}")
+                : null;
+        }
 
         return $data;
     }

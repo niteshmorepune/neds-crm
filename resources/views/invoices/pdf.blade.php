@@ -32,7 +32,7 @@
                     <div class="muted">{{ $company['email'] }}</div>
                 </td>
                 <td class="right">
-                    <div style="font-size:16px;font-weight:bold;">TAX INVOICE</div>
+                    <div style="font-size:16px;font-weight:bold;">{{ $invoice->customer?->isOverseas() ? 'INVOICE' : 'TAX INVOICE' }}</div>
                     <div>{{ $invoice->invoice_number }}</div>
                     <div class="muted">Issued: {{ $invoice->issue_date->format('d M Y') }}</div>
                     @if ($invoice->due_date)<div class="muted">Due: {{ $invoice->due_date->format('d M Y') }}</div>@endif
@@ -49,16 +49,26 @@
                 @if ($invoice->customer)
                     {{ $invoice->customer->company_name }}<br>
                     @if ($invoice->customer->address_line1){{ $invoice->customer->address_line1 }}<br>@endif
-                    @if ($invoice->customer->city){{ $invoice->customer->city }}, @endif{{ $invoice->customer->state }}<br>
-                    GSTIN: {{ $invoice->customer->gstin ?? 'Unregistered' }}
+                    @if ($invoice->customer->city){{ $invoice->customer->city }}@if($invoice->customer->state || $invoice->customer->country), @endif@endif
+                    @if($invoice->customer->isOverseas())
+                        {{ $invoice->customer->country }}<br>
+                    @else
+                        {{ $invoice->customer->state }}<br>
+                        GSTIN: {{ $invoice->customer->gstin ?? 'Unregistered' }}
+                    @endif
                 @else
                     Client removed
                 @endif
             </td>
             <td class="right">
-                <strong>Place of supply</strong><br>
-                {{ $invoice->customer?->state ?? '—' }} ({{ $invoice->place_of_supply_state_code }})<br>
-                {{ $invoice->is_intra_state ? 'Intra-state — CGST + SGST' : 'Inter-state — IGST' }}
+                @if($invoice->customer?->isOverseas())
+                    <strong>Export of Services</strong><br>
+                    <span style="color:#059669;">Zero-Rated Supply (GST not applicable)</span>
+                @else
+                    <strong>Place of supply</strong><br>
+                    {{ $invoice->customer?->state ?? '—' }} ({{ $invoice->place_of_supply_state_code }})<br>
+                    {{ $invoice->is_intra_state ? 'Intra-state — CGST + SGST' : 'Inter-state — IGST' }}
+                @endif
             </td>
         </tr>
     </table>
@@ -91,7 +101,9 @@
         <tr><td class="label-cell right muted">Subtotal</td><td class="right">{{ \App\Support\Money::format($invoice->subtotal) }}</td></tr>
         <tr><td class="label-cell right muted">Discount</td><td class="right">− {{ \App\Support\Money::format($invoice->discount) }}</td></tr>
         <tr><td class="label-cell right muted">Taxable value</td><td class="right">{{ \App\Support\Money::format($invoice->taxable_total) }}</td></tr>
-        @if ($invoice->is_intra_state)
+        @if($invoice->customer?->isOverseas())
+            <tr><td class="label-cell right muted">GST</td><td class="right" style="color:#059669;">Nil (Export / Zero-Rated)</td></tr>
+        @elseif ($invoice->is_intra_state)
             <tr><td class="label-cell right muted">CGST</td><td class="right">{{ \App\Support\Money::format($invoice->cgst_total) }}</td></tr>
             <tr><td class="label-cell right muted">SGST</td><td class="right">{{ \App\Support\Money::format($invoice->sgst_total) }}</td></tr>
         @else
@@ -106,7 +118,11 @@
     <p style="margin-top:12px;"><strong>Amount in words:</strong> {{ $invoice->amountInWords() }}</p>
 
     <p class="muted" style="margin-top:24px;font-size:11px;">
-        This is a computer-generated tax invoice. Subject to Maharashtra jurisdiction.
+        @if($invoice->customer?->isOverseas())
+            This is a computer-generated invoice for export of services. Supply is zero-rated under the IGST Act, 2017. Subject to Maharashtra jurisdiction.
+        @else
+            This is a computer-generated tax invoice. Subject to Maharashtra jurisdiction.
+        @endif
     </p>
 </body>
 </html>

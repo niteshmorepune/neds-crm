@@ -3,6 +3,8 @@
 use App\Enums\CustomerStatus;
 use App\Enums\UserRole;
 use App\Models\Customer;
+use App\Models\Deal;
+use App\Models\Ticket;
 use App\Models\User;
 use Database\Seeders\MenuItemsSeeder;
 
@@ -18,6 +20,7 @@ it('creates a client with valid data and derives the state name', function () {
             'gstin' => '27ABCDE1234F1Z5',
             'email' => 'hello@acme.test',
             'state_code' => '27',
+            'country' => 'India',
             'tags' => 'seo, retainer',
             'status' => CustomerStatus::Active->value,
         ])
@@ -68,6 +71,7 @@ it('updates a client', function () {
         ->put(route('clients.update', $customer), [
             'company_name' => 'New Name',
             'status' => CustomerStatus::Inactive->value,
+            'country' => 'India',
         ])
         ->assertRedirect(route('clients.show', $customer));
 
@@ -88,8 +92,8 @@ it('soft deletes a client', function () {
 
 it('cascade-deletes related records when a client is deleted', function () {
     $customer = Customer::factory()->create();
-    $deal = \App\Models\Deal::factory()->create(['customer_id' => $customer->id]);
-    $ticket = \App\Models\Ticket::factory()->create(['customer_id' => $customer->id]);
+    $deal = Deal::factory()->create(['customer_id' => $customer->id]);
+    $ticket = Ticket::factory()->create(['customer_id' => $customer->id]);
 
     $this->actingAs($this->admin)
         ->delete(route('clients.destroy', $customer))

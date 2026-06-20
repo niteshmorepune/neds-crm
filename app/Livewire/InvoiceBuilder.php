@@ -72,10 +72,14 @@ class InvoiceBuilder extends Component
             'gst_rate' => (float) ($item['gst_rate'] ?: 0),
         ])->all();
 
-        $stateCode = $this->customer_id ? Customer::find($this->customer_id)?->state_code : null;
+        $customer = $this->customer_id ? Customer::find($this->customer_id) : null;
 
-        return app(GstCalculator::class)
-            ->calculate($lines, Money::toPaise($this->discount ?: 0) ?? 0, $stateCode);
+        return app(GstCalculator::class)->calculate(
+            $lines,
+            Money::toPaise($this->discount ?: 0) ?? 0,
+            $customer?->state_code,
+            $customer?->isOverseas() ?? false,
+        );
     }
 
     public function save()
