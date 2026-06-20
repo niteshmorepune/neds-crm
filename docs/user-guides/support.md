@@ -31,11 +31,17 @@ A **Project** is created from a won deal. Open **Project Updates** to see your
 projects, each with its client, service and tasks.
 
 **Posting updates to the client:** each project has a **Notes & Client Updates**
-section at the bottom. Type a note and tick **Share with client** before clicking
-**Add note** — that note will appear in the client's portal under "Updates from
-Our Team". Leave the checkbox unticked for internal notes that only staff can
-see (e.g. hand-off notes between team members). A "Visible to client" badge
-marks which notes are shared.
+section at the bottom. If you are **assigned to a project**, you will see the
+note form. Type a note and tick **Share with client** before clicking **Add note**
+— that note will appear in the client's portal under "Updates from Our Team".
+Leave the checkbox unticked for internal notes only staff can see (e.g. hand-off
+notes between team members). A "Visible to client" badge marks which notes are
+shared. If you do not see the note form on a project, you are not assigned to it
+— ask a manager to add you.
+
+**Note on client profiles:** Support staff cannot add, edit, or delete contacts
+on a client profile — that is handled by the Sales team. You can view client and
+contact details but not change them.
 
 **WhatsApp tickets:** if a client messages your WhatsApp support number, the CRM
 automatically creates a ticket with a green **WhatsApp** badge on the tickets

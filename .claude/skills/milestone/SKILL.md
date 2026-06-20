@@ -156,3 +156,24 @@ is done; new work is maintenance.
   `services.whatsapp_webhook.token`). Phone lookup: exact → `+`-prefixed →
   last-10-digit LIKE. wadesk.in fires a fire-and-forget fetch on new/reopened
   conversations. Tier 3 (CRM reply → WhatsApp) is backlogged.
+- **Overseas / zero-rated GST:** `Customer::isOverseas()` returns true when
+  `country` is set and ≠ 'India'. `GstCalculator::calculate()` has a 4th param
+  `$isOverseas = false` — when true, all tax is zero regardless of state code.
+  `HasGstTotals` concern and `InvoiceBuilder`/`QuotationBuilder` both pass this.
+  PDF shows "INVOICE" (not "TAX INVOICE") and zero-rated supply note.
+- **RecordNotes component:** has two access flags — `$canManage` (full CRUD) and
+  `$canAddNotes` (note-only, no edit/delete). Pass `canAddNotes=true` when a
+  role should post notes but not edit the record (e.g. Support assigned to a
+  project). Gate with `abort_unless($this->canManage || $this->canAddNotes, 403)`
+  in `addNote()`. `showPortalToggle=true` on project pages defaults new notes to
+  `visible_to_client=true`.
+- **CustomerPolicy::manage()** controls Add/Edit/Delete contacts on the client
+  profile — separate from `update()` (which controls editing client record itself).
+  Restricted to Admin, Manager, Sales (own clients). Support can view but not mutate.
+- **project_user pivot has `role` column** ('lead' or 'member'). Use
+  `->withPivot('role')` when eager-loading assignees. Lead = primary contact;
+  `assignees->firstWhere('pivot.role', 'lead') ?? assignees->first()` to get
+  the lead assignee for auto-assignment (tickets, reports).
+- **Portal ticket auto-routing:** `Portal\TicketController::store()` resolves
+  `service_id` and `assignee_id` from the selected project's lead assignee.
+  The create view shows a project dropdown only when `$projects->isNotEmpty()`.

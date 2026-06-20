@@ -32,6 +32,12 @@ Open an invoice → **record a payment** (amount, date, mode — UPI / NEFT / ch
 / cash / gateway). **Partial payments are allowed**: the invoice moves to
 *Partially paid*, then *Paid* once fully settled. Status updates automatically.
 
+**Sending a payment receipt:** when the client's contact has an email address on
+file, a **Send payment receipt to client** checkbox appears at the bottom of the
+Record Payment form. Tick it before clicking Record — the client receives an email
+confirming the amount received, payment mode, reference number, and the remaining
+balance (or a "fully settled" message if the invoice is now paid in full).
+
 ## 3. Recurring invoices
 For monthly retainers (SEO, GMB, social, ads, AMC), set up a **recurring invoice
 template** (under Invoices → Recurring Invoices). The system **auto-generates

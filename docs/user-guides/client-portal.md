@@ -77,8 +77,13 @@ project page — it keeps everything tracked in one place.
 ## Raising a support ticket
 1. Go to **Tickets → New Ticket** (or click the "Raise a ticket" link anywhere
    in the portal).
-2. Enter a **subject**, choose a **priority**, and describe your issue clearly.
-3. Click **Submit Ticket** — the NEDS team is notified and an SLA timer starts.
+2. Enter a **subject** and describe your issue clearly.
+3. If you have **more than one active service** with NEDS, a **"Which service is
+   this about?"** dropdown will appear — select the relevant project/service so
+   your ticket goes straight to the right team member. If you're not sure, leave
+   it as "General / Not sure".
+4. Choose a **priority** and click **Submit Ticket** — the NEDS team is notified
+   and an SLA timer starts.
 4. You can **reply** to the ticket from the ticket page to continue the
    conversation. Replies appear as a chat thread.
 5. Internal NEDS notes are never shown to you — you only see messages meant for you.
