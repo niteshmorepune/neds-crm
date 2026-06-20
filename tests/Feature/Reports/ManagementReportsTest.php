@@ -1,9 +1,11 @@
 <?php
 
 use App\Actions\ConvertLead;
+use App\Enums\AttendanceStatus;
 use App\Enums\InvoiceStatus;
 use App\Enums\TaskStatus;
 use App\Enums\UserRole;
+use App\Models\Attendance;
 use App\Models\CallLog;
 use App\Models\Deal;
 use App\Models\Invoice;
@@ -46,9 +48,9 @@ it('counts a converted lead under its owner in the performance report', function
 
 it('measures tasks completed, on-time %, and calls for the period', function () {
     $user = User::factory()->role(UserRole::Support)->create();
-    // On-time completion.
-    Task::factory()->create(['assignee_id' => $user->id, 'due_date' => now()->addDay(), 'status' => TaskStatus::Done]);
-    // Late completion (due yesterday, completed now).
+    // On-time completion (due today, completed today).
+    Task::factory()->create(['assignee_id' => $user->id, 'due_date' => now(), 'status' => TaskStatus::Done]);
+    // Late completion (due 2 days ago, completed today).
     $late = Task::factory()->create(['assignee_id' => $user->id, 'due_date' => now()->subDays(2), 'status' => TaskStatus::Todo]);
     $late->update(['status' => TaskStatus::Done]);
     CallLog::factory()->count(2)->create(['user_id' => $user->id, 'called_at' => now()]);
@@ -59,6 +61,34 @@ it('measures tasks completed, on-time %, and calls for the period', function () 
     expect($row['tasks_completed'])->toBe(2)
         ->and($row['on_time_pct'])->toBe(50)
         ->and($row['calls_made'])->toBe(2);
+});
+
+it('calculates attendance % against working days not just record count', function () {
+    $user = User::factory()->role(UserRole::Support)->create();
+    // Only 1 present record in a month that has many working days.
+    Attendance::factory()->create([
+        'user_id' => $user->id,
+        'date' => now()->startOfMonth()->toDateString(),
+        'status' => AttendanceStatus::Present,
+        'check_in_at' => now()->startOfMonth()->setTime(9, 0),
+    ]);
+
+    $row = collect($this->metrics->employeePerformance(now()->startOfMonth(), now()->endOfMonth()))
+        ->firstWhere('user', $user->name);
+
+    // 1 day present out of ~20 working days — must be well below 100%.
+    expect($row['attendance_pct'])->toBeLessThan(20);
+});
+
+it('counts overdue unfinished tasks against on-time %', function () {
+    $user = User::factory()->role(UserRole::Support)->create();
+    // One task due this month, never completed.
+    Task::factory()->create(['assignee_id' => $user->id, 'due_date' => now()->subDay(), 'status' => TaskStatus::Todo]);
+
+    $row = collect($this->metrics->employeePerformance(now()->startOfMonth(), now()->endOfMonth()))
+        ->firstWhere('user', $user->name);
+
+    expect($row['on_time_pct'])->toBe(0);
 });
 
 it('splits revenue into recurring and one-time', function () {

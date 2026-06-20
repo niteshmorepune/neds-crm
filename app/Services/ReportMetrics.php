@@ -31,14 +31,27 @@ class ReportMetrics
         $fromDate = $from->toDateString();
         $toDate = $to->toDateString();
 
-        return User::query()->orderBy('name')->get()->map(function (User $user) use ($from, $to, $fromDate, $toDate) {
-            $completed = Task::query()
+        // Cap at today so future days in a part-completed month don't dilute %.
+        $effectiveTo = $to->copy()->min(now()->endOfDay());
+        $workingDays = $this->countWorkingDays($from, $effectiveTo);
+
+        return User::query()->orderBy('name')->get()->map(function (User $user) use ($from, $to, $fromDate, $toDate, $workingDays) {
+            // Tasks COMPLETED in the period.
+            $completedCount = Task::query()
                 ->where('assignee_id', $user->id)
                 ->whereBetween('completed_at', [$from, $to])
+                ->count();
+
+            // Tasks DUE in the period — denominator for on-time %, so overdue
+            // tasks that were never finished count against the employee.
+            $tasksDue = Task::query()
+                ->where('assignee_id', $user->id)
+                ->whereBetween('due_date', [$fromDate, $toDate])
                 ->get(['due_date', 'completed_at']);
 
-            $withDue = $completed->filter(fn (Task $t) => $t->due_date !== null);
-            $onTime = $withDue->filter(fn (Task $t) => $t->completed_at->toDateString() <= $t->due_date->toDateString())->count();
+            $onTimeCount = $tasksDue->filter(fn (Task $t) => $t->completed_at !== null &&
+                $t->completed_at->toDateString() <= $t->due_date->toDateString()
+            )->count();
 
             $attendance = Attendance::query()
                 ->where('user_id', $user->id)
@@ -54,14 +67,35 @@ class ReportMetrics
             return [
                 'user' => $user->name,
                 'role' => $user->role->label(),
-                'tasks_completed' => $completed->count(),
-                'on_time_pct' => $withDue->count() > 0 ? (int) round($onTime / $withDue->count() * 100) : null,
+                'tasks_completed' => $completedCount,
+                'on_time_pct' => $tasksDue->count() > 0 ? (int) round($onTimeCount / $tasksDue->count() * 100) : null,
                 'calls_made' => CallLog::query()->where('user_id', $user->id)->whereBetween('called_at', [$from, $to])->count(),
                 'leads_converted' => Lead::query()->where('owner_id', $user->id)->whereBetween('converted_at', [$from, $to])->count(),
-                'attendance_pct' => $attendance->count() > 0 ? (int) round($presentEquivalent / $attendance->count() * 100) : null,
+                // Divide by working days, not attendance record count.
+                'attendance_pct' => ($attendance->count() > 0 && $workingDays > 0)
+                    ? (int) round(min(100, $presentEquivalent / $workingDays * 100))
+                    : null,
                 'daily_reports' => DailyReport::query()->where('user_id', $user->id)->whereNotNull('submitted_at')->whereBetween('date', [$fromDate, $toDate])->count(),
             ];
         });
+    }
+
+    /**
+     * Count Monday–Friday days between two dates, inclusive.
+     */
+    private function countWorkingDays(Carbon $from, Carbon $to): int
+    {
+        $days = 0;
+        $day = $from->copy()->startOfDay();
+        $end = $to->copy()->startOfDay();
+        while ($day->lte($end)) {
+            if ($day->isWeekday()) {
+                $days++;
+            }
+            $day->addDay();
+        }
+
+        return $days;
     }
 
     /**
