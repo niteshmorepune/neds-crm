@@ -52,6 +52,12 @@ All your invoices are listed with:
 
 Click an invoice number to see the full breakdown of line items and payments.
 
+**Upcoming Billing Schedule:** below the invoice list you'll see a table of your
+active recurring services (monthly retainers, quarterly, or annual contracts)
+showing the service name, billing frequency, and the date your next invoice will
+be generated. You'll also receive an email reminder from NEDS a week before each
+billing date.
+
 ## Projects
 Open **Projects** to see every project NEDS is running for you. Each card shows
 the service type and the name of the team member managing it.

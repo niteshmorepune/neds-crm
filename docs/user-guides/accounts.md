@@ -30,9 +30,26 @@ Open an invoice → **record a payment** (amount, date, mode — UPI / NEFT / ch
 
 ## 3. Recurring invoices
 For monthly retainers (SEO, GMB, social, ads, AMC), set up a **recurring invoice
-template** (under Invoices). The system **auto-generates the invoice each cycle**
-(every morning the scheduler checks for due templates) and emails it to the
-client. You can pause/resume a template anytime.
+template** (under Invoices → Recurring Invoices). The system **auto-generates
+the invoice each cycle** (every morning the scheduler checks for due templates)
+and emails it to the client automatically. You can pause/resume a template
+anytime.
+
+**Viewing generated invoices:** click **Invoices** on any recurring template row
+to open its history — every invoice that has been auto-generated for that
+template, with status, balance, and action buttons.
+
+**Resending an invoice by email:** on the recurring template's invoice history
+page, click **Send Email** on the row you want to resend. The same
+`InvoiceIssued` email goes to the client's billing contact.
+
+**Recording a payment:** click **View / Pay** on any generated invoice row to
+open the full invoice page, then use the **Record payment** form at the bottom.
+Partial payments are supported.
+
+**Advance reminders:** the system automatically emails the client **7, 5, 3, and
+1 day before** each upcoming billing date so they're never surprised. No action
+needed from you — the scheduler sends these at 09:00 IST daily.
 
 ## 4. Reports
 - **Account** (in the sidebar) → the **outstanding receivables** report: who owes
