@@ -16,7 +16,7 @@ class FixRecurringNextRunDates extends Command
         $today = now()->startOfDay();
         $fixed = 0;
 
-        RecurringInvoice::where('next_run_on', '<', $today)->get()
+        RecurringInvoice::where('next_run_on', '<=', $today)->get()
             ->each(function (RecurringInvoice $r) use ($today, &$fixed) {
                 $next = $r->next_run_on->copy()->startOfDay();
                 while ($next->lt($today)) {
