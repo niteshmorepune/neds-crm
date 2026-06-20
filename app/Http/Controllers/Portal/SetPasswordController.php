@@ -18,6 +18,13 @@ class SetPasswordController extends Controller
         return view('portal.auth.set-password', ['token' => $token]);
     }
 
+    public function showReset(string $token): View
+    {
+        $this->contactForToken($token); // 404 if invalid
+
+        return view('portal.auth.reset-password', ['token' => $token]);
+    }
+
     public function store(Request $request, string $token): RedirectResponse
     {
         $contact = $this->contactForToken($token);

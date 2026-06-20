@@ -21,4 +21,8 @@
         </label>
         <x-primary-button class="w-full justify-center">Sign in</x-primary-button>
     </form>
+
+    <p class="mt-4 text-center text-sm text-gray-500">
+        <a href="{{ route('portal.password.forgot') }}" class="text-indigo-600 hover:text-indigo-500">Forgot your password?</a>
+    </p>
 </x-portal-guest-layout>

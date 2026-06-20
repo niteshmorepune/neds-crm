@@ -13,6 +13,7 @@ use App\Http\Controllers\HelpController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LeadController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\Portal\ForgotPasswordController;
 use App\Http\Controllers\Portal\HomeController;
 use App\Http\Controllers\Portal\LoginController;
 use App\Http\Controllers\Portal\SetPasswordController;
@@ -285,6 +286,10 @@ Route::prefix('portal')->name('portal.')->group(function () {
         Route::post('login', [LoginController::class, 'login']);
         Route::get('set-password/{token}', [SetPasswordController::class, 'show'])->name('password.setup');
         Route::post('set-password/{token}', [SetPasswordController::class, 'store'])->name('password.store');
+        Route::get('forgot-password', [ForgotPasswordController::class, 'show'])->name('password.forgot');
+        Route::post('forgot-password', [ForgotPasswordController::class, 'send'])->name('password.forgot.send');
+        Route::get('reset-password/{token}', [SetPasswordController::class, 'showReset'])->name('password.reset');
+        Route::post('reset-password/{token}', [SetPasswordController::class, 'store'])->name('password.reset.store');
     });
 
     Route::middleware('auth:portal')->group(function () {

@@ -88,5 +88,8 @@ so nothing falls through the cracks.
 ## Security & privacy
 - You can only ever see **your own company's** information.
 - Use a strong password and don't share your login.
-- If you forget your password, or need portal access for another person at your
-  company, contact your NEDS account manager.
+- **Forgot your password?** Click **Forgot your password?** on the sign-in page,
+  enter your email, and a reset link will be sent to your inbox. Click the link
+  and choose a new password — you'll be signed in automatically.
+- If you need portal access for another person at your company, or if you no
+  longer have access to your email address, contact your NEDS account manager.
