@@ -8,6 +8,7 @@ enum RecurringFrequency: string
 {
     case Monthly = 'monthly';
     case Quarterly = 'quarterly';
+    case Yearly = 'yearly';
 
     public function label(): string
     {
@@ -22,6 +23,7 @@ enum RecurringFrequency: string
         return match ($this) {
             self::Monthly => $date->copy()->addMonthNoOverflow(),
             self::Quarterly => $date->copy()->addMonthsNoOverflow(3),
+            self::Yearly => $date->copy()->addYearNoOverflow(),
         };
     }
 

@@ -9,6 +9,7 @@ use App\Models\RecurringInvoice;
 use App\Models\Service;
 use App\Support\Money;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
@@ -108,7 +109,14 @@ class RecurringInvoiceBuilder extends Component
             ]);
 
             if (! $recurring->exists) {
-                $recurring->next_run_on = $this->start_date;
+                // Advance from the start date until we reach a future date, so
+                // a historical start date never leaves next_run_on in the past.
+                $next = Carbon::parse($this->start_date)->startOfDay();
+                $today = now()->startOfDay();
+                while ($next->lt($today)) {
+                    $next = $recurring->frequency->advance($next);
+                }
+                $recurring->next_run_on = $next;
             }
             $recurring->save();
 
