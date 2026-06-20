@@ -12,11 +12,12 @@ tickets, and stay updated on the work we're doing for you. This guide is for
 
 ## Finding your way around
 The portal has a **left sidebar** (on desktop) or a **hamburger menu** (on mobile)
-with four sections:
+with five sections:
 
 | Section | What's there |
 |---|---|
 | **Dashboard** | Your account summary at a glance — open invoices, active projects, open tickets |
+| **Services** | All your active services and the team member responsible for each one |
 | **Invoices** | All your invoices with status and PDF download |
 | **Projects** | Status and updates for work NEDS is doing for you |
 | **Tickets** | Your support requests and their conversation history |
@@ -28,6 +29,19 @@ done.
 When you log in you'll see a personalised greeting and three stat cards showing
 your open invoices, active projects, and open tickets. Click any card to go
 straight to that section.
+
+## Services
+Open **Services** to see every service NEDS is running for your account in one
+place:
+
+- **Active Services** — each project/service with its current status and the
+  name and email of the team member handling it. Click **View updates →** to
+  jump to that project's update page.
+- **Retainer Services** — any recurring monthly services (SEO, GMB, social
+  media, etc.) with billing frequency and account manager.
+
+If you have a question about a specific service, use the **Raise a ticket** link
+at the bottom of the page — it keeps everything tracked in one place.
 
 ## Invoices
 All your invoices are listed with:

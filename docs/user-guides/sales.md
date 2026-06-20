@@ -47,6 +47,13 @@ everything together. The new client appears in the **Clients** list with status
 when you mark their deal as **Won**. Use the status filter on the Clients page
 to view Prospects, Active, or all clients.
 
+**Send Quotation from a lead:** you don't have to convert first. Open any lead
+and click **Send Quotation**. If the lead isn't converted yet, the CRM converts
+them automatically (creates the Client and Deal), then opens the Quotation
+builder with the client and deal already filled in. If they're already a client,
+it skips conversion and goes straight to the builder. Either way you land on a
+blank quotation ready to fill in — no manual selection needed.
+
 ## 2. Pipeline (Sales Department)
 The **Sales Department** board shows your deals in columns by stage:
 **New → Contacted → Proposal → Negotiation → Won / Lost**.
@@ -58,7 +65,9 @@ The **Sales Department** board shows your deals in columns by stage:
 
 ## 3. Quotations
 1. **Quotations → Create** — or open a **Deal** and click **+ New Quotation**
-   directly on the deal page (the client and deal are pre-filled for you).
+   directly on the deal page (the client and deal are pre-filled for you) — or
+   open a **Lead** and click **Send Quotation** (the CRM converts the lead and
+   pre-fills the builder for you automatically).
 2. Add **line items** (description, HSN/SAC, quantity, rate). GST is calculated
    per line (CGST+SGST for Maharashtra clients, IGST otherwise).
 3. For milestone/project work, add **milestones** (e.g. advance on signing,
