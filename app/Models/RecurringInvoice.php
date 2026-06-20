@@ -16,7 +16,8 @@ class RecurringInvoice extends Model
 
     protected $fillable = [
         'customer_id', 'service_id', 'frequency', 'day_of_month',
-        'start_date', 'end_date', 'next_run_on', 'is_active', 'discount', 'terms',
+        'start_date', 'end_date', 'next_run_on', 'is_active',
+        'last_reminder_sent_at', 'discount', 'terms',
     ];
 
     protected function casts(): array
@@ -26,6 +27,7 @@ class RecurringInvoice extends Model
             'start_date' => 'date',
             'end_date' => 'date',
             'next_run_on' => 'date',
+            'last_reminder_sent_at' => 'date',
             'is_active' => 'boolean',
             'discount' => 'integer',
             'day_of_month' => 'integer',
@@ -45,6 +47,11 @@ class RecurringInvoice extends Model
     public function items(): HasMany
     {
         return $this->hasMany(RecurringInvoiceItem::class)->orderBy('sort_order');
+    }
+
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class);
     }
 
     /** Active templates whose next run is due on or before the given date. */

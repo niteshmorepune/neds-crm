@@ -127,6 +127,7 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
         // Recurring invoice templates (declared before invoices/{invoice}).
         Route::get('recurring-invoices', [RecurringInvoiceController::class, 'index'])->name('recurring-invoices.index');
         Route::get('recurring-invoices/create', RecurringInvoiceBuilder::class)->name('recurring-invoices.create');
+        Route::get('recurring-invoices/{recurring}', [RecurringInvoiceController::class, 'show'])->name('recurring-invoices.show');
         Route::get('recurring-invoices/{recurring}/edit', RecurringInvoiceBuilder::class)->name('recurring-invoices.edit');
         Route::put('recurring-invoices/{recurring}/toggle', [RecurringInvoiceController::class, 'toggle'])->name('recurring-invoices.toggle');
         Route::delete('recurring-invoices/{recurring}', [RecurringInvoiceController::class, 'destroy'])->name('recurring-invoices.destroy');

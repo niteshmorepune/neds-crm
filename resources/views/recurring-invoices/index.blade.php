@@ -36,7 +36,8 @@
                                 ])>{{ $r->is_active ? 'Active' : 'Paused' }}</span>
                             </td>
                             <td class="px-4 py-3 text-right">
-                                <a href="{{ route('recurring-invoices.edit', $r) }}" class="text-gray-500 hover:text-gray-700">Edit</a>
+                                <a href="{{ route('recurring-invoices.show', $r) }}" class="text-indigo-600 hover:text-indigo-500">Invoices</a>
+                                <a href="{{ route('recurring-invoices.edit', $r) }}" class="ml-3 text-gray-500 hover:text-gray-700">Edit</a>
                                 <form method="POST" action="{{ route('recurring-invoices.toggle', $r) }}" class="inline">
                                     @csrf @method('PUT')
                                     <button class="ml-3 text-gray-500 hover:text-gray-700">{{ $r->is_active ? 'Pause' : 'Activate' }}</button>

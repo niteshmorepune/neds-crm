@@ -92,4 +92,48 @@
     @endif
 
     <div class="mt-4">{{ $invoices->links() }}</div>
+
+    {{-- Upcoming / recurring billing schedule --}}
+    @if($upcomingBilling->isNotEmpty())
+    <div class="mt-8">
+        <h2 class="text-sm font-semibold text-gray-700 mb-3">Upcoming Billing Schedule</h2>
+
+        {{-- Mobile cards --}}
+        <div class="sm:hidden space-y-3">
+            @foreach($upcomingBilling as $r)
+            <div class="rounded-xl bg-white px-5 py-4 shadow-sm ring-1 ring-gray-100">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm font-medium text-gray-800">{{ $r->service?->name ?? 'Service' }}</span>
+                    <span class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium bg-indigo-50 text-indigo-700">{{ $r->frequency->label() }}</span>
+                </div>
+                <p class="mt-1 text-xs text-gray-400">Next billing: <span class="text-gray-700 font-medium">{{ $r->next_run_on->format('d M Y') }}</span></p>
+            </div>
+            @endforeach
+        </div>
+
+        {{-- Desktop table --}}
+        <div class="hidden sm:block overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-100">
+            <table class="min-w-full divide-y divide-gray-100 text-sm">
+                <thead class="bg-gray-50">
+                    <tr class="text-left text-xs font-semibold uppercase tracking-wide text-gray-400">
+                        <th class="px-5 py-3">Service</th>
+                        <th class="px-5 py-3">Frequency</th>
+                        <th class="px-5 py-3">Next billing date</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    @foreach($upcomingBilling as $r)
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-5 py-3.5 font-medium text-gray-800">{{ $r->service?->name ?? 'Service' }}</td>
+                        <td class="px-5 py-3.5">
+                            <span class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium bg-indigo-50 text-indigo-700">{{ $r->frequency->label() }}</span>
+                        </td>
+                        <td class="px-5 py-3.5 text-gray-600">{{ $r->next_run_on->format('d M Y') }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+    @endif
 </x-portal-app-layout>

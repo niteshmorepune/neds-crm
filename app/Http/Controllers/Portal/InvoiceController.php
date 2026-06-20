@@ -12,6 +12,11 @@ class InvoiceController extends PortalController
     {
         return view('portal.invoices.index', [
             'invoices' => $this->customer()->invoices()->latest()->paginate(15),
+            'upcomingBilling' => $this->customer()->recurringInvoices()
+                ->where('is_active', true)
+                ->with(['service', 'items'])
+                ->orderBy('next_run_on')
+                ->get(),
         ]);
     }
 

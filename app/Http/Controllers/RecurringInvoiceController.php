@@ -21,6 +21,15 @@ class RecurringInvoiceController extends Controller
         return view('recurring-invoices.index', ['recurring' => $recurring]);
     }
 
+    public function show(RecurringInvoice $recurring): View
+    {
+        $this->authorize('viewAny', Invoice::class);
+
+        $invoices = $recurring->invoices()->with('payments')->latest('issue_date')->paginate(10);
+
+        return view('recurring-invoices.show', compact('recurring', 'invoices'));
+    }
+
     public function toggle(RecurringInvoice $recurring): RedirectResponse
     {
         $this->authorize('create', Invoice::class);
