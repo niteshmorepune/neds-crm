@@ -92,6 +92,12 @@ includes columns for address, owner (type a user's name exactly), and tags
 the client is assigned to you automatically. Click **Continue** and wait for
 "Uploading…" to clear before the step advances — large files take a moment.
 
+**Overseas clients (outside India):** set the **Country** field to the client's
+country (e.g. "United States"). This hides the GSTIN and State fields (which
+don't apply) and tells the system to produce zero-rated invoices for that client
+— no GST is charged, and the PDF is labelled "Export of Services" automatically.
+Leave Country as "India" for all domestic clients.
+
 ## 5. Quotations — sending to clients
 Once a quotation is ready, open it and click **Send to Client**. This emails the
 quotation details to the client's billing address and marks it as Sent. The client

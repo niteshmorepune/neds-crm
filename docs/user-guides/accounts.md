@@ -11,7 +11,11 @@ You handle **invoices**, **payments**, **recurring billing**, and the
 ## 1. Invoices
 **Invoices** lists every invoice. Invoices are **GST-compliant**:
 - **Maharashtra clients** → tax splits into **CGST + SGST**.
-- **Other states** → **IGST** at the full rate.
+- **Other states (India)** → **IGST** at the full rate.
+- **Overseas clients** → **zero-rated** (export of services, no GST). The PDF
+  is labelled "INVOICE" with an "Export of Services / Zero-Rated Supply" note
+  instead of the usual tax rows. This is set automatically when the client's
+  **Country** is anything other than "India" — no manual adjustment needed.
 - Each invoice has a number like **NEDS/2026-27/0042** (the financial year runs
   April–March), shows both parties' GSTINs, HSN/SAC per line, the tax breakup,
   and the **amount in words**.
