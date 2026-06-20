@@ -54,7 +54,7 @@
                             <tr>
                                 <th class="px-4 py-3">Project</th>
                                 @if ($activeGroup !== 'client') <th class="px-4 py-3">Client</th> @endif
-                                @if ($activeGroup !== 'owner') <th class="px-4 py-3">Owner</th> @endif
+                                @if ($activeGroup !== 'owner') <th class="px-4 py-3">Assignee</th> @endif
                                 @if ($activeGroup !== 'service') <th class="px-4 py-3">Service</th> @endif
                                 <th class="px-4 py-3">Status</th>
                                 <th class="px-4 py-3 text-right">Tasks</th>
@@ -65,7 +65,10 @@
                                 <tr class="hover:bg-gray-50">
                                     <td class="px-4 py-3"><a href="{{ route('projects.show', $project) }}" class="font-medium text-indigo-600 hover:underline">{{ $project->name }}</a></td>
                                     @if ($activeGroup !== 'client') <td class="px-4 py-3 text-gray-600">{{ $project->customer?->company_name ?? 'Client removed' }}</td> @endif
-                                    @if ($activeGroup !== 'owner') <td class="px-4 py-3 text-gray-600">{{ $project->owner?->name ?? '—' }}</td> @endif
+                                    @if ($activeGroup !== 'owner')
+                                        @php $lead = $project->assignees->firstWhere('pivot.role', 'lead') ?? $project->assignees->first(); @endphp
+                                        <td class="px-4 py-3 text-gray-600">{{ $lead?->name ?? '—' }}</td>
+                                    @endif
                                     @if ($activeGroup !== 'service') <td class="px-4 py-3 text-gray-600">{{ $project->service?->name ?? '—' }}</td> @endif
                                     <td class="px-4 py-3 text-gray-600">{{ $project->status->label() }}</td>
                                     <td class="px-4 py-3 text-right text-gray-600">{{ $project->tasks_count }}</td>
@@ -85,7 +88,7 @@
                         <tr>
                             <th class="px-4 py-3">Project</th>
                             <th class="px-4 py-3">Client</th>
-                            <th class="px-4 py-3">Owner</th>
+                            <th class="px-4 py-3">Assignee</th>
                             <th class="px-4 py-3">Status</th>
                             <th class="px-4 py-3 text-right">Tasks</th>
                         </tr>
@@ -95,7 +98,8 @@
                             <tr class="hover:bg-gray-50">
                                 <td class="px-4 py-3"><a href="{{ route('projects.show', $project) }}" class="font-medium text-indigo-600 hover:underline">{{ $project->name }}</a></td>
                                 <td class="px-4 py-3 text-gray-600">{{ $project->customer?->company_name ?? 'Client removed' }}</td>
-                                <td class="px-4 py-3 text-gray-600">{{ $project->owner?->name ?? '—' }}</td>
+                                @php $lead = $project->assignees->firstWhere('pivot.role', 'lead') ?? $project->assignees->first(); @endphp
+                                <td class="px-4 py-3 text-gray-600">{{ $lead?->name ?? '—' }}</td>
                                 <td class="px-4 py-3 text-gray-600">{{ $project->status->label() }}</td>
                                 <td class="px-4 py-3 text-right text-gray-600">{{ $project->tasks_count }}</td>
                             </tr>
