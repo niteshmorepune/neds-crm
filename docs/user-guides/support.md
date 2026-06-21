@@ -23,8 +23,16 @@ Tickets come from clients (via their portal) or are raised by staff.
 **Managing:** use the panel to change **status**, **priority**, or **assignee**,
 attach files, and **Mark resolved** when done (the client is notified).
 
-**SLA breaches:** if a ticket passes its due time while still open, managers are
-alerted automatically — keep an eye on the "SLA at risk" number.
+**Filtering:** use the filter bar to narrow by status, priority, or assignee.
+Tick **SLA breached** (shown in red) to instantly see only the open tickets that
+have passed their SLA deadline — useful for prioritising your queue at the start
+of the day.
+
+**SLA breaches:** when a ticket passes its SLA deadline, managers receive a
+one-time escalation email. The email shows how long overdue the ticket is (e.g.
+"1d 14h overdue"), the client, channel, priority, assignee, and a direct link to
+the ticket. No repeat emails — resolving the ticket is the way to clear it from
+the breach list.
 
 ## 2. Projects (Project Updates)
 A **Project** is created from a won deal. Open **Project Updates** to see your

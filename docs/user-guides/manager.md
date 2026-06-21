@@ -66,3 +66,9 @@ You don't need to chase people — the system does it.
 Check the **SLA at-risk** tickets and the **Overdue follow-ups** widget on the
 dashboard regularly — both are leading indicators of service and sales health.
 The stagnation alert emails give you a daily safety net for cold leads and deals.
+
+**SLA breach emails:** when an open ticket passes its SLA deadline you receive a
+one-time email showing how long overdue it is, the client, channel, priority,
+and assignee, plus a direct link to the ticket. The email fires once per ticket —
+no repeat hourly alerts. To see all currently breached tickets, go to **Tickets**
+and tick the red **SLA breached** checkbox in the filter bar.
