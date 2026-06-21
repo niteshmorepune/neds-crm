@@ -11,6 +11,9 @@
                 <label class="flex items-center gap-1 text-sm text-gray-600">
                     <input type="checkbox" name="mine" value="1" @checked(! empty($filters['mine'])) onchange="this.form.submit()" class="rounded border-gray-300 text-indigo-600" /> Assigned to me
                 </label>
+                <label class="flex items-center gap-1 text-sm font-medium text-red-600">
+                    <input type="checkbox" name="breached" value="1" @checked(! empty($filters['breached'])) onchange="this.form.submit()" class="rounded border-gray-300 text-red-600" /> SLA breached
+                </label>
                 <select name="status" class="rounded-md border-gray-300 text-sm shadow-sm">
                     <option value="">All statuses</option>
                     @foreach ($statuses as $status)

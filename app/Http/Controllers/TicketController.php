@@ -31,13 +31,14 @@ class TicketController extends Controller
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->input('status')))
             ->when($request->filled('priority'), fn ($q) => $q->where('priority', $request->input('priority')))
             ->when($request->boolean('mine'), fn ($q) => $q->where('assignee_id', $request->user()->id))
+            ->when($request->boolean('breached'), fn ($q) => $q->open()->whereNotNull('sla_due_at')->where('sla_due_at', '<', now()))
             ->latest()
             ->paginate(20)
             ->withQueryString();
 
         return view('tickets.index', $this->formData() + [
             'tickets' => $tickets,
-            'filters' => $request->only(['status', 'priority', 'mine']),
+            'filters' => $request->only(['status', 'priority', 'mine', 'breached']),
         ]);
     }
 
