@@ -21,11 +21,12 @@ class CheckTicketSla extends Command
             ->open()
             ->whereNotNull('sla_due_at')
             ->where('sla_due_at', '<', now())
+            ->whereNull('sla_breach_notified_at')
             ->with(['customer', 'assignee'])
             ->get();
 
         if ($breached->isEmpty()) {
-            $this->info('No SLA breaches.');
+            $this->info('No new SLA breaches.');
 
             return self::SUCCESS;
         }
@@ -37,6 +38,8 @@ class CheckTicketSla extends Command
         foreach ($managers as $manager) {
             Mail::to($manager)->send(new SlaEscalation($breached));
         }
+
+        Ticket::whereIn('id', $breached->pluck('id'))->update(['sla_breach_notified_at' => now()]);
 
         $this->info("Escalated {$breached->count()} breached ticket(s) to {$managers->count()} manager(s).");
 

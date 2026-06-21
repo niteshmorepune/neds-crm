@@ -20,7 +20,7 @@ class Ticket extends Model
 
     protected $fillable = [
         'customer_id', 'service_id', 'assignee_id', 'created_by',
-        'subject', 'description', 'priority', 'status', 'sla_due_at', 'resolved_at',
+        'subject', 'description', 'priority', 'status', 'sla_due_at', 'sla_breach_notified_at', 'resolved_at',
         'channel', 'whatsapp_conversation_id',
     ];
 
@@ -30,6 +30,7 @@ class Ticket extends Model
             'priority' => TicketPriority::class,
             'status' => TicketStatus::class,
             'sla_due_at' => 'datetime',
+            'sla_breach_notified_at' => 'datetime',
             'resolved_at' => 'datetime',
         ];
     }
