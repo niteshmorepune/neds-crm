@@ -18,6 +18,7 @@ with five sections:
 |---|---|
 | **Dashboard** | Your account summary at a glance — open invoices, active projects, open tickets |
 | **Services** | All your active services and the team member responsible for each one |
+| **Quotations** | Proposals and estimates NEDS has sent you |
 | **Invoices** | All your invoices with status and PDF download |
 | **Projects** | Status and updates for work NEDS is doing for you |
 | **Tickets** | Your support requests and their conversation history |
@@ -42,6 +43,12 @@ place:
 
 If you have a question about a specific service, use the **Raise a ticket** link
 at the bottom of the page — it keeps everything tracked in one place.
+
+## Quotations
+Open **Quotations** to see every proposal or estimate NEDS has sent you. Each
+entry shows the quotation number, date, status (Draft / Sent / Accepted /
+Rejected), validity date, and total amount. This section gives you a record of
+all agreed-upon scope and pricing before invoices are raised.
 
 ## Invoices
 All your invoices are listed with:
