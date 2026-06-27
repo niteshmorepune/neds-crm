@@ -45,6 +45,20 @@ return [
         'token' => env('WHATSAPP_WEBHOOK_TOKEN'),
     ],
 
+    // nedsdrishti.in — agency service delivery platform.
+    // The CRM provisions clients here when a deal is won.
+    'drishti' => [
+        'base_url'    => env('DRISHTI_API_URL', 'https://nedsdrishti.in'),
+        'service_key' => env('DRISHTI_SERVICE_KEY'),
+    ],
+
+    // socialmediadost.com — AI content production studio.
+    // The CRM provisions clients here when a deal is won.
+    'smdost' => [
+        'base_url'    => env('SMDOST_API_URL', 'https://socialmediadost.com'),
+        'service_key' => env('SMDOST_SERVICE_KEY'),
+    ],
+
     /*
      | Anthropic (Claude) API — Phase 5 AI features. All AI is gated by the
      | `enabled` flag (AI_ENABLED). The key is never hardcoded; request/response

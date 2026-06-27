@@ -34,6 +34,8 @@ class Customer extends Model
         'tags',
         'owner_id',
         'status',
+        'drishti_client_id',
+        'smdost_client_id',
     ];
 
     protected function casts(): array

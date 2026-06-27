@@ -177,3 +177,36 @@ is done; new work is maintenance.
 - **Portal ticket auto-routing:** `Portal\TicketController::store()` resolves
   `service_id` and `assignee_id` from the selected project's lead assignee.
   The create view shows a project dropdown only when `$projects->isNotEmpty()`.
+
+## Cross-app integrations (CRM ↔ Drishti ↔ SMDost)
+
+See [[integrations]] memory for the full architecture, VPS paths, and priority build order.
+
+**Server-to-server auth pattern (X-Service-Key):**
+Both Drishti and SMDost use browser-session auth, so we added a shared-secret header
+as an alternative auth path. CRM sends `X-Service-Key: <secret>` in the request
+header; each app validates it against an env var before falling back to normal session
+auth. Config in CRM: `config('services.drishti.service_key')` / `config('services.smdost.service_key')`.
+
+**Pattern for outbound HTTP calls to external apps:**
+- Always use a **queued job** (database driver — no Redis on Hostinger).
+- Wrap **each** external call in its own try/catch — failure of one must never block the other or break core CRM workflow.
+- **Idempotency guard:** check if the external ID is already set before calling; skip if so.
+- Log failures with `Log::warning()` (not info — `LOG_LEVEL=warning` on Hostinger drops info).
+- Write an `Activity` record on the subject model after successful provisioning (`user_id = null` for system events).
+- Use `updateQuietly()` to save external IDs without firing model events (avoids activity-log noise).
+
+**Config/env convention for new integrations:**
+```php
+// config/services.php
+'appname' => [
+    'base_url'    => env('APPNAME_API_URL', 'https://app.example.com'),
+    'service_key' => env('APPNAME_SERVICE_KEY'),
+],
+```
+Document both vars in `.env.example` with a comment explaining what they match on the other app's side.
+
+**VPS paths (for deploying changes to the other apps):**
+- nedsdrishti.in: `/opt/app/agencyos` — Docker Compose, env file `.env.production`, restart with `docker compose up -d app`
+- socialmediadost.com: `/root/social-media-dost` — Docker Compose, env file `.env`, restart with `docker compose up -d`
+- `docker compose restart app` does NOT re-read env_file — always use `up -d` to pick up new env vars.

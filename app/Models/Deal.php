@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\CustomerStatus;
 use App\Enums\DealStage;
 use App\Enums\UserRole;
+use App\Jobs\ProvisionClientExternallyJob;
 use App\Models\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -46,6 +47,11 @@ class Deal extends Model
                 Customer::where('id', $deal->customer_id)
                     ->where('status', CustomerStatus::Prospect->value)
                     ->update(['status' => CustomerStatus::Active->value]);
+
+                // Provision the customer in Drishti and SMDost. The job is
+                // idempotent (skips if drishti_client_id already set) so it is
+                // safe to dispatch even if the deal somehow reaches Won twice.
+                ProvisionClientExternallyJob::dispatch($deal->customer_id);
             }
         });
     }

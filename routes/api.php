@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Controllers\Api\LeadCaptureController;
+use App\Http\Controllers\Api\SmdostWebhookController;
 use App\Http\Controllers\Api\WhatsappWebhookController;
 use App\Http\Middleware\VerifyLeadCaptureToken;
+use App\Http\Middleware\VerifySmdostWebhookToken;
 use App\Http\Middleware\VerifyWhatsappWebhookToken;
 use Illuminate\Support\Facades\Route;
 
@@ -18,3 +20,9 @@ Route::post('/leads', [LeadCaptureController::class, 'store'])
 Route::post('/webhook/whatsapp', [WhatsappWebhookController::class, 'handle'])
     ->middleware(['throttle:60,1', VerifyWhatsappWebhookToken::class])
     ->name('api.webhook.whatsapp');
+
+// socialmediadost.com → CRM bridge. Called when all content in a brief is
+// approved. Creates a draft invoice for the accounts team to price and send.
+Route::post('/webhooks/smdost/brief-approved', [SmdostWebhookController::class, 'briefApproved'])
+    ->middleware(['throttle:60,1', VerifySmdostWebhookToken::class])
+    ->name('api.webhooks.smdost.brief-approved');
