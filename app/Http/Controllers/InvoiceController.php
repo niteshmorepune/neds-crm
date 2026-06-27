@@ -9,6 +9,7 @@ use App\Http\Requests\PaymentStoreRequest;
 use App\Mail\InvoiceIssued;
 use App\Mail\PaymentReceived;
 use App\Models\Invoice;
+use App\Services\InvoiceNumberGenerator;
 use App\Support\Money;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
@@ -62,8 +63,9 @@ class InvoiceController extends Controller
 
         $pdf = Pdf::loadView('invoices.pdf', ['invoice' => $invoice]);
 
-        // Invoice numbers contain "/" which is illegal in a download filename.
-        $filename = str_replace('/', '-', $invoice->invoice_number).'.pdf';
+        $filename = $invoice->invoice_number
+            ? str_replace('/', '-', $invoice->invoice_number).'.pdf'
+            : 'invoice-'.$invoice->id.'.pdf';
 
         return $pdf->stream($filename);
     }
@@ -71,6 +73,10 @@ class InvoiceController extends Controller
     public function send(Invoice $invoice): RedirectResponse
     {
         $this->authorize('view', $invoice);
+
+        if (! $invoice->invoice_number) {
+            return back()->withErrors(['send' => 'Assign an invoice number before sending.']);
+        }
 
         $email = $invoice->customer->load('contacts')->billingEmail();
 
@@ -121,6 +127,26 @@ class InvoiceController extends Controller
         }
 
         return back()->with('status', $status);
+    }
+
+    /**
+     * Assign the next GST invoice number. Only Accounts / Admin can do this.
+     * Invoices created from quotations start with no number; this finalises them.
+     */
+    public function assignNumber(Invoice $invoice, InvoiceNumberGenerator $numbers): RedirectResponse
+    {
+        $this->authorize('recordPayment', $invoice); // accounts-only gate (reuses same policy check)
+
+        if ($invoice->invoice_number !== null) {
+            return back()->with('error', 'This invoice already has a number assigned.');
+        }
+
+        $invoice->update([
+            'invoice_number' => $numbers->generate($invoice->issue_date),
+            'financial_year' => $numbers->financialYear($invoice->issue_date),
+        ]);
+
+        return back()->with('status', "Invoice number {$invoice->invoice_number} assigned.");
     }
 
     public function destroy(Invoice $invoice): RedirectResponse

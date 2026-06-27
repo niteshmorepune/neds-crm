@@ -17,7 +17,13 @@ class SendDailyReportReminders extends Command
 
     public function handle(): int
     {
-        $today = Carbon::today();
+        $today = Carbon::today(config('app.display_timezone'));
+
+        if ($today->isSunday()) {
+            $this->info('Sunday — skipping daily report reminders.');
+
+            return self::SUCCESS;
+        }
 
         $submittedUserIds = DailyReport::whereDate('date', $today)->pluck('user_id');
 

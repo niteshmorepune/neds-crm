@@ -42,6 +42,11 @@
                                     @csrf @method('PUT')
                                     <button class="ml-3 text-gray-500 hover:text-gray-700">{{ $r->is_active ? 'Pause' : 'Activate' }}</button>
                                 </form>
+                                <form method="POST" action="{{ route('recurring-invoices.destroy', $r) }}" class="inline"
+                                      onsubmit="return confirm('Delete this recurring invoice? This cannot be undone.')">
+                                    @csrf @method('DELETE')
+                                    <button class="ml-3 text-red-600 hover:text-red-500">Delete</button>
+                                </form>
                             </td>
                         </tr>
                     @empty

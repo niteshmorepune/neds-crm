@@ -15,6 +15,11 @@ class ConvertQuotationToInvoice
 {
     public function __construct(private readonly InvoiceNumberGenerator $numbers) {}
 
+    private function financialYear(Carbon $date): string
+    {
+        return $this->numbers->financialYear($date);
+    }
+
     /**
      * Create an Invoice (with item snapshot) from an accepted quotation.
      * Idempotent guard: a quotation can only be converted once.
@@ -34,8 +39,8 @@ class ConvertQuotationToInvoice
 
         return DB::transaction(function () use ($quotation, $issueDate, $dueDate) {
             $invoice = Invoice::create([
-                'invoice_number' => $this->numbers->generate($issueDate),
-                'financial_year' => $this->numbers->financialYear($issueDate),
+                'invoice_number' => null,
+                'financial_year' => $this->financialYear($issueDate),
                 'customer_id' => $quotation->customer_id,
                 'deal_id' => $quotation->deal_id,
                 'quotation_id' => $quotation->id,

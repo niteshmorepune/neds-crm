@@ -20,6 +20,12 @@ class SendStagnationAlerts extends Command
 
     public function handle(): int
     {
+        if (now(config('app.display_timezone'))->isSunday()) {
+            $this->info('Sunday — skipping stagnation alerts.');
+
+            return self::SUCCESS;
+        }
+
         $leadDays = (int) $this->option('lead-days');
         $dealDays = (int) $this->option('deal-days');
 

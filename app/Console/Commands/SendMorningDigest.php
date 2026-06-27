@@ -26,6 +26,13 @@ class SendMorningDigest extends Command
     {
         $tz = config('app.display_timezone');
         $today = Carbon::today($tz);
+
+        if ($today->isSunday()) {
+            $this->info('Sunday — skipping morning digest.');
+
+            return self::SUCCESS;
+        }
+
         $endOfToday = $today->copy()->endOfDay();
 
         $openLeadStatuses = [LeadStatus::New->value, LeadStatus::Contacted->value, LeadStatus::Qualified->value];

@@ -32,6 +32,13 @@
                         {{ $recurring->is_active ? 'Pause' : 'Activate' }}
                     </button>
                 </form>
+                @can('create', \App\Models\Invoice::class)
+                    <form method="POST" action="{{ route('recurring-invoices.destroy', $recurring) }}"
+                          onsubmit="return confirm('Delete this recurring invoice template? Generated invoices will not be deleted.')">
+                        @csrf @method('DELETE')
+                        <button class="rounded-md border border-red-300 bg-white px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50">Delete</button>
+                    </form>
+                @endcan
             </div>
         </div>
 

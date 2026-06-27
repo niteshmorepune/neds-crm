@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\Lead;
+use App\Models\Note;
 use App\Services\AiAssistant;
 use App\Support\Ai;
 use Illuminate\Database\Eloquent\Model;
@@ -28,6 +29,13 @@ class RecordNotes extends Component
     public string $body = '';
 
     public bool $visibleToClient = false;
+
+    // Edit state
+    public ?int $editingNoteId = null;
+
+    public string $editBody = '';
+
+    public bool $editVisibleToClient = false;
 
     public function mount(Model $record, bool $canManage = false, bool $canAddNotes = false, bool $showPortalToggle = false): void
     {
@@ -74,10 +82,60 @@ class RecordNotes extends Component
         $this->visibleToClient = $this->showPortalToggle;
     }
 
+    public function startEdit(int $noteId): void
+    {
+        abort_unless($this->canManage || $this->canAddNotes, 403);
+
+        $note = Note::findOrFail($noteId);
+        // Only the author or a manager can edit a note.
+        abort_unless($note->user_id === auth()->id() || $this->canManage, 403);
+
+        $this->editingNoteId = $noteId;
+        $this->editBody = $note->body;
+        $this->editVisibleToClient = $note->visible_to_client;
+    }
+
+    public function cancelEdit(): void
+    {
+        $this->editingNoteId = null;
+        $this->editBody = '';
+        $this->editVisibleToClient = false;
+    }
+
+    public function updateNote(): void
+    {
+        abort_unless($this->canManage || $this->canAddNotes, 403);
+        abort_unless($this->editingNoteId !== null, 422);
+
+        $this->validate(['editBody' => 'required|string|max:5000']);
+
+        $note = Note::findOrFail($this->editingNoteId);
+        abort_unless($note->user_id === auth()->id() || $this->canManage, 403);
+
+        $note->update([
+            'body' => $this->editBody,
+            'visible_to_client' => $this->showPortalToggle && $this->editVisibleToClient,
+        ]);
+
+        $this->editingNoteId = null;
+        $this->editBody = '';
+        $this->editVisibleToClient = false;
+    }
+
+    public function deleteNote(int $noteId): void
+    {
+        abort_unless($this->canManage || $this->canAddNotes, 403);
+
+        $note = Note::findOrFail($noteId);
+        abort_unless($note->user_id === auth()->id() || $this->canManage, 403);
+
+        $note->delete();
+    }
+
     public function render()
     {
         return view('livewire.record-notes', [
-            'notes' => $this->record->notes()->with('author')->get(),
+            'notes' => $this->record->notes()->with('author')->latest()->get(),
             'canDraft' => $this->canDraft(),
         ]);
     }

@@ -83,7 +83,7 @@ it('converts an accepted quotation into an invoice with copied items and totals'
     expect($invoice)->not->toBeNull()
         ->and($invoice->total)->toBe(118000)
         ->and($invoice->items()->count())->toBe(1)
-        ->and($invoice->invoice_number)->toStartWith('NEDS/');
+        ->and($invoice->invoice_number)->toBeNull(); // Accounts assigns the number manually
 });
 
 it('refuses to convert a quotation that is not accepted', function () {

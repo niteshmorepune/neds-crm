@@ -117,6 +117,27 @@
 
     <p style="margin-top:12px;"><strong>Amount in words:</strong> {{ $invoice->amountInWords() }}</p>
 
+    {{-- Bank account details --}}
+    @if ($company['account_number'] || $company['upi_id'])
+    <div style="margin-top:20px;padding:10px 14px;border:1px solid #d1fae5;background:#f0fdf4;border-radius:4px;">
+        <div style="font-weight:bold;font-size:11px;color:#065f46;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;">Payment Details</div>
+        <table width="100%" cellpadding="0" cellspacing="0" style="font-size:11px;color:#374151;">
+            <tr>
+                <td style="width:50%;vertical-align:top;padding-right:20px;">
+                    @if ($company['bank_name'])<div><span style="color:#6b7280;">Bank:</span> {{ $company['bank_name'] }}</div>@endif
+                    @if ($company['account_name'])<div><span style="color:#6b7280;">Name:</span> {{ $company['account_name'] }}</div>@endif
+                    @if ($company['account_number'])<div><span style="color:#6b7280;">Account No:</span> <strong>{{ $company['account_number'] }}</strong></div>@endif
+                    @if ($company['ifsc_code'])<div><span style="color:#6b7280;">IFSC:</span> <strong>{{ $company['ifsc_code'] }}</strong></div>@endif
+                    @if ($company['account_type'])<div><span style="color:#6b7280;">Type:</span> {{ $company['account_type'] }}</div>@endif
+                </td>
+                <td style="vertical-align:top;">
+                    @if ($company['upi_id'])<div><span style="color:#6b7280;">UPI:</span> <strong>{{ $company['upi_id'] }}</strong></div>@endif
+                </td>
+            </tr>
+        </table>
+    </div>
+    @endif
+
     <p class="muted" style="margin-top:24px;font-size:11px;">
         @if($invoice->customer?->isOverseas())
             This is a computer-generated invoice for export of services. Supply is zero-rated under the IGST Act, 2017. Subject to Maharashtra jurisdiction.

@@ -138,6 +138,7 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
         Route::get('invoices/{invoice}/edit', InvoiceBuilder::class)->name('invoices.edit');
         Route::get('invoices/{invoice}/pdf', [InvoiceController::class, 'pdf'])->name('invoices.pdf');
         Route::post('invoices/{invoice}/send', [InvoiceController::class, 'send'])->name('invoices.send');
+        Route::post('invoices/{invoice}/assign-number', [InvoiceController::class, 'assignNumber'])->name('invoices.assign-number');
         Route::post('invoices/{invoice}/payments', [InvoiceController::class, 'storePayment'])->name('invoices.payments.store');
         Route::delete('invoices/{invoice}', [InvoiceController::class, 'destroy'])->name('invoices.destroy');
     });
@@ -297,6 +298,7 @@ Route::prefix('portal')->name('portal.')->group(function () {
     Route::middleware('auth:portal')->group(function () {
         Route::post('logout', [LoginController::class, 'logout'])->name('logout');
         Route::get('/', [HomeController::class, 'index'])->name('home');
+        Route::get('quotations', [App\Http\Controllers\Portal\QuotationController::class, 'index'])->name('quotations.index');
         Route::get('invoices', [App\Http\Controllers\Portal\InvoiceController::class, 'index'])->name('invoices.index');
         Route::get('invoices/{invoice}', [App\Http\Controllers\Portal\InvoiceController::class, 'show'])->name('invoices.show');
         Route::get('invoices/{invoice}/pdf', [App\Http\Controllers\Portal\InvoiceController::class, 'pdf'])->name('invoices.pdf');

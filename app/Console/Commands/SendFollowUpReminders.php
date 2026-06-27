@@ -19,6 +19,12 @@ class SendFollowUpReminders extends Command
 
     public function handle(): int
     {
+        if (now(config('app.display_timezone'))->isSunday()) {
+            $this->info('Sunday — skipping follow-up reminders.');
+
+            return self::SUCCESS;
+        }
+
         $now = now();
 
         $leadsByOwner = Lead::query()

@@ -15,4 +15,15 @@ return [
     'phone' => env('COMPANY_PHONE', ''),
     'whatsapp' => env('COMPANY_WHATSAPP', ''), // E.164 without +, e.g. 919028099919
 
+    /*
+    | Bank account details shown on invoices and payment receipts.
+    | Set these in .env to override the placeholders.
+    */
+    'bank_name'       => env('COMPANY_BANK_NAME', ''),
+    'account_name'    => env('COMPANY_ACCOUNT_NAME', ''),
+    'account_number'  => env('COMPANY_ACCOUNT_NUMBER', ''),
+    'ifsc_code'       => env('COMPANY_IFSC_CODE', ''),
+    'account_type'    => env('COMPANY_ACCOUNT_TYPE', 'Current'),
+    'upi_id'          => env('COMPANY_UPI_ID', ''),
+
 ];

@@ -35,7 +35,14 @@
                 <tbody class="divide-y divide-gray-100">
                     @forelse ($invoices as $invoice)
                         <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-3"><a href="{{ route('invoices.show', $invoice) }}" class="font-medium text-indigo-600 hover:underline">{{ $invoice->invoice_number }}</a></td>
+                            <td class="px-4 py-3">
+                                <a href="{{ route('invoices.show', $invoice) }}" class="font-medium text-indigo-600 hover:underline">
+                                    {{ $invoice->invoice_number ?? '—' }}
+                                </a>
+                                @if (! $invoice->invoice_number)
+                                    <span class="ml-1 inline-flex rounded-full bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-700">Pending #</span>
+                                @endif
+                            </td>
                             <td class="px-4 py-3 text-gray-600">{{ $invoice->customer?->company_name ?? 'Client removed' }}</td>
                             <td class="px-4 py-3 text-gray-600">{{ $invoice->status->label() }}</td>
                             <td class="px-4 py-3 text-right text-gray-600">{{ \App\Support\Money::format($invoice->total) }}</td>

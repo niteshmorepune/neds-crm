@@ -12,7 +12,14 @@
         <div class="rounded-lg bg-white p-6 shadow-sm">
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                    <h1 class="text-xl font-semibold text-gray-900">{{ $invoice->invoice_number }}</h1>
+                    @if ($invoice->invoice_number)
+                        <h1 class="text-xl font-semibold text-gray-900">{{ $invoice->invoice_number }}</h1>
+                    @else
+                        <h1 class="text-xl font-semibold text-gray-900">
+                            Invoice
+                            <span class="ml-2 inline-flex rounded-full bg-amber-100 px-2.5 py-0.5 text-sm font-medium text-amber-800">Pending Invoice #</span>
+                        </h1>
+                    @endif
                     <p class="mt-1 text-sm text-gray-500">
                         {{ $invoice->customer?->company_name ?? 'Client removed' }} ·
                         <span class="font-medium">{{ $invoice->status->label() }}</span> ·
@@ -21,13 +28,23 @@
                     </p>
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
-                    @can('view', $invoice)
-                        <form method="POST" action="{{ route('invoices.send', $invoice) }}">
-                            @csrf
-                            <button class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">Send Invoice</button>
-                        </form>
+                    @can('recordPayment', $invoice)
+                        @if (! $invoice->invoice_number)
+                            <form method="POST" action="{{ route('invoices.assign-number', $invoice) }}">
+                                @csrf
+                                <button class="rounded-md bg-amber-500 px-3 py-2 text-sm font-medium text-white hover:bg-amber-600">Assign Invoice Number</button>
+                            </form>
+                        @endif
                     @endcan
-                    <a href="{{ route('invoices.pdf', $invoice) }}" target="_blank" class="rounded-md bg-gray-800 px-3 py-2 text-sm font-medium text-white hover:bg-gray-700">Download PDF</a>
+                    @if ($invoice->invoice_number)
+                        @can('view', $invoice)
+                            <form method="POST" action="{{ route('invoices.send', $invoice) }}">
+                                @csrf
+                                <button class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">Send Invoice</button>
+                            </form>
+                        @endcan
+                        <a href="{{ route('invoices.pdf', $invoice) }}" target="_blank" class="rounded-md bg-gray-800 px-3 py-2 text-sm font-medium text-white hover:bg-gray-700">Download PDF</a>
+                    @endif
                     @can('update', $invoice)
                         <a href="{{ route('invoices.edit', $invoice) }}" class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Edit</a>
                     @endcan
@@ -123,7 +140,7 @@
                                 <x-input-label for="reference" value="Reference" />
                                 <x-text-input id="reference" name="reference" type="text" class="mt-1 block w-full" :value="old('reference')" />
                             </div>
-                            @if ($invoice->customer?->contacts->where('is_primary', true)->first()?->email)
+                            @if ($invoice->customer?->contacts->firstWhere(fn($c) => filled($c->email)))
                             <div class="flex items-center gap-2">
                                 <input type="checkbox" id="send_receipt" name="send_receipt" value="1"
                                        class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500"

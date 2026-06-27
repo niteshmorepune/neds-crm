@@ -31,7 +31,7 @@ class GenerateMilestoneInvoice
 
         return DB::transaction(function () use ($milestone, $quotation, $issueDate, $pct) {
             $invoice = Invoice::create([
-                'invoice_number' => $this->numbers->generate($issueDate),
+                'invoice_number' => null,
                 'financial_year' => $this->numbers->financialYear($issueDate),
                 'customer_id' => $quotation->customer_id,
                 'deal_id' => $quotation->deal_id,
