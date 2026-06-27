@@ -2,7 +2,7 @@
     <div class="rounded-lg bg-white p-6 shadow-sm">
         <div class="flex items-center justify-between">
             <p class="text-sm text-gray-500">
-                Issued {{ $invoice->issue_date->format('d M Y') }}@if ($invoice->due_date) · Due {{ $invoice->due_date->format('d M Y') }}@endif · {{ $invoice->status->label() }}
+                Issued {{ $invoice->issue_date->format('d M Y') }}@if ($invoice->due_date) · Due {{ $invoice->due_date->format('d M Y') }}@endif · {{ $invoice->status === \App\Enums\InvoiceStatus::Sent ? 'Unpaid' : $invoice->status->label() }}
             </p>
             <a href="{{ route('portal.invoices.pdf', $invoice->id) }}" target="_blank" class="rounded-md bg-gray-800 px-3 py-2 text-sm font-medium text-white hover:bg-gray-700">Download PDF</a>
         </div>

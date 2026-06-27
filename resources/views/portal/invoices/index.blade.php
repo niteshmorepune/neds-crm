@@ -17,7 +17,7 @@
                     };
                 @endphp
                 <span class="shrink-0 inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium {{ $statusColor }}">
-                    {{ $invoice->status->label() }}
+                    {{ $invoice->status === \App\Enums\InvoiceStatus::Sent ? 'Unpaid' : $invoice->status->label() }}
                 </span>
             </div>
             <div class="mt-3 flex items-center justify-between text-sm">
@@ -68,7 +68,7 @@
                         </td>
                         <td class="px-5 py-3.5 text-gray-500">{{ $invoice->issue_date->format('d M Y') }}</td>
                         <td class="px-5 py-3.5">
-                            <span class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium {{ $statusColor }}">{{ $invoice->status->label() }}</span>
+                            <span class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium {{ $statusColor }}">{{ $invoice->status === \App\Enums\InvoiceStatus::Sent ? 'Unpaid' : $invoice->status->label() }}</span>
                         </td>
                         <td class="px-5 py-3.5 text-right text-gray-700 font-medium">{{ \App\Support\Money::format($invoice->total) }}</td>
                         <td class="px-5 py-3.5 text-right font-medium {{ $invoice->balance() > 0 ? 'text-red-600' : 'text-gray-700' }}">{{ \App\Support\Money::format($invoice->balance()) }}</td>
