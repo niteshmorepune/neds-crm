@@ -29,7 +29,7 @@ if (!browser) {
   process.exit(1);
 }
 
-const guides = ['getting-started', 'sales', 'support', 'accounts', 'manager', 'admin', 'client-portal'];
+const guides = ['getting-started', 'sales', 'support', 'accounts', 'manager', 'admin', 'client-portal', 'integrations'];
 
 for (const name of guides) {
   const html = resolve(tmpDir, `${name}.html`);

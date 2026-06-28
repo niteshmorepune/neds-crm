@@ -14,6 +14,7 @@ Start with **Getting Started**, then read the guide for your role.
 | [Manager](manager.md) | Managers — dashboards and reports |
 | [Admin](admin.md) | Administrators — users, services, menu control, audit, backups |
 | [Client Portal](client-portal.md) | Clients — the read-only customer portal |
+| [Integrations](integrations.md) | Managers & Admins — Drishti, SMDost, and the 7 automated workflows |
 
 > Some AI helpers (lead scoring, "Draft with AI", "Summarize") only appear when
 > an administrator has enabled AI for the workspace. If you don't see them,
