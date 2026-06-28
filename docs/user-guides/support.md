@@ -59,6 +59,14 @@ contact details but not change them.
 automatically creates a ticket with a green **WhatsApp** badge on the tickets
 list. Handle it like any other ticket — the client sees it in their portal too.
 
+**Drishti context link:** if the ticket's client is connected to Drishti
+(nedsdrishti.in), a blue **"Open in Drishti →"** bar appears on the ticket
+page, just above the description. Click it to jump straight to the relevant
+Drishti view for that client — the link goes to the audit list for SEO/GMB
+tickets, the content/optimization view for Social Media/Ads tickets, or the
+client's general profile for other service types. This saves you from
+context-switching manually when the support query is about a delivered service.
+
 ## 3. Tasks (Employee Task)
 **Employee Task** is your task list.
 - Update a task's **status** (To-do → In progress → Review → Done) as you work.

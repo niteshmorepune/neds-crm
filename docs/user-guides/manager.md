@@ -62,6 +62,25 @@ to you.
 no activity for 7 days, or a deal for 10 days, the owner is emailed automatically.
 You don't need to chase people — the system does it.
 
+## Automated integrations
+The CRM runs automated workflows with **Drishti** and **Social Media Dost**.
+As a manager, what you need to know:
+
+- **When a deal is Won**, the client is automatically provisioned in both tools
+  — no manual re-entry. Check the client's Activity tab to confirm.
+- **When SMDost brief is approved**, a draft invoice appears in the CRM for
+  accounts to price. Watch for the notification if you oversee billing.
+- **Client portal SSO** — clients with linked Drishti or SMDost accounts see
+  one-click login buttons on their portal dashboard. If a client asks why the
+  button is missing, check that their deal has been Won (which sets the external
+  IDs).
+- **Monthly briefs** are auto-created on the 1st of each month. If a client's
+  brief didn't appear in SMDost, check that their project service is set to
+  Social Media or GMB and that the SMDost Client ID is set on their CRM profile.
+
+For full details and troubleshooting, see the
+[Integrations guide](integrations.md).
+
 ## Tip
 Check the **SLA at-risk** tickets and the **Overdue follow-ups** widget on the
 dashboard regularly — both are leading indicators of service and sales health.

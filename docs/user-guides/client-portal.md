@@ -95,6 +95,22 @@ project page — it keeps everything tracked in one place.
    conversation. Replies appear as a chat thread.
 5. Internal NEDS notes are never shown to you — you only see messages meant for you.
 
+## Your NEDS Tools
+If your account has access to other NEDS platforms (such as **Drishti** for
+service reports and audits, or **Social Media Dost** for your content), you
+will see a **"Your NEDS Tools"** section on your Dashboard.
+
+- Click **"Open Drishti Dashboard"** to open your audit reports, SEO tracking,
+  and analytics — you will be signed in automatically, no separate password
+  needed.
+- Click **"Open Social Media Dost"** to view and approve your social media
+  content — again, signed in automatically.
+
+**These links sign you in for 10 minutes.** If you click a button and see a
+sign-in error, simply return to the portal and click it again to get a fresh
+link. If the section does not appear, it means your account has not yet been
+linked to those tools — contact your NEDS account manager.
+
 ## WhatsApp support
 If your account has WhatsApp support enabled, you'll see a **Chat on WhatsApp**
 button on the Dashboard and Tickets pages. Use it for urgent queries — WhatsApp

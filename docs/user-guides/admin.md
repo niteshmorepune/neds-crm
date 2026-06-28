@@ -79,6 +79,27 @@ This integration is configured via `COMPANY_WHATSAPP` and `WHATSAPP_WEBHOOK_TOKE
 in the server `.env`. Contact your developer if the integration stops creating
 tickets.
 
+## 6. NEDS tool integrations (Drishti & SMDost)
+
+The CRM is connected to **nedsdrishti.in** and **socialmediadost.com**. Seven
+automated workflows run between the three tools. The full details are in the
+**[Integrations guide](integrations.md)**. In summary:
+
+| When this happens in CRM | This happens automatically |
+|---|---|
+| Deal marked **Won** | Client + user created in Drishti and SMDost |
+| Brief fully approved in SMDost | Draft invoice created in CRM; accounts notified |
+| Drishti post approved/published | Activity logged on the client's CRM timeline |
+| **1st of the month** (7:30 AM) | Monthly content briefs auto-created in SMDost |
+| Client opens portal SSO button | One-click login to Drishti or SMDost |
+| WhatsApp ticket opened | Drishti context link auto-appended to ticket |
+
+**Keeping integrations healthy:** all events leave a trace in the client's
+Activity feed. If an integration stops working, the most common fix is
+verifying the server `.env` keys (`DRISHTI_SERVICE_KEY`, `SMDOST_SERVICE_KEY`,
+`PORTAL_SSO_SECRET`) and running `php artisan config:cache`. See the
+[Integrations guide](integrations.md) for step-by-step troubleshooting.
+
 ## 7. Website lead capture
 The **niranjanenterprises.com** contact form automatically creates a lead in the
 CRM whenever someone submits it. No manual action is needed.

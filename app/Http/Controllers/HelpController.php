@@ -23,6 +23,7 @@ class HelpController extends Controller
         'manager' => 'Manager',
         'admin' => 'Admin',
         'client-portal' => 'Client Portal',
+        'integrations' => 'Integrations',
     ];
 
     public function index(Request $request): View
@@ -31,8 +32,8 @@ class HelpController extends Controller
             UserRole::Sales => ['getting-started', 'sales'],
             UserRole::Support => ['getting-started', 'support'],
             UserRole::Accounts => ['getting-started', 'accounts'],
-            UserRole::Manager => ['getting-started', 'manager'],
-            UserRole::Admin => ['getting-started', 'admin', 'manager'],
+            UserRole::Manager => ['getting-started', 'manager', 'integrations'],
+            UserRole::Admin => ['getting-started', 'admin', 'manager', 'integrations'],
         };
 
         return view('help.index', [
