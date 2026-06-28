@@ -46,3 +46,7 @@ Schedule::command('app:backup-database')->dailyAt('02:00')->timezone('Asia/Kolka
 // Monthly report reminder — fires daily at 09:00 IST but the command exits early
 // unless today is the last non-Sunday of the month (the last working day).
 Schedule::command('app:send-monthly-report-reminder')->dailyAt('09:00')->timezone('Asia/Kolkata');
+
+// Auto-create SMDost content briefs for active social media and GMB projects
+// on the 1st of each month at 07:30 IST (after recurring invoices are generated).
+Schedule::command('app:create-monthly-briefs')->monthlyOn(1, '07:30')->timezone('Asia/Kolkata');
