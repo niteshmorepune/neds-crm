@@ -47,9 +47,12 @@ return [
 
     // nedsdrishti.in — agency service delivery platform.
     // The CRM provisions clients here when a deal is won.
+    // webhook_secret: the per-webhook HMAC secret Drishti generated when we
+    // registered the CRM as a webhook subscriber (GET /api/webhooks → secret field).
     'drishti' => [
-        'base_url'    => env('DRISHTI_API_URL', 'https://nedsdrishti.in'),
-        'service_key' => env('DRISHTI_SERVICE_KEY'),
+        'base_url'       => env('DRISHTI_API_URL', 'https://nedsdrishti.in'),
+        'service_key'    => env('DRISHTI_SERVICE_KEY'),
+        'webhook_secret' => env('DRISHTI_WEBHOOK_SECRET'),
     ],
 
     // socialmediadost.com — AI content production studio.

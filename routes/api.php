@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Controllers\Api\DrishtiWebhookController;
 use App\Http\Controllers\Api\LeadCaptureController;
 use App\Http\Controllers\Api\SmdostWebhookController;
 use App\Http\Controllers\Api\WhatsappWebhookController;
+use App\Http\Middleware\VerifyDrishtiWebhookSignature;
 use App\Http\Middleware\VerifyLeadCaptureToken;
 use App\Http\Middleware\VerifySmdostWebhookToken;
 use App\Http\Middleware\VerifyWhatsappWebhookToken;
@@ -26,3 +28,10 @@ Route::post('/webhook/whatsapp', [WhatsappWebhookController::class, 'handle'])
 Route::post('/webhooks/smdost/brief-approved', [SmdostWebhookController::class, 'briefApproved'])
     ->middleware(['throttle:60,1', VerifySmdostWebhookToken::class])
     ->name('api.webhooks.smdost.brief-approved');
+
+// nedsdrishti.in → CRM bridge. Receives post.approved / post.rejected /
+// post.published events and writes them to the customer's activity feed.
+// Auth: HMAC-SHA256 (X-Agency-Signature header) with DRISHTI_WEBHOOK_SECRET.
+Route::post('/webhooks/drishti/event', [DrishtiWebhookController::class, 'handle'])
+    ->middleware(['throttle:120,1', VerifyDrishtiWebhookSignature::class])
+    ->name('api.webhooks.drishti.event');

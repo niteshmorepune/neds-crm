@@ -9,6 +9,10 @@ use App\Models\User;
 use Illuminate\Support\Facades\Mail;
 
 it('emails owners their due, open follow-ups only', function () {
+    // Command skips Sundays — travel forward if needed.
+    if (now()->isSunday()) {
+        $this->travelTo(now()->addDay());
+    }
     Mail::fake();
 
     $owner = User::factory()->role(UserRole::Sales)->create();

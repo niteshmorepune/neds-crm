@@ -49,6 +49,10 @@ it('shows the team view to managers only', function () {
 });
 
 it('reminds only users who have not submitted today', function () {
+    // Command skips Sundays — travel forward if needed.
+    if (now()->isSunday()) {
+        $this->travelTo(now()->addDay());
+    }
     Mail::fake();
     $submitter = $this->user;
     DailyReport::factory()->create(['user_id' => $submitter->id]);
