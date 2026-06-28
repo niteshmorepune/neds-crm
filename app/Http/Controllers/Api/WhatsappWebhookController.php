@@ -35,10 +35,17 @@ class WhatsappWebhookController extends Controller
         $preview = trim($data['message'] ?? '');
         $subject = 'WhatsApp: ' . str($preview)->limit(80, '…');
 
+        $description = $preview ?: '(media or non-text message)';
+
+        if ($customer->drishti_client_id) {
+            $base = rtrim((string) config('services.drishti.base_url'), '/');
+            $description .= "\n\n— Drishti context: {$base}/clients/{$customer->drishti_client_id}";
+        }
+
         Ticket::create([
             'customer_id'              => $customer->id,
             'subject'                  => $subject ?: 'WhatsApp enquiry',
-            'description'              => $preview ?: '(media or non-text message)',
+            'description'              => $description,
             'priority'                 => TicketPriority::Normal->value,
             'status'                   => TicketStatus::Open->value,
             'channel'                  => 'whatsapp',

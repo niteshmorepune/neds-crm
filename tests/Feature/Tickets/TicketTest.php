@@ -101,3 +101,49 @@ it('renders ticket index, create and show pages', function () {
     $this->actingAs($this->support)->get(route('tickets.create'))->assertOk()->assertSee('Subject');
     $this->actingAs($this->support)->get(route('tickets.show', $ticket))->assertOk()->assertSee($ticket->subject);
 });
+
+it('shows a Drishti context link on ticket show when the customer has drishti_client_id', function () {
+    config(['services.drishti.base_url' => 'https://nedsdrishti.in']);
+    $customer = Customer::factory()->create(['drishti_client_id' => 'drsh-99']);
+    $ticket   = Ticket::factory()->create(['customer_id' => $customer->id]);
+
+    $this->actingAs($this->support)
+        ->get(route('tickets.show', $ticket))
+        ->assertOk()
+        ->assertSee('https://nedsdrishti.in/clients/drsh-99');
+});
+
+it('omits the Drishti context link when the customer has no drishti_client_id', function () {
+    config(['services.drishti.base_url' => 'https://nedsdrishti.in']);
+    $customer = Customer::factory()->create(['drishti_client_id' => null]);
+    $ticket   = Ticket::factory()->create(['customer_id' => $customer->id]);
+
+    $this->actingAs($this->support)
+        ->get(route('tickets.show', $ticket))
+        ->assertOk()
+        ->assertDontSee('Open in Drishti');
+});
+
+it('links to the audit page for SEO and GMB service tickets', function () {
+    config(['services.drishti.base_url' => 'https://nedsdrishti.in']);
+    $customer = Customer::factory()->create(['drishti_client_id' => 'drsh-seo']);
+    $service  = \App\Models\Service::factory()->create(['name' => 'SEO']);
+    $ticket   = Ticket::factory()->create(['customer_id' => $customer->id, 'service_id' => $service->id]);
+
+    $this->actingAs($this->support)
+        ->get(route('tickets.show', $ticket))
+        ->assertOk()
+        ->assertSee('https://nedsdrishti.in/audit/drsh-seo');
+});
+
+it('links to the optimize page for Social Media and Google Ads tickets', function () {
+    config(['services.drishti.base_url' => 'https://nedsdrishti.in']);
+    $customer = Customer::factory()->create(['drishti_client_id' => 'drsh-sm']);
+    $service  = \App\Models\Service::factory()->create(['name' => 'Social Media']);
+    $ticket   = Ticket::factory()->create(['customer_id' => $customer->id, 'service_id' => $service->id]);
+
+    $this->actingAs($this->support)
+        ->get(route('tickets.show', $ticket))
+        ->assertOk()
+        ->assertSee('https://nedsdrishti.in/optimize/drsh-sm');
+});

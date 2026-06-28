@@ -74,9 +74,31 @@ class TicketController extends Controller
         $ticket->load(['customer', 'service', 'assignee', 'replies.author', 'attachments.uploader']);
 
         return view('tickets.show', $this->formData() + [
-            'ticket' => $ticket,
-            'canManage' => $this->user()->can('update', $ticket),
+            'ticket'      => $ticket,
+            'canManage'   => $this->user()->can('update', $ticket),
+            'drishtiUrl'  => $this->drishtiContextUrl($ticket),
         ]);
+    }
+
+    private function drishtiContextUrl(Ticket $ticket): ?string
+    {
+        $clientId = $ticket->customer?->drishti_client_id;
+        if (! $clientId) {
+            return null;
+        }
+
+        $base = rtrim((string) config('services.drishti.base_url'), '/');
+        $name = $ticket->service?->name ?? '';
+
+        if (str_contains($name, 'SEO') || str_contains($name, 'GMB')) {
+            return "{$base}/audit/{$clientId}";
+        }
+
+        if (str_contains($name, 'Social') || str_contains($name, 'Ads')) {
+            return "{$base}/optimize/{$clientId}";
+        }
+
+        return "{$base}/clients/{$clientId}";
     }
 
     public function update(Request $request, Ticket $ticket, SlaCalculator $sla): RedirectResponse

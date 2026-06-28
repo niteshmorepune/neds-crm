@@ -78,3 +78,30 @@ it('rejects requests without the correct token', function () {
         'conversation_id' => 'conv_unauth',
     ])->assertUnauthorized();
 });
+
+it('appends a Drishti context link to the description when the customer has drishti_client_id', function () {
+    config(['services.drishti.base_url' => 'https://nedsdrishti.in']);
+    $customer = Customer::factory()->create(['phone' => '919028099919', 'drishti_client_id' => 'drishti-abc']);
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone'           => '919028099919',
+        'message'         => 'Need help with my audit.',
+        'conversation_id' => 'conv_drishti_link',
+    ], ['Authorization' => 'Bearer test-wa-token'])->assertOk();
+
+    $ticket = Ticket::where('whatsapp_conversation_id', 'conv_drishti_link')->first();
+    expect($ticket->description)->toContain('https://nedsdrishti.in/clients/drishti-abc');
+});
+
+it('does not append a Drishti link when the customer has no drishti_client_id', function () {
+    $customer = Customer::factory()->create(['phone' => '919028099919', 'drishti_client_id' => null]);
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone'           => '919028099919',
+        'message'         => 'Need help.',
+        'conversation_id' => 'conv_no_drishti',
+    ], ['Authorization' => 'Bearer test-wa-token'])->assertOk();
+
+    $ticket = Ticket::where('whatsapp_conversation_id', 'conv_no_drishti')->first();
+    expect($ticket->description)->not->toContain('drishti');
+});
