@@ -79,7 +79,26 @@ This integration is configured via `COMPANY_WHATSAPP` and `WHATSAPP_WEBHOOK_TOKE
 in the server `.env`. Contact your developer if the integration stops creating
 tickets.
 
-## 6. NEDS tool integrations (Drishti & SMDost)
+## 6. Scheduled maintenance tasks
+The CRM runs `app:dispatch-scheduled-tasks` at **8 AM IST daily** via the cron
+scheduler. It scans every active project, matches it to a set of built-in task
+templates by service, and creates tasks due today — assigned to the project
+lead with an in-app bell notification.
+
+**No configuration is needed** — templates are built into the command and cover
+all NEDS service lines (Website Dev, SEO, GMB, Social Media, Google Ads, etc.).
+
+**Backfill a missed date** (e.g. server was down, or a project was just made active):
+```bash
+php artisan app:dispatch-scheduled-tasks --date=2026-07-01
+```
+The command is idempotent — running it twice for the same date will not create
+duplicate tasks.
+
+**Verify it ran:** open any active project in Emptask and check that tasks were
+created today. Or check the server cron log.
+
+## 7. NEDS tool integrations (Drishti & SMDost)
 
 The CRM is connected to **nedsdrishti.in** and **socialmediadost.com**. Seven
 automated workflows run between the three tools. The full details are in the
@@ -100,7 +119,7 @@ verifying the server `.env` keys (`DRISHTI_SERVICE_KEY`, `SMDOST_SERVICE_KEY`,
 `PORTAL_SSO_SECRET`) and running `php artisan config:cache`. See the
 [Integrations guide](integrations.md) for step-by-step troubleshooting.
 
-## 7. Website lead capture
+## 8. Website lead capture
 The **niranjanenterprises.com** contact form automatically creates a lead in the
 CRM whenever someone submits it. No manual action is needed.
 
@@ -116,16 +135,16 @@ You don't need to touch anything — if the contact form stops creating leads,
 check that the server's `LEAD_CAPTURE_TOKEN` matches what's configured in the
 Elementor webhook URL.
 
-## 8. Audit Log
+## 9. Audit Log
 **Audit Log** (admin) shows who created, updated or deleted records, and when.
 Filter by record type or event. Use it to investigate "who changed this?".
 
-## 9. Backups
+## 10. Backups
 The database is **backed up automatically every night at 2 AM** (kept 14 daily +
 8 weekly copies on the server). You don't need to do anything. To restore from a
 backup, follow `docs/backup-restore.md`.
 
-## 10. AI features (optional)
+## 11. AI features (optional)
 Three AI helpers are built into the CRM, powered by Anthropic's Claude. They are
 **off by default** and never take action automatically — they only assist staff.
 

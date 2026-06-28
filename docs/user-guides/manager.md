@@ -62,6 +62,25 @@ to you.
 no activity for 7 days, or a deal for 10 days, the owner is emailed automatically.
 You don't need to chase people — the system does it.
 
+## Scheduled maintenance tasks
+Every morning at **8 AM**, the CRM automatically creates recurring maintenance
+tasks for each active project and assigns them to the project lead (or project
+owner if no lead is set) with an in-app bell notification — no email.
+
+**As a manager, what you need to watch:**
+- Open **Project Updates → any project** to see all tasks including auto-created
+  ones. Overdue maintenance tasks show with the same red overdue flag as manual tasks.
+- The **Employee Performance Report** (Reports on the dashboard) counts these
+  tasks in each person's on-time completion %. If someone's % is dropping, check
+  whether maintenance tasks are being dismissed without being marked Done.
+- If a project isn't generating tasks, verify the project **status is Active**
+  and a **service is set** on it. On-hold or completed projects are skipped.
+- To trigger tasks for a missed date (e.g. after adding a new project
+  mid-month), SSH into the server and run:
+  ```
+  php artisan app:dispatch-scheduled-tasks --date=YYYY-MM-DD
+  ```
+
 ## Automated integrations
 The CRM runs automated workflows with **Drishti** and **Social Media Dost**.
 As a manager, what you need to know:

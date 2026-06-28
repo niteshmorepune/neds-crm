@@ -76,13 +76,52 @@ context-switching manually when the support query is about a delivered service.
 Completing tasks on time feeds your performance report, so keep statuses
 current.
 
+### Scheduled maintenance tasks
+At **8 AM every day**, the CRM automatically creates maintenance tasks for each
+active project you lead and assigns them to you with an **in-app bell
+notification**. You do not need to remember these — just watch for the bell.
+
+Each task is already linked to the correct project and includes a description
+of what to do. Open it, complete the work, and mark it **Done**.
+
+**What fires and when:**
+
+| Task | When |
+|---|---|
+| Website backup | 1st and 15th of every month |
+| Website malware / security scan | 1st and 16th of every month |
+| WordPress / CMS plugin updates | 1st of every month |
+| SSL certificate expiry check | 1st of every month |
+| Broken link check | 1st of every month |
+| GA4 / analytics review | 1st of every month |
+| AMC contract renewal review | 1st of every month |
+| Keyword ranking report | 1st of every month |
+| GMB profile health check | 1st of every month |
+| Social media account health check | 1st of every month |
+| Content calendar review | 25th of every month |
+| Website uptime & speed check | Every Monday |
+| Google Search Console review | Every Monday |
+| Google Ads performance review | Every Monday |
+| Client portal contacts audit | 1st of Jan, Apr, Jul, Oct |
+
+You only receive tasks for the services your projects actually run — a GMB
+project gets GMB tasks, a Website project gets website tasks, and so on.
+
+**If a task is missing:** check that your project status is **Active** and that
+a service is set on the project. On-hold or completed projects do not get tasks.
+
 ## 4. Calls
 Use **☎ Log a call** (top bar) or **Calling** to record calls you make to
 clients about their tickets or projects.
 
 ## 5. Notifications
-When a task is assigned to you, a **bell notification** appears in the top bar.
-Click it to go straight to the task. Dismiss notifications once you've read them.
+The bell (🔔) in the top bar is how the CRM reaches you **without email**.
+It fires when:
+- A task is assigned to you (including the scheduled maintenance tasks above).
+- A call follow-up you logged is due.
+
+Click the bell to see all unread notifications with a direct link to the
+relevant task or ticket. Dismiss them once you've read them.
 
 ## 6. Morning digest email
 At **9 AM** (Monday–Saturday) you'll receive a daily email listing your overdue
@@ -94,3 +133,5 @@ where to focus before you open the CRM. No email is sent on Sundays.
 - Use **internal notes** for hand-offs between team members.
 - Keep task statuses current — it feeds the performance report and the morning
   digest accurately reflects what's still open.
+- **Don't let maintenance tasks pile up as overdue** — they count against your
+  on-time completion % in the performance report.
