@@ -50,3 +50,8 @@ Schedule::command('app:send-monthly-report-reminder')->dailyAt('09:00')->timezon
 // Auto-create SMDost content briefs for active social media and GMB projects
 // on the 1st of each month at 07:30 IST (after recurring invoices are generated).
 Schedule::command('app:create-monthly-briefs')->monthlyOn(1, '07:30')->timezone('Asia/Kolkata');
+
+// Recurring maintenance tasks — creates project-linked tasks and fires in-app
+// bell notifications to project leads. Runs daily; the command decides internally
+// which templates are due today based on frequency (weekly/biweekly/monthly/quarterly).
+Schedule::command('app:dispatch-scheduled-tasks')->dailyAt('08:00')->timezone('Asia/Kolkata');
