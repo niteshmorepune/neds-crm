@@ -62,6 +62,13 @@ return [
         'service_key' => env('SMDOST_SERVICE_KEY'),
     ],
 
+    // Shared secret for cross-portal SSO tokens (CRM → Drishti / SMDost).
+    // Used to sign short-lived HS256 JWTs that let a portal contact log into
+    // Drishti or SMDost without a separate password.
+    'portal_sso' => [
+        'secret' => env('PORTAL_SSO_SECRET'),
+    ],
+
     /*
      | Anthropic (Claude) API — Phase 5 AI features. All AI is gated by the
      | `enabled` flag (AI_ENABLED). The key is never hardcoded; request/response

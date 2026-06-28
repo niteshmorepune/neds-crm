@@ -120,6 +120,34 @@
         @endif
     </div>
 
+    {{-- SSO links to Drishti / SMDost (shown only when the account is connected) --}}
+    @if($customer->drishti_client_id || $customer->smdost_client_id)
+    <div class="rounded-xl bg-white px-6 py-5 shadow-sm ring-1 ring-gray-100 mb-6">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Your NEDS Tools</h2>
+        <div class="flex flex-wrap gap-3">
+            @if($customer->drishti_client_id)
+            <a href="{{ route('portal.sso', 'drishti') }}"
+               class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition-colors">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" />
+                </svg>
+                Open Drishti Dashboard
+            </a>
+            @endif
+            @if($customer->smdost_client_id)
+            <a href="{{ route('portal.sso', 'smdost') }}"
+               class="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700 transition-colors">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+                </svg>
+                Open Social Media Dost
+            </a>
+            @endif
+        </div>
+        <p class="mt-2 text-xs text-gray-400">These links sign you in automatically — no separate password needed.</p>
+    </div>
+    @endif
+
     {{-- Company info --}}
     <div class="rounded-xl bg-white px-6 py-5 shadow-sm ring-1 ring-gray-100">
         <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Your Account</h2>

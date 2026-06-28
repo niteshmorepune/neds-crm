@@ -311,6 +311,10 @@ Route::prefix('portal')->name('portal.')->group(function () {
         Route::post('tickets', [App\Http\Controllers\Portal\TicketController::class, 'store'])->name('tickets.store');
         Route::get('tickets/{ticket}', [App\Http\Controllers\Portal\TicketController::class, 'show'])->name('tickets.show');
         Route::post('tickets/{ticket}/reply', [App\Http\Controllers\Portal\TicketController::class, 'reply'])->name('tickets.reply');
+
+        // SSO bridge — generates a short-lived signed token and redirects the
+        // contact to Drishti or SMDost so they log in without a separate password.
+        Route::get('sso/{app}', [App\Http\Controllers\Portal\SsoController::class, 'redirect'])->name('sso');
     });
 });
 
