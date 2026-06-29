@@ -62,6 +62,47 @@
             </ul>
         </div>
 
+        {{-- Content Pieces --}}
+        <div class="rounded-lg bg-white p-6 shadow-sm">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-base font-semibold text-gray-900">Content Pieces</h2>
+                    @if ($project->google_drive_folder_link)
+                        <a href="{{ $project->google_drive_folder_link }}" target="_blank" rel="noopener noreferrer"
+                           class="mt-0.5 inline-flex items-center gap-1 text-xs text-indigo-600 hover:underline">
+                            Google Drive Folder ↗
+                        </a>
+                    @endif
+                </div>
+                @can('create', [App\Models\ContentPiece::class, $project])
+                    <a href="{{ route('projects.content.create', $project) }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">+ Add piece</a>
+                @endcan
+            </div>
+            @php
+                $contentPieces = $project->contentPieces()->with('partner')->orderBy('publish_date')->orderByDesc('created_at')->take(5)->get();
+                $totalPieces   = $project->contentPieces()->count();
+            @endphp
+            <ul class="mt-3 divide-y divide-gray-100 text-sm">
+                @forelse ($contentPieces as $piece)
+                    <li class="flex items-center justify-between py-2">
+                        <a href="{{ route('content.show', $piece) }}" class="text-indigo-600 hover:underline">{{ $piece->title }}</a>
+                        <div class="flex items-center gap-2 text-gray-500">
+                            <span class="inline-flex rounded px-1.5 py-0.5 text-xs {{ $piece->status->badgeClass() }}">{{ $piece->status->label() }}</span>
+                            <span>{{ $piece->platform->label() }}</span>
+                            @if ($piece->publish_date)<span>{{ $piece->publish_date->format('d M') }}</span>@endif
+                        </div>
+                    </li>
+                @empty
+                    <li class="py-2 text-gray-400">No content pieces yet.</li>
+                @endforelse
+            </ul>
+            @if ($totalPieces > 5)
+                <a href="{{ route('projects.content.index', $project) }}" class="mt-2 inline-block text-xs text-indigo-600 hover:underline">View all {{ $totalPieces }} pieces →</a>
+            @elseif ($totalPieces > 0)
+                <a href="{{ route('projects.content.index', $project) }}" class="mt-2 inline-block text-xs text-indigo-600 hover:underline">View all →</a>
+            @endif
+        </div>
+
         {{-- Notes / client updates --}}
         <div class="rounded-lg bg-white p-6 shadow-sm">
             <h2 class="mb-4 text-base font-semibold text-gray-900">Notes &amp; Client Updates</h2>

@@ -19,6 +19,7 @@ class Project extends Model
     protected $fillable = [
         'name', 'customer_id', 'deal_id', 'service_id', 'owner_id',
         'status', 'start_date', 'end_date', 'description',
+        'google_drive_folder_link',
     ];
 
     protected function casts(): array
@@ -58,6 +59,11 @@ class Project extends Model
     public function tasks(): HasMany
     {
         return $this->hasMany(Task::class);
+    }
+
+    public function contentPieces(): HasMany
+    {
+        return $this->hasMany(ContentPiece::class);
     }
 
     public function notes(): MorphMany
