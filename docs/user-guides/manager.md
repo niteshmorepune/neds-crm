@@ -108,6 +108,8 @@ When adding a content piece to a project, choose the workflow:
 | **Agency-led** | Agency creates the full content (copy + visuals) and delivers to NEDS. Starts in *Pending from agency*. |
 | **NEDS-led** | NEDS writes the copy/brief, sends it to the partner, partner creates images/video and sends back. Starts in *Copy drafting*. |
 
+> **Auto-sync from SMDost:** For NEDS-led pieces, you don't need to add them manually. When the team clicks **Send to agency** on a content piece in SMDost, the CRM automatically creates a *NEDS-led* content piece on the matching project (status: *Sent to partner*), pre-filled with the copy text. Just open it and generate an upload link for the partner — no copy-paste needed.
+
 ### Status flow
 
 **Agency-led:** Pending from agency → Received → Approved → Scheduled → Published
@@ -152,6 +154,9 @@ As a manager, what you need to know:
   — no manual re-entry. Check the client's Activity tab to confirm.
 - **When SMDost brief is approved**, a draft invoice appears in the CRM for
   accounts to price. Watch for the notification if you oversee billing.
+- **When SMDost content is sent to agency**, a *NEDS-led* content piece is
+  auto-created in the CRM project (status: *Sent to partner*) with the copy
+  already filled in. Open it and generate an upload link for the partner.
 - **Client portal SSO** — clients with linked Drishti or SMDost accounts see
   one-click login buttons on their portal dashboard. If a client asks why the
   button is missing, check that their deal has been Won (which sets the external

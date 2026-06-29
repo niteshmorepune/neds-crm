@@ -113,7 +113,9 @@ a client alongside a partner agency.
 - **Agency-led** — the partner agency creates the content and delivers it to
   NEDS for publishing. Starts in *Pending from agency*.
 - **NEDS-led** — NEDS writes the copy/brief first, sends it to the partner for
-  visuals, then publishes. Starts in *Copy drafting*.
+  visuals, then publishes. Starts in *Copy drafting*. **If the copy was written
+  in SMDost and marked "Send to agency" there, the piece is created
+  automatically** in *Sent to partner* status — no need to add it manually.
 
 Fill in the platform (Instagram, Facebook, etc.), title, publish date, and any
 notes. Assign a partner if one is involved.

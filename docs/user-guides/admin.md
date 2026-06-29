@@ -108,6 +108,7 @@ automated workflows run between the three tools. The full details are in the
 |---|---|
 | Deal marked **Won** | Client + user created in Drishti and SMDost |
 | Brief fully approved in SMDost | Draft invoice created in CRM; accounts notified |
+| Content piece marked **Send to agency** in SMDost | *NEDS-led* content piece auto-created in CRM project (status: *Sent to partner*), pre-filled with copy text |
 | Drishti post approved/published | Activity logged on the client's CRM timeline |
 | **1st of the month** (7:30 AM) | Monthly content briefs auto-created in SMDost |
 | Client opens portal SSO button | One-click login to Drishti or SMDost |
