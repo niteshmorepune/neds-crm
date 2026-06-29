@@ -135,16 +135,30 @@ You don't need to touch anything — if the contact form stops creating leads,
 check that the server's `LEAD_CAPTURE_TOKEN` matches what's configured in the
 Elementor webhook URL.
 
-## 9. Audit Log
+## 9. Partners — content agency directory
+**Partners** in the sidebar is a directory of the external content agencies NEDS
+collaborates with. Managers and admins can add, edit, and delete partner records.
+
+Each partner needs only a **name**. Email and phone are optional but useful for
+quick reference when you need to contact the agency.
+
+Once a partner is registered, staff can assign them to content pieces inside
+projects (see [Manager guide → Content collaboration](manager.md)).
+
+**Deleting a partner** is allowed only when no content pieces are linked to
+them — the CRM will block the delete and show an error if any pieces still
+reference that partner.
+
+## 10. Audit Log
 **Audit Log** (admin) shows who created, updated or deleted records, and when.
 Filter by record type or event. Use it to investigate "who changed this?".
 
-## 10. Backups
+## 11. Backups
 The database is **backed up automatically every night at 2 AM** (kept 14 daily +
 8 weekly copies on the server). You don't need to do anything. To restore from a
 backup, follow `docs/backup-restore.md`.
 
-## 11. AI features (optional)
+## 12. AI features (optional)
 Three AI helpers are built into the CRM, powered by Anthropic's Claude. They are
 **off by default** and never take action automatically — they only assist staff.
 

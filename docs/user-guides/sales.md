@@ -98,7 +98,35 @@ don't apply) and tells the system to produce zero-rated invoices for that client
 — no GST is charged, and the PDF is labelled "Export of Services" automatically.
 Leave Country as "India" for all domestic clients.
 
-## 5. Quotations — sending to clients
+## 5. Content pieces (when you own a project)
+If you are set as the **owner** of a project, you can track content pieces for
+that project — useful when NEDS is managing social media or other content for
+a client alongside a partner agency.
+
+**Adding a content piece:** open the project → **Content Pieces** card →
+**Add piece**. Choose the workflow type:
+
+- **Agency-led** — the partner agency creates the content and delivers it to
+  NEDS for publishing. Starts in *Pending from agency*.
+- **NEDS-led** — NEDS writes the copy/brief first, sends it to the partner for
+  visuals, then publishes. Starts in *Copy drafting*.
+
+Fill in the platform (Instagram, Facebook, etc.), title, publish date, and any
+notes. Assign a partner if one is involved.
+
+**Advancing status:** open the content piece → click the **Move to…** button
+to move it to the next step. When a piece is marked *Published*, the timestamp
+is recorded automatically.
+
+**Google Drive:** you can store a Drive link on each piece (for the specific
+file) and on the project itself (for the shared folder). These appear as
+clickable links so you can jump straight to the asset.
+
+**Upload links** (generating one requires manager access — ask your manager).
+Once a link is generated you can copy it and send it to the partner; they
+upload files without needing a CRM login.
+
+## 6. Quotations — sending to clients
 Once a quotation is ready, open it and click **Send to Client**. This emails the
 quotation details to the client's billing address and marks it as Sent. The client
 can then accept or request changes.
