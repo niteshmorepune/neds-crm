@@ -43,7 +43,7 @@
         </div>
 
         {{-- Attachments --}}
-        <div class="rounded-lg bg-white p-6 shadow-sm">
+        <div id="attachments" class="rounded-lg bg-white p-6 shadow-sm">
             <h2 class="text-base font-semibold text-gray-900">Attachments</h2>
             <ul class="mt-3 divide-y divide-gray-100 text-sm">
                 @forelse ($task->attachments as $attachment)
@@ -64,11 +64,19 @@
             </ul>
 
             @can('update', $task)
-                <form method="POST" action="{{ route('tasks.attachments.store', $task) }}" enctype="multipart/form-data" class="mt-4 flex items-center gap-2">
+                @if (session('attachment_uploaded'))
+                    <p class="mt-3 text-sm font-medium text-green-700">&#10003; &ldquo;{{ session('attachment_uploaded') }}&rdquo; uploaded successfully.</p>
+                @endif
+                <form method="POST" action="{{ route('tasks.attachments.store', $task) }}" enctype="multipart/form-data"
+                      class="mt-4" x-data="{ fileName: '' }">
                     @csrf
-                    <input type="file" name="file" required class="text-sm" />
-                    <x-primary-button>Upload</x-primary-button>
-                    @error('file') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
+                    <div class="flex flex-wrap items-center gap-2">
+                        <input type="file" name="file" required class="text-sm"
+                               x-on:change="fileName = $event.target.files[0]?.name ?? ''" />
+                        <x-primary-button>Upload</x-primary-button>
+                    </div>
+                    <p x-show="fileName" x-text="'\u{1F4CE} ' + fileName + ' — ready to upload'" class="mt-1 text-xs text-gray-500" style="display:none"></p>
+                    @error('file') <span class="mt-1 block text-xs text-red-600">{{ $message }}</span> @enderror
                 </form>
             @endcan
         </div>

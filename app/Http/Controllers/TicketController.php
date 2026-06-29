@@ -74,9 +74,9 @@ class TicketController extends Controller
         $ticket->load(['customer', 'service', 'assignee', 'replies.author', 'attachments.uploader']);
 
         return view('tickets.show', $this->formData() + [
-            'ticket'      => $ticket,
-            'canManage'   => $this->user()->can('update', $ticket),
-            'drishtiUrl'  => $this->drishtiContextUrl($ticket),
+            'ticket' => $ticket,
+            'canManage' => $this->user()->can('update', $ticket),
+            'drishtiUrl' => $this->drishtiContextUrl($ticket),
         ]);
     }
 
@@ -147,7 +147,10 @@ class TicketController extends Controller
             'size' => $file->getSize(),
         ]);
 
-        return back()->with('status', 'Attachment uploaded.');
+        return back()
+            ->with('status', 'Attachment uploaded.')
+            ->with('attachment_uploaded', $file->getClientOriginalName())
+            ->withFragment('attachments');
     }
 
     private function notifyCustomer(Ticket $ticket, string $kind, ?TicketReply $reply = null): void

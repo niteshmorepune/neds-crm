@@ -136,7 +136,10 @@ class TaskController extends Controller
             'size' => $file->getSize(),
         ]);
 
-        return back()->with('status', 'Attachment uploaded.');
+        return back()
+            ->with('status', 'Attachment uploaded.')
+            ->with('attachment_uploaded', $file->getClientOriginalName())
+            ->withFragment('attachments');
     }
 
     /**
