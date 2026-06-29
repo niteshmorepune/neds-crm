@@ -16,7 +16,13 @@
                 </select>
                 <button class="rounded-md bg-gray-800 px-3 py-2 text-sm font-medium text-white hover:bg-gray-700">Filter</button>
             </form>
+            <div class="flex items-center gap-2">
+            @can('create', \App\Models\Invoice::class)
+                <a href="{{ route('invoices.import') }}" class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Import CSV</a>
+                <a href="{{ route('invoices.create') }}" class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">Log Invoice</a>
+            @endcan
             <a href="{{ route('recurring-invoices.index') }}" class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Recurring invoices</a>
+        </div>
         </div>
 
         <div class="overflow-hidden overflow-x-auto rounded-lg bg-white shadow-sm">
@@ -50,7 +56,6 @@
                             <td class="px-4 py-3 text-gray-600">{{ $invoice->due_date?->format('d M Y') ?? '—' }}</td>
                             <td class="px-4 py-3 text-right">
                                 <a href="{{ route('invoices.show', $invoice) }}" class="text-gray-500 hover:text-gray-700">View</a>
-                                <a href="{{ route('invoices.pdf', $invoice) }}" class="ml-3 text-gray-500 hover:text-gray-700" target="_blank">PDF</a>
                             </td>
                         </tr>
                     @empty

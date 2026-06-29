@@ -34,7 +34,6 @@ use App\Http\Controllers\TwoFactorSetupController;
 use App\Http\Controllers\UserController;
 use App\Livewire\ClientImport;
 use App\Livewire\DealsBoard;
-use App\Livewire\InvoiceBuilder;
 use App\Livewire\MenuManager;
 use App\Livewire\QuotationBuilder;
 use App\Livewire\RecurringInvoiceBuilder;
@@ -145,8 +144,13 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
         Route::delete('recurring-invoices/{recurring}', [RecurringInvoiceController::class, 'destroy'])->name('recurring-invoices.destroy');
 
         Route::get('invoices', [InvoiceController::class, 'index'])->name('invoices.index');
+        Route::get('invoices/create', [InvoiceController::class, 'create'])->name('invoices.create');
+        Route::post('invoices', [InvoiceController::class, 'store'])->name('invoices.store');
+        Route::get('invoices/import', [InvoiceController::class, 'import'])->name('invoices.import');
+        Route::post('invoices/import', [InvoiceController::class, 'importStore'])->name('invoices.import.store');
         Route::get('invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
-        Route::get('invoices/{invoice}/edit', InvoiceBuilder::class)->name('invoices.edit');
+        Route::get('invoices/{invoice}/edit', [InvoiceController::class, 'edit'])->name('invoices.edit');
+        Route::put('invoices/{invoice}', [InvoiceController::class, 'update'])->name('invoices.update');
         Route::get('invoices/{invoice}/pdf', [InvoiceController::class, 'pdf'])->name('invoices.pdf');
         Route::post('invoices/{invoice}/send', [InvoiceController::class, 'send'])->name('invoices.send');
         Route::post('invoices/{invoice}/assign-number', [InvoiceController::class, 'assignNumber'])->name('invoices.assign-number');

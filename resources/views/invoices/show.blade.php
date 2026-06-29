@@ -1,5 +1,5 @@
 <x-app-layout>
-    <x-slot name="header">Invoice {{ $invoice->invoice_number }}</x-slot>
+    <x-slot name="header">Invoice {{ $invoice->invoice_number ?? '—' }}</x-slot>
 
     <div class="max-w-5xl mx-auto space-y-6">
         @if (session('status'))
@@ -12,39 +12,26 @@
         <div class="rounded-lg bg-white p-6 shadow-sm">
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                    @if ($invoice->invoice_number)
-                        <h1 class="text-xl font-semibold text-gray-900">{{ $invoice->invoice_number }}</h1>
-                    @else
-                        <h1 class="text-xl font-semibold text-gray-900">
-                            Invoice
-                            <span class="ml-2 inline-flex rounded-full bg-amber-100 px-2.5 py-0.5 text-sm font-medium text-amber-800">Pending Invoice #</span>
-                        </h1>
-                    @endif
+                    <h1 class="text-xl font-semibold text-gray-900">{{ $invoice->invoice_number ?? 'Invoice' }}</h1>
                     <p class="mt-1 text-sm text-gray-500">
                         {{ $invoice->customer?->company_name ?? 'Client removed' }} ·
                         <span class="font-medium">{{ $invoice->status->label() }}</span> ·
                         Issued {{ $invoice->issue_date->format('d M Y') }}
                         @if ($invoice->due_date) · Due {{ $invoice->due_date->format('d M Y') }} @endif
                     </p>
+                    @if ($invoice->deal || $invoice->project)
+                        <p class="mt-1 text-sm text-gray-400">
+                            @if ($invoice->deal)
+                                Deal: <a href="{{ route('deals.show', $invoice->deal) }}" class="text-indigo-600 hover:underline">{{ $invoice->deal->title }}</a>
+                            @endif
+                            @if ($invoice->deal && $invoice->project) · @endif
+                            @if ($invoice->project)
+                                Project: <a href="{{ route('projects.show', $invoice->project) }}" class="text-indigo-600 hover:underline">{{ $invoice->project->name }}</a>
+                            @endif
+                        </p>
+                    @endif
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
-                    @can('recordPayment', $invoice)
-                        @if (! $invoice->invoice_number)
-                            <form method="POST" action="{{ route('invoices.assign-number', $invoice) }}">
-                                @csrf
-                                <button class="rounded-md bg-amber-500 px-3 py-2 text-sm font-medium text-white hover:bg-amber-600">Assign Invoice Number</button>
-                            </form>
-                        @endif
-                    @endcan
-                    @if ($invoice->invoice_number)
-                        @can('view', $invoice)
-                            <form method="POST" action="{{ route('invoices.send', $invoice) }}">
-                                @csrf
-                                <button class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">Send Invoice</button>
-                            </form>
-                        @endcan
-                        <a href="{{ route('invoices.pdf', $invoice) }}" target="_blank" class="rounded-md bg-gray-800 px-3 py-2 text-sm font-medium text-white hover:bg-gray-700">Download PDF</a>
-                    @endif
                     @can('update', $invoice)
                         <a href="{{ route('invoices.edit', $invoice) }}" class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Edit</a>
                     @endcan
@@ -62,41 +49,44 @@
             </div>
         </div>
 
-        <div class="rounded-lg bg-white p-6 shadow-sm">
-            <table class="min-w-full divide-y divide-gray-200 text-sm">
-                <thead class="text-left text-xs font-medium uppercase tracking-wide text-gray-500">
-                    <tr><th class="py-2">Description</th><th class="py-2">SAC</th><th class="py-2 text-right">Qty</th><th class="py-2 text-right">Rate</th><th class="py-2 text-right">GST%</th><th class="py-2 text-right">Amount</th></tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100">
-                    @foreach ($invoice->items as $item)
-                        <tr>
-                            <td class="py-2">{{ $item->description }}</td>
-                            <td class="py-2 text-gray-500">{{ $item->sac_code ?? '—' }}</td>
-                            <td class="py-2 text-right">{{ rtrim(rtrim($item->quantity, '0'), '.') }}</td>
-                            <td class="py-2 text-right">{{ \App\Support\Money::format($item->rate) }}</td>
-                            <td class="py-2 text-right">{{ rtrim(rtrim($item->gst_rate, '0'), '.') }}%</td>
-                            <td class="py-2 text-right">{{ \App\Support\Money::format($item->amount) }}</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
+        {{-- Line items — shown only for invoices that have them (pre-log-simplification) --}}
+        @if ($invoice->items->isNotEmpty())
+            <div class="rounded-lg bg-white p-6 shadow-sm">
+                <table class="min-w-full divide-y divide-gray-200 text-sm">
+                    <thead class="text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                        <tr><th class="py-2">Description</th><th class="py-2">SAC</th><th class="py-2 text-right">Qty</th><th class="py-2 text-right">Rate</th><th class="py-2 text-right">GST%</th><th class="py-2 text-right">Amount</th></tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        @foreach ($invoice->items as $item)
+                            <tr>
+                                <td class="py-2">{{ $item->description }}</td>
+                                <td class="py-2 text-gray-500">{{ $item->sac_code ?? '—' }}</td>
+                                <td class="py-2 text-right">{{ rtrim(rtrim($item->quantity, '0'), '.') }}</td>
+                                <td class="py-2 text-right">{{ \App\Support\Money::format($item->rate) }}</td>
+                                <td class="py-2 text-right">{{ rtrim(rtrim($item->gst_rate, '0'), '.') }}%</td>
+                                <td class="py-2 text-right">{{ \App\Support\Money::format($item->amount) }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
 
-            <div class="mt-4 flex justify-end">
-                <dl class="w-64 space-y-1 text-sm">
-                    <div class="flex justify-between"><dt class="text-gray-500">Subtotal</dt><dd>{{ \App\Support\Money::format($invoice->subtotal) }}</dd></div>
-                    <div class="flex justify-between"><dt class="text-gray-500">Discount</dt><dd>− {{ \App\Support\Money::format($invoice->discount) }}</dd></div>
-                    @if ($invoice->is_intra_state)
-                        <div class="flex justify-between"><dt class="text-gray-500">CGST</dt><dd>{{ \App\Support\Money::format($invoice->cgst_total) }}</dd></div>
-                        <div class="flex justify-between"><dt class="text-gray-500">SGST</dt><dd>{{ \App\Support\Money::format($invoice->sgst_total) }}</dd></div>
-                    @else
-                        <div class="flex justify-between"><dt class="text-gray-500">IGST</dt><dd>{{ \App\Support\Money::format($invoice->igst_total) }}</dd></div>
-                    @endif
-                    <div class="flex justify-between"><dt class="text-gray-500">Round off</dt><dd>{{ \App\Support\Money::format($invoice->round_off) }}</dd></div>
-                    <div class="flex justify-between border-t border-gray-200 pt-1 font-semibold"><dt>Total</dt><dd>{{ \App\Support\Money::format($invoice->total) }}</dd></div>
-                </dl>
+                <div class="mt-4 flex justify-end">
+                    <dl class="w-64 space-y-1 text-sm">
+                        <div class="flex justify-between"><dt class="text-gray-500">Subtotal</dt><dd>{{ \App\Support\Money::format($invoice->subtotal) }}</dd></div>
+                        <div class="flex justify-between"><dt class="text-gray-500">Discount</dt><dd>− {{ \App\Support\Money::format($invoice->discount) }}</dd></div>
+                        @if ($invoice->is_intra_state)
+                            <div class="flex justify-between"><dt class="text-gray-500">CGST</dt><dd>{{ \App\Support\Money::format($invoice->cgst_total) }}</dd></div>
+                            <div class="flex justify-between"><dt class="text-gray-500">SGST</dt><dd>{{ \App\Support\Money::format($invoice->sgst_total) }}</dd></div>
+                        @else
+                            <div class="flex justify-between"><dt class="text-gray-500">IGST</dt><dd>{{ \App\Support\Money::format($invoice->igst_total) }}</dd></div>
+                        @endif
+                        <div class="flex justify-between"><dt class="text-gray-500">Round off</dt><dd>{{ \App\Support\Money::format($invoice->round_off) }}</dd></div>
+                        <div class="flex justify-between border-t border-gray-200 pt-1 font-semibold"><dt>Total</dt><dd>{{ \App\Support\Money::format($invoice->total) }}</dd></div>
+                    </dl>
+                </div>
+                <p class="mt-3 text-right text-xs text-gray-500">{{ $invoice->amountInWords() }}</p>
             </div>
-            <p class="mt-3 text-right text-xs text-gray-500">{{ $invoice->amountInWords() }}</p>
-        </div>
+        @endif
 
         {{-- Payments --}}
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">

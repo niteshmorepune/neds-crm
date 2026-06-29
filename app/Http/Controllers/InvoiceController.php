@@ -5,13 +5,20 @@ namespace App\Http\Controllers;
 use App\Enums\InvoiceStatus;
 use App\Enums\PaymentMode;
 use App\Enums\UserRole;
+use App\Http\Requests\InvoiceLogImportRequest;
+use App\Http\Requests\InvoiceLogStoreRequest;
+use App\Http\Requests\InvoiceLogUpdateRequest;
 use App\Http\Requests\PaymentStoreRequest;
 use App\Mail\InvoiceIssued;
 use App\Mail\PaymentReceived;
+use App\Models\Customer;
+use App\Models\Deal;
 use App\Models\Invoice;
+use App\Models\Project;
 use App\Services\InvoiceNumberGenerator;
 use App\Support\Money;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -41,6 +48,199 @@ class InvoiceController extends Controller
             'statuses' => InvoiceStatus::cases(),
             'filters' => $request->only('status'),
         ]);
+    }
+
+    public function create(): View
+    {
+        $this->authorize('create', Invoice::class);
+
+        return view('invoices.create', [
+            'customers' => Customer::orderBy('company_name')->get(['id', 'company_name']),
+            'deals' => Deal::whereNotIn('stage', ['lost'])->orderBy('title')->get(['id', 'title', 'customer_id']),
+            'projects' => Project::whereNotIn('status', ['completed'])->orderBy('name')->get(['id', 'name', 'customer_id']),
+        ]);
+    }
+
+    public function store(InvoiceLogStoreRequest $request, InvoiceNumberGenerator $numbers): RedirectResponse
+    {
+        $issueDate = Carbon::parse($request->validated()['issue_date']);
+        $total = Money::toPaise($request->validated()['amount']);
+
+        $data = $request->validated();
+
+        $invoice = Invoice::create([
+            'invoice_number' => $data['invoice_number'],
+            'financial_year' => $numbers->financialYear($issueDate),
+            'customer_id' => $data['customer_id'],
+            'deal_id' => $data['deal_id'] ?? null,
+            'project_id' => $data['project_id'] ?? null,
+            'status' => InvoiceStatus::Sent,
+            'issue_date' => $issueDate,
+            'due_date' => $data['due_date'] ?? null,
+            'subtotal' => $total,
+            'taxable_total' => $total,
+            'total' => $total,
+            'amount_paid' => 0,
+        ]);
+
+        return redirect()->route('invoices.show', $invoice)->with('status', 'Invoice logged.');
+    }
+
+    public function edit(Invoice $invoice): View
+    {
+        $this->authorize('update', $invoice);
+
+        return view('invoices.edit', [
+            'invoice' => $invoice,
+            'customers' => Customer::orderBy('company_name')->get(['id', 'company_name']),
+            'deals' => Deal::whereNotIn('stage', ['lost'])->orderBy('title')->get(['id', 'title', 'customer_id']),
+            'projects' => Project::whereNotIn('status', ['completed'])->orderBy('name')->get(['id', 'name', 'customer_id']),
+        ]);
+    }
+
+    public function update(InvoiceLogUpdateRequest $request, Invoice $invoice, InvoiceNumberGenerator $numbers): RedirectResponse
+    {
+        abort_unless($invoice->isEditable(), 403);
+
+        $issueDate = Carbon::parse($request->validated()['issue_date']);
+        $total = Money::toPaise($request->validated()['amount']);
+
+        $data = $request->validated();
+
+        $invoice->update([
+            'invoice_number' => $data['invoice_number'],
+            'financial_year' => $numbers->financialYear($issueDate),
+            'customer_id' => $data['customer_id'],
+            'deal_id' => $data['deal_id'] ?? null,
+            'project_id' => $data['project_id'] ?? null,
+            'issue_date' => $issueDate,
+            'due_date' => $data['due_date'] ?? null,
+            'subtotal' => $total,
+            'taxable_total' => $total,
+            'total' => $total,
+        ]);
+
+        return redirect()->route('invoices.show', $invoice)->with('status', 'Invoice updated.');
+    }
+
+    public function import(): View
+    {
+        $this->authorize('create', Invoice::class);
+
+        return view('invoices.import');
+    }
+
+    public function importStore(InvoiceLogImportRequest $request, InvoiceNumberGenerator $numbers): RedirectResponse
+    {
+        $path = $request->file('csv')->getRealPath();
+        $handle = fopen($path, 'r');
+
+        $headers = array_map('trim', fgetcsv($handle) ?: []);
+        $headerMap = array_flip(array_map('strtolower', $headers));
+
+        $col = fn (string ...$names): ?int => collect($names)
+            ->map(fn ($n) => $headerMap[strtolower($n)] ?? null)
+            ->first(fn ($v) => $v !== null);
+
+        $colInvoice = $col('Invoice No', 'invoice_number', 'Voucher No', 'Invoice Number');
+        $colDate = $col('Date', 'Invoice Date', 'issue_date');
+        $colClient = $col('Client Name', 'Party Name', 'Customer', 'customer_name');
+        $colAmount = $col('Amount', 'Total', 'Net Amount', 'Total Amount');
+        $colDue = $col('Due Date', 'due_date');
+
+        if ($colInvoice === null || $colDate === null || $colClient === null || $colAmount === null) {
+            fclose($handle);
+
+            return back()->withErrors(['csv' => 'CSV must contain columns: Invoice No, Date, Client Name, Amount (and optionally Due Date).']);
+        }
+
+        $imported = 0;
+        $skipped = [];
+
+        while (($row = fgetcsv($handle)) !== false) {
+            $row = array_map('trim', $row);
+
+            $invoiceNo = $row[$colInvoice] ?? null;
+            $dateRaw = $row[$colDate] ?? null;
+            $clientRaw = $row[$colClient] ?? null;
+            $amountRaw = $row[$colAmount] ?? null;
+            $dueRaw = $colDue !== null ? ($row[$colDue] ?? null) : null;
+
+            if (! $invoiceNo || ! $dateRaw || ! $clientRaw || ! $amountRaw) {
+                $skipped[] = "Row skipped — missing required value (invoice: {$invoiceNo})";
+
+                continue;
+            }
+
+            // Skip duplicates silently.
+            if (Invoice::where('invoice_number', $invoiceNo)->exists()) {
+                $skipped[] = "{$invoiceNo} — already exists, skipped";
+
+                continue;
+            }
+
+            $customer = Customer::whereRaw('LOWER(TRIM(company_name)) = ?', [strtolower(trim($clientRaw))])->first();
+            if (! $customer) {
+                $skipped[] = "{$invoiceNo} — client \"{$clientRaw}\" not found";
+
+                continue;
+            }
+
+            try {
+                $issueDate = Carbon::createFromFormat('d/m/Y', $dateRaw)
+                    ?? Carbon::createFromFormat('Y-m-d', $dateRaw);
+            } catch (\Throwable) {
+                $skipped[] = "{$invoiceNo} — invalid date \"{$dateRaw}\"";
+
+                continue;
+            }
+
+            $dueDate = null;
+            if ($dueRaw) {
+                try {
+                    $dueDate = Carbon::createFromFormat('d/m/Y', $dueRaw)
+                        ?? Carbon::createFromFormat('Y-m-d', $dueRaw);
+                } catch (\Throwable) {
+                    // non-fatal: just skip due date
+                }
+            }
+
+            $amount = (float) str_replace([',', '₹', ' '], '', $amountRaw);
+            if ($amount <= 0) {
+                $skipped[] = "{$invoiceNo} — invalid amount \"{$amountRaw}\"";
+
+                continue;
+            }
+
+            $total = Money::toPaise($amount);
+
+            Invoice::create([
+                'invoice_number' => $invoiceNo,
+                'financial_year' => $numbers->financialYear($issueDate),
+                'customer_id' => $customer->id,
+                'status' => InvoiceStatus::Sent,
+                'issue_date' => $issueDate,
+                'due_date' => $dueDate,
+                'subtotal' => $total,
+                'taxable_total' => $total,
+                'total' => $total,
+                'amount_paid' => 0,
+            ]);
+
+            $imported++;
+        }
+
+        fclose($handle);
+
+        $message = "{$imported} invoice(s) imported.";
+        if ($skipped) {
+            $message .= ' '.count($skipped).' row(s) skipped: '.implode('; ', array_slice($skipped, 0, 5));
+            if (count($skipped) > 5) {
+                $message .= ' … and '.(count($skipped) - 5).' more.';
+            }
+        }
+
+        return redirect()->route('invoices.index')->with('status', $message);
     }
 
     public function show(Invoice $invoice): View
