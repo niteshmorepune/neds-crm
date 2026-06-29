@@ -48,6 +48,14 @@
                     <div><span class="text-gray-400">Value:</span> {{ \App\Support\Money::format($deal->value) }}</div>
                     <div><span class="text-gray-400">Service:</span> {{ $deal->service?->name ?? '—' }}</div>
                     <div><span class="text-gray-400">Owner:</span> {{ $deal->owner?->name ?? 'Unassigned' }}</div>
+                    <div class="col-span-2">
+                        <span class="text-gray-400">Referred by:</span>
+                        @if ($deal->partner)
+                            <span class="ml-1 inline-flex items-center rounded-full bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-700">{{ $deal->partner->name }}</span>
+                        @else
+                            <span class="ml-1">Direct</span>
+                        @endif
+                    </div>
                 </dl>
 
                 <div class="mt-6 border-t border-gray-100 pt-6">
@@ -138,6 +146,15 @@
                         <div>
                             <x-input-label for="next_follow_up_at" value="Next follow-up" />
                             <x-text-input id="next_follow_up_at" name="next_follow_up_at" type="datetime-local" class="mt-1 block w-full" :value="$followUp" />
+                        </div>
+                        <div>
+                            <x-input-label for="partner_id" value="Referred by (agency)" />
+                            <select id="partner_id" name="partner_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                <option value="">Direct (no agency)</option>
+                                @foreach ($partners as $partner)
+                                    <option value="{{ $partner->id }}" @selected((string) old('partner_id', $deal->partner_id) === (string) $partner->id)>{{ $partner->name }}</option>
+                                @endforeach
+                            </select>
                         </div>
 
                         <x-primary-button>Save</x-primary-button>

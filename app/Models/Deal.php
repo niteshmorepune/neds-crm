@@ -29,6 +29,7 @@ class Deal extends Model
         'owner_id',
         'next_follow_up_at',
         'lead_id',
+        'partner_id',
     ];
 
     protected function casts(): array
@@ -74,6 +75,11 @@ class Deal extends Model
     public function lead(): BelongsTo
     {
         return $this->belongsTo(Lead::class);
+    }
+
+    public function partner(): BelongsTo
+    {
+        return $this->belongsTo(Partner::class);
     }
 
     public function notes(): MorphMany

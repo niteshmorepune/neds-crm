@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Enums\DealStage;
 use App\Http\Requests\DealUpdateRequest;
 use App\Models\Deal;
+use App\Models\Partner;
+use App\Models\Quotation;
 use App\Models\Service;
 use App\Models\User;
 use App\Support\Money;
@@ -17,15 +19,16 @@ class DealController extends Controller
     {
         $this->authorize('view', $deal);
 
-        $deal->load(['customer', 'service', 'owner', 'lead', 'quotations']);
+        $deal->load(['customer', 'service', 'owner', 'lead', 'partner', 'quotations']);
 
         return view('deals.show', [
             'deal' => $deal,
             'canManage' => $this->user()->can('update', $deal),
-            'canCreateQuotation' => $this->user()->can('create', \App\Models\Quotation::class),
+            'canCreateQuotation' => $this->user()->can('create', Quotation::class),
             'stages' => DealStage::cases(),
             'services' => Service::active()->orderBy('sort_order')->get(),
             'owners' => User::query()->orderBy('name')->get(['id', 'name']),
+            'partners' => Partner::orderBy('name')->get(['id', 'name']),
         ]);
     }
 
@@ -45,6 +48,7 @@ class DealController extends Controller
             'stage' => $data['stage'],
             'service_id' => $data['service_id'] ?? null,
             'owner_id' => $data['owner_id'] ?? null,
+            'partner_id' => $data['partner_id'] ?? null,
             'value' => Money::toPaise($data['value'] ?? null) ?? 0,
             'next_follow_up_at' => $data['next_follow_up_at'] ?? null,
         ]);

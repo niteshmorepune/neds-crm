@@ -22,6 +22,7 @@ class DealUpdateRequest extends FormRequest
             'owner_id' => ['nullable', Rule::exists('users', 'id')],
             'value' => ['nullable', 'numeric', 'min:0', 'max:999999999'],
             'next_follow_up_at' => ['nullable', 'date'],
+            'partner_id' => ['nullable', Rule::exists('partners', 'id')],
         ];
     }
 }
