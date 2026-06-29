@@ -92,6 +92,14 @@ Go to **Partners** in the sidebar. Add the agency with a name and (optionally)
 email and phone. One partner record covers all the projects you work with them
 on.
 
+### Tracking agency-sourced deals
+When a deal was introduced to NEDS by a partner agency (rather than the client
+coming to us directly), open the deal and set the **Referred by** dropdown to
+that agency. This is separate from the content collaboration workflow — it
+answers "how did we get this client?" at the deal level, so you can see over
+time which agencies are generating business for NEDS. Leave it blank for direct
+clients.
+
 ### Two workflow types
 When adding a content piece to a project, choose the workflow:
 

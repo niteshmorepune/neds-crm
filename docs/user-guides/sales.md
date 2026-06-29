@@ -62,6 +62,10 @@ The **Sales Department** board shows your deals in columns by stage:
   stage).
 - Won and Lost are final — once set, a deal stays there.
 - A **won** deal can become a **Project** for the delivery team.
+- **Referred by** — if a deal came to NEDS through a partner agency rather than
+  directly, open the deal and set the **Referred by** dropdown to that agency.
+  Leave it as "Direct (no agency)" for clients who came to NEDS on their own.
+  This lets management see which deals were agency-sourced vs direct.
 
 ## 3. Quotations
 1. **Quotations → Create** — or open a **Deal** and click **+ New Quotation**
