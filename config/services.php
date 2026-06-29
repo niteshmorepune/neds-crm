@@ -40,9 +40,16 @@ return [
         'token' => env('LEAD_CAPTURE_TOKEN'),
     ],
 
-    // Shared secret for the wadesk.in → CRM WhatsApp webhook.
+    // Shared secret for the wadesk.in → CRM WhatsApp webhook (inbound).
     'whatsapp_webhook' => [
         'token' => env('WHATSAPP_WEBHOOK_TOKEN'),
+    ],
+
+    // wadesk.in — WhatsApp conversation platform (outbound staff replies).
+    // WADESK_SERVICE_KEY must match the WADESK_SERVICE_KEY set in wadesk.in's .env.
+    'wadesk' => [
+        'base_url' => env('WADESK_API_URL', 'https://wadesk.in'),
+        'service_key' => env('WADESK_SERVICE_KEY'),
     ],
 
     // nedsdrishti.in — agency service delivery platform.
@@ -50,15 +57,15 @@ return [
     // webhook_secret: the per-webhook HMAC secret Drishti generated when we
     // registered the CRM as a webhook subscriber (GET /api/webhooks → secret field).
     'drishti' => [
-        'base_url'       => env('DRISHTI_API_URL', 'https://nedsdrishti.in'),
-        'service_key'    => env('DRISHTI_SERVICE_KEY'),
+        'base_url' => env('DRISHTI_API_URL', 'https://nedsdrishti.in'),
+        'service_key' => env('DRISHTI_SERVICE_KEY'),
         'webhook_secret' => env('DRISHTI_WEBHOOK_SECRET'),
     ],
 
     // socialmediadost.com — AI content production studio.
     // The CRM provisions clients here when a deal is won.
     'smdost' => [
-        'base_url'    => env('SMDOST_API_URL', 'https://socialmediadost.com'),
+        'base_url' => env('SMDOST_API_URL', 'https://socialmediadost.com'),
         'service_key' => env('SMDOST_SERVICE_KEY'),
     ],
 
