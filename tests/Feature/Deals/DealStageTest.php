@@ -40,7 +40,22 @@ it('updates a deal stage via the controller', function () {
         ->assertRedirect(route('deals.show', $deal));
 
     expect($deal->fresh()->stage)->toBe(DealStage::Won)
-        ->and($deal->fresh()->value)->toBe(100000); // 1000 rupees -> paise
+        ->and($deal->fresh()->value)->toBe(100000) // 1000 rupees -> paise
+        ->and($deal->fresh()->won_at)->not->toBeNull();
+});
+
+it('stamps won_at when deal moves to Won and clears it if stage reverts', function () {
+    $deal = Deal::factory()->stage(DealStage::New)->create();
+    expect($deal->won_at)->toBeNull();
+
+    $deal->update(['stage' => DealStage::Won]);
+    expect($deal->fresh()->won_at)->not->toBeNull();
+
+    // Directly force a revert (bypassing moveToStage terminal guard) to confirm clearing.
+    // Must use save() (not saveQuietly) so the saving hook fires.
+    $deal->stage = DealStage::Negotiation;
+    $deal->save();
+    expect($deal->fresh()->won_at)->toBeNull();
 });
 
 it('blocks a stage change on a terminal deal via the controller', function () {

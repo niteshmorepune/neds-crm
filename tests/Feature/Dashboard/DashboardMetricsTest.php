@@ -62,7 +62,10 @@ it('summarizes tasks into assigned/pending/overdue/completed', function () {
 it('computes sales pipeline value by open stage and won this month', function () {
     $sales = User::factory()->role(UserRole::Sales)->create();
     Deal::factory()->create(['owner_id' => $sales->id, 'stage' => DealStage::Proposal, 'value' => 500000]);
+    // Won this month — won_at auto-stamped to now() by saving hook.
     Deal::factory()->create(['owner_id' => $sales->id, 'stage' => DealStage::Won, 'value' => 1000000]);
+    // Won last month — should be excluded from won_this_month_value.
+    Deal::factory()->create(['owner_id' => $sales->id, 'stage' => DealStage::Won, 'value' => 999999, 'won_at' => now()->subMonth()]);
 
     $stats = $this->metrics->salesStats($sales);
 

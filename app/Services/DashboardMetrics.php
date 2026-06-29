@@ -108,7 +108,8 @@ class DashboardMetrics
                 ->count(),
             'won_this_month_value' => (int) Deal::query()->visibleTo($user)
                 ->where('stage', DealStage::Won->value)
-                ->where('updated_at', '>=', now()->startOfMonth())
+                ->whereNotNull('won_at')
+                ->where('won_at', '>=', now()->startOfMonth())
                 ->sum('value'),
         ];
     }

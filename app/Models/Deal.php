@@ -28,6 +28,7 @@ class Deal extends Model
         'stage',
         'owner_id',
         'next_follow_up_at',
+        'won_at',
         'lead_id',
         'partner_id',
     ];
@@ -38,11 +39,22 @@ class Deal extends Model
             'stage' => DealStage::class,
             'value' => 'integer',
             'next_follow_up_at' => 'datetime',
+            'won_at' => 'datetime',
         ];
     }
 
     protected static function booted(): void
     {
+        static::saving(function (Deal $deal) {
+            if ($deal->isDirty('stage')) {
+                if ($deal->stage === DealStage::Won) {
+                    $deal->won_at ??= now();
+                } else {
+                    $deal->won_at = null;
+                }
+            }
+        });
+
         static::updated(function (Deal $deal) {
             if ($deal->wasChanged('stage') && $deal->stage === DealStage::Won) {
                 Customer::where('id', $deal->customer_id)
