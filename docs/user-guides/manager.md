@@ -81,6 +81,61 @@ owner if no lead is set) with an in-app bell notification — no email.
   php artisan app:dispatch-scheduled-tasks --date=YYYY-MM-DD
   ```
 
+## Content collaboration (Partners)
+
+When NEDS works with an external content agency, use the **Content
+Collaboration** module to track what has been commissioned, where it is in the
+workflow, and when it was published.
+
+### Setting up a partner
+Go to **Partners** in the sidebar. Add the agency with a name and (optionally)
+email and phone. One partner record covers all the projects you work with them
+on.
+
+### Two workflow types
+When adding a content piece to a project, choose the workflow:
+
+| Workflow | What it means |
+|---|---|
+| **Agency-led** | Agency creates the full content (copy + visuals) and delivers to NEDS. Starts in *Pending from agency*. |
+| **NEDS-led** | NEDS writes the copy/brief, sends it to the partner, partner creates images/video and sends back. Starts in *Copy drafting*. |
+
+### Status flow
+
+**Agency-led:** Pending from agency → Received → Approved → Scheduled → Published
+
+**NEDS-led:** Copy drafting → Sent to partner → Received → Approved → Scheduled → Published
+
+Advance the status using the **Move to…** button on the content piece detail page.
+When a piece is marked *Published*, the timestamp is recorded automatically.
+
+### Secure partner upload link
+Instead of emailing files back and forth, you can generate a secure upload link
+for the partner:
+
+1. Open the content piece → click **Generate upload link**.
+2. Copy the URL and send it to the partner (WhatsApp, email, etc.).
+3. The link is valid for **7 days**. The partner visits the URL, selects their
+   files (images, video, PDF), and clicks Upload — no CRM login needed.
+4. When they upload, the status automatically advances to *Received* and the
+   files appear in the **Attachments** section (marked *Partner upload* in
+   yellow).
+
+Only admins and managers can generate upload links. If a link expires before
+the partner uploads, just generate a new one — it replaces the old token.
+
+### Google Drive links
+You can store a Google Drive link on each project (the shared folder) and also
+on individual content pieces (a specific file or sub-folder). These appear as
+clickable links on the project page and on each piece — handy when you prefer
+Drive over the upload link.
+
+To set the project-level folder link: **Edit project → Google Drive folder link**.
+
+### Monthly volume
+Up to 18 content pieces per client per month is normal. Filter the content list
+by status or platform using the chips at the top of the index page.
+
 ## Automated integrations
 The CRM runs automated workflows with **Drishti** and **Social Media Dost**.
 As a manager, what you need to know:

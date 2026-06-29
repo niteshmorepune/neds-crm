@@ -72,4 +72,13 @@
         <x-input-label for="description" value="Description" />
         <textarea id="description" name="description" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">{{ old('description', $project->description) }}</textarea>
     </div>
+
+    <div class="md:col-span-2">
+        <x-input-label for="google_drive_folder_link" value="Google Drive Folder Link" />
+        <x-text-input id="google_drive_folder_link" name="google_drive_folder_link" type="url" class="mt-1 block w-full"
+                      :value="old('google_drive_folder_link', $project->google_drive_folder_link)"
+                      placeholder="https://drive.google.com/drive/folders/..." />
+        <p class="mt-1 text-xs text-gray-400">Shared folder where the partner uploads/shares content for this project.</p>
+        <x-input-error :messages="$errors->get('google_drive_folder_link')" class="mt-1" />
+    </div>
 </div>

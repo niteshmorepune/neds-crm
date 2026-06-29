@@ -5,6 +5,7 @@ use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\Auth\TwoFactorChallengeController;
 use App\Http\Controllers\CallLogController;
+use App\Http\Controllers\ContentPieceController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DailyReportController;
 use App\Http\Controllers\DashboardController;
@@ -13,10 +14,13 @@ use App\Http\Controllers\HelpController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LeadController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PartnerController;
+use App\Http\Controllers\PartnerUploadController;
 use App\Http\Controllers\Portal\ForgotPasswordController;
 use App\Http\Controllers\Portal\HomeController;
 use App\Http\Controllers\Portal\LoginController;
 use App\Http\Controllers\Portal\SetPasswordController;
+use App\Http\Controllers\Portal\SsoController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\QuotationController;
@@ -35,6 +39,13 @@ use App\Livewire\MenuManager;
 use App\Livewire\QuotationBuilder;
 use App\Livewire\RecurringInvoiceBuilder;
 use Illuminate\Support\Facades\Route;
+
+/*
+ * Partner upload — token-based, no login required. Partner receives a link
+ * and uploads content files directly; the CRM marks the piece as received.
+ */
+Route::get('/partner/upload/{token}', [PartnerUploadController::class, 'show'])->name('partner-upload.show');
+Route::post('/partner/upload/{token}', [PartnerUploadController::class, 'store'])->name('partner-upload.store');
 
 // Internal CRM — no public landing page. Send visitors to the right place.
 Route::get('/', function () {
@@ -161,11 +172,30 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
     Route::get('reports/revenue/export', [ReportController::class, 'exportRevenue'])->name('reports.revenue.export');
 
     /*
+     * Partners — content agency collaborators. Admin/manager only (menu.access:partners).
+     */
+    Route::middleware('menu.access:partners')->group(function () {
+        Route::resource('partners', PartnerController::class);
+    });
+
+    /*
      * Projects — Milestone 4. Gated by menu.access:project-updates.
      */
     Route::middleware('menu.access:project-updates')->group(function () {
         Route::post('projects/from-deal/{deal}', [ProjectController::class, 'storeFromDeal'])->name('projects.from-deal');
         Route::resource('projects', ProjectController::class);
+
+        /*
+         * Content pieces nested under projects (shallow). Custom actions declared
+         * before the resource so they aren't captured by {content_piece} wildcard.
+         */
+        Route::post('projects/{project}/content/{content_piece}/upload-link', [ContentPieceController::class, 'generateUploadLink'])
+            ->name('projects.content.upload-link');
+        Route::patch('projects/{project}/content/{content_piece}/advance', [ContentPieceController::class, 'advance'])
+            ->name('projects.content.advance');
+        Route::resource('projects.content', ContentPieceController::class)
+            ->shallow()
+            ->parameters(['content' => 'content_piece']);
     });
 
     /*
@@ -314,7 +344,7 @@ Route::prefix('portal')->name('portal.')->group(function () {
 
         // SSO bridge — generates a short-lived signed token and redirects the
         // contact to Drishti or SMDost so they log in without a separate password.
-        Route::get('sso/{app}', [App\Http\Controllers\Portal\SsoController::class, 'redirect'])->name('sso');
+        Route::get('sso/{app}', [SsoController::class, 'redirect'])->name('sso');
     });
 });
 

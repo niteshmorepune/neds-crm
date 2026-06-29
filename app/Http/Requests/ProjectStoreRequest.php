@@ -26,6 +26,7 @@ class ProjectStoreRequest extends FormRequest
             'description' => ['nullable', 'string'],
             'assignees' => ['nullable', 'array'],
             'assignees.*' => [Rule::exists('users', 'id')],
+            'google_drive_folder_link' => ['nullable', 'url', 'max:2048'],
         ];
     }
 }
