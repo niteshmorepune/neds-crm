@@ -29,6 +29,13 @@ Route::post('/webhooks/smdost/brief-approved', [SmdostWebhookController::class, 
     ->middleware(['throttle:60,1', VerifySmdostWebhookToken::class])
     ->name('api.webhooks.smdost.brief-approved');
 
+// socialmediadost.com → CRM bridge. Called when a content piece's copy is
+// ready to send to the partner agency for creative (images/video). Creates
+// a neds_led ContentPiece (sent_to_partner) so the team can track it.
+Route::post('/webhooks/smdost/content-ready', [SmdostWebhookController::class, 'contentReady'])
+    ->middleware(['throttle:60,1', VerifySmdostWebhookToken::class])
+    ->name('api.webhooks.smdost.content-ready');
+
 // nedsdrishti.in → CRM bridge. Receives post.approved / post.rejected /
 // post.published events and writes them to the customer's activity feed.
 // Auth: HMAC-SHA256 (X-Agency-Signature header) with DRISHTI_WEBHOOK_SECRET.

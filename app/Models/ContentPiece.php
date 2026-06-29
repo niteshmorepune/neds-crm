@@ -20,7 +20,7 @@ class ContentPiece extends Model
         'project_id', 'partner_id', 'workflow_type', 'platform', 'status',
         'title', 'copy_text', 'google_drive_link', 'publish_date',
         'published_at', 'notes', 'upload_token', 'upload_token_expires_at',
-        'created_by',
+        'smdost_content_id', 'created_by',
     ];
 
     protected function casts(): array
