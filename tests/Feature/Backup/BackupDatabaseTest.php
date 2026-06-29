@@ -1,5 +1,6 @@
 <?php
 
+use App\Support\PdoDumper;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
@@ -63,4 +64,95 @@ it('still succeeds and writes the backup when the confirmation email fails', fun
     expect(Storage::disk('local')->files('backups'))->toHaveCount(1);
 
     config(['database.default' => 'sqlite']);
+});
+
+it('falls back to PdoDumper when mysqldump exits with a non-zero code', function () {
+    Storage::fake('local');
+    Mail::fake();
+
+    Process::fake(['*' => Process::result(exitCode: 1, errorOutput: 'mysqldump: command not found')]);
+
+    $this->instance(PdoDumper::class, new class extends PdoDumper
+    {
+        public function dump(array $db): string
+        {
+            return '-- PDO FALLBACK SQL --';
+        }
+    });
+
+    config([
+        'database.default' => 'mysql',
+        'database.connections.mysql.database' => 'neds_crm',
+        'backup.notify_email' => null,
+    ]);
+
+    try {
+        $this->artisan('app:backup-database')->assertSuccessful();
+
+        $files = Storage::disk('local')->files('backups');
+        expect($files)->toHaveCount(1)
+            ->and(gzdecode(Storage::disk('local')->get($files[0])))->toContain('-- PDO FALLBACK SQL --');
+    } finally {
+        config(['database.default' => 'sqlite']);
+    }
+});
+
+it('falls back to PdoDumper when Process throws (proc_open disabled)', function () {
+    Storage::fake('local');
+    Mail::fake();
+
+    // Simulate proc_open being disabled at the PHP level — Process::run() throws.
+    Process::fake(fn () => throw new RuntimeException('proc_open() has been disabled for security reasons'));
+
+    $this->instance(PdoDumper::class, new class extends PdoDumper
+    {
+        public function dump(array $db): string
+        {
+            return '-- PDO EXCEPTION FALLBACK --';
+        }
+    });
+
+    config([
+        'database.default' => 'mysql',
+        'database.connections.mysql.database' => 'neds_crm',
+        'backup.notify_email' => null,
+    ]);
+
+    try {
+        $this->artisan('app:backup-database')->assertSuccessful();
+
+        $files = Storage::disk('local')->files('backups');
+        expect($files)->toHaveCount(1)
+            ->and(gzdecode(Storage::disk('local')->get($files[0])))->toContain('-- PDO EXCEPTION FALLBACK --');
+    } finally {
+        config(['database.default' => 'sqlite']);
+    }
+});
+
+it('returns failure when both mysqldump and PDO dump fail', function () {
+    Storage::fake('local');
+
+    Process::fake(['*' => Process::result(exitCode: 1)]);
+
+    $this->instance(PdoDumper::class, new class extends PdoDumper
+    {
+        public function dump(array $db): string
+        {
+            throw new RuntimeException('PDO connection refused');
+        }
+    });
+
+    config([
+        'database.default' => 'mysql',
+        'database.connections.mysql.database' => 'neds_crm',
+        'backup.notify_email' => null,
+    ]);
+
+    try {
+        $this->artisan('app:backup-database')->assertFailed();
+
+        expect(Storage::disk('local')->allFiles('backups'))->toBeEmpty();
+    } finally {
+        config(['database.default' => 'sqlite']);
+    }
 });

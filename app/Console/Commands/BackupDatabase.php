@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Support\PdoDumper;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
@@ -10,9 +11,10 @@ use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
 
 /**
- * Nightly MySQL backup for shared hosting. Dumps the database with mysqldump,
- * gzips it to storage/app/backups, prunes daily backups older than 14 days, and
- * keeps one weekly copy retained for 8 weeks. Emails a confirmation.
+ * Nightly MySQL backup for shared hosting. Tries mysqldump first; if
+ * proc_open is disabled or mysqldump fails, falls back to a pure-PHP
+ * PDO export. Gzips to storage/app/backups, prunes old copies, emails
+ * a confirmation.
  *
  * Restore: gunzip the chosen file and pipe it back in, e.g.
  *   gunzip < storage/app/backups/neds-YYYY-MM-DD-HHMMSS.sql.gz | mysql -u USER -p DB
@@ -32,7 +34,7 @@ class BackupDatabase extends Command
 
     private const WEEKLY_RETENTION_WEEKS = 8;
 
-    public function handle(): int
+    public function handle(PdoDumper $pdoDumper): int
     {
         $db = config('database.connections.'.config('database.default'));
 
@@ -45,31 +47,23 @@ class BackupDatabase extends Command
         $now = CarbonImmutable::now();
         $filename = self::DAILY_DIR.'/neds-'.$now->format('Y-m-d-His').'.sql.gz';
 
-        $binary = config('backup.mysqldump_binary', 'mysqldump');
+        $sql = $this->dumpViaMysqldump($db);
 
-        $args = [
-            $binary,
-            '--host='.($db['host'] ?? '127.0.0.1'),
-            '--port='.($db['port'] ?? '3306'),
-            '--user='.($db['username'] ?? 'root'),
-            '--single-transaction',
-            '--no-tablespaces',
-            '--skip-lock-tables',
-            $db['database'],
-        ];
+        if ($sql === null) {
+            $this->warn('mysqldump unavailable; using pure-PHP PDO fallback.');
+            Log::warning('app:backup-database: mysqldump failed, attempting PDO fallback.');
 
-        // Pass the password via env (MYSQL_PWD) so it never appears in the
-        // process list / logs.
-        $result = Process::env(['MYSQL_PWD' => (string) ($db['password'] ?? '')])
-            ->run($args);
+            try {
+                $sql = $pdoDumper->dump($db);
+            } catch (\Throwable $e) {
+                $this->error('PDO fallback also failed: '.$e->getMessage());
+                Log::error('app:backup-database: PDO fallback failed.', ['error' => $e->getMessage()]);
 
-        if (! $result->successful()) {
-            $this->error('mysqldump failed: '.trim($result->errorOutput()));
-
-            return self::FAILURE;
+                return self::FAILURE;
+            }
         }
 
-        Storage::disk('local')->put($filename, gzencode($result->output(), 6));
+        Storage::disk('local')->put($filename, gzencode($sql, 6));
 
         // Weekly copy (one per ISO week), kept longer.
         $weekly = self::WEEKLY_DIR.'/neds-'.$now->format('o-\WW').'.sql.gz';
@@ -83,6 +77,40 @@ class BackupDatabase extends Command
         $this->info("Backup written to {$filename} ({$sizeKb} KB).");
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Run mysqldump via a subprocess. Returns the raw SQL string on success,
+     * or null if mysqldump is missing, returns a non-zero exit code, or if
+     * proc_open is disabled on the host (which causes Process to throw).
+     *
+     * @param  array<string, mixed>  $db
+     */
+    private function dumpViaMysqldump(array $db): ?string
+    {
+        $binary = config('backup.mysqldump_binary', 'mysqldump');
+
+        $args = [
+            $binary,
+            '--host='.($db['host'] ?? '127.0.0.1'),
+            '--port='.($db['port'] ?? '3306'),
+            '--user='.($db['username'] ?? 'root'),
+            '--single-transaction',
+            '--no-tablespaces',
+            '--skip-lock-tables',
+            $db['database'],
+        ];
+
+        try {
+            // Pass the password via env (MYSQL_PWD) so it never appears in
+            // the process list / logs.
+            $result = Process::env(['MYSQL_PWD' => (string) ($db['password'] ?? '')])
+                ->run($args);
+        } catch (\Throwable) {
+            return null;
+        }
+
+        return $result->successful() ? $result->output() : null;
     }
 
     /** Delete daily backups older than the retention window, and stale weeklies. */
