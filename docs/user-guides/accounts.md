@@ -7,6 +7,8 @@ You handle **invoices**, **payments**, **recurring billing**, and the
 - **Outstanding receivables** — total still owed to NEDS.
 - **Collected this month** — payments received.
 - **Overdue invoices** — count past their due date.
+- **Overdue tasks alert** — if you have any tasks past their due date, a red
+  banner appears at the top of the dashboard with a direct link to your task list.
 
 ## 1. Invoices
 **Invoices** lists every invoice. Invoices are **GST-compliant**:
@@ -43,6 +45,11 @@ receives an email confirming the amount received, payment mode, reference number
 and the remaining balance (or a "fully settled" message if the invoice is now
 paid in full).
 
+**Bell notification — payment recorded:** when a payment is saved, a 💰 bell
+notification is sent to all accounts staff (except the person who recorded it)
+and to the client's assigned sales person. No action needed — it's purely
+informational so everyone stays aware of cash coming in.
+
 ## 3. Recurring invoices
 For monthly retainers (SEO, GMB, social, ads, AMC), set up a **recurring invoice
 template** (under Invoices → Recurring Invoices). The system **auto-generates
@@ -66,9 +73,14 @@ page, click **Send Email** on the row you want to resend. The same
 open the full invoice page, then use the **Record payment** form at the bottom.
 Partial payments are supported.
 
-**Advance reminders:** the system automatically emails the client **7, 5, 3, and
-1 day before** each upcoming billing date so they're never surprised. No action
-needed from you — the scheduler sends these at 09:00 IST daily.
+**Advance reminders to the client:** the system automatically emails the client
+**7, 5, 3, and 1 day before** each upcoming billing date so they're never
+surprised. No action needed from you — the scheduler sends these at 09:00 IST daily.
+
+**Bell notification — invoice due in 7 days:** every morning at **8 AM**, if any
+recurring-linked invoice has a due date exactly 7 days away and hasn't been paid
+yet, a ⚠️ bell notification is sent to all accounts staff, admin, and managers.
+This gives you a full week to follow up before the invoice becomes overdue.
 
 ## 4. Reports
 - **Account** (in the sidebar) → the **outstanding receivables** report: who owes
@@ -91,3 +103,5 @@ your developer to update them.
 - Overdue invoices are flagged automatically each morning, and payment reminders
   go out to clients.
 - Daily digest and reminder emails are **not sent on Sundays**.
+- If you delete a recurring invoice template, the previously generated invoices
+  are kept for financial records — only the template and its schedule are removed.

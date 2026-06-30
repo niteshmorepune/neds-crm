@@ -8,6 +8,8 @@ When you log in you'll see:
 - **Follow-ups due** — leads you need to chase today.
 - **Won this month** — value of deals you've closed.
 - **Open pipeline by stage** — your live deals and their value.
+- **Overdue tasks alert** — if you have tasks past their due date, a red banner
+  appears with a direct link to your task list.
 
 ## 1. Leads (Lead Generation)
 1. **Lead Generation → Add Lead**.
@@ -136,6 +138,19 @@ upload files without needing a CRM login.
 Once a quotation is ready, open it and click **Send to Client**. This emails the
 quotation details to the client's billing address and marks it as Sent. The client
 can then accept or request changes.
+
+## Bell notifications
+The 🔔 bell icon at the top of the screen shows real-time alerts for your key
+events. You'll be notified when:
+
+| Event | Who gets it |
+|---|---|
+| 🟢 **New lead created** | The assigned sales person — or all sales staff if the lead has no owner yet |
+| 📄 **New quotation created** | The deal's assigned sales person |
+| 🏆 **Deal marked Won** | The deal's assigned sales person + all managers and admins |
+| 🧾 **New invoice created** | The client's assigned sales person (recurring auto-invoices are excluded to avoid noise) |
+
+Click any notification to jump straight to the record. Click **Dismiss** to clear it.
 
 ## Email alerts
 The CRM sends you two types of automated emails to help you stay on top of things:

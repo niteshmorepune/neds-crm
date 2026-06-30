@@ -30,6 +30,17 @@ From the **Reports** panel on the dashboard:
 
 **Outstanding Receivables** — what clients still owe (shared with accounts).
 
+## Bell notifications
+As a manager, you receive bell notifications for:
+
+- 🏆 **Deal won** — whenever any deal is marked Won, you and all admins are
+  notified with the deal title, client name, and value.
+- ⚠️ **Recurring invoice due in 7 days** — every morning at 8 AM, if any
+  recurring-linked invoice is due in 7 days and hasn't been paid, you're alerted
+  alongside the accounts team so you can follow up if needed.
+- **SMDost brief approved** — ✅ when a brief is approved in SMDost, a draft
+  invoice appears in the CRM for accounts to price.
+
 ## Oversight
 You have access to Leads, Deals, Quotations, Invoices, Projects, Tasks, Tickets,
 Clients, Attendance, Calls and Daily Reports so you can monitor and step in

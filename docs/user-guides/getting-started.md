@@ -33,10 +33,16 @@ password only you know.
 - **Search bar** (top) — find any client, lead, deal, invoice, ticket or project
   by name or number.
 - **☎ Log a call** (top) — quickly record a phone call with a client or lead.
-- **🔔 Bell icon** (top) — your notification centre. Shows unread alerts such as
-  tasks assigned to you and call follow-up reminders. Click a notification to go
-  straight to the record; click **Dismiss** to clear it.
+- **🔔 Bell icon** (top) — your notification centre. Alerts vary by role but
+  include: tasks assigned to you, call follow-up reminders, new leads, deal won,
+  payment recorded, and upcoming recurring invoice due dates. Click a notification
+  to go straight to the record; click **Dismiss** to clear it.
 - **Your name** (top-right) — Profile and Log out.
+
+## 4a. Overdue tasks alert
+If you have any tasks past their due date, a **red banner** appears at the top of
+your dashboard when you log in. Click **View tasks →** to see them and clear the
+backlog.
 
 ## 5. Attendance — check in and out
 On the **Dashboard**, use the attendance widget:
