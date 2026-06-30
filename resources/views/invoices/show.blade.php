@@ -32,6 +32,18 @@
                     @endif
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
+                    @if ($invoice->status === \App\Enums\InvoiceStatus::Draft)
+                        <span class="inline-flex items-center rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800">Draft — not visible to client</span>
+                    @endif
+                    @can('recordPayment', $invoice)
+                        @if ($invoice->status === \App\Enums\InvoiceStatus::Draft)
+                            <form method="POST" action="{{ route('invoices.send', $invoice) }}">
+                                @csrf
+                                <button type="submit" class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+                                        onclick="return confirm('Send this invoice to the client and mark it as Sent?')">Send Invoice</button>
+                            </form>
+                        @endif
+                    @endcan
                     @can('update', $invoice)
                         <a href="{{ route('invoices.edit', $invoice) }}" class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Edit</a>
                     @endcan

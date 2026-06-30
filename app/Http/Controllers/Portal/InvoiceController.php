@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Portal;
 
+use App\Enums\InvoiceStatus;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Response;
 use Illuminate\View\View;
@@ -11,7 +12,7 @@ class InvoiceController extends PortalController
     public function index(): View
     {
         return view('portal.invoices.index', [
-            'invoices' => $this->customer()->invoices()->latest()->paginate(15),
+            'invoices' => $this->customer()->invoices()->where('status', '!=', InvoiceStatus::Draft->value)->latest()->paginate(15),
             'upcomingBilling' => $this->customer()->recurringInvoices()
                 ->where('is_active', true)
                 ->with(['service', 'items'])
@@ -25,12 +26,16 @@ class InvoiceController extends PortalController
         // Scoped to the contact's customer — findOrFail 404s on another's invoice.
         $invoice = $this->customer()->invoices()->with('items', 'payments')->findOrFail($invoice);
 
+        abort_if($invoice->status === InvoiceStatus::Draft, 404);
+
         return view('portal.invoices.show', ['invoice' => $invoice]);
     }
 
     public function pdf(int $invoice): Response
     {
         $invoice = $this->customer()->invoices()->with('items', 'customer')->findOrFail($invoice);
+
+        abort_if($invoice->status === InvoiceStatus::Draft, 404);
 
         $filename = str_replace('/', '-', $invoice->invoice_number).'.pdf';
 
