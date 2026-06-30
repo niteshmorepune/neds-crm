@@ -70,6 +70,11 @@ class Customer extends Model
             TicketReply::whereIn('ticket_id', $customer->tickets()->pluck('id'))->delete();
             $customer->tickets()->delete();
 
+            // Hard-delete recurring invoice line items + templates (no SoftDeletes on RecurringInvoice)
+            $recurringIds = $customer->recurringInvoices()->pluck('id');
+            RecurringInvoiceItem::whereIn('recurring_invoice_id', $recurringIds)->delete();
+            $customer->recurringInvoices()->delete();
+
             // Soft-delete invoices; items/payments kept for financial audit (Invoice has SoftDeletes)
             $customer->invoices()->delete();
 
