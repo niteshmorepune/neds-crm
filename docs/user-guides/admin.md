@@ -9,8 +9,8 @@ Admins can do everything a manager can, plus manage **users**, **services**, the
 ## 1. Users — add and manage staff
 Public sign-up is disabled, so **you create every staff account**.
 
-- **Users → Add user** → name, email, **role** (Admin / Manager / Sales /
-  Support / Accounts), and a temporary password. Leave **Active** ticked.
+- **Users → Add user** → name, email, **role**, and a temporary password.
+  Leave **Active** ticked.
 - Give the person their email + temporary password; they change it on first
   login. Admins/managers will be guided through 2FA setup.
 - **Edit** a user to change their name, email, role, or reset their password.
@@ -18,6 +18,49 @@ Public sign-up is disabled, so **you create every staff account**.
   this blocks their login but keeps their leads, deals and history intact.
 - You **can't** disable, demote, or delete **your own** account (so you can't
   lock yourself out).
+
+**Roles available:**
+
+| Role | What they can access |
+|---|---|
+| Admin | Everything, including users, menu controller, audit log, backups |
+| Manager | All modules except user/menu/audit/backup admin |
+| Sales | Leads, deals, their own clients, quotations, projects, tasks, tickets, calls |
+| Support | Tickets, projects (assigned), clients (read-only), calls, tasks |
+| Accounts | Invoices, payments, clients, recurring invoices |
+| **Intern** | Clients (read-only), Projects (assigned), Tasks (assigned), Attendance, Daily Reports |
+
+**Biometric Device User ID:** each user record has an optional
+**Biometric Device User ID** field. Set this to the numeric ID from the
+eSSL attendance machine's Device Users list. Once set, punches from that
+person on the biometric machine automatically update their CRM attendance
+record (check-in and check-out times). See Section 1a below.
+
+## 1a. Biometric attendance sync (eSSL machine)
+The CRM is connected to the **eSSL x 2008** biometric attendance machine
+(serial NFZ8243301103). When staff punch in or out on the machine, their
+attendance is automatically synced to the CRM — no manual check-in needed.
+
+**How it works:**
+- The machine sends each punch to the CRM automatically via the internet.
+- The **first punch of the day** sets the check-in time.
+- The **last punch of the day** sets the check-out time.
+- If a staff member also pressed the manual check-in button on the CRM
+  dashboard, the biometric punch will update the record with the exact time
+  from the machine.
+
+**To map a staff member to the machine:**
+1. On the machine, go to **Menu → User Mgt** to find the person's numeric
+   User ID (e.g. 1, 3, 13, 16 …).
+2. In the CRM, go to **Users → Edit** the staff member.
+3. Enter that number in the **Biometric Device User ID** field and save.
+
+From that point on, the machine's punches update their attendance automatically.
+
+**If the sync stops working**, check that `BIOMETRIC_DEVICE_SERIAL` is set
+correctly in the server `.env` and run `php artisan config:cache`. The
+machine's Cloud Server settings should point to `crm.talktonitesh.com` on
+port 443 with HTTPS on.
 
 ## 2. Services — the service-line taxonomy
 **Services** lists your offerings (SEO, GMB, Website Development, Social Media,

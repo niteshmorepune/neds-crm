@@ -62,4 +62,5 @@ Click your **name** (top-right) → **Log Out**. Always log out on shared device
 
 ---
 Next: read the guide for your role — [Sales](sales.md), [Support](support.md),
-[Accounts](accounts.md), [Manager](manager.md), or [Admin](admin.md).
+[Accounts](accounts.md), [Manager](manager.md), [Admin](admin.md), or
+[Intern](intern.md).

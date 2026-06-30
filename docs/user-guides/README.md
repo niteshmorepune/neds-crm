@@ -13,6 +13,7 @@ Start with **Getting Started**, then read the guide for your role.
 | [Accounts](accounts.md) | Accounts team — invoices, payments, recurring billing |
 | [Manager](manager.md) | Managers — dashboards and reports |
 | [Admin](admin.md) | Administrators — users, services, menu control, audit, backups |
+| [Intern](intern.md) | Interns — clients (view), assigned projects and tasks, attendance, daily reports |
 | [Client Portal](client-portal.md) | Clients — the read-only customer portal |
 | [Integrations](integrations.md) | Managers & Admins — Drishti, SMDost, and the 7 automated workflows |
 
