@@ -16,6 +16,7 @@ Start with **Getting Started**, then read the guide for your role.
 | [Intern](intern.md) | Interns — clients (view), assigned projects and tasks, attendance, daily reports |
 | [Client Portal](client-portal.md) | Clients — the read-only customer portal |
 | [Integrations](integrations.md) | Managers & Admins — Drishti, SMDost, and the 7 automated workflows |
+| [Troubleshooting](troubleshooting.md) | Admins & Managers — fixing common issues (biometric, SSO, integrations, email) |
 
 > Some AI helpers (lead scoring, "Draft with AI", "Summarize") only appear when
 > an administrator has enabled AI for the workspace. If you don't see them,

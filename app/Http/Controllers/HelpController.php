@@ -25,28 +25,43 @@ class HelpController extends Controller
         'intern' => 'Intern',
         'client-portal' => 'Client Portal',
         'integrations' => 'Integrations',
+        'troubleshooting' => 'Troubleshooting',
     ];
+
+    /** Guides restricted to admin / manager only. */
+    private const ADMIN_ONLY = ['troubleshooting', 'integrations'];
 
     public function index(Request $request): View
     {
-        $recommended = match ($request->user()->role) {
+        $user = $request->user();
+        $isAdminOrManager = $user->hasRole(UserRole::Admin, UserRole::Manager);
+
+        $guides = $isAdminOrManager
+            ? self::GUIDES
+            : array_diff_key(self::GUIDES, array_flip(self::ADMIN_ONLY));
+
+        $recommended = match ($user->role) {
             UserRole::Sales => ['getting-started', 'sales'],
             UserRole::Support => ['getting-started', 'support'],
             UserRole::Accounts => ['getting-started', 'accounts'],
-            UserRole::Manager => ['getting-started', 'manager', 'integrations'],
-            UserRole::Admin => ['getting-started', 'admin', 'manager', 'integrations'],
+            UserRole::Manager => ['getting-started', 'manager', 'integrations', 'troubleshooting'],
+            UserRole::Admin => ['getting-started', 'admin', 'manager', 'integrations', 'troubleshooting'],
             UserRole::Intern => ['getting-started', 'intern'],
         };
 
         return view('help.index', [
-            'guides' => self::GUIDES,
+            'guides' => $guides,
             'recommended' => $recommended,
         ]);
     }
 
-    public function show(string $guide): View
+    public function show(Request $request, string $guide): View
     {
         abort_unless(array_key_exists($guide, self::GUIDES), 404);
+
+        if (in_array($guide, self::ADMIN_ONLY, true)) {
+            abort_unless($request->user()->hasRole(UserRole::Admin, UserRole::Manager), 403);
+        }
 
         $path = base_path("docs/user-guides/{$guide}.md");
         abort_unless(is_file($path), 404);
