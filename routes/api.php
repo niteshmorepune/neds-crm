@@ -1,9 +1,11 @@
 <?php
 
+use App\Http\Controllers\Api\BiometricWebhookController;
 use App\Http\Controllers\Api\DrishtiWebhookController;
 use App\Http\Controllers\Api\LeadCaptureController;
 use App\Http\Controllers\Api\SmdostWebhookController;
 use App\Http\Controllers\Api\WhatsappWebhookController;
+use App\Http\Middleware\VerifyBiometricDeviceSerial;
 use App\Http\Middleware\VerifyDrishtiWebhookSignature;
 use App\Http\Middleware\VerifyLeadCaptureToken;
 use App\Http\Middleware\VerifySmdostWebhookToken;
@@ -35,6 +37,19 @@ Route::post('/webhooks/smdost/brief-approved', [SmdostWebhookController::class, 
 Route::post('/webhooks/smdost/content-ready', [SmdostWebhookController::class, 'contentReady'])
     ->middleware(['throttle:60,1', VerifySmdostWebhookToken::class])
     ->name('api.webhooks.smdost.content-ready');
+
+// eSSL biometric device ADMS push. The device is configured with:
+//   Server Address: crm.talktonitesh.com, Port: 443, HTTPS: ON
+//   Auth: SN query param validated against BIOMETRIC_DEVICE_SERIAL.
+// GET = device ping/registration handshake; POST = attendance log push.
+Route::middleware(['throttle:300,1', VerifyBiometricDeviceSerial::class])
+    ->prefix('iclock')
+    ->group(function () {
+        Route::get('/cdata', [BiometricWebhookController::class, 'ping'])
+            ->name('api.biometric.ping');
+        Route::post('/cdata', [BiometricWebhookController::class, 'push'])
+            ->name('api.biometric.push');
+    });
 
 // nedsdrishti.in → CRM bridge. Receives post.approved / post.rejected /
 // post.published events and writes them to the customer's activity feed.

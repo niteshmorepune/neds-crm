@@ -37,6 +37,14 @@
         <x-text-input id="password_confirmation" name="password_confirmation" type="password" class="mt-1 block w-full" :required="! $user->exists" autocomplete="new-password" />
     </div>
 
+    <div>
+        <x-input-label for="device_user_id" value="Biometric Device User ID" />
+        <x-text-input id="device_user_id" name="device_user_id" type="text" class="mt-1 block w-full"
+                      :value="old('device_user_id', $user->device_user_id)" placeholder="e.g. 3" />
+        <p class="mt-1 text-xs text-gray-500">Numeric ID from the biometric machine's Device Users list. Leave blank if this user does not use the biometric device.</p>
+        <x-input-error :messages="$errors->get('device_user_id')" class="mt-1" />
+    </div>
+
     <label class="flex items-center gap-2 text-sm text-gray-700">
         <input type="checkbox" name="is_active" value="1" class="rounded border-gray-300 text-indigo-600"
                @checked(old('is_active', $user->is_active ?? true))

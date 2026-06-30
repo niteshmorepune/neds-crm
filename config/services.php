@@ -69,6 +69,12 @@ return [
         'service_key' => env('SMDOST_SERVICE_KEY'),
     ],
 
+    // eSSL biometric device ADMS push. BIOMETRIC_DEVICE_SERIAL must match the
+    // serial number printed on the device (shown in its Command Center screen).
+    'biometric' => [
+        'device_serial' => env('BIOMETRIC_DEVICE_SERIAL'),
+    ],
+
     // Shared secret for cross-portal SSO tokens (CRM → Drishti / SMDost).
     // Used to sign short-lived HS256 JWTs that let a portal contact log into
     // Drishti or SMDost without a separate password.

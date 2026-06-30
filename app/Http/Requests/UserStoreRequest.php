@@ -22,6 +22,7 @@ class UserStoreRequest extends FormRequest
             'role' => ['required', Rule::enum(UserRole::class)],
             'password' => ['required', 'confirmed', Password::min(8)],
             'is_active' => ['boolean'],
+            'device_user_id' => ['nullable', 'string', 'max:20', 'unique:users,device_user_id'],
         ];
     }
 
