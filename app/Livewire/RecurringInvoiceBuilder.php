@@ -108,9 +108,11 @@ class RecurringInvoiceBuilder extends Component
                 'terms' => $this->terms ?: null,
             ]);
 
-            if (! $recurring->exists) {
+            if (! $recurring->exists || $recurring->invoices()->doesntExist()) {
                 // Advance from the start date until we reach a future date, so
                 // a historical start date never leaves next_run_on in the past.
+                // On edit we also recalculate when no invoices have been generated
+                // yet — the cycle hasn't started so it's safe to adjust.
                 $next = Carbon::parse($this->start_date)->startOfDay();
                 $today = now()->startOfDay();
                 while ($next->lt($today)) {
