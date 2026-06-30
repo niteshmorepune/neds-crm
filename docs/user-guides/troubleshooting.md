@@ -344,6 +344,60 @@ emails are also not sending, fix SMTP first (see Section 3 Check 4).
 
 ---
 
+## 13. Bell notifications not appearing
+
+**Symptom:** Staff report they're not receiving bell notifications for events
+such as new leads, deal won, payment recorded, or the recurring invoice due
+warning.
+
+There are two categories of bell notification:
+
+- **Event-triggered** (new lead, new quotation, deal won, new invoice, payment
+  recorded) — fire instantly when the event occurs, no cron needed.
+- **Scheduled** (recurring invoice due in 7 days) — fires daily at **08:00 IST**
+  via the cron; requires the scheduler to be running.
+
+**Check 1 — For the recurring invoice 7-day warning only: is the command scheduled?**
+```
+cd /home/u314035009/neds-crm && php artisan schedule:list | grep due-warning
+```
+Should show `app:send-recurring-invoice-due-warnings` at 08:00 IST. If missing,
+check `routes/console.php` and re-deploy. Then verify the Hostinger cron is
+active (hPanel → Cron Jobs — see Section 3 Check 3).
+
+**Check 2 — Are notifications being written to the database at all?**
+```
+cd /home/u314035009/neds-crm && php artisan tinker --no-interaction
+```
+Then:
+```php
+DB::table('notifications')->latest('created_at')->take(5)->get(['type','notifiable_id','created_at','read_at']);
+```
+If the result is empty and events have definitely occurred (payments recorded,
+leads created, etc.), check the application log for errors (Check 4 below).
+
+**Check 3 — Check a specific user's unread count:**
+```php
+\App\Models\User::where('email', 'user@example.com')->first()->unreadNotifications()->count();
+```
+If this returns a number but the bell shows zero, the user may have already
+dismissed them — dismissed notifications are removed from the count. The bell
+only shows **unread** (not yet dismissed) notifications.
+
+**Check 4 — Look for exceptions in the log:**
+```
+tail -100 /home/u314035009/neds-crm/storage/logs/laravel.log | grep -i 'exception\|error\|notification'
+```
+Any `QueryException` or `InvalidArgumentException` here will explain why a
+notification failed to save.
+
+**Note on new lead notifications:** the notification fires only when a lead is
+**created** — not when it is edited. Leads created via the CRM form, the website
+capture form, and the WhatsApp webhook all trigger the notification. A re-save
+(edit) does not.
+
+---
+
 ## General: when in doubt, run these four commands
 
 After any deployment, `.env` edit, or unexpected behaviour:
