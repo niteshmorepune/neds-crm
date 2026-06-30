@@ -9,6 +9,7 @@ enum UserRole: string
     case Sales = 'sales';
     case Support = 'support';
     case Accounts = 'accounts';
+    case Intern = 'intern';
 
     /**
      * Human-readable label for the role.
@@ -21,6 +22,7 @@ enum UserRole: string
             self::Sales => 'Sales',
             self::Support => 'Support',
             self::Accounts => 'Accounts',
+            self::Intern => 'Intern',
         };
     }
 

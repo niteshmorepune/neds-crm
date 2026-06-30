@@ -85,6 +85,24 @@ it('computes accounts outstanding, collections and overdue count', function () {
         ->and($stats['overdue_count'])->toBe(1);
 });
 
+it('returns pending tasks, completed today and active project count for an intern', function () {
+    $intern = User::factory()->role(UserRole::Intern)->create();
+
+    Task::factory()->create(['assignee_id' => $intern->id, 'status' => TaskStatus::Todo]);
+    Task::factory()->create(['assignee_id' => $intern->id, 'status' => TaskStatus::Done, 'updated_at' => now()]);
+    Task::factory()->create(['status' => TaskStatus::Todo]); // another user's task
+
+    $project = Project::factory()->create();
+    $project->assignees()->attach($intern->id, ['role' => 'member']);
+    Project::factory()->create(['status' => 'completed']); // excluded
+
+    $stats = app(DashboardMetrics::class)->internStats($intern);
+
+    expect($stats['pendingTasks'])->toBe(1)
+        ->and($stats['completedToday'])->toBe(1)
+        ->and($stats['projects'])->toBe(1);
+});
+
 it('summarizes support open tickets by priority and SLA risk', function () {
     $support = User::factory()->role(UserRole::Support)->create();
     Ticket::factory()->create(['status' => TicketStatus::Open, 'priority' => TicketPriority::Urgent, 'sla_due_at' => now()->addHour()]);

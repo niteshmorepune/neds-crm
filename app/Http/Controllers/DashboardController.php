@@ -25,6 +25,7 @@ class DashboardController extends Controller
             $user->hasRole(UserRole::Sales) => ['sales', ['stats' => $metrics->salesStats($user)]],
             $user->hasRole(UserRole::Accounts) => ['accounts', ['stats' => $metrics->accountsStats()]],
             $user->hasRole(UserRole::Support) => ['support', ['stats' => $metrics->supportStats($user)]],
+            $user->hasRole(UserRole::Intern) => ['intern', ['stats' => $metrics->internStats($user)]],
             default => ['blank', []],
         };
 

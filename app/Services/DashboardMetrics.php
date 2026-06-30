@@ -157,6 +157,25 @@ class DashboardMetrics
         ];
     }
 
+    /** Stat cards for the intern dashboard — tasks assigned and projects. */
+    public function internStats(User $user): array
+    {
+        $pendingTasks = Task::where('assignee_id', $user->id)
+            ->whereIn('status', [TaskStatus::Todo->value, TaskStatus::InProgress->value, TaskStatus::Review->value])
+            ->count();
+
+        $completedToday = Task::where('assignee_id', $user->id)
+            ->where('status', TaskStatus::Done->value)
+            ->whereDate('updated_at', today())
+            ->count();
+
+        $projects = Project::whereHas('assignees', fn ($q) => $q->where('users.id', $user->id))
+            ->whereNotIn('status', ['completed', 'cancelled'])
+            ->count();
+
+        return compact('pendingTasks', 'completedToday', 'projects');
+    }
+
     /**
      * Build a stat card payload: value + signed % change vs last month.
      */

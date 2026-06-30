@@ -42,6 +42,10 @@ class CustomerPolicy
 
     public function update(User $user, Customer $customer): bool
     {
+        if ($user->hasRole(UserRole::Intern)) {
+            return false;
+        }
+
         if (! $user->hasRole(UserRole::Sales)) {
             return true;
         }
