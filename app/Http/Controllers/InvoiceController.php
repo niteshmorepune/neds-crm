@@ -15,6 +15,8 @@ use App\Models\Customer;
 use App\Models\Deal;
 use App\Models\Invoice;
 use App\Models\Project;
+use App\Models\User;
+use App\Notifications\PaymentRecordedNotification;
 use App\Services\InvoiceNumberGenerator;
 use App\Support\Money;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -312,6 +314,22 @@ class InvoiceController extends Controller
         ]);
 
         $invoice->refreshPaymentStatus();
+
+        // Notify accounts staff + client's sales rep (skip the person who recorded it).
+        $recorder = $request->user();
+        $notification = new PaymentRecordedNotification($invoice, $payment);
+        $recipients = User::where('is_active', true)
+            ->where('role', UserRole::Accounts->value)
+            ->where('id', '!=', $recorder->id)
+            ->get();
+        $ownerId = Customer::where('id', $invoice->customer_id)->value('owner_id');
+        if ($ownerId && $ownerId !== $recorder->id) {
+            $owner = User::find($ownerId);
+            if ($owner && ! $recipients->contains('id', $owner->id)) {
+                $recipients = $recipients->push($owner);
+            }
+        }
+        $recipients->each(fn (User $u) => $u->notify($notification));
 
         $status = 'Payment recorded.';
 

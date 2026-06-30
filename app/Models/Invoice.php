@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\InvoiceStatus;
 use App\Models\Concerns\HasGstTotals;
 use App\Models\Concerns\LogsActivity;
+use App\Notifications\NewInvoiceNotification;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -39,6 +40,20 @@ class Invoice extends Model
             'total' => 'integer',
             'amount_paid' => 'integer',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::created(function (Invoice $invoice) {
+            // Skip auto-generated recurring invoices — one per client per cycle would be too noisy.
+            if ($invoice->recurring_invoice_id !== null) {
+                return;
+            }
+            $ownerId = Customer::where('id', $invoice->customer_id)->value('owner_id');
+            if ($ownerId) {
+                User::find($ownerId)?->notify(new NewInvoiceNotification($invoice));
+            }
+        });
     }
 
     public function customer(): BelongsTo

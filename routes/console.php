@@ -26,9 +26,11 @@ Schedule::command('app:send-stagnation-alerts')
 // Billing schedule (India time): generate recurring invoices, flag overdue,
 // then send payment reminders. Recurring invoice reminders go out at 09:00 IST
 // on days 7, 5, 3, and 1 before the next billing date (alternate days in that window).
+// Due-soon warnings go out at 08:00 IST to notify accounts staff 7 days before due date.
 Schedule::command('app:generate-recurring-invoices')->dailyAt('06:00')->timezone('Asia/Kolkata');
 Schedule::command('app:mark-overdue-invoices')->dailyAt('07:00')->timezone('Asia/Kolkata');
 Schedule::command('app:send-payment-reminders')->dailyAt('07:30')->timezone('Asia/Kolkata');
+Schedule::command('app:send-recurring-invoice-due-warnings')->dailyAt('08:00')->timezone('Asia/Kolkata');
 Schedule::command('app:send-recurring-invoice-reminders')->dailyAt('09:00')->timezone('Asia/Kolkata');
 
 // Call follow-up reminders — check every 5 minutes so notifications fire close to the scheduled time.

@@ -26,6 +26,26 @@
                                 Was due {{ \Illuminate\Support\Carbon::parse($data['follow_up_at'])->timezone(config('app.display_timezone'))->format('d M Y, g:i A') }}
                                 · {{ $notification->created_at->timezone(config('app.display_timezone'))->diffForHumans() }}
                             </p>
+                        @elseif (! empty($data['message']))
+                            @php($typeIcon = match ($type) {
+                                'new_lead'                    => '🟢',
+                                'new_quotation'               => '📄',
+                                'deal_won'                    => '🏆',
+                                'new_invoice'                 => '🧾',
+                                'payment_recorded'            => '💰',
+                                'recurring_invoice_due_soon'  => '⚠️',
+                                'smdost_brief_approved'       => '✅',
+                                default                       => '🔔',
+                            })
+                            <p class="text-sm font-medium text-gray-900">
+                                {{ $typeIcon }}
+                                @if (! empty($data['url']))
+                                    <a href="{{ $data['url'] }}" class="text-indigo-600 hover:underline">{{ $data['message'] }}</a>
+                                @else
+                                    {{ $data['message'] }}
+                                @endif
+                            </p>
+                            <p class="mt-0.5 text-xs text-gray-500">{{ $notification->created_at->timezone(config('app.display_timezone'))->diffForHumans() }}</p>
                         @else
                             <p class="text-sm font-medium text-gray-900">
                                 Task assigned: <a href="{{ $data['url'] }}" class="text-indigo-600 hover:underline">{{ $data['task_title'] }}</a>

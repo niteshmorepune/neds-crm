@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\QuotationStatus;
 use App\Models\Concerns\HasGstTotals;
 use App\Models\Concerns\LogsActivity;
+use App\Notifications\NewQuotationNotification;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,6 +15,18 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 class Quotation extends Model
 {
     use HasFactory, HasGstTotals, LogsActivity;
+
+    protected static function booted(): void
+    {
+        static::created(function (Quotation $quotation) {
+            $ownerId = $quotation->deal_id
+                ? Deal::where('id', $quotation->deal_id)->value('owner_id')
+                : Customer::where('id', $quotation->customer_id)->value('owner_id');
+            if ($ownerId) {
+                User::find($ownerId)?->notify(new NewQuotationNotification($quotation));
+            }
+        });
+    }
 
     protected $fillable = [
         'number', 'customer_id', 'deal_id', 'status', 'place_of_supply_state_code',

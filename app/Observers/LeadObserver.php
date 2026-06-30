@@ -2,8 +2,11 @@
 
 namespace App\Observers;
 
+use App\Enums\UserRole;
 use App\Jobs\ScoreLead;
 use App\Models\Lead;
+use App\Models\User;
+use App\Notifications\NewLeadNotification;
 use App\Support\Ai;
 
 /**
@@ -20,6 +23,7 @@ class LeadObserver
     public function created(Lead $lead): void
     {
         $this->queueScore($lead);
+        $this->notifyNewLead($lead);
     }
 
     public function updated(Lead $lead): void
@@ -35,6 +39,20 @@ class LeadObserver
     {
         if (Ai::enabled()) {
             ScoreLead::dispatch($lead->id);
+        }
+    }
+
+    private function notifyNewLead(Lead $lead): void
+    {
+        $notification = new NewLeadNotification($lead);
+
+        if ($lead->owner_id) {
+            User::find($lead->owner_id)?->notify($notification);
+        } else {
+            User::where('is_active', true)
+                ->where('role', UserRole::Sales->value)
+                ->get()
+                ->each(fn (User $u) => $u->notify($notification));
         }
     }
 }

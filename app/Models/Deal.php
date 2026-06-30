@@ -7,6 +7,7 @@ use App\Enums\DealStage;
 use App\Enums\UserRole;
 use App\Jobs\ProvisionClientExternallyJob;
 use App\Models\Concerns\LogsActivity;
+use App\Notifications\DealWonNotification;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -65,6 +66,19 @@ class Deal extends Model
                 // idempotent (skips if drishti_client_id already set) so it is
                 // safe to dispatch even if the deal somehow reaches Won twice.
                 ProvisionClientExternallyJob::dispatch($deal->customer_id);
+
+                // Notify the deal owner + all admin/manager users.
+                $notification = new DealWonNotification($deal);
+                $recipients = User::where('is_active', true)
+                    ->whereIn('role', [UserRole::Admin->value, UserRole::Manager->value])
+                    ->get();
+                if ($deal->owner_id) {
+                    $owner = User::find($deal->owner_id);
+                    if ($owner && ! $recipients->contains('id', $owner->id)) {
+                        $recipients = $recipients->push($owner);
+                    }
+                }
+                $recipients->each(fn (User $u) => $u->notify($notification));
             }
         });
     }
