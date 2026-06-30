@@ -38,6 +38,13 @@ class BiometricWebhookController extends Controller
         $punches = $this->parseBody($request->getContent());
         $processed = 0;
 
+        if (count($punches) > 0) {
+            Log::warning('Biometric: push received', [
+                'count' => count($punches),
+                'punches' => $punches,
+            ]);
+        }
+
         foreach ($punches as $punch) {
             try {
                 $user = User::where('device_user_id', $punch['device_user_id'])->first();

@@ -15,7 +15,15 @@
         <div class="overflow-hidden overflow-x-auto rounded-lg bg-white shadow-sm">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
-                    <tr><th class="px-4 py-3">User</th><th class="px-4 py-3">Current</th><th class="px-4 py-3">Mark as</th><th class="px-4 py-3">Notes</th><th></th></tr>
+                    <tr>
+                        <th class="px-4 py-3">User</th>
+                        <th class="px-4 py-3">Current</th>
+                        <th class="px-4 py-3">Status</th>
+                        <th class="px-4 py-3">Check In</th>
+                        <th class="px-4 py-3">Check Out</th>
+                        <th class="px-4 py-3">Notes</th>
+                        <th></th>
+                    </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     @foreach ($users as $person)
@@ -41,6 +49,16 @@
                                             <option value="{{ $status->value }}" @selected($e?->status === $status)>{{ $status->label() }}</option>
                                         @endforeach
                                     </select>
+                                </td>
+                                <td class="px-4 py-2">
+                                    <input type="time" name="check_in"
+                                           value="{{ $e?->check_in_at?->timezone(config('app.display_timezone'))->format('H:i') }}"
+                                           class="rounded-md border-gray-300 text-sm shadow-sm" />
+                                </td>
+                                <td class="px-4 py-2">
+                                    <input type="time" name="check_out"
+                                           value="{{ $e?->check_out_at?->timezone(config('app.display_timezone'))->format('H:i') }}"
+                                           class="rounded-md border-gray-300 text-sm shadow-sm" />
                                 </td>
                                 <td class="px-4 py-2"><input type="text" name="notes" value="{{ $e?->notes }}" class="rounded-md border-gray-300 text-sm shadow-sm w-full" /></td>
                                 <td class="px-4 py-2"><button class="rounded-md bg-gray-800 px-2 py-1 text-xs font-medium text-white hover:bg-gray-700">Save</button></td>

@@ -75,21 +75,34 @@ class AttendanceController extends Controller
         $this->authorize('correct', Attendance::class);
 
         $data = $request->validate([
-            'user_id' => ['required', Rule::exists('users', 'id')],
-            'date' => ['required', 'date'],
-            'status' => ['required', Rule::enum(AttendanceStatus::class)],
-            'notes' => ['nullable', 'string', 'max:255'],
+            'user_id'    => ['required', Rule::exists('users', 'id')],
+            'date'       => ['required', 'date'],
+            'status'     => ['required', Rule::enum(AttendanceStatus::class)],
+            'check_in'   => ['nullable', 'date_format:H:i'],
+            'check_out'  => ['nullable', 'date_format:H:i'],
+            'notes'      => ['nullable', 'string', 'max:255'],
         ]);
 
         $date = Carbon::parse($data['date']);
+        $tz = config('app.display_timezone', 'Asia/Kolkata');
 
         $attendance = Attendance::where('user_id', $data['user_id'])->whereDate('date', $date)->first()
             ?? new Attendance(['user_id' => $data['user_id'], 'date' => $date->toDateString()]);
 
-        $attendance->fill([
+        $fill = [
             'status' => $data['status'],
-            'notes' => $data['notes'] ?? null,
-        ])->save();
+            'notes'  => $data['notes'] ?? null,
+        ];
+
+        if (filled($data['check_in'] ?? null)) {
+            $fill['check_in_at'] = Carbon::createFromFormat('Y-m-d H:i', $date->format('Y-m-d').' '.$data['check_in'], $tz)->utc();
+        }
+
+        if (filled($data['check_out'] ?? null)) {
+            $fill['check_out_at'] = Carbon::createFromFormat('Y-m-d H:i', $date->format('Y-m-d').' '.$data['check_out'], $tz)->utc();
+        }
+
+        $attendance->fill($fill)->save();
 
         return back()->with('status', 'Attendance corrected.');
     }
