@@ -193,6 +193,38 @@ description — so it's visible in wadesk.in as well.
 
 ---
 
+## Integration 8 — WhatsApp two-way reply (wadesk.in)
+
+**What it does:** WhatsApp is now a full two-way channel through the CRM.
+
+- **Inbound:** when a customer messages on WhatsApp, wadesk.in calls the CRM
+  webhook, which matches the phone number to a client and opens a **Ticket**
+  (channel = WhatsApp) — deduplicated per wadesk.in conversation, so replies
+  in the same conversation don't create new tickets.
+- **Outbound:** when a staff member replies on that ticket in the CRM (and the
+  reply is **not** marked "internal note"), the CRM sends the reply back
+  through wadesk.in so the customer receives it on WhatsApp — the staffer
+  never has to open wadesk.in or WhatsApp directly.
+
+**What the team sees:**
+- A ticket tagged WhatsApp behaves like any other ticket — reply in the CRM
+  as normal.
+- Internal notes (the "internal" checkbox) are never sent to the customer —
+  use these for team-only context.
+- If the client can't be matched by phone number, no ticket is created
+  (`no_customer_match`); add/fix the client's phone number in the CRM and ask
+  the customer to send another WhatsApp message.
+
+**If a customer says they didn't receive a reply:**
+- Check the ticket wasn't marked as an internal note by mistake.
+- Check server `.env` has `WADESK_API_URL` and `WADESK_SERVICE_KEY` set —
+  without these the outbound send is silently skipped (logged as a warning,
+  never blocks the ticket reply itself).
+- wadesk.in outages never break the CRM reply — the message is just not
+  forwarded; the staffer may need to resend once wadesk.in is back up.
+
+---
+
 ## Checking integration health
 
 All integration events leave a trace in the CRM:
@@ -203,10 +235,12 @@ All integration events leave a trace in the CRM:
 | Client profile → Invoices tab | Draft invoices created by SMDost brief approvals |
 | Tickets list → WhatsApp badge | Tickets auto-created from WhatsApp conversations |
 | Drishti → Posts queue | Content pushed from SMDost |
+| Ticket → replies | Outbound WhatsApp replies sent via wadesk.in |
 
 If any integration stops working, the most common causes are:
 1. **Server `.env` out of date** — a key (`DRISHTI_SERVICE_KEY`,
-   `SMDOST_SERVICE_KEY`, `PORTAL_SSO_SECRET`, etc.) is missing or wrong.
+   `SMDOST_SERVICE_KEY`, `PORTAL_SSO_SECRET`, `WADESK_API_URL`,
+   `WADESK_SERVICE_KEY`, etc.) is missing or wrong.
    Run `php artisan config:cache` after any `.env` change.
 2. **Docker not restarted after env change on VPS** — use
    `docker compose up -d` (not `restart`) so the container picks up new env vars.
