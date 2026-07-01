@@ -33,12 +33,23 @@ In the CRM: Admin → Users → Edit the person. The **Biometric Device User ID*
 field must contain their numeric ID from the machine's Device Users list
 (Menu → User Mgt on the machine).
 
-**Check 4 — Is the endpoint reachable?**
+**Check 4 — Is the endpoint reachable at the exact path the device uses?**
 ```
-curl -s "https://crm.talktonitesh.com/api/iclock/cdata?SN=NFZ8243301103"
+curl -s "https://crm.talktonitesh.com/iclock/cdata?SN=NFZ8243301103"
 ```
 Should return `GET OPTION FROM:NFZ8243301103`. If it doesn't, the CRM is down
 or config:cache wasn't run after setting the env var.
+
+**Important:** the URL has **no `/api` prefix**. The ADMS protocol used by
+eSSL/ZKTeco biometric devices always POSTs to `/iclock/cdata` — the device's
+Cloud Server settings only let you set the server address and port, not a
+path. Testing against `/api/iclock/cdata` will falsely appear to work (it
+used to be registered there) while the real device 404s silently — this is
+exactly what caused a real outage on 2026-07-01 where punches never synced
+and nothing appeared in the logs (404s aren't logged by Laravel by default).
+If a future change ever moves this route back under `/api`, punches will
+silently stop syncing again with no log trace — always verify with the
+no-prefix URL above, not the `/api/...` one.
 
 ---
 

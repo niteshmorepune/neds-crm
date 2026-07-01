@@ -14,7 +14,7 @@ beforeEach(function () {
 // ──────────────────────────────────────────────────────────────────────────────
 
 it('responds to the ADMS device ping with the correct plain-text handshake', function () {
-    $response = $this->get('/api/iclock/cdata?SN=NFZ8243301103&options=all&pushver=2.0.33S-20220613&language=English');
+    $response = $this->get('/iclock/cdata?SN=NFZ8243301103&options=all&pushver=2.0.33S-20220613&language=English');
 
     $response->assertStatus(200);
     $response->assertHeader('Content-Type', 'text/plain; charset=UTF-8');
@@ -23,11 +23,11 @@ it('responds to the ADMS device ping with the correct plain-text handshake', fun
 });
 
 it('rejects a ping with an unknown serial number', function () {
-    $this->get('/api/iclock/cdata?SN=UNKNOWN123&options=all')->assertStatus(403);
+    $this->get('/iclock/cdata?SN=UNKNOWN123&options=all')->assertStatus(403);
 });
 
 it('rejects a push with a missing SN parameter', function () {
-    $this->call('POST', '/api/iclock/cdata', [], [], [], ['CONTENT_TYPE' => 'text/plain'], '')
+    $this->call('POST', '/iclock/cdata', [], [], [], ['CONTENT_TYPE' => 'text/plain'], '')
         ->assertStatus(403);
 });
 
@@ -40,7 +40,7 @@ it('creates an attendance record with check-in from an ENTRY punch (status 0)', 
 
     $body = "ATTLOG\n3\t2026-06-30 09:15:00\t0\t1\t0\t0\t0\n";
 
-    $response = $this->call('POST', '/api/iclock/cdata?SN=NFZ8243301103&table=ATTLOG&Stamp=9999',
+    $response = $this->call('POST', '/iclock/cdata?SN=NFZ8243301103&table=ATTLOG&Stamp=9999',
         [], [], [], ['CONTENT_TYPE' => 'text/plain'], $body);
 
     $response->assertStatus(200);
@@ -60,7 +60,7 @@ it('creates an attendance record with check-out from an EXIT punch (status 1)', 
 
     $body = "ATTLOG\n14\t2026-06-30 18:30:00\t1\t1\t0\t0\t0\n";
 
-    $this->call('POST', '/api/iclock/cdata?SN=NFZ8243301103&table=ATTLOG&Stamp=9999',
+    $this->call('POST', '/iclock/cdata?SN=NFZ8243301103&table=ATTLOG&Stamp=9999',
         [], [], [], ['CONTENT_TYPE' => 'text/plain'], $body);
 
     $attendance = Attendance::where('user_id', $user->id)->first();
@@ -76,7 +76,7 @@ it('sets both check-in and check-out when a full-day batch is pushed', function 
 
     $body = "ATTLOG\n17\t2026-06-30 09:00:00\t0\t1\t0\t0\t0\n17\t2026-06-30 18:00:00\t1\t1\t0\t0\t0\n";
 
-    $response = $this->call('POST', '/api/iclock/cdata?SN=NFZ8243301103&table=ATTLOG&Stamp=9999',
+    $response = $this->call('POST', '/iclock/cdata?SN=NFZ8243301103&table=ATTLOG&Stamp=9999',
         [], [], [], ['CONTENT_TYPE' => 'text/plain'], $body);
 
     expect($response->getContent())->toContain('OK: 2');
@@ -97,7 +97,7 @@ it('keeps the earliest check-in when multiple entry punches arrive', function ()
     // Two entry punches — first at 09:05, second at 09:00 (earlier, should win)
     $body = "ATTLOG\n19\t2026-06-30 09:05:00\t0\t1\t0\t0\t0\n19\t2026-06-30 09:00:00\t0\t1\t0\t0\t0\n";
 
-    $this->call('POST', '/api/iclock/cdata?SN=NFZ8243301103&table=ATTLOG&Stamp=9999',
+    $this->call('POST', '/iclock/cdata?SN=NFZ8243301103&table=ATTLOG&Stamp=9999',
         [], [], [], ['CONTENT_TYPE' => 'text/plain'], $body);
 
     $attendance = Attendance::where('user_id', $user->id)->first();
@@ -113,7 +113,7 @@ it('keeps the latest check-out when multiple exit punches arrive', function () {
     // Two exit punches — first at 18:00, then later at 18:15
     $body = "ATTLOG\n20\t2026-06-30 18:00:00\t1\t1\t0\t0\t0\n20\t2026-06-30 18:15:00\t1\t1\t0\t0\t0\n";
 
-    $this->call('POST', '/api/iclock/cdata?SN=NFZ8243301103&table=ATTLOG&Stamp=9999',
+    $this->call('POST', '/iclock/cdata?SN=NFZ8243301103&table=ATTLOG&Stamp=9999',
         [], [], [], ['CONTENT_TYPE' => 'text/plain'], $body);
 
     $attendance = Attendance::where('user_id', $user->id)->first();
@@ -129,7 +129,7 @@ it('processes punches for multiple users in one batch', function () {
 
     $body = "ATTLOG\n21\t2026-06-30 09:10:00\t0\t1\t0\t0\t0\n22\t2026-06-30 09:20:00\t0\t1\t0\t0\t0\n";
 
-    $response = $this->call('POST', '/api/iclock/cdata?SN=NFZ8243301103&table=ATTLOG&Stamp=9999',
+    $response = $this->call('POST', '/iclock/cdata?SN=NFZ8243301103&table=ATTLOG&Stamp=9999',
         [], [], [], ['CONTENT_TYPE' => 'text/plain'], $body);
 
     expect($response->getContent())->toContain('OK: 2');
@@ -140,7 +140,7 @@ it('processes punches for multiple users in one batch', function () {
 it('skips and logs a warning for an unknown device_user_id', function () {
     $body = "ATTLOG\n99\t2026-06-30 09:00:00\t0\t1\t0\t0\t0\n";
 
-    $response = $this->call('POST', '/api/iclock/cdata?SN=NFZ8243301103&table=ATTLOG&Stamp=9999',
+    $response = $this->call('POST', '/iclock/cdata?SN=NFZ8243301103&table=ATTLOG&Stamp=9999',
         [], [], [], ['CONTENT_TYPE' => 'text/plain'], $body);
 
     $response->assertStatus(200);
@@ -150,7 +150,7 @@ it('skips and logs a warning for an unknown device_user_id', function () {
 
 it('gracefully handles an empty or header-only body', function () {
     foreach (['', 'ATTLOG', "ATTLOG\n"] as $body) {
-        $response = $this->call('POST', '/api/iclock/cdata?SN=NFZ8243301103&table=ATTLOG&Stamp=9999',
+        $response = $this->call('POST', '/iclock/cdata?SN=NFZ8243301103&table=ATTLOG&Stamp=9999',
             [], [], [], ['CONTENT_TYPE' => 'text/plain'], $body);
 
         $response->assertStatus(200);
@@ -164,7 +164,7 @@ it('stores timestamps in UTC and displays correctly in IST', function () {
     // 09:00 IST = 03:30 UTC
     $body = "ATTLOG\n23\t2026-06-30 09:00:00\t0\t1\t0\t0\t0\n";
 
-    $this->call('POST', '/api/iclock/cdata?SN=NFZ8243301103&table=ATTLOG&Stamp=9999',
+    $this->call('POST', '/iclock/cdata?SN=NFZ8243301103&table=ATTLOG&Stamp=9999',
         [], [], [], ['CONTENT_TYPE' => 'text/plain'], $body);
 
     $attendance = Attendance::where('user_id', $user->id)->first();
