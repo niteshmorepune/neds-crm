@@ -196,6 +196,19 @@ is done; new work is maintenance.
   `zk.getInfo().logCounts` directly, before assuming a connectivity problem —
   see the verify-don't-theorize gotcha below. `users.device_user_id` is the
   mapping column; see [[backlog]] for which staff still need verification.
+  **The bridge/Hitech race can lose a punch entirely, not just mislabel
+  it** — whichever of the two polls the device first wins that punch, the
+  other never sees it. When someone's attendance looks wrong even after the
+  2026-07-04 fix above, use **Attendance → Import from Hitech**
+  (`app/Livewire/HitechAttendanceImport.php` + `app/Support/
+  HitechAttendanceParser.php`, commit `1d84f91`) rather than trying to
+  re-poll the device: admin exports that staff member's attendance from
+  Hitech's own per-employee "Export To Excel" and uploads it — Hitech
+  reliably wins the race, so its export is the authoritative correction
+  source. The export has no Staff ID/Name column (identity is filename-only),
+  so the admin picks the CRM user from a dropdown rather than any automatic
+  match. The importer only overwrites fields Hitech actually reports; a
+  blank cell never erases an existing value.
 
 ## Cross-app integrations (CRM ↔ Drishti ↔ SMDost)
 
