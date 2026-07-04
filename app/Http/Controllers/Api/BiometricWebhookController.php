@@ -83,6 +83,15 @@ class BiometricWebhookController extends Controller
                     $asUtc = $time->utc();
                     if (is_null($attendance->check_in_at) || $asUtc->lt($attendance->check_in_at)) {
                         $attendance->check_in_at = $asUtc;
+                    } elseif ($asUtc->gt($attendance->check_in_at)
+                        && (is_null($attendance->check_out_at) || $asUtc->gt($attendance->check_out_at))) {
+                        // Labeled "entry" but later than the existing check-in: the
+                        // bridge script (tools/biometric-bridge) labels a lone leftover
+                        // punch as entry by default since it can't see prior state
+                        // (the device only retains whatever punches haven't been
+                        // consumed/cleared by other software polling it). Treat it as
+                        // this day's exit rather than silently discarding it.
+                        $attendance->check_out_at = $asUtc;
                     }
                 } else {
                     // Exit — keep the latest check-out of the day

@@ -123,6 +123,49 @@ it('keeps the latest check-out when multiple exit punches arrive', function () {
     expect($checkOut->format('H:i'))->toBe('18:15');
 });
 
+it('treats a later "entry"-labeled punch as a check-out when a check-in already exists', function () {
+    // Mirrors tools/biometric-bridge/bridge.mjs: when the device has already
+    // lost the morning check-in (consumed/cleared before the bridge polls) and
+    // only a lone evening punch remains, the bridge labels it status 0 (entry)
+    // by default because it can't see the CRM's existing state.
+    $user = User::factory()->create(['device_user_id' => '3']);
+    Attendance::create([
+        'user_id' => $user->id,
+        'date' => '2026-07-04',
+        'status' => AttendanceStatus::Present,
+        'check_in_at' => Carbon::parse('2026-07-04 12:04:57', 'Asia/Kolkata')->utc(),
+    ]);
+
+    $body = "ATTLOG\n3\t2026-07-04 17:47:29\t0\t1\t0\t0\t0\n";
+
+    $this->call('POST', '/iclock/cdata?SN=NFZ8243301103&table=ATTLOG&Stamp=9999',
+        [], [], [], ['CONTENT_TYPE' => 'text/plain'], $body);
+
+    $attendance = Attendance::where('user_id', $user->id)->first();
+    $checkOut = Carbon::parse($attendance->check_out_at)->setTimezone('Asia/Kolkata');
+    expect($checkOut->format('H:i:s'))->toBe('17:47:29');
+});
+
+it('does not fabricate a check-out when the same open check-in punch is resent', function () {
+    $user = User::factory()->create(['device_user_id' => '3']);
+    Attendance::create([
+        'user_id' => $user->id,
+        'date' => '2026-07-04',
+        'status' => AttendanceStatus::Present,
+        'check_in_at' => Carbon::parse('2026-07-04 09:00:00', 'Asia/Kolkata')->utc(),
+    ]);
+
+    // The idempotent bridge resends the trailing days' punches every run —
+    // the same still-open check-in punch arrives again unchanged.
+    $body = "ATTLOG\n3\t2026-07-04 09:00:00\t0\t1\t0\t0\t0\n";
+
+    $this->call('POST', '/iclock/cdata?SN=NFZ8243301103&table=ATTLOG&Stamp=9999',
+        [], [], [], ['CONTENT_TYPE' => 'text/plain'], $body);
+
+    $attendance = Attendance::where('user_id', $user->id)->first();
+    expect($attendance->check_out_at)->toBeNull();
+});
+
 it('processes punches for multiple users in one batch', function () {
     $user1 = User::factory()->create(['device_user_id' => '21']);
     $user2 = User::factory()->create(['device_user_id' => '22']);
