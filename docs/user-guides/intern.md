@@ -33,9 +33,13 @@ Under **Employee Task** (Emptask) you'll see tasks assigned to you. You can:
 - Create tasks (e.g. to track your own to-dos).
 
 ## 5. Attendance
-The **biometric machine** handles your check-in and check-out automatically —
-just punch the machine when you arrive and leave. Your attendance record in
-the CRM is updated within a minute of each punch.
+Do **both** every day: use the **Check In** / **Check Out** buttons on your
+dashboard, **and** punch the biometric machine when you arrive and leave.
+The two work together automatically — your CRM check-in marks you present
+immediately, and the biometric punch fills in or corrects the exact time
+once it syncs. Whichever is the **earliest** check-in and **latest**
+check-out (from either source) is what's kept, so there's no conflict from
+doing both.
 
 You can also view your own attendance history under **Attendance** in the
 sidebar.
