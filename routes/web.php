@@ -34,6 +34,7 @@ use App\Http\Controllers\TwoFactorSetupController;
 use App\Http\Controllers\UserController;
 use App\Livewire\ClientImport;
 use App\Livewire\DealsBoard;
+use App\Livewire\HitechAttendanceImport;
 use App\Livewire\MenuManager;
 use App\Livewire\QuotationBuilder;
 use App\Livewire\RecurringInvoiceBuilder;
@@ -236,6 +237,7 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
         Route::get('attendance/export', [AttendanceController::class, 'export'])->name('attendance.export');
         Route::get('attendance/corrections', [AttendanceController::class, 'corrections'])->name('attendance.corrections');
         Route::post('attendance/corrections', [AttendanceController::class, 'storeCorrection'])->name('attendance.corrections.store');
+        Route::get('attendance/import', HitechAttendanceImport::class)->name('attendance.import');
     });
 
     /*

@@ -62,6 +62,21 @@ correctly in the server `.env` and run `php artisan config:cache`. The
 machine's Cloud Server settings should point to `crm.talktonitesh.com` on
 port 443 with HTTPS on.
 
+**Occasional missing punches:** the biometric machine's own stored log can
+get trimmed during the day by other software that also reads it (the
+"hitech" billing software), so a punch can occasionally never reach the
+CRM at all. If someone's check-in or check-out looks wrong or missing on
+the Attendance page:
+1. In **hitech**, open that staff member's **Attendance** tab, pick the
+   date range, and click **Export To Excel**.
+2. In the CRM, go to **Attendance → Import from Hitech**, pick the staff
+   member, and upload that file.
+3. Review the preview (it shows Hitech's times next to what the CRM
+   currently has) and click **Import**. Only the fields Hitech actually
+   reports are written — it never erases a value the CRM already has just
+   because a cell is blank (e.g. someone who hasn't clocked out yet when
+   the export was taken).
+
 ## 2. Services — the service-line taxonomy
 **Services** lists your offerings (SEO, GMB, Website Development, Social Media,
 Google Ads, Software Development, AI Automation…). These power every report's

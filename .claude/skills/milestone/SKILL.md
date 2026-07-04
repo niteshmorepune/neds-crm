@@ -177,6 +177,25 @@ is done; new work is maintenance.
 - **Portal ticket auto-routing:** `Portal\TicketController::store()` resolves
   `service_id` and `assignee_id` from the selected project's lead assignee.
   The create view shows a project dropdown only when `$projects->isNotEmpty()`.
+- **Biometric attendance sync:** the real eSSL device can't push over the
+  internet reliably, so `tools/biometric-bridge/bridge.mjs` (Node, runs as a
+  Windows Scheduled Task "NEDS Biometric Bridge" on the owner's laptop, every
+  5 min) polls the device on the office LAN and forwards punches to
+  `POST /iclock/cdata` itself, mimicking the ADMS protocol. It resends the
+  trailing `DAYS_BACK` days every run (idempotent — safe by design) and groups
+  punches by `deviceUserId`+day, labeling the first as entry/last as exit.
+  `BiometricWebhookController::push()` maps `device_user_id` → `User` and
+  applies "earliest check-in, latest check-out" per day. Because the device's
+  own log gets trimmed mid-day (something else — likely the "hitech" billing
+  software — also polls/clears it), a lone leftover punch can be all the
+  bridge sees; the controller derives entry vs. exit by comparing the punch
+  time to the existing check-in rather than trusting the bridge's guessed
+  label (fixed 2026-07-04, commit `a2fb6b9` — see [[feedback-gotchas]]).
+  When staff report a missing punch: check `tools/biometric-bridge/bridge.log`
+  first (mtimes are UTC in the log, local IST on disk), then the device's
+  `zk.getInfo().logCounts` directly, before assuming a connectivity problem —
+  see the verify-don't-theorize gotcha below. `users.device_user_id` is the
+  mapping column; see [[backlog]] for which staff still need verification.
 
 ## Cross-app integrations (CRM ↔ Drishti ↔ SMDost)
 

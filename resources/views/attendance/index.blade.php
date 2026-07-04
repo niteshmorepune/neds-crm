@@ -21,6 +21,7 @@
                 @endif
                 <a href="{{ route('attendance.export', array_filter(['month' => $month->format('Y-m'), 'user_id' => $isManager ? $viewingUser->id : null])) }}" class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Export CSV</a>
                 @can('correct', \App\Models\Attendance::class)
+                    <a href="{{ route('attendance.import') }}" class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Import from Hitech</a>
                     <a href="{{ route('attendance.corrections') }}" class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">Corrections</a>
                 @endcan
             </div>
