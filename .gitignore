@@ -13,6 +13,7 @@
 /.zed
 /auth.json
 /node_modules
+tools/biometric-bridge/node_modules
 # Compiled assets are committed so the Git/SSH deploy ships them (Hostinger has
 # no Node). CI rebuilds and re-commits them on push to master. See deploy.yml.
 #/public/build

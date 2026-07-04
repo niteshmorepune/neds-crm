@@ -1,0 +1,15 @@
+{
+    "name": "neds-biometric-bridge",
+    "version": "1.0.0",
+    "private": true,
+    "description": "Polls the office eSSL biometric device over the LAN and forwards punches to the CRM's ADMS webhook over HTTPS, bypassing the device's own (unreliable) HTTPS push.",
+    "type": "module",
+    "main": "bridge.mjs",
+    "scripts": {
+        "start": "node bridge.mjs"
+    },
+    "dependencies": {
+        "dotenv": "^16.4.5",
+        "node-zklib": "^1.3.0"
+    }
+}

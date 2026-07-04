@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\BiometricWebhookController;
 use App\Http\Middleware\EnsureMenuAccess;
+use App\Http\Middleware\ForceHttps;
 use App\Http\Middleware\RequireTwoFactor;
 use App\Http\Middleware\VerifyBiometricDeviceSerial;
 use Illuminate\Foundation\Application;
@@ -39,6 +40,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'menu.access' => EnsureMenuAccess::class,
             'two-factor' => RequireTwoFactor::class,
         ]);
+
+        // Browser-facing routes only — the biometric ADMS routes are registered
+        // outside the web group (see the `then` callback above) and must stay
+        // reachable over plain HTTP at the origin even in production.
+        $middleware->web(append: [ForceHttps::class]);
 
         // Unauthenticated portal requests go to the portal login, not /login.
         $middleware->redirectGuestsTo(fn (Request $request) => $request->is('portal', 'portal/*')
