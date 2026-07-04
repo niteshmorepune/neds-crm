@@ -1,0 +1,475 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>NEDS CRM — Pitch Deck</title>
+<style>
+  @page { size: A4 landscape; margin: 0; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    color: #1f2937;
+    background: #fff;
+  }
+  .slide {
+    width: 297mm;
+    height: 210mm;
+    padding: 14mm 16mm;
+    position: relative;
+    page-break-after: always;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .slide:last-child { page-break-after: auto; }
+
+  .kicker {
+    font-size: 11px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: #6366f1;
+    font-weight: 700;
+    margin: 0 0 6px;
+  }
+  h1.title { font-size: 30px; color: #111827; margin: 0 0 4px; line-height: 1.15; }
+  h2.subtitle { font-size: 15px; color: #4b5563; font-weight: 400; margin: 0 0 18px; line-height: 1.5; }
+  h3.section-head { font-size: 13px; color: #4f46e5; text-transform: uppercase; letter-spacing: .06em; margin: 0 0 10px; }
+
+  .logo-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: auto; }
+  .logo-row img { height: 32px; }
+  .pagenum { font-size: 10px; color: #9ca3af; }
+
+  .footer { display:flex; align-items:center; justify-content:space-between; margin-top: 10px; padding-top: 8px; border-top: 1px solid #e5e7eb; font-size: 9.5px; color: #9ca3af; }
+
+  /* COVER */
+  .cover { background: linear-gradient(135deg, #111827 0%, #1e1b4b 55%, #4338ca 100%); color: #fff; justify-content: center; align-items: flex-start; }
+  .cover img.logo { height: 46px; margin-bottom: 30px; filter: brightness(0) invert(1); }
+  .cover h1 { font-size: 46px; color: #fff; margin: 0 0 14px; line-height: 1.1; max-width: 750px; }
+  .cover .accent { color: #a5b4fc; }
+  .cover p.tag { font-size: 17px; color: #c7d2fe; max-width: 620px; line-height: 1.55; margin: 0 0 34px; }
+  .cover .pills { display: flex; gap: 10px; flex-wrap: wrap; }
+  .pill { background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.25); color: #e0e7ff; padding: 7px 14px; border-radius: 999px; font-size: 12px; }
+  .cover .foot { position: absolute; bottom: 14mm; left: 16mm; right: 16mm; display:flex; justify-content: space-between; font-size: 11px; color: #a5b4fc; }
+
+  /* Grids */
+  .grid { display: grid; gap: 12px; }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+  .grid-2 { grid-template-columns: repeat(2, 1fr); }
+
+  .card {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .card .icon { font-size: 20px; margin-bottom: 6px; display: block; }
+  .card h4 { font-size: 13px; color: #111827; margin: 0 0 5px; }
+  .card p { font-size: 10.5px; color: #4b5563; margin: 0; line-height: 1.5; }
+
+  .card.accent-indigo { border-top: 3px solid #4f46e5; }
+  .card.accent-amber { border-top: 3px solid #f59e0b; }
+  .card.accent-green { border-top: 3px solid #10b981; }
+  .card.accent-blue { border-top: 3px solid #3b82f6; }
+  .card.accent-rose { border-top: 3px solid #f43f5e; }
+
+  .stat { text-align: center; padding: 16px 10px; }
+  .stat .num { font-size: 30px; font-weight: 700; color: #4f46e5; display: block; line-height: 1.1; }
+  .stat .label { font-size: 10.5px; color: #6b7280; margin-top: 4px; }
+
+  table.deck-table { border-collapse: collapse; width: 100%; font-size: 11px; }
+  table.deck-table th { background: #111827; color: #fff; text-align: left; padding: 8px 10px; font-weight: 600; }
+  table.deck-table td { border: 1px solid #e5e7eb; padding: 7px 10px; vertical-align: top; }
+  table.deck-table tbody tr:nth-child(even) { background: #f9fafb; }
+
+  .split { display: flex; gap: 18px; flex: 1; }
+  .split > div { flex: 1; }
+
+  .panel { border-radius: 10px; padding: 16px 18px; height: 100%; }
+  .panel.dark { background: #111827; color: #f3f4f6; }
+  .panel.dark h4 { color: #a5b4fc; }
+  .panel.tint { background: #eef2ff; border: 1px solid #c7d2fe; }
+  .panel h4 { font-size: 14px; margin: 0 0 10px; color: #111827; }
+  .panel ul { margin: 0; padding-left: 18px; }
+  .panel li { font-size: 11px; margin: 5px 0; line-height: 1.5; }
+
+  .quote { font-size: 15px; font-style: italic; color: #374151; line-height: 1.6; border-left: 3px solid #4f46e5; padding-left: 16px; margin: 10px 0; }
+
+  .badge { display: inline-block; background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; border-radius: 999px; padding: 3px 10px; font-size: 10px; font-weight: 600; margin-right: 6px; }
+  .badge.blue { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+  .badge.amber { background: #fffbeb; color: #92400e; border-color: #fde68a; }
+
+  .flow { display: flex; align-items: center; gap: 8px; margin: 14px 0; }
+  .flow .node { flex: 1; background: #fff; border: 2px solid #4f46e5; border-radius: 10px; padding: 12px; text-align: center; }
+  .flow .node h5 { margin: 0 0 4px; font-size: 12px; color: #111827; }
+  .flow .node p { margin: 0; font-size: 9.5px; color: #6b7280; }
+  .flow .arrow { font-size: 20px; color: #9ca3af; }
+
+  ul.bullets { margin: 0; padding-left: 20px; }
+  ul.bullets li { font-size: 11.5px; margin: 6px 0; line-height: 1.55; color: #374151; }
+  ul.bullets li strong { color: #111827; }
+
+  .checklist { list-style: none; margin: 0; padding: 0; }
+  .checklist li { font-size: 11.5px; margin: 7px 0; padding-left: 24px; position: relative; color: #374151; }
+  .checklist li:before { content: "✓"; position: absolute; left: 0; color: #10b981; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<!-- SLIDE 1 — COVER -->
+<div class="slide cover">
+  <img class="logo" src="{{LOGO_URI}}" alt="NEDS">
+  <div class="kicker" style="color:#a5b4fc;">Sales &amp; Marketing Briefing</div>
+  <h1>The CRM we run our own agency on —<br><span class="accent">now available for yours.</span></h1>
+  <p class="tag">A GST-ready, AI-assisted CRM built end-to-end by Niranjan Enterprises Digital
+  Solutions, proven daily on our own leads, quotations, invoices and clients — and the same
+  engineering team that can build one for you.</p>
+  <div class="pills">
+    <span class="pill">Leads → Deals → Invoices → Payments</span>
+    <span class="pill">India GST built in (CGST/SGST/IGST)</span>
+    <span class="pill">AI lead scoring &amp; reply drafting</span>
+    <span class="pill">Client self-service portal</span>
+    <span class="pill">Live in production since June 2026</span>
+  </div>
+  <div class="foot">
+    <span>Niranjan Enterprises Digital Solutions</span>
+    <span>crm.talktonitesh.com</span>
+  </div>
+</div>
+
+<!-- SLIDE 2 — THE STORY -->
+<div class="slide">
+  <div class="logo-row"><img src="{{LOGO_MARK_URI}}" alt=""><span class="pagenum">02</span></div>
+  <div class="kicker">Why this exists</div>
+  <h1 class="title">We had the same mess our prospects have.</h1>
+  <h2 class="subtitle">Leads in WhatsApp, quotations in Word, invoices in Excel, GST math done by
+  hand, and no single place to see a client's whole relationship with us. So we built the system
+  we wished we had — then kept using it, every day, on real money and real clients.</h2>
+  <div class="split">
+    <div class="panel tint">
+      <h4>Before</h4>
+      <ul class="checklist" style="list-style:none;">
+        <li style="padding-left:0;">📋 Leads tracked in spreadsheets and chat threads</li>
+        <li style="padding-left:0;">🧮 GST split (CGST/SGST/IGST) calculated manually per invoice</li>
+        <li style="padding-left:0;">📁 No shared view of a client across sales, support, and accounts</li>
+        <li style="padding-left:0;">⏱️ Follow-ups missed because nothing reminded anyone</li>
+        <li style="padding-left:0;">🧾 Clients calling to ask "where's my invoice / ticket status"</li>
+      </ul>
+    </div>
+    <div class="panel dark">
+      <h4>After</h4>
+      <ul>
+        <li>One pipeline: Lead → Deal → Quotation → GST Invoice → Payment</li>
+        <li>Tax auto-splits by the client's GSTIN state code — zero manual math</li>
+        <li>Every client's deals, invoices, tickets and projects on one screen</li>
+        <li>Automatic reminders: overdue tasks, stagnant leads, invoices due, follow-ups</li>
+        <li>Clients self-serve via a branded portal — fewer "status update" calls</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer"><span>NEDS CRM — Sales &amp; Marketing Briefing</span><span>Confidential — internal use</span></div>
+</div>
+
+<!-- SLIDE 3 — TWO WAYS TO SELL THIS -->
+<div class="slide">
+  <div class="logo-row"><img src="{{LOGO_MARK_URI}}" alt=""><span class="pagenum">03</span></div>
+  <div class="kicker">How to pitch it — pick the angle that fits the prospect</div>
+  <h1 class="title">Two products, one proof point.</h1>
+  <h2 class="subtitle">This deck supports two different conversations. Lead with whichever
+  matches what the prospect actually needs — you can pivot between them mid-call.</h2>
+  <div class="split">
+    <div class="card accent-indigo" style="flex:1;">
+      <span class="icon">🛠️</span>
+      <h4>Angle A — "We build custom software"</h4>
+      <p>For prospects who need something built for their specific process (not just a CRM).
+      Use this CRM as <strong>proof of capability</strong>: it's a real, production system —
+      not a demo — handling money, tax law, and a live customer base. Pitch: <em>"This is the
+      level of system our Software Development team can build for your business."</em></p>
+      <p style="margin-top:8px;">Best for: businesses with a workflow that off-the-shelf
+      software doesn't fit — trading, manufacturing, services, healthcare, education.</p>
+    </div>
+    <div class="card accent-green" style="flex:1;">
+      <span class="icon">📦</span>
+      <h4>Angle B — "License this CRM for your business"</h4>
+      <p>For prospects who just need a CRM + GST billing + support desk and don't want a
+      from-scratch build. Pitch: <em>"Take the same system we run our own agency on,
+      configured for your services and branding."</em> Faster to close, faster to deploy —
+      the hard engineering is already done.</p>
+      <p style="margin-top:8px;">Best for: small/mid Indian businesses — agencies,
+      service providers, B2B sellers — outgrowing spreadsheets and WhatsApp-only workflows.</p>
+    </div>
+  </div>
+  <div class="footer"><span>NEDS CRM — Sales &amp; Marketing Briefing</span><span>Confidential — internal use</span></div>
+</div>
+
+<!-- SLIDE 4 — PRODUCT TOUR -->
+<div class="slide">
+  <div class="logo-row"><img src="{{LOGO_MARK_URI}}" alt=""><span class="pagenum">04</span></div>
+  <div class="kicker">Product tour</div>
+  <h1 class="title">Everything a service business needs, in one system.</h1>
+  <h2 class="subtitle">Nine modules, all connected — a lead in one screen is the same record
+  as the invoice, ticket, and project in every other screen.</h2>
+  <div class="grid grid-4">
+    <div class="card accent-indigo"><span class="icon">🎯</span><h4>Leads &amp; Pipeline</h4><p>Capture from web forms, WhatsApp or manual entry. Visual pipeline: New → Contacted → Proposal → Negotiation → Won/Lost. AI scores every lead 0–100.</p></div>
+    <div class="card accent-indigo"><span class="icon">🧾</span><h4>Quotations &amp; Invoices</h4><p>Line-item quotes with per-item GST, milestone/partial billing, one-click convert to invoice. Auto GST split, sequential legal numbering.</p></div>
+    <div class="card accent-indigo"><span class="icon">💳</span><h4>Payments &amp; Recurring Billing</h4><p>Partial payments against any invoice. Recurring retainers (SEO/GMB/AMC) auto-generate and auto-remind — the core of subscription revenue.</p></div>
+    <div class="card accent-indigo"><span class="icon">📁</span><h4>Projects &amp; Tasks</h4><p>Won deals become projects with assignees, due dates and status. Multi-person teams with Lead/Member roles per project.</p></div>
+    <div class="card accent-indigo"><span class="icon">🎫</span><h4>Support Tickets</h4><p>Priority, SLA timers, assignment. Ingests tickets from the web portal <strong>and WhatsApp</strong> automatically.</p></div>
+    <div class="card accent-indigo"><span class="icon">🌐</span><h4>Client Portal</h4><p>Read-only branded portal — clients see invoices, quotations, projects, ticket status and raise their own tickets. Fewer status-check calls.</p></div>
+    <div class="card accent-indigo"><span class="icon">🕒</span><h4>Attendance &amp; HR</h4><p>Self check-in/out, biometric device sync, daily reports, employee performance reporting — one system for delivery <em>and</em> team ops.</p></div>
+    <div class="card accent-indigo"><span class="icon">📊</span><h4>Role Dashboards &amp; Reports</h4><p>Purpose-built dashboards per role (admin, sales, accounts, support, manager) plus revenue and performance reports, sliced by service line.</p></div>
+  </div>
+  <div class="footer"><span>NEDS CRM — Sales &amp; Marketing Briefing</span><span>Confidential — internal use</span></div>
+</div>
+
+<!-- SLIDE 5 — GST / INDIA-BUILT -->
+<div class="slide">
+  <div class="logo-row"><img src="{{LOGO_MARK_URI}}" alt=""><span class="pagenum">05</span></div>
+  <div class="kicker">The detail that sells itself</div>
+  <h1 class="title">Built for how India actually invoices.</h1>
+  <h2 class="subtitle">Most generic CRMs treat GST as an afterthought. This one was designed
+  around it from day one — because we had to get it right for our own invoices first.</h2>
+  <div class="grid grid-2" style="flex:1;">
+    <div class="panel tint">
+      <h4>Automatic, correct, every time</h4>
+      <ul class="bullets">
+        <li><strong>Same state (Maharashtra):</strong> auto-splits CGST + SGST, half each</li>
+        <li><strong>Different state:</strong> auto-applies IGST at full rate</li>
+        <li><strong>Overseas clients:</strong> zero-rated "Export of Services" invoice, no tax</li>
+        <li>GSTIN validated against the official 15-character format before it's saved</li>
+        <li>Editable tax rate per line item (default 18%, not locked)</li>
+      </ul>
+    </div>
+    <div class="panel tint">
+      <h4>What the invoice looks like</h4>
+      <ul class="bullets">
+        <li>Both parties' GSTIN shown, HSN/SAC code per line</li>
+        <li>Full tax breakup table + amount in words</li>
+        <li>Legal numbering: <code>NEDS/2026-27/0042</code> — financial year + sequence</li>
+        <li>Bank details, UPI ID and a branded PDF, emailed automatically</li>
+        <li>Draft invoices stay invisible to the client until accounts hits "Send"</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer"><span>NEDS CRM — Sales &amp; Marketing Briefing</span><span>Confidential — internal use</span></div>
+</div>
+
+<!-- SLIDE 6 — AI -->
+<div class="slide">
+  <div class="logo-row"><img src="{{LOGO_MARK_URI}}" alt=""><span class="pagenum">06</span></div>
+  <div class="kicker">AI, without the gimmicks</div>
+  <h1 class="title">AI that helps the team, never replaces their judgment.</h1>
+  <h2 class="subtitle">Powered by Anthropic's Claude. Every AI feature is optional, fails
+  silently if it's down, and never sends anything without a human clicking Send.</h2>
+  <div class="grid grid-3">
+    <div class="card accent-blue"><span class="icon">🧠</span><h4>Lead scoring</h4><p>Every new or updated lead is scored 0–100 automatically with a one-line reason, so sales prioritises the right calls first.</p></div>
+    <div class="card accent-blue"><span class="icon">✍️</span><h4>Draft replies</h4><p>One click drafts a reply to a lead or ticket using the full interaction history. The human always edits and sends — AI never auto-sends.</p></div>
+    <div class="card accent-blue"><span class="icon">🗒️</span><h4>Thread summaries</h4><p>Summarize a long client or ticket history into a few lines before a call — no more scrolling months of notes.</p></div>
+  </div>
+  <div class="panel dark" style="margin-top:14px;">
+    <h4 style="margin-bottom:4px;">Talking point for prospects</h4>
+    <p style="font-size:11.5px; margin:0; color:#e5e7eb; line-height:1.6;">"AI is switched on with one toggle and off by default — you're never locked into it, and it
+    never runs a workflow unsupervised. That's a deliberate design choice, not a limitation."</p>
+  </div>
+  <div class="footer"><span>NEDS CRM — Sales &amp; Marketing Briefing</span><span>Confidential — internal use</span></div>
+</div>
+
+<!-- SLIDE 7 — ECOSYSTEM -->
+<div class="slide">
+  <div class="logo-row"><img src="{{LOGO_MARK_URI}}" alt=""><span class="pagenum">07</span></div>
+  <div class="kicker">Beyond the CRM</div>
+  <h1 class="title">It's the hub of a connected agency stack.</h1>
+  <h2 class="subtitle">For agency prospects specifically: this CRM already talks to a service
+  delivery cockpit and an AI content production tool — proof we can integrate systems, not
+  just build them standalone.</h2>
+  <div class="flow">
+    <div class="node" style="border-color:#4f46e5;"><h5>NEDS CRM</h5><p>Clients, deals, invoices, support — source of truth</p></div>
+    <div class="arrow">⇄</div>
+    <div class="node" style="border-color:#3b82f6;"><h5>Drishti</h5><p>Service delivery — audits, scheduling, analytics</p></div>
+    <div class="arrow">⇄</div>
+    <div class="node" style="border-color:#10b981;"><h5>SMDost</h5><p>AI content factory — brief → content → approval</p></div>
+  </div>
+  <div class="grid grid-2" style="margin-top:6px;">
+    <div class="panel tint">
+      <h4>Automated hand-offs, live today</h4>
+      <ul class="bullets">
+        <li>Deal marked <strong>Won</strong> → client auto-provisioned in all three systems</li>
+        <li>Content approved in SMDost → draft invoice created in the CRM automatically</li>
+        <li>Client raises a WhatsApp message → becomes a CRM support ticket automatically</li>
+      </ul>
+    </div>
+    <div class="panel tint">
+      <h4>One login for the client</h4>
+      <ul class="bullets">
+        <li>Single sign-on from the client portal into Drishti and SMDost — no second password</li>
+        <li>Client sees one relationship, even though three systems power it behind the scenes</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer"><span>NEDS CRM — Sales &amp; Marketing Briefing</span><span>Confidential — internal use</span></div>
+</div>
+
+<!-- SLIDE 8 — SECURITY & RELIABILITY -->
+<div class="slide">
+  <div class="logo-row"><img src="{{LOGO_MARK_URI}}" alt=""><span class="pagenum">08</span></div>
+  <div class="kicker">The boring stuff that matters</div>
+  <h1 class="title">Enterprise habits, small-business budget.</h1>
+  <h2 class="subtitle">Prospects who've been burned by a cheap CRM before will ask about this.
+  Have the answers ready.</h2>
+  <table class="deck-table">
+    <thead><tr><th style="width:26%;">Concern</th><th>How it's handled</th></tr></thead>
+    <tbody>
+      <tr><td>Account takeover</td><td>Two-factor authentication (authenticator app) enforced for admins and managers; optional for all roles.</td></tr>
+      <tr><td>Who did what</td><td>Every create/update/delete on core records is logged — who, when, and exactly which fields changed — visible in an admin audit log.</td></tr>
+      <tr><td>Role-appropriate access</td><td>Every action is checked against a policy per role (admin/manager/sales/support/accounts/intern) — not just hidden menus.</td></tr>
+      <tr><td>Data loss</td><td>Automated nightly database backups (14 days rolling + 8 weeks archive), monitored by email alert on failure.</td></tr>
+      <tr><td>Does it actually get used</td><td>Attendance can sync from a physical biometric device — proof the system is wired into daily operations, not shelfware.</td></tr>
+      <tr><td>Is it tested</td><td>400+ automated tests cover GST math, invoice numbering, permissions, and every core workflow before any change ships.</td></tr>
+    </tbody>
+  </table>
+  <div class="footer"><span>NEDS CRM — Sales &amp; Marketing Briefing</span><span>Confidential — internal use</span></div>
+</div>
+
+<!-- SLIDE 9 — PROOF -->
+<div class="slide">
+  <div class="logo-row"><img src="{{LOGO_MARK_URI}}" alt=""><span class="pagenum">09</span></div>
+  <div class="kicker">Proof, not a promise</div>
+  <h1 class="title">This isn't a prototype. It's what we run our agency on.</h1>
+  <h2 class="subtitle">Every number below is our own production system, today.</h2>
+  <div class="grid grid-4">
+    <div class="card stat"><span class="num">Live</span><span class="label">since June 2026, in daily use</span></div>
+    <div class="card stat"><span class="num">10+</span><span class="label">internal staff across sales, support, accounts &amp; management, using it every day</span></div>
+    <div class="card stat"><span class="num">3</span><span class="label">connected systems (CRM + Drishti + SMDost) integrated end-to-end</span></div>
+    <div class="card stat"><span class="num">400+</span><span class="label">automated tests protecting GST math, billing &amp; permissions</span></div>
+  </div>
+  <div class="quote">"We migrated 65 real clients from spreadsheets in one afternoon. Since then
+  every quotation, GST invoice and support ticket for our own agency has gone through this
+  system — not a demo environment."</div>
+  <div class="footer"><span>NEDS CRM — Sales &amp; Marketing Briefing</span><span>Confidential — internal use</span></div>
+</div>
+
+<!-- SLIDE 10 — DEPLOYMENT / TCO -->
+<div class="slide">
+  <div class="logo-row"><img src="{{LOGO_MARK_URI}}" alt=""><span class="pagenum">10</span></div>
+  <div class="kicker">Cost of ownership</div>
+  <h1 class="title">No servers to hire someone to babysit.</h1>
+  <h2 class="subtitle">A deliberate technical choice, and a genuine selling point for
+  price-sensitive Indian SMB prospects.</h2>
+  <div class="split">
+    <div class="panel tint">
+      <h4>What it runs on</h4>
+      <ul class="bullets">
+        <li>Standard shared web hosting (~₹5,000–15,000/year class of hosting) — <strong>no</strong> dedicated server, Docker, or DevOps hire required</li>
+        <li>No Redis, no message queue infrastructure, no websocket server to maintain</li>
+        <li>Standard MySQL database — any hosting provider, any competent developer can support it later</li>
+      </ul>
+    </div>
+    <div class="panel tint">
+      <h4>Why prospects should care</h4>
+      <ul class="bullets">
+        <li>Dramatically lower running cost than a custom app built on "modern" infra (Kubernetes, managed queues, etc.)</li>
+        <li>No lock-in to us for hosting — it's plain PHP/MySQL, portable to any host</li>
+        <li>Predictable monthly cost — no surprise cloud bills that scale with traffic</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer"><span>NEDS CRM — Sales &amp; Marketing Briefing</span><span>Confidential — internal use</span></div>
+</div>
+
+<!-- SLIDE 11 — ICP -->
+<div class="slide">
+  <div class="logo-row"><img src="{{LOGO_MARK_URI}}" alt=""><span class="pagenum">11</span></div>
+  <div class="kicker">Who to pitch this to</div>
+  <h1 class="title">Ideal customer profile.</h1>
+  <div class="grid grid-2" style="flex:1;">
+    <div class="panel tint">
+      <h4>Good fit</h4>
+      <ul class="checklist">
+        <li>Indian SMB or agency with 5–50 staff</li>
+        <li>Mix of recurring retainer revenue and project/milestone billing</li>
+        <li>Currently on spreadsheets, WhatsApp, and/or a generic CRM that doesn't handle GST</li>
+        <li>Has a support/ticket load from clients (agency, IT services, B2B vendor)</li>
+        <li>Wants a client-facing portal without building one from scratch</li>
+        <li>Values owning their data/source over a per-seat SaaS subscription forever</li>
+      </ul>
+    </div>
+    <div class="panel" style="background:#fff1f2;border:1px solid #fecdd3;">
+      <h4>Poor fit — don't force it</h4>
+      <ul class="bullets">
+        <li>Needs true real-time features (live chat, collaborative editing) — this stack polls, it doesn't push</li>
+        <li>Wants a native mobile app on day one</li>
+        <li>Enterprise scale (500+ concurrent users) — shared hosting won't hold that; needs a different infra conversation</li>
+        <li>Wants a marketplace of 200 pre-built integrations — this is a focused system, not a platform</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer"><span>NEDS CRM — Sales &amp; Marketing Briefing</span><span>Confidential — internal use</span></div>
+</div>
+
+<!-- SLIDE 12 — ENGAGEMENT MODELS -->
+<div class="slide">
+  <div class="logo-row"><img src="{{LOGO_MARK_URI}}" alt=""><span class="pagenum">12</span></div>
+  <div class="kicker">Engagement models — framework only</div>
+  <h1 class="title">How to package the offer.</h1>
+  <h2 class="subtitle"><strong>Pricing is not filled in below on purpose</strong> — confirm current
+  numbers with management before quoting. This is the structure to quote against, not a rate card.</h2>
+  <table class="deck-table">
+    <thead><tr><th style="width:22%;">Model</th><th style="width:34%;">What's included</th><th>Typical structure</th></tr></thead>
+    <tbody>
+      <tr><td><strong>License this CRM</strong><br><span class="badge">Angle B</span></td><td>This exact system, deployed on the client's own hosting, branded for them, configured with their services/GST/roles.</td><td>One-time setup fee + monthly support/hosting retainer. Fastest to deliver.</td></tr>
+      <tr><td><strong>Custom build</strong><br><span class="badge blue">Angle A</span></td><td>A new system built to the client's exact workflow — this CRM's codebase as the proven starting point/foundation, not a copy-paste.</td><td>Scoped project quote (discovery → milestones), like any other NEDS Software Development engagement.</td></tr>
+      <tr><td><strong>Ongoing support</strong></td><td>Bug fixes, small feature requests, backups, uptime monitoring — for either model above.</td><td>Monthly retainer, tiered by response-time SLA.</td></tr>
+    </tbody>
+  </table>
+  <div class="footer"><span>NEDS CRM — Sales &amp; Marketing Briefing</span><span>Confidential — internal use</span></div>
+</div>
+
+<!-- SLIDE 13 — OBJECTION HANDLING -->
+<div class="slide">
+  <div class="logo-row"><img src="{{LOGO_MARK_URI}}" alt=""><span class="pagenum">13</span></div>
+  <div class="kicker">Quick reference for the call</div>
+  <h1 class="title">Objection handling.</h1>
+  <table class="deck-table">
+    <thead><tr><th style="width:38%;">They say...</th><th>You say...</th></tr></thead>
+    <tbody>
+      <tr><td>"We already use [Zoho/Salesforce/etc.]"</td><td>"Does it split GST automatically by GSTIN state code, or does your accounts team still do that by hand? That's usually the gap."</td></tr>
+      <tr><td>"How do we know it'll actually get finished / supported?"</td><td>"It's not a pitch — it's the system running our own agency's invoicing right now. You can ask to see it live."</td></tr>
+      <tr><td>"Isn't custom software expensive to maintain?"</td><td>"It runs on standard shared hosting and plain MySQL — no Kubernetes bill, no DevOps hire. That's a deliberate cost choice."</td></tr>
+      <tr><td>"We're worried about AI making mistakes with client data."</td><td>"AI is off by default, opt-in, and never sends anything without a human clicking Send. It never touches money or contracts."</td></tr>
+      <tr><td>"What if we outgrow it?"</td><td>"It's your data and your source code on your hosting — no seat-based lock-in. We can also scope a bigger custom build off this same foundation."</td></tr>
+    </tbody>
+  </table>
+  <div class="footer"><span>NEDS CRM — Sales &amp; Marketing Briefing</span><span>Confidential — internal use</span></div>
+</div>
+
+<!-- SLIDE 14 — CTA -->
+<div class="slide cover" style="justify-content:center; align-items:flex-start;">
+  <img class="logo" src="{{LOGO_URI}}" alt="NEDS">
+  <div class="kicker" style="color:#a5b4fc;">Next steps</div>
+  <h1>Show, don't just tell.</h1>
+  <p class="tag">The strongest close is a live demo of a real, running system — not a slide.
+  Walk the prospect through their own scenario: a lead coming in, a GST quotation, an invoice,
+  a support ticket. Let them see it work.</p>
+  <div class="split" style="width:100%; max-width:820px;">
+    <div class="panel" style="background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.2);">
+      <h4 style="color:#fff;">Before every pitch</h4>
+      <ul style="color:#e0e7ff;">
+        <li>Confirm which angle fits (build-for-you vs. license-this)</li>
+        <li>Have a demo login ready — never share the live production login</li>
+        <li>Know their state (Maharashtra vs. inter-state) to demo the right GST split</li>
+      </ul>
+    </div>
+    <div class="panel" style="background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.2);">
+      <h4 style="color:#fff;">Contact</h4>
+      <ul style="color:#e0e7ff;">
+        <li>Niranjan Enterprises Digital Solutions</li>
+        <li>niranjan.enterprisespune@gmail.com</li>
+        <li>Live reference system: crm.talktonitesh.com</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

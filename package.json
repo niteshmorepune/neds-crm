@@ -5,7 +5,8 @@
     "scripts": {
         "build": "vite build",
         "dev": "vite",
-        "handouts": "node docs/user-guides/_tools/make-handouts.mjs"
+        "handouts": "node docs/user-guides/_tools/make-handouts.mjs",
+        "pitch-deck": "node docs/marketing/_tools/make-pitch-deck.mjs"
     },
     "devDependencies": {
         "@tailwindcss/forms": "^0.5.2",
