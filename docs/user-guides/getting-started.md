@@ -49,6 +49,13 @@ On the **Dashboard**, use the attendance widget:
 - **Check in** when you start your day.
 - **Check out** when you finish.
 
+**Also do your biometric fingerprint punch as usual** — do both, not one or
+the other. The two work together automatically: your CRM check-in/out marks
+you present immediately, and your biometric punch fills in or corrects the
+exact time within a few minutes once it syncs. Whichever is the **earliest**
+check-in and **latest** check-out (from either source) is what's kept — so
+there's no conflict and nothing to undo if both are recorded.
+
 Your manager can see attendance, and it feeds the performance reports. If you're
 on half-day or leave, your admin/manager can mark that.
 

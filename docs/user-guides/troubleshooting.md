@@ -13,43 +13,64 @@ All server commands are run over SSH:
 **Symptom:** Staff punch the machine but CRM attendance is not updated (no
 check-in / check-out time appears, or only the manual dashboard entry shows).
 
-**Check 1 — Is the device serial set in the server env?**
-```
-cd /home/u314035009/neds-crm && grep BIOMETRIC_DEVICE_SERIAL .env
-```
-Should show `BIOMETRIC_DEVICE_SERIAL=NFZ8243301103`. If blank:
-```
-echo 'BIOMETRIC_DEVICE_SERIAL=NFZ8243301103' >> .env && php artisan config:cache
-```
+**How sync actually works (as of 2026-07-04):** the device's own outbound
+HTTPS push to the CRM turned out to be unreliable even when its settings are
+correct (this budget eSSL model likely never completes a real TLS/SNI
+handshake to Hostinger — see Check 4 below for the historical detail). The
+**real sync path is `tools/biometric-bridge`**, a Node script that polls the
+device directly over the **office LAN** every 5 minutes and forwards
+punches to the CRM itself, via a Windows Scheduled Task ("NEDS Biometric
+Bridge") on the owner's laptop. **This only works while that laptop is
+powered on, logged in, and connected to the office network** — it's also
+the same laptop the "hitech" billing software uses to read the device, so if
+hitech can reach the device, the bridge should be able to too.
 
-**Check 2 — Is the device pointing at the CRM?**
-On the machine: Menu → Cloud Server → ADMS. Verify:
-- Server Address: `crm.talktonitesh.com`
-- Port: (blank or 443)
-- HTTPS: ON
+**Check 1 — Is the bridge actually running?**
+On the owner's laptop:
+- Task Scheduler → find **"NEDS Biometric Bridge"** → check **Last Run
+  Result** (should be `0` / success) and **Last Run Time** (should be within
+  the last 5 minutes during work hours).
+- Check `tools/biometric-bridge/bridge.log` in the repo for recent lines like
+  `Forwarded N user-day group(s) from M raw punch(es). CRM responded 200: OK: M`.
+- If the task hasn't run recently or the log is stale/erroring, confirm the
+  laptop is on and connected to the office Wi-Fi/LAN — it can't reach the
+  device (`192.168.1.201:4370`) from anywhere else, and if it's off or away,
+  sync simply pauses until it's back (it self-heals — no data is lost, see
+  `DAYS_BACK` in `tools/biometric-bridge/.env`).
+- To force an immediate sync manually: open a terminal in
+  `tools/biometric-bridge` on that laptop and run `npm start`.
+
+**Check 2 — Has the staff member actually punched the device today?**
+The bridge can only forward what the device has recorded. If in doubt, ask
+them to re-punch and re-run the bridge manually (Check 1) to confirm it picks
+up a fresh punch.
 
 **Check 3 — Is the staff member's Device User ID mapped?**
 In the CRM: Admin → Users → Edit the person. The **Biometric Device User ID**
 field must contain their numeric ID from the machine's Device Users list
-(Menu → User Mgt on the machine).
+(Menu → User Mgt on the machine, or "Device Users" in the hitech software).
+Don't assume a previously-recorded ID is still correct — these were found to
+be substantially wrong once before and had to be re-mapped from scratch.
 
-**Check 4 — Is the endpoint reachable at the exact path the device uses?**
+**Check 4 — Is the CRM endpoint itself reachable?**
 ```
 curl -s "https://crm.talktonitesh.com/iclock/cdata?SN=NFZ8243301103"
 ```
 Should return `GET OPTION FROM:NFZ8243301103`. If it doesn't, the CRM is down
-or config:cache wasn't run after setting the env var.
+or `BIOMETRIC_DEVICE_SERIAL` isn't set in the server `.env` (should be
+`NFZ8243301103`; if you change it, run `php artisan config:cache`).
 
-**Important:** the URL has **no `/api` prefix**. The ADMS protocol used by
-eSSL/ZKTeco biometric devices always POSTs to `/iclock/cdata` — the device's
-Cloud Server settings only let you set the server address and port, not a
-path. Testing against `/api/iclock/cdata` will falsely appear to work (it
-used to be registered there) while the real device 404s silently — this is
-exactly what caused a real outage on 2026-07-01 where punches never synced
-and nothing appeared in the logs (404s aren't logged by Laravel by default).
-If a future change ever moves this route back under `/api`, punches will
-silently stop syncing again with no log trace — always verify with the
-no-prefix URL above, not the `/api/...` one.
+**Historical background (not the current fix, kept for context):** the ADMS
+protocol always POSTs to `/iclock/cdata` with **no `/api` prefix** — a real
+outage on 2026-07-01 happened because the route briefly lived under `/api`
+and 404s aren't logged by Laravel by default. That was fixed, but the device's
+*own* push still silently failed afterward due to Hostinger's edge
+force-HTTPS redirect intercepting it before the device's TLS could complete
+(fixed 2026-07-04 with an app-level `ForceHttps` middleware + disabling
+Hostinger's edge toggle for this subdomain) — and even after both fixes, the
+device's own push still never reliably produced traffic, which is why the LAN
+bridge above is the actual mechanism in production today, not the device's
+native Cloud Server / ADMS push.
 
 ---
 
