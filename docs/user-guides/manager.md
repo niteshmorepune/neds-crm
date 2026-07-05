@@ -81,7 +81,9 @@ Useful for managers who also run their own service accounts.
 ## Email alerts
 **Morning digest (9 AM daily)** — your own personalised summary: overdue tasks,
 tasks due today, call follow-ups, lead/deal follow-ups, and open tickets assigned
-to you.
+to you. If AI is enabled, it opens with a short AI-written line on what to
+prioritise — the same line also shows as a banner on your dashboard for the
+rest of the day.
 
 **Stagnation alerts (10 AM daily)** — if any lead owned by a team member has had
 no activity for 7 days, or a deal for 10 days, the owner is emailed automatically.

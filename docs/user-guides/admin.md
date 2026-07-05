@@ -248,8 +248,9 @@ The database is **backed up automatically every night at 2 AM** (kept 14 daily +
 backup, follow `docs/backup-restore.md`.
 
 ## 12. AI features (optional)
-Three AI helpers are built into the CRM, powered by Anthropic's Claude. They are
-**off by default** and never take action automatically — they only assist staff.
+Six AI helpers are built into the CRM, powered by Anthropic's Claude. They are
+**off by default** and never take action, send, publish, or score an employee
+automatically — they only draft or summarize for a human to review.
 
 **Lead scoring** — when a lead is created or edited, the CRM automatically sends
 its details to Claude and stores a **0–100 score** with a one-line reason
@@ -267,14 +268,32 @@ anything automatically.
 timeline (notes, calls, interactions) and produces a short paragraph summarising
 the situation. Useful when picking up a colleague's account.
 
+**Festival greeting drafts** — every morning, for clients with an active Social
+Media or GMB project, Claude drafts a festival greeting caption 7 days ahead of
+each entry in the **Festivals** calendar (Section 2a) and adds it to that
+project's Content Collaboration queue as a draft. A team member always reviews
+and approves it before anything is scheduled or published.
+
+**AI daily-priorities digest** — every staff member with anything due gets a
+short AI-written "here's your day" line at the top of their 9 AM morning digest
+email, which also appears as a dashboard banner for the rest of that day. It's
+generated only from that person's own tasks/follow-ups.
+
+**Team performance summary (✨ Generate AI Summary)** — a button on the
+**Employee Performance Report** (Reports panel) that turns the existing
+tasks/calls/attendance numbers into a narrative of trends and standouts.
+**Visible to Admin/Manager only** — it is never shown to the employee it's
+about, so it's a starting point for a conversation, not a rating you share.
+
 **To turn on:** add these two lines to the server `.env`, then run
 `php artisan config:cache`:
 ```
 AI_ENABLED=true
 ANTHROPIC_API_KEY=sk-ant-...
 ```
-If the features are off, the buttons simply don't appear and nothing else changes.
-Usage is billed by Anthropic per request (very low cost for this volume).
+If the features are off, the buttons/drafts/digests simply don't appear and
+nothing else changes. Usage is billed by Anthropic per request (very low cost
+for this volume).
 
 ## Tip
 Adding a new module/menu item or changing a label is a code change that deploys

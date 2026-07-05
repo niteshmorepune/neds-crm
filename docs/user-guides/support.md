@@ -126,7 +126,9 @@ relevant task or ticket. Dismiss them once you've read them.
 ## 6. Morning digest email
 At **9 AM** (Monday–Saturday) you'll receive a daily email listing your overdue
 tasks, tasks due today, and open tickets assigned to you — so you know exactly
-where to focus before you open the CRM. No email is sent on Sundays.
+where to focus before you open the CRM. No email is sent on Sundays. If AI is
+enabled, it opens with a short AI-written line on what to prioritise — the
+same line also shows as a banner on your dashboard for the rest of the day.
 
 ## Tips
 - Always set the right **priority** on a ticket — it sets the SLA clock.
