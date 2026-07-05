@@ -35,10 +35,20 @@ touching money, GST, or permissions.
   (Hostinger shared hosting; queue/cache/session = `database`).
 - **Money:** integer **paise** in the DB; forms take rupees → convert with
   `App\Support\Money` (`toPaise`, and `format()` for Indian ₹). Never floats.
-- **Dates:** store UTC, display `Asia/Kolkata`.
+- **Dates:** store UTC, display `Asia/Kolkata`. Iterating a date range? Use
+  `Carbon\CarbonPeriod` — **not** `Illuminate\Support\CarbonPeriod`, which
+  doesn't exist and fatals at runtime.
 - **Auth:** a Policy per model. Pattern so far — sales see own + unassigned;
   admin/manager see all; support/accounts vary per module. Keep a model
-  `scopeVisibleTo($user)` in sync with the policy's `view`.
+  `scopeVisibleTo($user)` in sync with the policy's `view`. When "any
+  admin/manager" can act on a record someone in that same role group might
+  own (approvals, reviews), block self-action explicitly in the policy
+  (`$user->id !== $record->user_id`) — don't rely on the UI hiding the button.
+- **Notification recipients:** the recurring pattern for "notify all
+  admin/manager" is `User::where('is_active', true)->whereIn('role',
+  [UserRole::Admin->value, UserRole::Manager->value])->get()` (see
+  `Deal::booted()`'s `DealWonNotification` dispatch, reused by
+  `LeaveRequestSubmitted`). Reuse this query rather than re-deriving it.
 - **Validation:** FormRequest classes, never inline in controllers.
 - **Migrations are append-only** once merged; date-prefix new ones after existing.
 - **Activity log:** add the `LogsActivity` trait to core models.
@@ -209,6 +219,17 @@ is done; new work is maintenance.
   so the admin picks the CRM user from a dropdown rather than any automatic
   match. The importer only overwrites fields Hitech actually reports; a
   blank cell never erases an existing value.
+- **Leave requests:** `leave_requests` table (employee-submitted, one generic
+  "Leave" type, no balance/quota tracking in v1 — deliberate, see
+  [[project-progress]] for the AskUserQuestion decisions behind this). Any
+  Admin/Manager may approve/reject except their own request
+  (`LeaveRequestPolicy::review()`). Approving stamps the matching
+  `attendances` rows `status = Leave` for each day in range via
+  `LeaveRequest::businessDays()`, which **excludes Sunday** (office is
+  Mon–Sat) — don't mark Sunday attendance from a leave approval. Mirrors
+  `AttendanceController`'s split between a self-service page
+  (`leave-requests.index`) and a manager-only sub-page
+  (`leave-requests.approvals`), same pattern as Attendance's Corrections page.
 
 ## Cross-app integrations (CRM ↔ Drishti ↔ SMDost)
 
