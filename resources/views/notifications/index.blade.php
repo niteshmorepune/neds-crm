@@ -35,6 +35,7 @@
                                 'payment_recorded'            => '💰',
                                 'recurring_invoice_due_soon'  => '⚠️',
                                 'smdost_brief_approved'       => '✅',
+                                'leave_request_submitted', 'leave_request_reviewed' => '🌴',
                                 default                       => '🔔',
                             })
                             <p class="text-sm font-medium text-gray-900">

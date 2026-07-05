@@ -13,6 +13,7 @@ use App\Http\Controllers\DealController;
 use App\Http\Controllers\HelpController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LeadController;
+use App\Http\Controllers\LeaveRequestController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PartnerController;
 use App\Http\Controllers\PartnerUploadController;
@@ -238,6 +239,18 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
         Route::get('attendance/corrections', [AttendanceController::class, 'corrections'])->name('attendance.corrections');
         Route::post('attendance/corrections', [AttendanceController::class, 'storeCorrection'])->name('attendance.corrections.store');
         Route::get('attendance/import', HitechAttendanceImport::class)->name('attendance.import');
+    });
+
+    /*
+     * Leave requests — employee self-service + admin/manager approval queue.
+     */
+    Route::middleware('menu.access:leave-requests')->group(function () {
+        Route::get('leave-requests', [LeaveRequestController::class, 'index'])->name('leave-requests.index');
+        Route::post('leave-requests', [LeaveRequestController::class, 'store'])->name('leave-requests.store');
+        Route::delete('leave-requests/{leaveRequest}', [LeaveRequestController::class, 'destroy'])->name('leave-requests.destroy');
+        Route::get('leave-requests/approvals', [LeaveRequestController::class, 'approvals'])->name('leave-requests.approvals');
+        Route::post('leave-requests/{leaveRequest}/approve', [LeaveRequestController::class, 'approve'])->name('leave-requests.approve');
+        Route::post('leave-requests/{leaveRequest}/reject', [LeaveRequestController::class, 'reject'])->name('leave-requests.reject');
     });
 
     /*

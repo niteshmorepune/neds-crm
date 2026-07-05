@@ -40,6 +40,9 @@ As a manager, you receive bell notifications for:
   alongside the accounts team so you can follow up if needed.
 - **SMDost brief approved** — ✅ when a brief is approved in SMDost, a draft
   invoice appears in the CRM for accounts to price.
+- 🌴 **Leave request submitted / reviewed** — whenever anyone requests leave,
+  you and all other admins/managers are notified with their name and dates.
+  You'll also see a banner on your dashboard when there are pending requests.
 
 ## Oversight
 You have access to Leads, Deals, Quotations, Invoices, Projects, Tasks, Tickets,
@@ -63,6 +66,11 @@ Useful for managers who also run their own service accounts.
   pick the date, and update the **status** and **notes**. Times are set by
   the employee's own check-in/check-out and cannot be edited here — corrections
   are logged to the audit trail.
+- **Leave Requests → Review pending** — any admin or manager can approve or
+  reject a leave request (you can't approve your own). Approving a request
+  automatically marks the employee's attendance as **Leave** for each office
+  day in the range (Sundays are skipped); rejecting lets you add a short note
+  explaining why.
 
 ## Email alerts
 **Morning digest (9 AM daily)** — your own personalised summary: overdue tasks,
