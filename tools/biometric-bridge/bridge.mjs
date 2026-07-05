@@ -34,7 +34,32 @@ function localDateKey(date) {
     return `${date.getFullYear()}-${p(date.getMonth() + 1)}-${p(date.getDate())}`;
 }
 
+// Office is 9am-6pm, Monday-Saturday. The Task Scheduler trigger is set to
+// this window too, but a PC can wake from sleep, a trigger can misfire, or
+// someone can run `npm start` by hand — this is a backstop, not the primary
+// control. Padded past both edges (8:30am-7pm) so a genuinely early arrival
+// or late finisher still gets picked up on the next in-window run.
+const RUN_WINDOW_START_HOUR = 8.5; // 8:30am
+const RUN_WINDOW_END_HOUR = 19; // 7:00pm
+
+function isWithinRunWindow(date) {
+    const day = date.getDay(); // 0 = Sunday, 6 = Saturday
+    if (day === 0) {
+        return false;
+    }
+
+    const hour = date.getHours() + date.getMinutes() / 60;
+
+    return hour >= RUN_WINDOW_START_HOUR && hour < RUN_WINDOW_END_HOUR;
+}
+
 async function main() {
+    const now = new Date();
+    if (!isWithinRunWindow(now)) {
+        log('Outside the office run window (Mon-Sat, 8:30am-7:00pm). Skipping this run.');
+        return;
+    }
+
     const deviceIp = required('DEVICE_IP');
     const devicePort = Number(process.env.DEVICE_PORT || 4370);
     const crmUrl = required('CRM_URL');

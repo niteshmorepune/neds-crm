@@ -38,7 +38,11 @@ normal HTTPS request from a normal PC, no embedded-TLS/SNI limitation.
 ## Running it automatically (Windows Task Scheduler)
 
 The device doesn't push in real time to us anymore, so this needs to run on
-a schedule — every 5–10 minutes during office hours is enough.
+a schedule — every 5–10 minutes during office hours is enough. Office hours
+are 9am–6pm, Monday–Saturday, so the schedule below runs from 8:30am to
+7:00pm on those days (a little padding on each side so an early arrival or a
+late checkout still gets caught) and doesn't bother polling the device at
+night or on Sunday when no one's there.
 
 1. Open **Task Scheduler** → **Create Task** (not "Basic Task", so you get
    the full options).
@@ -46,9 +50,9 @@ a schedule — every 5–10 minutes during office hours is enough.
    options", pick "Run whether user is logged on or not" if this PC might be
    locked during the day, and check "Run with highest privileges" only if
    you hit permission errors without it.
-3. **Triggers** tab → New → "Daily", recur every 1 day, then check "Repeat
-   task every: 5 minutes" for a duration of "1 day". Set the daily start
-   time to when the office opens.
+3. **Triggers** tab → New → "Weekly", check Monday through Saturday (leave
+   Sunday unchecked), then check "Repeat task every: 5 minutes" for a
+   duration of "10 hours 30 minutes". Set the start time to 8:30 AM.
 4. **Actions** tab → New → Action "Start a program":
    - Program/script: full path to `node.exe` (find it with `where node` in
      Command Prompt)
@@ -57,6 +61,11 @@ a schedule — every 5–10 minutes during office hours is enough.
      `C:\NEDS\biometric-bridge`)
 5. Save. Right-click the task → **Run** to test it fires correctly, then
    check `bridge.log`.
+
+`bridge.mjs` also enforces this window itself (Mon–Sat, 8:30am–7:00pm) and
+exits without polling the device if it's invoked outside it — a backstop for
+if the PC wakes from sleep and the trigger fires late, or someone runs
+`npm start` by hand outside hours, not the primary schedule control.
 
 ## Why re-sending is safe
 
