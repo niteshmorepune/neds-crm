@@ -165,7 +165,9 @@ is done; new work is maintenance.
   `VerifyWhatsappWebhookToken` middleware (Bearer token from
   `services.whatsapp_webhook.token`). Phone lookup: exact → `+`-prefixed →
   last-10-digit LIKE. wadesk.in fires a fire-and-forget fetch on new/reopened
-  conversations. Tier 3 (CRM reply → WhatsApp) is backlogged.
+  conversations. Tier 3 (CRM reply → WhatsApp, staff reply on a WhatsApp
+  ticket → `SendWhatsappReplyJob` → wadesk.in → customer) shipped 2026-06-29
+  — this line previously said "backlogged"; corrected 2026-07-05, it's live.
 - **Overseas / zero-rated GST:** `Customer::isOverseas()` returns true when
   `country` is set and ≠ 'India'. `GstCalculator::calculate()` has a 4th param
   `$isOverseas = false` — when true, all tax is zero regardless of state code.
