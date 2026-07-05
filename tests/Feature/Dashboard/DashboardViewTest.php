@@ -23,6 +23,24 @@ it('omits the festival banner when nothing is within the window', function () {
     $this->actingAs($sales)->get(route('dashboard'))->assertOk()->assertDontSee('Far Off Festival');
 });
 
+it('shows the AI daily digest banner when cached for today', function () {
+    $sales = User::factory()->role(UserRole::Sales)->create([
+        'ai_daily_digest' => 'You have 2 overdue tasks — tackle those first.',
+        'ai_daily_digest_date' => now()->toDateString(),
+    ]);
+
+    $this->actingAs($sales)->get(route('dashboard'))->assertOk()->assertSee('You have 2 overdue tasks');
+});
+
+it('hides a stale AI daily digest from a previous day', function () {
+    $sales = User::factory()->role(UserRole::Sales)->create([
+        'ai_daily_digest' => 'Yesterday\'s stale summary text.',
+        'ai_daily_digest_date' => now()->subDay()->toDateString(),
+    ]);
+
+    $this->actingAs($sales)->get(route('dashboard'))->assertOk()->assertDontSee('stale summary');
+});
+
 it('shows the company dashboard to an admin', function () {
     $admin = User::factory()->role(UserRole::Admin)->create();
 

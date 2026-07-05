@@ -6,7 +6,9 @@ use App\Models\Festival;
 use App\Models\Lead;
 use App\Models\Project;
 use App\Models\Ticket;
+use App\Models\User;
 use App\Services\AiAssistant;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
 
 function fakeAiText(string $text): void
@@ -77,6 +79,31 @@ it('drafts a festival greeting caption', function () {
 
     expect($draft)->toContain('Diwali');
     expect(AiUsage::where('feature', 'draft_festival_greeting')->exists())->toBeTrue();
+});
+
+it('summarizes daily priorities for a user', function () {
+    aiOn();
+    fakeAiText('You have 2 overdue tasks and a call follow-up due — start with the oldest task.');
+    $user = User::factory()->create();
+    $empty = new Collection;
+
+    $summary = app(AiAssistant::class)->summarizeDailyPriorities($user, $empty, $empty, $empty, $empty, $empty, $empty);
+
+    expect($summary)->toContain('overdue');
+    expect(AiUsage::where('feature', 'daily_priorities_summary')->exists())->toBeTrue();
+});
+
+it('summarizes team performance from report rows', function () {
+    aiOn();
+    fakeAiText('- Mohit completed the most tasks this month. - Attendance is strong across the team.');
+    $rows = new Collection([
+        ['user' => 'Mohit', 'role' => 'Sales', 'tasks_completed' => 12, 'on_time_pct' => 90, 'calls_made' => 30, 'leads_converted' => 3, 'attendance_pct' => 95, 'daily_reports' => 20],
+    ]);
+
+    $summary = app(AiAssistant::class)->summarizeTeamPerformance($rows, now()->startOfMonth(), now()->endOfMonth());
+
+    expect($summary)->toContain('Mohit');
+    expect(AiUsage::where('feature', 'team_performance_summary')->exists())->toBeTrue();
 });
 
 it('returns null (not an exception) when the API fails', function () {

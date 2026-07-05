@@ -23,6 +23,12 @@ From the **Reports** panel on the dashboard:
 - tasks completed, **on-time %**, calls made, leads converted, **attendance %**,
   and daily reports submitted.
 - Pick the month, then **Export CSV** for records or appraisals.
+- Click **✨ Generate AI Summary** for a narrative read of the table — trends,
+  standouts, and anyone whose numbers suggest they may need support. It's
+  generated only from the numbers already on the page (never invents a
+  reason behind them) and is **visible to Admin/Manager only** — it's never
+  shown to the employee it's about, so use it as a starting point for a
+  conversation, not as a rating you show them.
 
 **Revenue Report** — for a chosen financial year:
 - income **by month**, **by service**, and **by client**, split **recurring vs

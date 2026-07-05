@@ -29,6 +29,16 @@
                    + $leadFollowUps->count() + $dealFollowUps->count() + $openTickets->count();
           @endphp
 
+          @if ($aiSummary)
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
+            <tr>
+              <td style="background:#eef2ff;border-radius:6px;padding:14px 16px;">
+                <p style="margin:0;font-size:13px;color:#4338ca;">🤖 {{ $aiSummary }}</p>
+              </td>
+            </tr>
+          </table>
+          @endif
+
           {{-- Summary strip --}}
           <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
             <tr>

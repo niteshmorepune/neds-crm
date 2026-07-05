@@ -5,6 +5,12 @@
         {{-- Common to every role --}}
         <livewire:attendance-widget />
 
+        @if (auth()->user()->ai_daily_digest && auth()->user()->ai_daily_digest_date?->isToday())
+            <div class="rounded-lg border border-indigo-200 bg-indigo-50 p-4">
+                <p class="text-sm font-medium text-indigo-800">🤖 {{ auth()->user()->ai_daily_digest }}</p>
+            </div>
+        @endif
+
         @php($overdueTaskCount = \App\Models\Task::where('assignee_id', auth()->id())
             ->where('status', '!=', \App\Enums\TaskStatus::Done->value)
             ->whereNotNull('due_date')
