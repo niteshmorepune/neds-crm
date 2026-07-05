@@ -7,7 +7,10 @@ use App\Models\Festival;
 use App\Models\Lead;
 use App\Models\Project;
 use App\Models\Ticket;
+use App\Models\User;
 use App\Support\Ai;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
 /**
  * Higher-level AI helpers built on AnthropicClient: draft replies and timeline
@@ -136,6 +139,48 @@ class AiAssistant
         ));
     }
 
+    /**
+     * A short "here's your day" narrative for the morning digest, built from
+     * the same collections `SendMorningDigest` already assembles. Never
+     * invents items — only narrates what's given.
+     */
+    public function summarizeDailyPriorities(
+        User $user,
+        Collection $overdueTasks,
+        Collection $dueTodayTasks,
+        Collection $callFollowUps,
+        Collection $leadFollowUps,
+        Collection $dealFollowUps,
+        Collection $openTickets,
+    ): ?string {
+        if (! Ai::enabled()) {
+            return null;
+        }
+
+        $lines = [
+            'Overdue tasks: '.$overdueTasks->count(),
+            'Tasks due today: '.$dueTodayTasks->count(),
+            'Call follow-ups due: '.$callFollowUps->count(),
+            'Lead follow-ups due: '.$leadFollowUps->count(),
+            'Deal follow-ups due: '.$dealFollowUps->count(),
+            'Open tickets assigned: '.$openTickets->count(),
+        ];
+
+        $system = <<<'PROMPT'
+        You write a short, warm "here's your day" summary for a staff member at a
+        digital-solutions agency in India, based only on the counts given. Address
+        them directly ("you have..."), highlight what's most urgent first, and keep
+        it to 2-3 sentences (about 50 words). Do not invent specific items, names,
+        or numbers beyond what's provided. Output only the summary.
+        PROMPT;
+
+        return $this->trimmed($this->client->message(
+            feature: 'daily_priorities_summary',
+            prompt: "Staff member: {$user->name}\n".implode("\n", $lines),
+            system: $system,
+        ));
+    }
+
     public function summarizeTicket(Ticket $ticket): ?string
     {
         if (! Ai::enabled()) {
@@ -193,6 +238,54 @@ class AiAssistant
             feature: 'summarize_customer',
             prompt: implode("\n", $lines),
             system: $this->summarySystem(),
+        ));
+    }
+
+    /**
+     * A management-facing narrative summary of the Employee Performance
+     * Report for one period. Admin/Manager only by construction — callers
+     * only reach this from the already role-gated report page. Never shown
+     * to the employee it's about.
+     *
+     * @param  Collection<int, array<string, mixed>>  $rows  Same shape as ReportMetrics::employeePerformance().
+     */
+    public function summarizeTeamPerformance(Collection $rows, Carbon $from, Carbon $to): ?string
+    {
+        if (! Ai::enabled()) {
+            return null;
+        }
+
+        $lines = [];
+        foreach ($rows as $row) {
+            $lines[] = sprintf(
+                '- %s (%s): %d tasks completed, on-time %s%%, %d calls, %d leads converted, attendance %s%%, %d daily reports',
+                $row['user'],
+                $row['role'],
+                $row['tasks_completed'],
+                $row['on_time_pct'] ?? 'n/a',
+                $row['calls_made'],
+                $row['leads_converted'],
+                $row['attendance_pct'] ?? 'n/a',
+                $row['daily_reports'],
+            );
+        }
+
+        $system = <<<'PROMPT'
+        You write a concise management-facing summary of a small digital-solutions
+        agency's team performance for internal use by the owner/manager. Base it
+        ONLY on the numbers given — never invent a cause, reason, or context not
+        evidenced by the data. Give 4-6 bullet points covering: notable trends,
+        standout performers (positive), and anyone whose numbers suggest they may
+        need support or follow-up (frame this as an observation, not a
+        judgement). Output only the bullet points.
+        PROMPT;
+
+        $prompt = "Period: {$from->format('d M Y')} - {$to->format('d M Y')}\n\n".implode("\n", $lines);
+
+        return $this->trimmed($this->client->message(
+            feature: 'team_performance_summary',
+            prompt: $prompt,
+            system: $system,
         ));
     }
 

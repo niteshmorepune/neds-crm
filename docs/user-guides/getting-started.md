@@ -76,6 +76,11 @@ Every morning at **9 AM** you'll receive a personalised email summarising your
 day — overdue tasks, tasks due today, call follow-ups, and any open tickets
 assigned to you. No email means you have a clean plate for the day.
 
+If anything is due, the email opens with a short **AI-written summary** of
+what to prioritize — the same text also appears as a banner on your dashboard
+for the rest of the day. It's generated only from your own tasks/follow-ups,
+never invents anything, and disappears automatically the next day.
+
 ## 8. Logging out
 
 Click your **name** (top-right) → **Log Out**. Always log out on shared devices.

@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Enums\DealStage;
 use App\Enums\LeadStatus;
+use App\Enums\TaskStatus;
 use App\Enums\TicketStatus;
 use App\Mail\MorningDigest;
 use App\Models\CallLog;
@@ -12,6 +13,8 @@ use App\Models\Lead;
 use App\Models\Task;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Services\AiAssistant;
+use App\Support\Ai;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
@@ -22,7 +25,7 @@ class SendMorningDigest extends Command
 
     protected $description = 'Email each active user their personalised day-ahead digest (run at 09:00 IST).';
 
-    public function handle(): int
+    public function handle(AiAssistant $ai): int
     {
         $tz = config('app.display_timezone');
         $today = Carbon::today($tz);
@@ -44,7 +47,7 @@ class SendMorningDigest extends Command
 
         foreach ($users as $user) {
             $overdueTasks = Task::where('assignee_id', $user->id)
-                ->where('status', '!=', \App\Enums\TaskStatus::Done->value)
+                ->where('status', '!=', TaskStatus::Done->value)
                 ->whereNotNull('due_date')
                 ->where('due_date', '<', $today->toDateString())
                 ->with('project')
@@ -52,7 +55,7 @@ class SendMorningDigest extends Command
                 ->get();
 
             $dueTodayTasks = Task::where('assignee_id', $user->id)
-                ->where('status', '!=', \App\Enums\TaskStatus::Done->value)
+                ->where('status', '!=', TaskStatus::Done->value)
                 ->whereDate('due_date', $today->toDateString())
                 ->with('project')
                 ->orderBy('priority')
@@ -84,7 +87,7 @@ class SendMorningDigest extends Command
             $openTickets = Ticket::where('assignee_id', $user->id)
                 ->whereIn('status', $openTicketStatuses)
                 ->with('customer')
-                ->orderByRaw("CASE WHEN sla_due_at IS NULL THEN 1 ELSE 0 END, sla_due_at ASC")
+                ->orderByRaw('CASE WHEN sla_due_at IS NULL THEN 1 ELSE 0 END, sla_due_at ASC')
                 ->get();
 
             $digest = new MorningDigest(
@@ -100,6 +103,22 @@ class SendMorningDigest extends Command
 
             if ($digest->isEmpty()) {
                 continue;
+            }
+
+            if (Ai::enabled()) {
+                $aiSummary = $ai->summarizeDailyPriorities(
+                    $user, $overdueTasks, $dueTodayTasks, $callFollowUps, $leadFollowUps, $dealFollowUps, $openTickets,
+                );
+
+                if ($aiSummary !== null) {
+                    $digest->aiSummary = $aiSummary;
+
+                    // saveQuietly: no activity-log entry, no re-dispatch loop.
+                    $user->forceFill([
+                        'ai_daily_digest' => $aiSummary,
+                        'ai_daily_digest_date' => $today->toDateString(),
+                    ])->saveQuietly();
+                }
             }
 
             Mail::to($user)->send($digest);

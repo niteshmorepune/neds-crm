@@ -42,6 +42,9 @@ class User extends Authenticatable
         'two_factor_recovery_codes',
     ];
 
+    /** AI-generated fields are set via forceFill/saveQuietly — never worth logging. */
+    protected array $activityExcept = ['ai_daily_digest', 'ai_daily_digest_date'];
+
     /**
      * Get the attributes that should be cast.
      *
@@ -57,6 +60,7 @@ class User extends Authenticatable
             'two_factor_secret' => 'encrypted',
             'two_factor_recovery_codes' => 'encrypted:array',
             'two_factor_confirmed_at' => 'datetime',
+            'ai_daily_digest_date' => 'date',
         ];
     }
 

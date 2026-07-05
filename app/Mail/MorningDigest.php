@@ -16,12 +16,13 @@ class MorningDigest extends Mailable
     use Queueable, SerializesModels;
 
     /**
-     * @param  Collection  $overdueTasks   Tasks past their due date, not done
+     * @param  Collection  $overdueTasks  Tasks past their due date, not done
      * @param  Collection  $dueTodayTasks  Tasks due today, not done
      * @param  Collection  $callFollowUps  Call logs with follow_up_at due today or earlier
      * @param  Collection  $leadFollowUps  Open leads with next_follow_up_at due today or earlier
      * @param  Collection  $dealFollowUps  Open deals with next_follow_up_at due today or earlier
-     * @param  Collection  $openTickets    Tickets assigned to the user that are still open
+     * @param  Collection  $openTickets  Tickets assigned to the user that are still open
+     * @param  ?string  $aiSummary  AI-generated "here's your day" narrative, or null if AI is off/unavailable
      */
     public function __construct(
         public User $user,
@@ -32,6 +33,7 @@ class MorningDigest extends Mailable
         public Collection $leadFollowUps,
         public Collection $dealFollowUps,
         public Collection $openTickets,
+        public ?string $aiSummary = null,
     ) {}
 
     public function envelope(): Envelope
