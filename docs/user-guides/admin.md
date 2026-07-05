@@ -90,13 +90,23 @@ service breakdown.
 **Festivals** drives two things: a "🎉 Diwali is in 5 days!" banner everyone
 sees on their dashboard, and AI-drafted client greeting content (see below).
 
-**Only fixed-date national holidays are pre-loaded** (Independence Day,
+**Fixed-date national holidays are always pre-loaded** (Independence Day,
 Gandhi Jayanti, Christmas, New Year's Day, Republic Day, Maharashtra Day).
-**Lunar and regional festivals — Diwali, Holi, Ganesh Chaturthi, Eid,
-Navratri, Gudi Padwa — are NOT pre-loaded.** Their exact dates shift every
-year, so you need to add them yourself from an official calendar each year.
-Add a festival with a name and date; toggle **Active** to hide one without
-deleting it (e.g. after the year it applies to has passed).
+
+**Lunar/regional festivals shift every year and are NOT pre-loaded by
+default.** As of 2026-07-05, the remaining lunar/regional festivals of 2026
+were verified against multiple calendar sources and added: Eid-e-Milad-un-Nabi
+(26 Aug — moon-sighting dependent, confirm closer to the date), Raksha Bandhan
+(28 Aug — one source disagreed with 9 Aug, double-check a regional panchang),
+Janmashtami (4 Sep), Ganesh Chaturthi (14 Sep), Navratri/Ghatasthapana
+(11 Oct), Dussehra (20 Oct), and Diwali/Lakshmi Puja (8 Nov). Sources:
+[drikpanchang.com](https://www.drikpanchang.com/calendars/indian/indiancalendar.html),
+[timeanddate.com](https://www.timeanddate.com/holidays/india/2026).
+**These dates do not carry forward to next year** — every January, re-verify
+and re-add that year's lunar/regional festivals from an official calendar;
+don't assume last year's dates still apply. Add a festival with a name and
+date; toggle **Active** to hide one without deleting it (e.g. after the year
+it applies to has passed).
 
 **AI-drafted client greetings:** every morning, the CRM checks for festivals
 7 days out and — for every active client with a **Social Media** or **GMB**
