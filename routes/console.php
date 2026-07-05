@@ -57,3 +57,8 @@ Schedule::command('app:create-monthly-briefs')->monthlyOn(1, '07:30')->timezone(
 // bell notifications to project leads. Runs daily; the command decides internally
 // which templates are due today based on frequency (weekly/biweekly/monthly/quarterly).
 Schedule::command('app:dispatch-scheduled-tasks')->dailyAt('08:00')->timezone('Asia/Kolkata');
+
+// AI-drafts festival greeting content for active Social Media/GMB projects
+// 7 days ahead of each festival. Idempotent (checks for an existing content
+// piece per project+festival) so a missed run just catches up the next day.
+Schedule::command('app:draft-festival-greetings')->dailyAt('07:15')->timezone('Asia/Kolkata');

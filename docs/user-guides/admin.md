@@ -86,6 +86,26 @@ service breakdown.
 - A service **in use** by leads/deals/projects/tickets can't be deleted — just
   deactivate it so it stays on old records but isn't offered for new ones.
 
+## 2a. Festivals — the greeting calendar
+**Festivals** drives two things: a "🎉 Diwali is in 5 days!" banner everyone
+sees on their dashboard, and AI-drafted client greeting content (see below).
+
+**Only fixed-date national holidays are pre-loaded** (Independence Day,
+Gandhi Jayanti, Christmas, New Year's Day, Republic Day, Maharashtra Day).
+**Lunar and regional festivals — Diwali, Holi, Ganesh Chaturthi, Eid,
+Navratri, Gudi Padwa — are NOT pre-loaded.** Their exact dates shift every
+year, so you need to add them yourself from an official calendar each year.
+Add a festival with a name and date; toggle **Active** to hide one without
+deleting it (e.g. after the year it applies to has passed).
+
+**AI-drafted client greetings:** every morning, the CRM checks for festivals
+7 days out and — for every active client with a **Social Media** or **GMB**
+project — automatically drafts a short greeting caption with Claude and adds
+it to that project's Content Collaboration queue (tagged with a 🎉 badge).
+Nothing is ever posted automatically — a team member always reviews, edits,
+and approves it like any other content piece. Requires `AI_ENABLED` (see
+Section 12).
+
 ## 3. Menu Controller — who sees what
 The **Menu Controller** has two parts:
 - **Role grid** — which roles can reach each module. *This controls real access.*

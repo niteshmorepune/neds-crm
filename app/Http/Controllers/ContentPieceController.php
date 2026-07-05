@@ -59,7 +59,7 @@ class ContentPieceController extends Controller
     {
         $this->authorize('view', $contentPiece);
 
-        $contentPiece->load('project', 'partner', 'creator', 'attachments');
+        $contentPiece->load('project', 'partner', 'creator', 'attachments', 'festival');
 
         $allowedNext = ContentStatus::allowedNextFor($contentPiece->workflow_type)[$contentPiece->status->value] ?? [];
 

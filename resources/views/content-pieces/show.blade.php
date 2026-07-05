@@ -27,6 +27,9 @@
                 <div class="space-y-3">
                     <div class="flex items-center gap-3">
                         <h1 class="text-xl font-semibold text-gray-900">{{ $contentPiece->title }}</h1>
+                        @if ($contentPiece->festival)
+                            <span class="inline-flex rounded px-2 py-0.5 text-sm font-medium bg-pink-100 text-pink-700">🎉 {{ $contentPiece->festival->name }}</span>
+                        @endif
                         <span class="inline-flex rounded px-2 py-0.5 text-sm font-medium {{ $contentPiece->status->badgeClass() }}">
                             {{ $contentPiece->status->label() }}
                         </span>

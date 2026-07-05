@@ -63,7 +63,7 @@
         </div>
 
         {{-- Content Pieces --}}
-        <div class="rounded-lg bg-white p-6 shadow-sm">
+        <div id="content" class="rounded-lg bg-white p-6 shadow-sm">
             <div class="flex items-center justify-between">
                 <div>
                     <h2 class="text-base font-semibold text-gray-900">Content Pieces</h2>
@@ -79,7 +79,7 @@
                 @endcan
             </div>
             @php
-                $contentPieces = $project->contentPieces()->with('partner')->orderBy('publish_date')->orderByDesc('created_at')->take(5)->get();
+                $contentPieces = $project->contentPieces()->with('partner', 'festival')->orderBy('publish_date')->orderByDesc('created_at')->take(5)->get();
                 $totalPieces   = $project->contentPieces()->count();
             @endphp
             <ul class="mt-3 divide-y divide-gray-100 text-sm">
@@ -87,6 +87,9 @@
                     <li class="flex items-center justify-between py-2">
                         <a href="{{ route('content.show', $piece) }}" class="text-indigo-600 hover:underline">{{ $piece->title }}</a>
                         <div class="flex items-center gap-2 text-gray-500">
+                            @if ($piece->festival)
+                                <span class="inline-flex rounded px-1.5 py-0.5 text-xs bg-pink-100 text-pink-700">🎉 {{ $piece->festival->name }}</span>
+                            @endif
                             <span class="inline-flex rounded px-1.5 py-0.5 text-xs {{ $piece->status->badgeClass() }}">{{ $piece->status->label() }}</span>
                             <span>{{ $piece->platform->label() }}</span>
                             @if ($piece->publish_date)<span>{{ $piece->publish_date->format('d M') }}</span>@endif
