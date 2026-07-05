@@ -157,7 +157,9 @@ The CRM sends you two types of automated emails to help you stay on top of thing
 
 **Morning digest (9 AM daily)** — a summary of your day: overdue tasks, tasks due
 today, call follow-ups due, lead follow-ups, deal follow-ups, and open tickets.
-No email means your slate is clean.
+No email means your slate is clean. If AI is enabled, it opens with a short
+AI-written line on what to prioritise — the same line also shows as a banner
+on your dashboard for the rest of the day.
 
 **Stagnation alert (10 AM daily)** — if any of your leads haven't had any
 activity (note, call, or edit) for **7 days**, or any of your deals for
