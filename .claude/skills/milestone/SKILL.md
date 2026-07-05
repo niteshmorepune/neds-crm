@@ -232,6 +232,29 @@ is done; new work is maintenance.
   `AttendanceController`'s split between a self-service page
   (`leave-requests.index`) and a manager-only sub-page
   (`leave-requests.approvals`), same pattern as Attendance's Corrections page.
+- **AI digest caching pattern:** when an AI-generated summary needs to appear
+  on more than one surface (email + dashboard, for example), compute it
+  **once** at the point you already have the data assembled (e.g. inside a
+  scheduled command that's already building it for an email) and cache the
+  result on the relevant model (`forceFill()->saveQuietly()`, same as
+  `ScoreLead`) rather than calling AI again per page load. If the cache is
+  time-bound (e.g. "today's" digest), store the date alongside the text and
+  check it explicitly (`->isToday()`) wherever you render it — otherwise a
+  summary from a day AI later fails on will silently linger forever.
+- **A Livewire component doesn't need its own auth check if the only page
+  that embeds it is already role-gated** — e.g. `TeamPerformanceSummary`
+  skips a dedicated Policy because it only ever renders inside
+  `reports/employee-performance.blade.php`, which
+  `ReportController::authorizePerformance()` already restricts to
+  Admin/Manager. (Still worth an inline `abort_unless` in the component's
+  mutating method as defense-in-depth, per how `generate()` is written, but
+  the *reachability* guarantee comes from the parent page.)
+- **When a feature touches something already described in multiple
+  role-specific guides** (e.g. the morning digest is documented separately
+  in `getting-started.md`, `sales.md`, `manager.md`, and `support.md`),
+  `grep` all of `docs/user-guides/*.md` for the topic before calling docs
+  done — updating only the one or two guides that seem most relevant misses
+  the others (caught late, in a follow-up PR, for the AI daily-digest line).
 
 ## Cross-app integrations (CRM ↔ Drishti ↔ SMDost)
 
