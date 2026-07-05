@@ -165,6 +165,16 @@ To set the project-level folder link: **Edit project → Google Drive folder lin
 Up to 18 content pieces per client per month is normal. Filter the content list
 by status or platform using the chips at the top of the index page.
 
+### Festival greeting drafts
+For any client with an active Social Media or GMB project, the CRM
+automatically drafts a festival greeting caption with AI 7 days ahead of each
+festival in the **Festivals** calendar (admin-managed) and adds it to that
+project's content queue — look for the 🎉 badge next to the title. Review and
+edit it like any other content piece before it goes anywhere; nothing is
+posted automatically. If a festival you expect to see isn't showing up,
+check with an admin — only fixed-date holidays are pre-loaded, so
+lunar/regional festivals (Diwali, Holi, etc.) need to be added each year.
+
 ## Automated integrations
 The CRM runs automated workflows with **Drishti** and **Social Media Dost**.
 As a manager, what you need to know:

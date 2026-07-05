@@ -2,7 +2,9 @@
 
 use App\Models\AiUsage;
 use App\Models\Customer;
+use App\Models\Festival;
 use App\Models\Lead;
+use App\Models\Project;
 use App\Models\Ticket;
 use App\Services\AiAssistant;
 use Illuminate\Support\Facades\Http;
@@ -63,6 +65,18 @@ it('summarizes a customer timeline', function () {
 
     expect($summary)->toContain('open ticket');
     expect(AiUsage::where('feature', 'summarize_customer')->exists())->toBeTrue();
+});
+
+it('drafts a festival greeting caption', function () {
+    aiOn();
+    fakeAiText('🎉 Wishing Acme Corp a joyful Diwali filled with light and prosperity! ✨');
+    $project = Project::factory()->create();
+    $festival = Festival::factory()->create(['name' => 'Diwali']);
+
+    $draft = app(AiAssistant::class)->draftFestivalGreeting($festival, $project);
+
+    expect($draft)->toContain('Diwali');
+    expect(AiUsage::where('feature', 'draft_festival_greeting')->exists())->toBeTrue();
 });
 
 it('returns null (not an exception) when the API fails', function () {

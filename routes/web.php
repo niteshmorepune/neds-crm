@@ -10,6 +10,7 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DailyReportController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DealController;
+use App\Http\Controllers\FestivalController;
 use App\Http\Controllers\HelpController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LeadController;
@@ -293,6 +294,17 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
         Route::post('services', [ServiceController::class, 'store'])->name('services.store');
         Route::put('services/{service}', [ServiceController::class, 'update'])->name('services.update');
         Route::delete('services/{service}', [ServiceController::class, 'destroy'])->name('services.destroy');
+    });
+
+    /*
+     * Festivals — admin-owned calendar driving the dashboard reminder and
+     * AI-drafted client greeting content. Admin/manager via menu.access:festivals.
+     */
+    Route::middleware('menu.access:festivals')->group(function () {
+        Route::get('festivals', [FestivalController::class, 'index'])->name('festivals.index');
+        Route::post('festivals', [FestivalController::class, 'store'])->name('festivals.store');
+        Route::put('festivals/{festival}', [FestivalController::class, 'update'])->name('festivals.update');
+        Route::delete('festivals/{festival}', [FestivalController::class, 'destroy'])->name('festivals.destroy');
     });
 
     /*

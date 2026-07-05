@@ -35,6 +35,19 @@
             @endif
         @endif
 
+        @php($nextFestival = \App\Models\Festival::active()->upcomingWithin(7)->orderBy('date')->first())
+        @if ($nextFestival)
+            <div class="rounded-lg border border-pink-200 bg-pink-50 p-4">
+                <p class="text-sm font-medium text-pink-800">
+                    @if ($nextFestival->date->isToday())
+                        🎉 Happy {{ $nextFestival->name }}, from all of us at NEDS!
+                    @else
+                        🎉 {{ $nextFestival->name }} is in {{ $nextFestival->daysUntil() }} day{{ $nextFestival->daysUntil() === 1 ? '' : 's' }}!
+                    @endif
+                </p>
+            </div>
+        @endif
+
         <div class="rounded-lg bg-white p-4 shadow-sm flex items-center justify-between">
             <span class="text-sm text-gray-600">End of day? Submit your daily report.</span>
             <a href="{{ route('daily-reports.index') }}" class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">Daily report</a>

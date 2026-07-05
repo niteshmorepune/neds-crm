@@ -1,11 +1,26 @@
 <?php
 
 use App\Enums\UserRole;
+use App\Models\Festival;
 use App\Models\User;
 use Database\Seeders\MenuItemsSeeder;
 
 beforeEach(function () {
     $this->seed(MenuItemsSeeder::class);
+});
+
+it('shows the festival banner when one is within the lead window', function () {
+    Festival::factory()->create(['name' => 'Diwali', 'date' => now()->addDays(3)->toDateString()]);
+    $sales = User::factory()->role(UserRole::Sales)->create();
+
+    $this->actingAs($sales)->get(route('dashboard'))->assertOk()->assertSee('Diwali');
+});
+
+it('omits the festival banner when nothing is within the window', function () {
+    Festival::factory()->create(['name' => 'Far Off Festival', 'date' => now()->addDays(30)->toDateString()]);
+    $sales = User::factory()->role(UserRole::Sales)->create();
+
+    $this->actingAs($sales)->get(route('dashboard'))->assertOk()->assertDontSee('Far Off Festival');
 });
 
 it('shows the company dashboard to an admin', function () {

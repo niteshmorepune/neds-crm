@@ -3,7 +3,9 @@
 namespace App\Services;
 
 use App\Models\Customer;
+use App\Models\Festival;
 use App\Models\Lead;
+use App\Models\Project;
 use App\Models\Ticket;
 use App\Support\Ai;
 
@@ -98,6 +100,37 @@ class AiAssistant
 
         return $this->trimmed($this->client->message(
             feature: 'draft_lead_followup',
+            prompt: implode("\n", $lines),
+            system: $system,
+        ));
+    }
+
+    public function draftFestivalGreeting(Festival $festival, Project $project): ?string
+    {
+        if (! Ai::enabled()) {
+            return null;
+        }
+
+        $project->loadMissing('customer', 'service');
+
+        $lines = [
+            'Festival: '.$festival->name.' ('.$festival->date->format('d M Y').')',
+            'Client: '.$project->customer->company_name,
+            'Service: '.($project->service?->name ?? 'unspecified'),
+        ];
+
+        $system = <<<'PROMPT'
+        You draft short, warm festival greeting captions a digital-solutions
+        agency in India posts on behalf of its clients (Instagram/Facebook/Google
+        Business). Write a festive, professional caption of about 40-60 words that
+        naturally mentions the client's business name, wishes them and their
+        customers well for the festival, and uses 1-2 relevant emojis. Do not
+        invent offers, prices, or promises. Do not use hashtags unless they occur
+        naturally. Output only the caption text.
+        PROMPT;
+
+        return $this->trimmed($this->client->message(
+            feature: 'draft_festival_greeting',
             prompt: implode("\n", $lines),
             system: $system,
         ));

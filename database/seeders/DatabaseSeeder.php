@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             MenuItemsSeeder::class,
             ServicesSeeder::class,
+            FestivalsSeeder::class,
             AdminUserSeeder::class,
         ]);
     }

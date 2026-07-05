@@ -20,7 +20,7 @@ class ContentPiece extends Model
         'project_id', 'partner_id', 'workflow_type', 'platform', 'status',
         'title', 'copy_text', 'google_drive_link', 'publish_date',
         'published_at', 'notes', 'upload_token', 'upload_token_expires_at',
-        'smdost_content_id', 'created_by',
+        'smdost_content_id', 'festival_id', 'created_by',
     ];
 
     protected function casts(): array
@@ -43,6 +43,11 @@ class ContentPiece extends Model
     public function partner(): BelongsTo
     {
         return $this->belongsTo(Partner::class);
+    }
+
+    public function festival(): BelongsTo
+    {
+        return $this->belongsTo(Festival::class);
     }
 
     public function creator(): BelongsTo
