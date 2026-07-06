@@ -217,6 +217,13 @@ needs to review. Switch the filter dropdown to **"Routine maintenance"** to
 audit just those, or **"All tasks"** to see everything — routine tasks are
 marked with a 🔄 icon wherever they appear mixed in.
 
+**Team workload summary:** above the filter bar, Emptask shows a one-row-per-
+person table — total tasks, a To Do / In Progress / Review / Done breakdown,
+and an overdue count (highlighted in red) — combining assigned and routine
+tasks so it reflects everyone's real workload, even though routine tasks are
+hidden from the detailed list by default. Click a name to jump straight to
+that person's full task list.
+
 ## 7. NEDS tool integrations (Drishti & SMDost)
 
 The CRM is connected to **nedsdrishti.in** and **socialmediadost.com**. Seven
