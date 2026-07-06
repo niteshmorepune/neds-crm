@@ -225,6 +225,27 @@ description — so it's visible in wadesk.in as well.
 
 ---
 
+## Integration 9 — Drishti marketing metrics feed the monthly wins note
+
+**What it does:** the CRM's AI monthly wins note (see the AI features section
+in the Admin/Manager guides) pulls real marketing-delivery numbers from
+Drishti for clients Drishti manages — posts published, audits completed, and
+marketing action items done for the month, fetched from Drishti's
+`GET /api/clients/{id}/monthly-metrics` endpoint via the same X-Service-Key
+pattern as the other integrations. These are the same counts Drishti's own
+weekly client digest already computes, just totalled over a full month
+instead of a week.
+
+**What the team sees:** no extra step — the monthly wins note simply mentions
+these numbers alongside the CRM's own (tasks/tickets/payments) when a client
+has a Drishti account linked. Nothing changes for clients without one.
+
+**If Drishti is unreachable:** the call fails silently (logged as a warning)
+and the note still drafts from whatever the CRM itself knows. This
+integration can never block the monthly wins note from running.
+
+---
+
 ## Checking integration health
 
 All integration events leave a trace in the CRM:

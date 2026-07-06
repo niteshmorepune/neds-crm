@@ -134,6 +134,23 @@ it('drafts a monthly wins note for a client', function () {
     expect(AiUsage::where('feature', 'monthly_wins_note')->exists())->toBeTrue();
 });
 
+it('drafts a monthly wins note including Drishti marketing-delivery numbers', function () {
+    aiOn();
+    fakeAiText('Acme Corp, we published 8 posts and completed an audit for you this month!');
+    $customer = Customer::factory()->create(['company_name' => 'Acme Corp']);
+
+    $draft = app(AiAssistant::class)->draftMonthlyWinsNote($customer, [
+        'tasks_completed' => 0,
+        'tickets_resolved' => 0,
+        'amount_paid' => '—',
+        'posts_published' => 8,
+        'audits_completed' => 1,
+        'action_items_done' => 3,
+    ]);
+
+    expect($draft)->toContain('posts');
+});
+
 it('returns null (not an exception) when the API fails', function () {
     aiOn();
     Http::fake(['api.anthropic.com/*' => Http::response('boom', 500)]);

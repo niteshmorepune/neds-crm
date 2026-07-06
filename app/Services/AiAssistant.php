@@ -331,7 +331,7 @@ class AiAssistant
      * manager can personalize and send to a client, based only on the given
      * counts for the month just ended. Never invents specifics.
      *
-     * @param  array{tasks_completed: int, tickets_resolved: int, amount_paid: string}  $wins
+     * @param  array{tasks_completed: int, tickets_resolved: int, amount_paid: string, posts_published?: int, audits_completed?: int, action_items_done?: int}  $wins
      */
     public function draftMonthlyWinsNote(Customer $customer, array $wins): ?string
     {
@@ -344,6 +344,9 @@ class AiAssistant
             'Tasks completed this month: '.$wins['tasks_completed'],
             'Support tickets resolved this month: '.$wins['tickets_resolved'],
             'Amount paid this month: '.$wins['amount_paid'],
+            'Social/marketing posts published this month: '.($wins['posts_published'] ?? 0),
+            'Marketing audits completed this month: '.($wins['audits_completed'] ?? 0),
+            'Marketing action items completed this month: '.($wins['action_items_done'] ?? 0),
         ];
 
         $system = <<<'PROMPT'

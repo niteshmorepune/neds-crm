@@ -135,3 +135,86 @@ it('counts payments received in the target month toward the wins note', function
 
     expect($customer->notes()->count())->toBe(1);
 });
+
+it('folds real Drishti marketing-delivery numbers into the note for Drishti-managed clients', function () {
+    aiOnForWinsNote();
+    config(['services.drishti.base_url' => 'https://nedsdrishti.in', 'services.drishti.service_key' => 'drishti-secret']);
+    Http::fake([
+        'nedsdrishti.in/api/clients/*/monthly-metrics*' => Http::response([
+            'data' => ['postsPublished' => 8, 'auditsCompleted' => 1, 'actionItemsDone' => 3],
+        ]),
+        'api.anthropic.com/*' => Http::response([
+            'content' => [['type' => 'text', 'text' => 'We published 8 posts and completed an audit for you this month.']],
+            'usage' => ['input_tokens' => 20, 'output_tokens' => 10],
+        ]),
+    ]);
+    $customer = Customer::factory()->ownedBy(User::factory()->create()->id)->create(['drishti_client_id' => 'drishti-123']);
+
+    DraftMonthlyWinsNote::dispatchSync($customer->id, '2026-06');
+
+    Http::assertSent(function ($request) {
+        return str_contains($request->url(), 'nedsdrishti.in/api/clients/drishti-123/monthly-metrics')
+            && $request->hasHeader('X-Service-Key', 'drishti-secret')
+            && $request['from'] === '2026-06-01T00:00:00+00:00'
+            && $request['to'] === '2026-06-30T23:59:59+00:00';
+    });
+
+    $note = $customer->notes()->latest()->first();
+    expect($note)->not->toBeNull();
+    expect($note->body)->toContain('published 8 posts');
+});
+
+it('does not call Drishti for a client with no drishti_client_id', function () {
+    aiOnForWinsNote();
+    config(['services.drishti.base_url' => 'https://nedsdrishti.in', 'services.drishti.service_key' => 'drishti-secret']);
+    fakeWinsNoteText('Nice progress this month.');
+    $customer = Customer::factory()->ownedBy(User::factory()->create()->id)->create();
+    $project = Project::factory()->for($customer)->create();
+    Task::factory()->for($project)->create(['status' => TaskStatus::Done])
+        ->forceFill(['completed_at' => '2026-06-15'])->saveQuietly();
+
+    DraftMonthlyWinsNote::dispatchSync($customer->id, '2026-06');
+
+    Http::assertNotSent(fn ($request) => str_contains($request->url(), 'nedsdrishti.in'));
+});
+
+it('still drafts a note from CRM-only signals when the Drishti call fails', function () {
+    aiOnForWinsNote();
+    config(['services.drishti.base_url' => 'https://nedsdrishti.in', 'services.drishti.service_key' => 'drishti-secret']);
+    Http::fake([
+        'nedsdrishti.in/*' => Http::response('boom', 500),
+        'api.anthropic.com/*' => Http::response([
+            'content' => [['type' => 'text', 'text' => 'You completed 2 tasks this month.']],
+            'usage' => ['input_tokens' => 20, 'output_tokens' => 10],
+        ]),
+    ]);
+    $customer = Customer::factory()->ownedBy(User::factory()->create()->id)->create(['drishti_client_id' => 'drishti-123']);
+    $project = Project::factory()->for($customer)->create();
+    Task::factory()->for($project)->create(['status' => TaskStatus::Done])
+        ->forceFill(['completed_at' => '2026-06-15'])->saveQuietly();
+
+    DraftMonthlyWinsNote::dispatchSync($customer->id, '2026-06');
+
+    $note = $customer->notes()->latest()->first();
+    expect($note)->not->toBeNull();
+    expect($note->body)->toContain('completed 2 tasks');
+});
+
+it('drafts a note from Drishti signals alone even when there is nothing to report in the CRM', function () {
+    aiOnForWinsNote();
+    config(['services.drishti.base_url' => 'https://nedsdrishti.in', 'services.drishti.service_key' => 'drishti-secret']);
+    Http::fake([
+        'nedsdrishti.in/api/clients/*/monthly-metrics*' => Http::response([
+            'data' => ['postsPublished' => 4, 'auditsCompleted' => 0, 'actionItemsDone' => 0],
+        ]),
+        'api.anthropic.com/*' => Http::response([
+            'content' => [['type' => 'text', 'text' => 'We kept your social presence active this month.']],
+            'usage' => ['input_tokens' => 20, 'output_tokens' => 10],
+        ]),
+    ]);
+    $customer = Customer::factory()->ownedBy(User::factory()->create()->id)->create(['drishti_client_id' => 'drishti-123']);
+
+    DraftMonthlyWinsNote::dispatchSync($customer->id, '2026-06');
+
+    expect($customer->notes()->count())->toBe(1);
+});

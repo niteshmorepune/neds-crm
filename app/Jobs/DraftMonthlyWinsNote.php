@@ -19,6 +19,8 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Drafts an AI "here's what we delivered this month" note for one client and
@@ -27,6 +29,14 @@ use Illuminate\Support\Carbon;
  * Referenced by customer id, not a serialized model, so a re-run always sees
  * fresh data. AI failure is swallowed — this must never break the monthly
  * command or the client's own workflow.
+ *
+ * For clients Drishti manages (drishti_client_id set), also pulls real
+ * marketing-delivery numbers (posts published, audits completed, action
+ * items done) from Drishti's GET /api/clients/{id}/monthly-metrics — the
+ * same counts Drishti's own weekly client digest already computes, just
+ * over a full month instead of a week. That external call is independently
+ * try/catched and degrades to zero on any failure; it never blocks the
+ * CRM-only signals (tasks/tickets/payments) from still producing a note.
  */
 class DraftMonthlyWinsNote implements ShouldQueue
 {
@@ -57,9 +67,11 @@ class DraftMonthlyWinsNote implements ShouldQueue
 
         $month = Carbon::createFromFormat('Y-m', $this->monthKey)->startOfMonth();
         $wins = $this->winsFor($customer, $month);
+        $drishti = $this->drishtiWinsFor($customer, $month);
 
         // Nothing to report — skip the AI call and don't create a hollow note.
-        if ($wins['tasks_completed'] === 0 && $wins['tickets_resolved'] === 0 && $wins['amount_paid_paise'] === 0) {
+        if ($wins['tasks_completed'] === 0 && $wins['tickets_resolved'] === 0 && $wins['amount_paid_paise'] === 0
+            && $drishti['posts_published'] === 0 && $drishti['audits_completed'] === 0 && $drishti['action_items_done'] === 0) {
             return;
         }
 
@@ -67,6 +79,9 @@ class DraftMonthlyWinsNote implements ShouldQueue
             'tasks_completed' => $wins['tasks_completed'],
             'tickets_resolved' => $wins['tickets_resolved'],
             'amount_paid' => Money::format($wins['amount_paid_paise']),
+            'posts_published' => $drishti['posts_published'],
+            'audits_completed' => $drishti['audits_completed'],
+            'action_items_done' => $drishti['action_items_done'],
         ]);
 
         if ($draft === null) {
@@ -126,5 +141,62 @@ class DraftMonthlyWinsNote implements ShouldQueue
             'tickets_resolved' => $ticketsResolved,
             'amount_paid_paise' => (int) $amountPaid,
         ];
+    }
+
+    /**
+     * Real marketing-delivery numbers from Drishti (posts published, audits
+     * completed, action items done) for clients Drishti manages. Zeroed out
+     * (never an exception) when the client has no drishti_client_id, Drishti
+     * isn't configured, or the call fails — this must never block the note.
+     *
+     * @return array{posts_published: int, audits_completed: int, action_items_done: int}
+     */
+    private function drishtiWinsFor(Customer $customer, Carbon $month): array
+    {
+        $zero = ['posts_published' => 0, 'audits_completed' => 0, 'action_items_done' => 0];
+
+        if ($customer->drishti_client_id === null) {
+            return $zero;
+        }
+
+        $baseUrl = rtrim((string) config('services.drishti.base_url'), '/');
+        $serviceKey = (string) config('services.drishti.service_key');
+
+        if (! $baseUrl || ! $serviceKey) {
+            return $zero;
+        }
+
+        try {
+            $response = Http::withHeaders(['X-Service-Key' => $serviceKey])
+                ->timeout(15)
+                ->get("{$baseUrl}/api/clients/{$customer->drishti_client_id}/monthly-metrics", [
+                    'from' => $month->copy()->startOfMonth()->toIso8601String(),
+                    'to' => $month->copy()->endOfMonth()->toIso8601String(),
+                ]);
+
+            if (! $response->successful()) {
+                Log::warning('Drishti monthly metrics fetch failed', [
+                    'customer_id' => $customer->id,
+                    'status' => $response->status(),
+                ]);
+
+                return $zero;
+            }
+
+            $data = $response->json('data') ?? [];
+
+            return [
+                'posts_published' => (int) ($data['postsPublished'] ?? 0),
+                'audits_completed' => (int) ($data['auditsCompleted'] ?? 0),
+                'action_items_done' => (int) ($data['actionItemsDone'] ?? 0),
+            ];
+        } catch (\Throwable $e) {
+            Log::warning('Drishti monthly metrics exception', [
+                'customer_id' => $customer->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return $zero;
+        }
     }
 }
