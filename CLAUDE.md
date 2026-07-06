@@ -64,11 +64,11 @@ This app deploys to **Hostinger shared hosting (Business plan)**. That means:
 - Ticket → belongs to Customer, priority, status, assignee, SLA due time
 - Note / Interaction → polymorphic, attaches to Lead/Customer/Deal/Ticket
 - Attachment → polymorphic file uploads
-- Service (taxonomy) → NEDS service lines: SEO, GMB, Website Development,
-  Social Media, Performance Marketing, Software Development, AI Automation,
-  AMC Service (seed these; admin can add more). Deals, projects, quotation
-  line items, and tickets reference a service_id so every report can be
-  sliced service-wise.
+- Service (taxonomy) → NEDS service lines: SEO, GMB, Website Design &
+  Development, Social Media, Performance Marketing, Software Development,
+  AI Automation, AMC Service (seed these; admin can add more). Deals,
+  projects, quotation line items, and tickets reference a service_id so
+  every report can be sliced service-wise.
 - Attendance → per user per day: check_in_at, check_out_at, status
   (present/half_day/leave/absent), notes. Self check-in via dashboard button;
   admin/manager can correct entries (corrections logged to activities).
@@ -168,6 +168,13 @@ Record every "we chose X because Y" here — this is the project's memory.
   (audience research, conversion tracking, creative testing) than "Google
   Ads" specifically. AMC Service is new — previously AMC/maintenance-only
   work had no service of its own and was folded into Website Development.
+  **Discovered mid-deploy that production's "Website Development" service
+  had separately been renamed by the team to "Website Design &
+  Development"** (real drift from this doc, unrelated to this change) —
+  confirmed with owner to keep that name and update the templates/tests to
+  match it, rather than let the seeder create a duplicate service or
+  silently rename the team's live label back. Caught by checking production
+  service data directly before running the seeder, not assumed.
   **Deliberately did not convert every line item in Kiran's doc into an
   individual auto-created task** — that would have multiplied routine-task
   volume ~5-10x per project, re-introducing the exact "task flood" problem

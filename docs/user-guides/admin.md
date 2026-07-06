@@ -78,9 +78,9 @@ the Attendance page:
    the export was taken).
 
 ## 2. Services — the service-line taxonomy
-**Services** lists your offerings (SEO, GMB, Website Development, Social Media,
-Performance Marketing, Software Development, AI Automation, AMC Service).
-These power every report's service breakdown.
+**Services** lists your offerings (SEO, GMB, Website Design & Development,
+Social Media, Performance Marketing, Software Development, AI Automation,
+AMC Service). These power every report's service breakdown.
 - **Add** a new service line, **rename**, set the **sort order**, or **toggle
   active**.
 - A service **in use** by leads/deals/projects/tickets can't be deleted — just
