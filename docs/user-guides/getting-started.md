@@ -71,6 +71,15 @@ At the end of the day, open **Daily Reports** and submit a short "what I did
 today". Some numbers (tasks completed, calls made) are filled in automatically;
 add a sentence or two on your day and submit. You'll get a reminder at 6 PM.
 
+**My Tasks** on this page is grouped by project, with the project needing the
+soonest attention shown first. Within each project, tasks someone assigned you
+directly appear up top; **🔄 routine maintenance** tasks — things like
+"Google Search Console review" or "SSL certificate expiry check" that the CRM
+creates automatically on a schedule for every active project (no one assigned
+these to you personally) — are collapsed under a "click to view" line so they
+don't bury the tasks that actually need your judgement. Click that line
+whenever you want to see or update them.
+
 ## 7. Morning digest email
 Every morning at **9 AM** you'll receive a personalised email summarising your
 day — overdue tasks, tasks due today, call follow-ups, and any open tickets

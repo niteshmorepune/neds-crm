@@ -21,47 +21,68 @@
             <div class="rounded-lg bg-white p-4 shadow-sm"><div class="text-xs text-gray-500">Attendance</div><div class="text-xl font-semibold">{{ $metrics['attendance_status'] ? \App\Enums\AttendanceStatus::from($metrics['attendance_status'])->label() : '—' }}</div></div>
         </div>
 
-        {{-- My tasks (active) --}}
-        @if ($myTasks->isNotEmpty())
-        <div class="overflow-hidden overflow-x-auto rounded-lg bg-white shadow-sm">
-            <div class="border-b border-gray-100 px-6 py-4">
+        {{-- My tasks (active), grouped by project so routine maintenance checks
+             don't bury the few tasks that need real attention --}}
+        @if ($taskGroups->isNotEmpty())
+        <div class="space-y-4">
+            <div class="flex items-center justify-between px-1">
                 <h3 class="text-base font-semibold text-gray-900">My Tasks</h3>
+                @php
+                    $totalTaskCount = $taskGroups->sum(fn ($g) => $g['manual']->count() + $g['routine']->count());
+                @endphp
+                <span class="text-xs text-gray-500">
+                    {{ $totalTaskCount }} {{ $totalTaskCount === 1 ? 'task' : 'tasks' }} across {{ $taskGroups->count() }} {{ $taskGroups->count() === 1 ? 'project' : 'projects' }}
+                </span>
             </div>
-            <table class="min-w-full divide-y divide-gray-200 text-sm">
-                <thead class="bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
-                    <tr>
-                        <th class="px-4 py-3">Task</th>
-                        <th class="px-4 py-3">Project</th>
-                        <th class="px-4 py-3">Status</th>
-                        <th class="px-4 py-3">Priority</th>
-                        <th class="px-4 py-3">Due</th>
-                        <th class="px-4 py-3">Update status</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100">
-                    @foreach ($myTasks as $task)
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-2"><a href="{{ route('tasks.show', $task) }}" class="font-medium text-indigo-600 hover:underline">{{ $task->title }}</a></td>
-                            <td class="px-4 py-2 text-gray-500">{{ $task->project?->name ?? '—' }}</td>
-                            <td class="px-4 py-2 text-gray-600">{{ $task->status->label() }}</td>
-                            <td class="px-4 py-2 text-gray-600">{{ $task->priority->label() }}</td>
-                            <td class="px-4 py-2 {{ $task->isOverdue() ? 'font-medium text-red-600' : 'text-gray-600' }}">
-                                {{ $task->due_date?->format('d M Y') ?? '—' }}
-                            </td>
-                            <td class="px-4 py-2">
-                                <form method="POST" action="{{ route('tasks.status', $task) }}">
-                                    @csrf @method('PATCH')
-                                    <select name="status" class="rounded-md border-gray-300 text-xs shadow-sm" onchange="this.form.submit()">
-                                        @foreach ($taskStatuses as $s)
-                                            <option value="{{ $s->value }}" @selected($task->status === $s)>{{ $s->label() }}</option>
-                                        @endforeach
-                                    </select>
-                                </form>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
+
+            @foreach ($taskGroups as $group)
+                @php
+                    $project = $group['project'];
+                    $manual = $group['manual'];
+                    $routine = $group['routine'];
+                    $groupTotal = $manual->count() + $routine->count();
+                @endphp
+                <div class="overflow-hidden overflow-x-auto rounded-lg bg-white shadow-sm">
+                    <div class="flex items-center justify-between border-b border-gray-100 px-4 py-3">
+                        <div class="text-sm">
+                            @if ($project)
+                                <a href="{{ route('projects.show', $project) }}" class="font-medium text-gray-900 hover:text-indigo-600">{{ $project->name }}</a>
+                                @if ($project->customer)
+                                    <span class="ml-1 text-xs text-gray-400">· {{ $project->customer->company_name }}</span>
+                                @endif
+                            @else
+                                <span class="font-medium text-gray-900">Other tasks</span>
+                            @endif
+                        </div>
+                        <span class="shrink-0 text-xs text-gray-400">{{ $groupTotal }} {{ $groupTotal === 1 ? 'task' : 'tasks' }}</span>
+                    </div>
+
+                    @if ($manual->isNotEmpty())
+                        <table class="min-w-full divide-y divide-gray-100 text-sm">
+                            <tbody class="divide-y divide-gray-100">
+                                @foreach ($manual as $task)
+                                    <x-task-row :task="$task" :task-statuses="$taskStatuses" />
+                                @endforeach
+                            </tbody>
+                        </table>
+                    @endif
+
+                    @if ($routine->isNotEmpty())
+                        <details @class(['border-gray-100', 'border-t' => $manual->isNotEmpty()])>
+                            <summary class="cursor-pointer select-none px-4 py-2 text-xs font-medium text-gray-500 hover:bg-gray-50">
+                                🔄 {{ $routine->count() }} routine maintenance {{ $routine->count() === 1 ? 'task' : 'tasks' }} — created automatically on a schedule for this project, click to view
+                            </summary>
+                            <table class="min-w-full divide-y divide-gray-100 text-sm">
+                                <tbody class="divide-y divide-gray-100">
+                                    @foreach ($routine as $task)
+                                        <x-task-row :task="$task" :task-statuses="$taskStatuses" :muted="true" />
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </details>
+                    @endif
+                </div>
+            @endforeach
         </div>
         @endif
 
