@@ -41,7 +41,7 @@ it('does not create a weekly_monday task on a non-Monday', function () {
 
 it('creates twice_monthly tasks on the 1st and 15th', function () {
     $lead = User::factory()->role(UserRole::Support)->create();
-    $service = Service::factory()->create(['name' => 'Website Development']);
+    $service = Service::factory()->create(['name' => 'Website Design & Development']);
     $project = Project::factory()->create(['service_id' => $service->id, 'owner_id' => $lead->id, 'status' => ProjectStatus::Active]);
 
     $this->artisan('app:dispatch-scheduled-tasks', ['--date' => '2026-07-01'])->assertSuccessful();
@@ -103,7 +103,7 @@ it('fires a TaskAssigned in-app notification for each created task', function ()
 
 it('does not create duplicate tasks when the command runs twice on the same day', function () {
     $lead = User::factory()->role(UserRole::Support)->create();
-    $service = Service::factory()->create(['name' => 'Website Development']);
+    $service = Service::factory()->create(['name' => 'Website Design & Development']);
     $project = Project::factory()->create(['service_id' => $service->id, 'owner_id' => $lead->id, 'status' => ProjectStatus::Active]);
 
     $this->artisan('app:dispatch-scheduled-tasks', ['--date' => '2026-07-01'])->assertSuccessful();
@@ -143,7 +143,7 @@ it('skips projects with no matching service template', function () {
     expect(Task::where('project_id', $project->id)->count())->toBe($baseline);
 });
 
-it('gives an AMC Service project the same shared upkeep templates as Website Development', function () {
+it('gives an AMC Service project the same shared upkeep templates as Website Design & Development', function () {
     $lead = User::factory()->role(UserRole::Support)->create();
     $service = Service::factory()->create(['name' => 'AMC Service']);
     $project = Project::factory()->create(['service_id' => $service->id, 'owner_id' => $lead->id, 'status' => ProjectStatus::Active]);

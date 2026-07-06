@@ -22,7 +22,7 @@ it('seeds all 8 NEDS service lines, including AMC Service and Performance Market
         'SEO',
         'Social Media',
         'Software Development',
-        'Website Development',
+        'Website Design & Development',
     ]);
 });
 

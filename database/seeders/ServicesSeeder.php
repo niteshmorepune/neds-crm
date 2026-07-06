@@ -17,7 +17,7 @@ class ServicesSeeder extends Seeder
         $services = [
             'SEO',
             'GMB',
-            'Website Development',
+            'Website Design & Development',
             'Social Media',
             'Performance Marketing',
             'Software Development',

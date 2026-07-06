@@ -74,24 +74,24 @@ class CreateOnboardingTasks implements ShouldQueue
             'description' => 'Google Business Profile audit, business information setup, category selection, service/product addition, business description update, photo + cover photo upload, Q&A setup, initial review strategy.',
         ],
 
-        // ── Website Development ────────────────────────────────────────────────
+        // ── Website Design & Development ──────────────────────────────────────
         [
             'title' => 'Website discovery & design',
-            'services' => ['Website Development'],
+            'services' => ['Website Design & Development'],
             'due_in_days' => 10,
             'priority' => 'high',
             'description' => 'Requirement gathering, sitemap approval, wireframe approval, UI design.',
         ],
         [
             'title' => 'Website development',
-            'services' => ['Website Development'],
+            'services' => ['Website Design & Development'],
             'due_in_days' => 21,
             'priority' => 'normal',
             'description' => 'Homepage development, inner page development, contact form setup, WhatsApp integration, mobile responsive design, speed optimization, basic SEO setup.',
         ],
         [
             'title' => 'Website QA & launch',
-            'services' => ['Website Development'],
+            'services' => ['Website Design & Development'],
             'due_in_days' => 28,
             'priority' => 'normal',
             'description' => 'Browser testing, client review, bug fixes, website go-live.',

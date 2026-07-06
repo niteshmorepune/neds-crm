@@ -30,61 +30,61 @@ class DispatchScheduledTasks extends Command
      *   quarterly      — 1st of Jan, Apr, Jul, Oct
      */
     private const TEMPLATES = [
-        // ── Website Development / Software Development / AMC Service ─────────
+        // ── Website Design & Development / Software Development / AMC Service ─
         // Shared across all three: an AMC Service client gets the same core
         // upkeep an active Website/Software Dev client gets bundled in.
         [
             'title' => 'Website backup',
-            'services' => ['Website Development', 'Software Development', 'AMC Service'],
+            'services' => ['Website Design & Development', 'Software Development', 'AMC Service'],
             'frequency' => 'twice_monthly',
             'priority' => 'normal',
             'description' => 'Take a full backup of the client website (files + database). Verify the backup file is complete and store it securely.',
         ],
         [
             'title' => 'Website malware / security scan',
-            'services' => ['Website Development', 'Software Development', 'AMC Service'],
+            'services' => ['Website Design & Development', 'Software Development', 'AMC Service'],
             'frequency' => 'biweekly',
             'priority' => 'normal',
             'description' => 'Run a malware and security scan on the website. Escalate immediately if threats are found.',
         ],
         [
             'title' => 'Website uptime & speed check',
-            'services' => ['Website Development', 'Software Development', 'AMC Service'],
+            'services' => ['Website Design & Development', 'Software Development', 'AMC Service'],
             'frequency' => 'weekly_monday',
             'priority' => 'normal',
             'description' => "Check uptime status and run a PageSpeed / GTmetrix test. Log the score and flag if below 70. Also test the site's contact form end-to-end.",
         ],
         [
             'title' => 'WordPress / CMS / theme updates',
-            'services' => ['Website Development', 'AMC Service'],
+            'services' => ['Website Design & Development', 'AMC Service'],
             'frequency' => 'monthly_1',
             'priority' => 'normal',
             'description' => 'Update all plugins, themes, and CMS core. Take a backup first. Test key pages after updating.',
         ],
         [
             'title' => 'SSL certificate expiry check',
-            'services' => ['Website Development', 'Software Development', 'AMC Service'],
+            'services' => ['Website Design & Development', 'Software Development', 'AMC Service'],
             'frequency' => 'monthly_1',
             'priority' => 'normal',
             'description' => 'Check SSL certificate expiry date for the client site. Initiate renewal if expiring within 30 days.',
         ],
         [
             'title' => 'Broken link check',
-            'services' => ['Website Development', 'SEO', 'AMC Service'],
+            'services' => ['Website Design & Development', 'SEO', 'AMC Service'],
             'frequency' => 'monthly_1',
             'priority' => 'low',
             'description' => 'Scan the website for broken links and 404 errors. Fix or set up redirects as needed.',
         ],
         [
             'title' => 'GA4 / analytics review',
-            'services' => ['Website Development', 'SEO'],
+            'services' => ['Website Design & Development', 'SEO'],
             'frequency' => 'monthly_1',
             'priority' => 'normal',
             'description' => 'Review traffic trends, goal completions, and top landing pages in GA4. Note any significant changes.',
         ],
         [
             'title' => 'Website health report',
-            'services' => ['Website Development', 'AMC Service'],
+            'services' => ['Website Design & Development', 'AMC Service'],
             'frequency' => 'monthly_1',
             'priority' => 'normal',
             'description' => 'Summarize this month\'s backup, security scan, uptime, and update status into a client-facing health report.',
@@ -233,14 +233,14 @@ class DispatchScheduledTasks extends Command
         // ── All services (quarterly / monthly housekeeping) ───────────────────
         [
             'title' => 'AMC contract renewal review',
-            'services' => ['SEO', 'GMB', 'Social Media', 'Performance Marketing', 'Website Development', 'Software Development', 'AI Automation', 'AMC Service'],
+            'services' => ['SEO', 'GMB', 'Social Media', 'Performance Marketing', 'Website Design & Development', 'Software Development', 'AI Automation', 'AMC Service'],
             'frequency' => 'monthly_1',
             'priority' => 'normal',
             'description' => 'Check if this client\'s AMC or retainer contract is due for renewal in the next 30 days. Flag to accounts if action is needed.',
         ],
         [
             'title' => 'Client portal contacts audit',
-            'services' => ['SEO', 'GMB', 'Social Media', 'Performance Marketing', 'Website Development', 'Software Development', 'AI Automation', 'AMC Service'],
+            'services' => ['SEO', 'GMB', 'Social Media', 'Performance Marketing', 'Website Design & Development', 'Software Development', 'AI Automation', 'AMC Service'],
             'frequency' => 'quarterly',
             'priority' => 'low',
             'description' => 'Review contacts on the client portal. Remove access for anyone who has left the client\'s organisation.',
