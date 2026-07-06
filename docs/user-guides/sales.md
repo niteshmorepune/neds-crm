@@ -105,9 +105,10 @@ don't apply) and tells the system to produce zero-rated invoices for that client
 Leave Country as "India" for all domestic clients.
 
 **Monthly wins note (AI, optional):** on the 1st of each month, if AI is enabled
-and one of your clients had tasks completed, tickets resolved, or a payment in
-the month before, Claude drafts a short "here's what we delivered" note and adds
-it to that client's **Notes** tab (marked "AI-drafted monthly update"). It's
+and one of your clients had tasks completed, tickets resolved, a payment, or
+(for clients on Drishti) posts published/audits completed in the month before,
+Claude drafts a short "here's what we delivered" note and adds it to that
+client's **Notes** tab (marked "AI-drafted monthly update"). It's
 staff-only — the client never sees it automatically. Review it, personalize it,
 and send it yourself via email or WhatsApp if it reads right.
 

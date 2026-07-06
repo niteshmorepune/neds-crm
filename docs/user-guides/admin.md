@@ -309,13 +309,17 @@ next action based on that client's specific signals. Generated on demand per
 client, not in a batch — so it costs nothing unless someone clicks it.
 
 **Monthly wins note drafts** — on the 1st of each month, for every active client
-with an assigned owner who had at least one task completed, ticket resolved, or
-payment received the month before, Claude drafts a short "here's what we
-delivered" note and adds it to that client's Notes tab (staff-only, marked
-"AI-drafted monthly update"). The owner gets a bell notification. Nothing is
-sent to the client automatically — the account manager reviews, personalizes,
-and sends it themselves. Clients with nothing to report that month are skipped
-entirely (no hollow note, no AI call spent).
+with an assigned owner who had at least one task completed, ticket resolved,
+payment received, or (for clients Drishti manages) a post published, audit
+completed, or marketing action item done the month before, Claude drafts a
+short "here's what we delivered" note and adds it to that client's Notes tab
+(staff-only, marked "AI-drafted monthly update"). The owner gets a bell
+notification. Nothing is sent to the client automatically — the account
+manager reviews, personalizes, and sends it themselves. Clients with nothing
+to report that month are skipped entirely (no hollow note, no AI call spent).
+The Drishti numbers are pulled live via a service-to-service call — if
+Drishti is unreachable that day, the note still drafts from whatever the CRM
+itself knows (tasks/tickets/payments).
 
 **To turn on:** add these two lines to the server `.env`, then run
 `php artisan config:cache`:
