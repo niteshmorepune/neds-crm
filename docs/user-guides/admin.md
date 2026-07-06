@@ -116,6 +116,24 @@ Nothing is ever posted automatically — a team member always reviews, edits,
 and approves it like any other content piece. Requires `AI_ENABLED` (see
 Section 12).
 
+## 2b. Client Radar — at-risk / upsell signals
+A dashboard banner ("N clients need attention") and a **Client Radar** sidebar
+page (Admin/Manager only) flag active clients worth a proactive check-in:
+
+- **No Contact** — no note, call log, or ticket in the last 14 days.
+- **Declining Activity** — touches in the last 30 days are well below the
+  30 days before that (only shown when No Contact doesn't already apply).
+- **Overdue Invoice** — the client has at least one overdue invoice.
+- **Growth Opportunity** — the client only uses one of the agency's service
+  lines, even though more are active — a natural upsell conversation starter.
+
+Everything on this page is computed live from existing CRM data — nothing is
+stored or sent automatically. Click **✨ Suggest action** next to a flagged
+client to have Claude draft a short, specific next step (a check-in call, a
+service to pitch, tactfully chasing payment) based only on that client's
+flags. This is generated on demand, one client at a time — not run as a
+batch job — so there's no AI cost unless someone actually looks at a client.
+
 ## 3. Menu Controller — who sees what
 The **Menu Controller** has two parts:
 - **Role grid** — which roles can reach each module. *This controls real access.*
@@ -248,7 +266,7 @@ The database is **backed up automatically every night at 2 AM** (kept 14 daily +
 backup, follow `docs/backup-restore.md`.
 
 ## 12. AI features (optional)
-Six AI helpers are built into the CRM, powered by Anthropic's Claude. They are
+Seven AI helpers are built into the CRM, powered by Anthropic's Claude. They are
 **off by default** and never take action, send, publish, or score an employee
 automatically — they only draft or summarize for a human to review.
 
@@ -284,6 +302,11 @@ generated only from that person's own tasks/follow-ups.
 tasks/calls/attendance numbers into a narrative of trends and standouts.
 **Visible to Admin/Manager only** — it is never shown to the employee it's
 about, so it's a starting point for a conversation, not a rating you share.
+
+**Client Radar suggestions (✨ Suggest action)** — on the **Client Radar** page
+(Section 2b), a button per flagged client that has Claude suggest one concrete
+next action based on that client's specific signals. Generated on demand per
+client, not in a batch — so it costs nothing unless someone clicks it.
 
 **To turn on:** add these two lines to the server `.env`, then run
 `php artisan config:cache`:

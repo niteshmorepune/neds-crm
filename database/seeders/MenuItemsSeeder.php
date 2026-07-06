@@ -33,6 +33,7 @@ class MenuItemsSeeder extends Seeder
             ['key' => 'tickets',          'label' => 'Tickets',          'route' => 'tickets.index',    'icon' => 'lifebuoy',   'roles' => [UserRole::Manager, UserRole::Support, UserRole::Sales]],
             ['key' => 'categories',       'label' => 'Services',         'route' => 'services.index',   'icon' => 'tag',        'roles' => [UserRole::Manager]],
             ['key' => 'festivals',        'label' => 'Festivals',        'route' => 'festivals.index',  'icon' => 'calendar',   'roles' => [UserRole::Manager]],
+            ['key' => 'client-radar',     'label' => 'Client Radar',     'route' => 'client-radar.index', 'icon' => 'radar',    'roles' => [UserRole::Manager]],
             ['key' => 'quotations',       'label' => 'Quotations',       'route' => 'quotations.index', 'icon' => 'document',   'roles' => [UserRole::Manager, UserRole::Sales, UserRole::Accounts]],
             ['key' => 'customer',         'label' => 'Clients',          'route' => 'clients.index',    'icon' => 'users',      'roles' => [UserRole::Manager, UserRole::Sales, UserRole::Support, UserRole::Accounts, UserRole::Intern]],
             ['key' => 'invoices',         'label' => 'Invoices',         'route' => 'invoices.index',   'icon' => 'receipt',    'roles' => [UserRole::Manager, UserRole::Accounts]],
