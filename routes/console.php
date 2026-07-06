@@ -53,6 +53,11 @@ Schedule::command('app:send-monthly-report-reminder')->dailyAt('09:00')->timezon
 // on the 1st of each month at 07:30 IST (after recurring invoices are generated).
 Schedule::command('app:create-monthly-briefs')->monthlyOn(1, '07:30')->timezone('Asia/Kolkata');
 
+// AI-drafts a "monthly wins" note (staff-only) for each active, owned client,
+// summarizing the month that just ended, for the account manager to
+// personalize and send. Idempotent per client+month.
+Schedule::command('app:draft-monthly-wins-notes')->monthlyOn(1, '07:45')->timezone('Asia/Kolkata');
+
 // Recurring maintenance tasks — creates project-linked tasks and fires in-app
 // bell notifications to project leads. Runs daily; the command decides internally
 // which templates are due today based on frequency (weekly/biweekly/monthly/quarterly).

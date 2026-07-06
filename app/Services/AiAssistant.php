@@ -326,6 +326,45 @@ class AiAssistant
         ));
     }
 
+    /**
+     * A short, warm monthly "here's what we delivered" note an account
+     * manager can personalize and send to a client, based only on the given
+     * counts for the month just ended. Never invents specifics.
+     *
+     * @param  array{tasks_completed: int, tickets_resolved: int, amount_paid: string}  $wins
+     */
+    public function draftMonthlyWinsNote(Customer $customer, array $wins): ?string
+    {
+        if (! Ai::enabled()) {
+            return null;
+        }
+
+        $lines = [
+            'Client: '.$customer->company_name,
+            'Tasks completed this month: '.$wins['tasks_completed'],
+            'Support tickets resolved this month: '.$wins['tickets_resolved'],
+            'Amount paid this month: '.$wins['amount_paid'],
+        ];
+
+        $system = <<<'PROMPT'
+        You draft a short, warm monthly update an account manager at a
+        digital-solutions agency in India will personalize and send to a
+        client, based ONLY on the numbers given. Write 2-3 sentences (about
+        60-90 words) that name the client's business, highlight what was
+        delivered/accomplished for them this month, and end on a forward-
+        looking note. Do not invent specific tasks, tickets, or figures beyond
+        what's given — if a number is zero, don't mention that category at
+        all rather than drawing attention to it. Do not invent prices,
+        offers, or promises. Output only the note body.
+        PROMPT;
+
+        return $this->trimmed($this->client->message(
+            feature: 'monthly_wins_note',
+            prompt: implode("\n", $lines),
+            system: $system,
+        ));
+    }
+
     private function summarySystem(): string
     {
         return <<<'PROMPT'

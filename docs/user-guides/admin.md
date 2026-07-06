@@ -266,7 +266,7 @@ The database is **backed up automatically every night at 2 AM** (kept 14 daily +
 backup, follow `docs/backup-restore.md`.
 
 ## 12. AI features (optional)
-Seven AI helpers are built into the CRM, powered by Anthropic's Claude. They are
+Eight AI helpers are built into the CRM, powered by Anthropic's Claude. They are
 **off by default** and never take action, send, publish, or score an employee
 automatically — they only draft or summarize for a human to review.
 
@@ -307,6 +307,15 @@ about, so it's a starting point for a conversation, not a rating you share.
 (Section 2b), a button per flagged client that has Claude suggest one concrete
 next action based on that client's specific signals. Generated on demand per
 client, not in a batch — so it costs nothing unless someone clicks it.
+
+**Monthly wins note drafts** — on the 1st of each month, for every active client
+with an assigned owner who had at least one task completed, ticket resolved, or
+payment received the month before, Claude drafts a short "here's what we
+delivered" note and adds it to that client's Notes tab (staff-only, marked
+"AI-drafted monthly update"). The owner gets a bell notification. Nothing is
+sent to the client automatically — the account manager reviews, personalizes,
+and sends it themselves. Clients with nothing to report that month are skipped
+entirely (no hollow note, no AI call spent).
 
 **To turn on:** add these two lines to the server `.env`, then run
 `php artisan config:cache`:

@@ -104,6 +104,13 @@ don't apply) and tells the system to produce zero-rated invoices for that client
 — no GST is charged, and the PDF is labelled "Export of Services" automatically.
 Leave Country as "India" for all domestic clients.
 
+**Monthly wins note (AI, optional):** on the 1st of each month, if AI is enabled
+and one of your clients had tasks completed, tickets resolved, or a payment in
+the month before, Claude drafts a short "here's what we delivered" note and adds
+it to that client's **Notes** tab (marked "AI-drafted monthly update"). It's
+staff-only — the client never sees it automatically. Review it, personalize it,
+and send it yourself via email or WhatsApp if it reads right.
+
 ## 5. Content pieces (when you own a project)
 If you are set as the **owner** of a project, you can track content pieces for
 that project — useful when NEDS is managing social media or other content for
@@ -149,6 +156,7 @@ events. You'll be notified when:
 | 📄 **New quotation created** | The deal's assigned sales person |
 | 🏆 **Deal marked Won** | The deal's assigned sales person + all managers and admins |
 | 🧾 **New invoice created** | The client's assigned sales person (recurring auto-invoices are excluded to avoid noise) |
+| 📈 **Monthly wins note drafted** | The client's assigned sales person, on the 1st of each month for clients with something to report the month before |
 
 Click any notification to jump straight to the record. Click **Dismiss** to clear it.
 

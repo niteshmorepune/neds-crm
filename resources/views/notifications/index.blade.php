@@ -37,6 +37,7 @@
                                 'smdost_brief_approved'       => '✅',
                                 'leave_request_submitted', 'leave_request_reviewed' => '🌴',
                                 'festival_greeting_drafted'   => '🎉',
+                                'monthly_wins_note_drafted'   => '📈',
                                 default                       => '🔔',
                             })
                             <p class="text-sm font-medium text-gray-900">
