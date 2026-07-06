@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ProjectStatus;
+use App\Jobs\CreateOnboardingTasks;
 use App\Models\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -29,6 +30,15 @@ class Project extends Model
             'start_date' => 'date',
             'end_date' => 'date',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::created(function (Project $project) {
+            if ($project->status === ProjectStatus::Active) {
+                CreateOnboardingTasks::dispatch($project->id);
+            }
+        });
     }
 
     public function customer(): BelongsTo

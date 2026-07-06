@@ -79,8 +79,8 @@ the Attendance page:
 
 ## 2. Services — the service-line taxonomy
 **Services** lists your offerings (SEO, GMB, Website Development, Social Media,
-Google Ads, Software Development, AI Automation…). These power every report's
-service breakdown.
+Performance Marketing, Software Development, AI Automation, AMC Service).
+These power every report's service breakdown.
 - **Add** a new service line, **rename**, set the **sort order**, or **toggle
   active**.
 - A service **in use** by leads/deals/projects/tickets can't be deleted — just
@@ -192,7 +192,12 @@ templates by service, and creates tasks due today — assigned to the project
 lead with an in-app bell notification.
 
 **No configuration is needed** — templates are built into the command and cover
-all NEDS service lines (Website Dev, SEO, GMB, Social Media, Google Ads, etc.).
+all NEDS service lines (Website Dev, SEO, GMB, Social Media, Performance
+Marketing, Software Development, AI Automation, AMC Service). Each doc section
+of Kiran's service-task checklist (Technical SEO, On-Page SEO, GMB
+Profile & Engagement, etc.) became one consolidated recurring task with the
+full checklist in its description — not one task per line item — so the
+list stays manageable even with dozens of active projects.
 
 **Backfill a missed date** (e.g. server was down, or a project was just made active):
 ```bash
@@ -203,6 +208,14 @@ duplicate tasks.
 
 **Verify it ran:** open any active project in Emptask and check that tasks were
 created today. Or check the server cron log.
+
+**New project onboarding checklist:** when a project is created (manually, or
+automatically from a won deal) and its status is Active, the CRM also
+one-time-creates a matching onboarding checklist for its service (e.g. SEO
+gets "Technical SEO setup", "On-page SEO setup", "Off-page SEO setup", and
+"Initial SEO report", each due a few days to a few weeks out) — assigned to
+the project lead (or owner if no lead is set yet). This only fires once per
+project, not on a schedule.
 
 **How staff see these:** on the Daily Reports page, **My Tasks** groups tasks
 by project and collapses these auto-created tasks under a "🔄 routine
