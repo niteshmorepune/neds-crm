@@ -33,8 +33,8 @@ it('updates task status via the quick action', function () {
 });
 
 it('scopes the My Tasks filter to the current user', function () {
-    $mine = Task::factory()->assignedTo($this->manager->id)->create(['title' => 'Mine']);
-    Task::factory()->create(['title' => 'Someone elses']);
+    $mine = Task::factory()->assignedTo($this->manager->id)->create(['title' => 'Mine', 'created_by' => $this->manager->id]);
+    Task::factory()->create(['title' => 'Someone elses', 'created_by' => $this->manager->id]);
 
     $this->actingAs($this->manager)->get(route('tasks.index', ['mine' => 1]))
         ->assertOk()->assertSee('Mine')->assertDontSee('Someone elses');
@@ -42,11 +42,35 @@ it('scopes the My Tasks filter to the current user', function () {
 
 it('hides other users tasks from a non-manager list', function () {
     $sales = User::factory()->role(UserRole::Sales)->create();
-    Task::factory()->assignedTo($sales->id)->create(['title' => 'Sales task']);
-    Task::factory()->create(['title' => 'Hidden task', 'assignee_id' => User::factory()->create()->id]);
+    Task::factory()->assignedTo($sales->id)->create(['title' => 'Sales task', 'created_by' => $sales->id]);
+    Task::factory()->create(['title' => 'Hidden task', 'assignee_id' => User::factory()->create()->id, 'created_by' => $this->manager->id]);
 
     $this->actingAs($sales)->get(route('tasks.index'))->assertOk()
         ->assertSee('Sales task')->assertDontSee('Hidden task');
+});
+
+it('defaults the task list to assigned tasks, hiding routine maintenance ones', function () {
+    Task::factory()->create(['title' => 'Fix contact form', 'created_by' => $this->manager->id]);
+    Task::factory()->create(['title' => 'Google Search Console review', 'created_by' => null]);
+
+    $this->actingAs($this->manager)->get(route('tasks.index'))
+        ->assertOk()->assertSee('Fix contact form')->assertDontSee('Google Search Console review');
+});
+
+it('shows only routine maintenance tasks when that filter is selected', function () {
+    Task::factory()->create(['title' => 'Fix contact form', 'created_by' => $this->manager->id]);
+    Task::factory()->create(['title' => 'Google Search Console review', 'created_by' => null]);
+
+    $this->actingAs($this->manager)->get(route('tasks.index', ['type' => 'routine']))
+        ->assertOk()->assertSee('Google Search Console review')->assertDontSee('Fix contact form');
+});
+
+it('shows both task types when "all tasks" is selected', function () {
+    Task::factory()->create(['title' => 'Fix contact form', 'created_by' => $this->manager->id]);
+    Task::factory()->create(['title' => 'Google Search Console review', 'created_by' => null]);
+
+    $this->actingAs($this->manager)->get(route('tasks.index', ['type' => 'all']))
+        ->assertOk()->assertSee('Fix contact form')->assertSee('Google Search Console review');
 });
 
 it('lets a participant comment but forbids outsiders', function () {

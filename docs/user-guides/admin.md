@@ -210,6 +210,13 @@ maintenance" line (tasks a person assigned directly stay expanded above it).
 The distinction is automatic — any task with no creator recorded is treated
 as routine maintenance — so nothing needs to be tagged manually.
 
+**How Admin/Manager see these on Emptask:** the company-wide **Emptask** list
+defaults to a **"Assigned tasks"** filter, hiding routine maintenance tasks so
+267+ auto-created checks don't bury the handful of tasks someone actually
+needs to review. Switch the filter dropdown to **"Routine maintenance"** to
+audit just those, or **"All tasks"** to see everything — routine tasks are
+marked with a 🔄 icon wherever they appear mixed in.
+
 ## 7. NEDS tool integrations (Drishti & SMDost)
 
 The CRM is connected to **nedsdrishti.in** and **socialmediadost.com**. Seven

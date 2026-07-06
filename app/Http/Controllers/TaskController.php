@@ -24,6 +24,14 @@ class TaskController extends Controller
         $user = $request->user();
         $isManager = $user->hasRole(UserRole::Admin, UserRole::Manager);
 
+        // Defaults to "assigned" (created_by set — a person assigned this
+        // directly) whenever the request has no type param at all, so a
+        // fresh visit to Emptask isn't dominated by the routine maintenance
+        // checks app:dispatch-scheduled-tasks creates daily/weekly/monthly
+        // for every active project. request->has() (not filled()) so an
+        // explicit ?type= (e.g. "all") is respected rather than re-defaulted.
+        $taskType = $request->has('type') ? $request->input('type') : 'assigned';
+
         $tasks = Task::query()
             ->with(['assignee', 'project'])
             ->unless($isManager, fn ($q) => $q->where(function ($w) use ($user) {
@@ -32,6 +40,8 @@ class TaskController extends Controller
                     ->orWhereHas('project.assignees', fn ($a) => $a->whereKey($user->id));
             }))
             ->when($request->boolean('mine'), fn ($q) => $q->where('assignee_id', $user->id))
+            ->when($taskType === 'assigned', fn ($q) => $q->whereNotNull('created_by'))
+            ->when($taskType === 'routine', fn ($q) => $q->whereNull('created_by'))
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->input('status')))
             ->when($request->filled('priority'), fn ($q) => $q->where('priority', $request->input('priority')))
             ->latest()
@@ -40,7 +50,7 @@ class TaskController extends Controller
 
         return view('tasks.index', $this->formData() + [
             'tasks' => $tasks,
-            'filters' => $request->only(['status', 'priority', 'mine']),
+            'filters' => $request->only(['status', 'priority', 'mine']) + ['type' => $taskType],
         ]);
     }
 
