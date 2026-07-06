@@ -106,6 +106,19 @@ it('summarizes team performance from report rows', function () {
     expect(AiUsage::where('feature', 'team_performance_summary')->exists())->toBeTrue();
 });
 
+it('suggests a next action for a flagged client', function () {
+    aiOn();
+    fakeAiText('Give them a quick check-in call this week and mention the SEO add-on.');
+    $customer = Customer::factory()->create(['company_name' => 'Acme Corp']);
+
+    $suggestion = app(AiAssistant::class)->suggestClientAction($customer, [
+        'no_contact' => ['label' => 'No Contact', 'detail' => 'Last touch 20 days ago'],
+    ]);
+
+    expect($suggestion)->toContain('check-in');
+    expect(AiUsage::where('feature', 'client_radar_suggestion')->exists())->toBeTrue();
+});
+
 it('returns null (not an exception) when the API fails', function () {
     aiOn();
     Http::fake(['api.anthropic.com/*' => Http::response('boom', 500)]);

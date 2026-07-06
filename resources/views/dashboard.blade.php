@@ -41,6 +41,20 @@
             @endif
         @endif
 
+        @if (auth()->user()->hasRole(\App\Enums\UserRole::Admin, \App\Enums\UserRole::Manager))
+            @php($radarFlaggedCount = app(\App\Services\ClientRadarService::class)->flaggedClients()->count())
+            @if ($radarFlaggedCount > 0)
+                <div class="rounded-lg border border-orange-200 bg-orange-50 p-4">
+                    <div class="flex items-center justify-between gap-4">
+                        <p class="text-sm font-medium text-orange-800">
+                            📡 {{ $radarFlaggedCount }} {{ $radarFlaggedCount === 1 ? 'client needs' : 'clients need' }} attention.
+                        </p>
+                        <a href="{{ route('client-radar.index') }}" class="shrink-0 text-sm font-medium text-orange-700 hover:underline">View Client Radar →</a>
+                    </div>
+                </div>
+            @endif
+        @endif
+
         @php($nextFestival = \App\Models\Festival::active()->upcomingWithin(7)->orderBy('date')->first())
         @if ($nextFestival)
             <div class="rounded-lg border border-pink-200 bg-pink-50 p-4">

@@ -16,6 +16,20 @@ Your dashboard shows the whole business at a glance:
 - **Link panels** — quick access to Daily Reports, the Project Dashboard, and the
   Reports below.
 
+## Client Radar
+A **Client Radar** sidebar item (and a dashboard banner when clients are
+flagged) surfaces active clients worth a proactive check-in:
+- **No Contact** — no note, call, or ticket in the last 14 days.
+- **Declining Activity** — recent touches well below the prior 30 days.
+- **Overdue Invoice** — at least one overdue invoice.
+- **Growth Opportunity** — only using one service line even though more are
+  active — a natural upsell prompt.
+
+Everything is computed live from existing data, nothing is stored. Click
+**✨ Suggest action** next to a client to have Claude draft a specific next
+step from that client's flags — generated on demand, per client, so it's
+never run automatically as a batch.
+
 ## Reports
 From the **Reports** panel on the dashboard:
 

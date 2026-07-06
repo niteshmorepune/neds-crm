@@ -289,6 +289,43 @@ class AiAssistant
         ));
     }
 
+    /**
+     * A suggested next action for an account manager, based on the risk/
+     * opportunity flags ClientRadarService computed for one client. Called
+     * on-demand (button click), never in a batch job, to keep AI cost tied
+     * to clients someone actually looks at rather than the whole client base.
+     *
+     * @param  array<string, array{label: string, detail: string}>  $flags
+     */
+    public function suggestClientAction(Customer $customer, array $flags): ?string
+    {
+        if (! Ai::enabled()) {
+            return null;
+        }
+
+        $lines = ['Client: '.$customer->company_name, '', 'Signals:'];
+
+        foreach ($flags as $flag) {
+            $lines[] = "- {$flag['label']}: {$flag['detail']}";
+        }
+
+        $system = <<<'PROMPT'
+        You advise account managers at a digital-solutions agency in India on how
+        to respond to a client health signal. Based only on the signals given,
+        suggest ONE concrete next action the account manager should take this
+        week (e.g. a check-in call, a specific service to pitch, tactfully
+        chasing an overdue payment). Keep it to 2-3 sentences (about 50 words).
+        Do not invent facts, prices, or client details beyond what's given.
+        Output only the suggestion.
+        PROMPT;
+
+        return $this->trimmed($this->client->message(
+            feature: 'client_radar_suggestion',
+            prompt: implode("\n", $lines),
+            system: $system,
+        ));
+    }
+
     private function summarySystem(): string
     {
         return <<<'PROMPT'

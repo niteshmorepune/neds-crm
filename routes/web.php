@@ -5,6 +5,7 @@ use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\Auth\TwoFactorChallengeController;
 use App\Http\Controllers\CallLogController;
+use App\Http\Controllers\ClientRadarController;
 use App\Http\Controllers\ContentPieceController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DailyReportController;
@@ -305,6 +306,14 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
         Route::post('festivals', [FestivalController::class, 'store'])->name('festivals.store');
         Route::put('festivals/{festival}', [FestivalController::class, 'update'])->name('festivals.update');
         Route::delete('festivals/{festival}', [FestivalController::class, 'destroy'])->name('festivals.destroy');
+    });
+
+    /*
+     * Client Radar — at-risk / upsell signals for active clients. Admin/manager
+     * via menu.access:client-radar (no Policy class, same convention as Festivals).
+     */
+    Route::middleware('menu.access:client-radar')->group(function () {
+        Route::get('client-radar', [ClientRadarController::class, 'index'])->name('client-radar.index');
     });
 
     /*
