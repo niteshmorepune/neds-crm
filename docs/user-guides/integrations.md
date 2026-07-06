@@ -184,7 +184,7 @@ searching.
 | Ticket service | Drishti link goes to |
 |---|---|
 | SEO or GMB | Client's audit list |
-| Social Media or Google Ads | Client's optimization / content view |
+| Social Media or Performance Marketing | Client's optimization / content view |
 | Any other / no service set | Client's detail page |
 
 **WhatsApp tickets:** when a WhatsApp message creates a ticket and the client

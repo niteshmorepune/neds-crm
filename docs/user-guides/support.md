@@ -90,22 +90,37 @@ of what to do. Open it, complete the work, and mark it **Done**.
 |---|---|
 | Website backup | 1st and 15th of every month |
 | Website malware / security scan | 1st and 16th of every month |
-| WordPress / CMS plugin updates | 1st of every month |
+| WordPress / CMS / theme updates | 1st of every month |
 | SSL certificate expiry check | 1st of every month |
 | Broken link check | 1st of every month |
 | GA4 / analytics review | 1st of every month |
+| Website health report | 1st of every month |
 | AMC contract renewal review | 1st of every month |
-| Keyword ranking report | 1st of every month |
-| GMB profile health check | 1st of every month |
+| Keyword ranking report (GMB) | 1st of every month |
+| On-page SEO review | 1st of every month |
+| Off-page SEO review | 1st of every month |
+| Monthly SEO report & client review | 1st of every month |
+| GMB profile & engagement review | 1st of every month |
+| Monthly GMB report | 1st of every month |
 | Social media account health check | 1st of every month |
+| Monthly social media report | 1st of every month |
+| Monthly performance marketing report | 1st of every month |
+| Server & database health review | 1st of every month |
+| Monthly maintenance report | 1st of every month |
+| AI automation workflow review | 1st of every month |
+| Monthly AI automation report | 1st of every month |
+| Monthly AMC report | 1st of every month |
 | Content calendar review | 25th of every month |
 | Website uptime & speed check | Every Monday |
-| Google Search Console review | Every Monday |
-| Google Ads performance review | Every Monday |
+| Technical SEO review | Every Monday |
+| Weekly Google post | Every Monday |
+| Performance marketing campaign review | Every Monday |
 | Client portal contacts audit | 1st of Jan, Apr, Jul, Oct |
 
 You only receive tasks for the services your projects actually run — a GMB
 project gets GMB tasks, a Website project gets website tasks, and so on.
+A new project also gets a one-time onboarding checklist (e.g. "Technical SEO
+setup") in its first few weeks — these appear once, not on a schedule.
 
 **If a task is missing:** check that your project status is **Active** and that
 a service is set on the project. On-hold or completed projects do not get tasks.

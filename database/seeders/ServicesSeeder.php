@@ -19,9 +19,10 @@ class ServicesSeeder extends Seeder
             'GMB',
             'Website Development',
             'Social Media',
-            'Google Ads',
+            'Performance Marketing',
             'Software Development',
             'AI Automation',
+            'AMC Service',
         ];
 
         foreach ($services as $sort => $name) {

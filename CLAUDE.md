@@ -65,9 +65,10 @@ This app deploys to **Hostinger shared hosting (Business plan)**. That means:
 - Note / Interaction → polymorphic, attaches to Lead/Customer/Deal/Ticket
 - Attachment → polymorphic file uploads
 - Service (taxonomy) → NEDS service lines: SEO, GMB, Website Development,
-  Social Media, Google Ads, Software Development, AI Automation (seed these;
-  admin can add more). Deals, projects, quotation line items, and tickets
-  reference a service_id so every report can be sliced service-wise.
+  Social Media, Performance Marketing, Software Development, AI Automation,
+  AMC Service (seed these; admin can add more). Deals, projects, quotation
+  line items, and tickets reference a service_id so every report can be
+  sliced service-wise.
 - Attendance → per user per day: check_in_at, check_out_at, status
   (present/half_day/leave/absent), notes. Self check-in via dashboard button;
   admin/manager can correct entries (corrections logged to activities).
@@ -155,3 +156,26 @@ Record every "we chose X because Y" here — this is the project's memory.
   `mysql` CLI is not on PATH on the dev machine — use the full path under
   `C:\Program Files\MySQL\MySQL Server 8.4\bin\` if needed; Laravel itself uses
   the `pdo_mysql` driver and is unaffected.
+- **2026-07-06 — Service taxonomy: "Google Ads" renamed to "Performance
+  Marketing"; added "AMC Service" as its own 8th service line.** Kiran shared
+  a full service-task checklist (SEO, GMB, Website Dev, Social Media,
+  Performance Marketing, Software Dev, AI Automation, AMC Service — each with
+  a "new client" one-time setup list and an "existing client" recurring
+  monthly list). Renamed via a data migration that updates the existing
+  `services` row in place (same id, same `service_id` on every deal/lead/
+  project/ticket/quotation/recurring-invoice — nothing re-links), since
+  "Performance Marketing" better matches the broader paid-media scope
+  (audience research, conversion tracking, creative testing) than "Google
+  Ads" specifically. AMC Service is new — previously AMC/maintenance-only
+  work had no service of its own and was folded into Website Development.
+  **Deliberately did not convert every line item in Kiran's doc into an
+  individual auto-created task** — that would have multiplied routine-task
+  volume ~5-10x per project, re-introducing the exact "task flood" problem
+  the Client Radar / Emptask filter / team-workload-summary work (same week)
+  was built to fix. Instead each doc section (e.g. "On-Page SEO") became one
+  consolidated recurring task with the checklist in its description —
+  confirmed with owner via AskUserQuestion. Also added a genuinely new
+  feature: a one-time onboarding checklist auto-created via
+  `App\Jobs\CreateOnboardingTasks` (hooked off `Project::booted()`'s
+  `created` event) when a project starts, using the same
+  consolidated-per-section shape.

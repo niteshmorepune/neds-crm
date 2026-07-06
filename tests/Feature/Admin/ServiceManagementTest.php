@@ -5,9 +5,25 @@ use App\Models\Deal;
 use App\Models\Service;
 use App\Models\User;
 use Database\Seeders\MenuItemsSeeder;
+use Database\Seeders\ServicesSeeder;
 
 beforeEach(function () {
     $this->seed(MenuItemsSeeder::class);
+});
+
+it('seeds all 8 NEDS service lines, including AMC Service and Performance Marketing', function () {
+    $this->seed(ServicesSeeder::class);
+
+    expect(Service::pluck('name')->sort()->values()->all())->toBe([
+        'AI Automation',
+        'AMC Service',
+        'GMB',
+        'Performance Marketing',
+        'SEO',
+        'Social Media',
+        'Software Development',
+        'Website Development',
+    ]);
 });
 
 it('lets a manager manage services but forbids a sales user', function () {

@@ -94,7 +94,7 @@ class TicketController extends Controller
             return "{$base}/audit/{$clientId}";
         }
 
-        if (str_contains($name, 'Social') || str_contains($name, 'Ads')) {
+        if (str_contains($name, 'Social') || str_contains($name, 'Marketing')) {
             return "{$base}/optimize/{$clientId}";
         }
 
