@@ -8,6 +8,7 @@ use App\Models\Project;
 use App\Models\Task;
 use App\Models\User;
 use App\Services\DailyReportMetrics;
+use Carbon\CarbonPeriod;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -66,11 +67,50 @@ class DailyReportController extends Controller
         $this->authorize('viewTeam', DailyReport::class);
 
         $date = $request->date('date') ?? Carbon::today();
+        $users = User::orderBy('name')->get();
 
         return view('daily-reports.team', [
             'date' => $date,
-            'users' => User::orderBy('name')->get(),
+            'users' => $users,
             'reports' => DailyReport::whereDate('date', $date)->get()->keyBy('user_id'),
+            'weeklyRates' => $this->weeklySubmissionRates($users, $date),
+        ]);
+    }
+
+    /**
+     * For each user, how many of the last 7 calendar days ending on $date —
+     * excluding Sundays, since the office is Mon-Sat — have a submitted
+     * daily report. Lets admin spot a chronic non-submitter without
+     * flipping through the date picker one day at a time.
+     *
+     * @return Collection<int, array{submitted: int, expected: int}>
+     */
+    private function weeklySubmissionRates(Collection $users, Carbon $date): Collection
+    {
+        $businessDays = collect(CarbonPeriod::create($date->copy()->subDays(6), $date))
+            ->reject(fn (Carbon $d) => $d->isSunday())
+            ->map(fn (Carbon $d) => $d->toDateString());
+
+        // Range query + PHP-side date comparison, not an exact-match whereIn
+        // on the raw column: SQLite serializes a `date`-cast column with a
+        // trailing time component, so exact string matching against
+        // toDateString() values silently matches nothing there (MySQL
+        // wouldn't have this issue, but the test suite runs on SQLite).
+        // $report->date is a Carbon instance either way (the model's own
+        // cast), so normalizing via toDateString() in PHP works regardless
+        // of how the underlying driver stored it.
+        $submittedCounts = DailyReport::query()
+            ->whereBetween('date', [$date->copy()->subDays(6)->startOfDay(), $date->copy()->endOfDay()])
+            ->get(['user_id', 'date'])
+            ->filter(fn (DailyReport $report) => $businessDays->contains($report->date->toDateString()))
+            ->groupBy('user_id')
+            ->map->count();
+
+        return $users->mapWithKeys(fn (User $user) => [
+            $user->id => [
+                'submitted' => (int) ($submittedCounts[$user->id] ?? 0),
+                'expected' => $businessDays->count(),
+            ],
         ]);
     }
 

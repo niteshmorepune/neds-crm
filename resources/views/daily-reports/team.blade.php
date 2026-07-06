@@ -13,7 +13,20 @@
                 @php($r = $reports->get($person->id))
                 <div class="rounded-lg bg-white p-4 shadow-sm">
                     <div class="flex items-center justify-between">
-                        <div class="font-medium text-gray-900">{{ $person->name }}</div>
+                        <div class="font-medium text-gray-900">
+                            {{ $person->name }}
+                            @php($rate = $weeklyRates[$person->id] ?? null)
+                            @if ($rate && $rate['expected'] > 0)
+                                <span @class([
+                                    'ml-2 rounded-full px-2 py-0.5 text-xs font-medium',
+                                    'bg-green-100 text-green-700' => $rate['submitted'] === $rate['expected'],
+                                    'bg-amber-100 text-amber-700' => $rate['submitted'] > 0 && $rate['submitted'] < $rate['expected'],
+                                    'bg-red-100 text-red-700' => $rate['submitted'] === 0,
+                                ]) title="Submitted {{ $rate['submitted'] }} of the last {{ $rate['expected'] }} working days (Mon-Sat)">
+                                    {{ $rate['submitted'] }}/{{ $rate['expected'] }} this week
+                                </span>
+                            @endif
+                        </div>
                         @if ($r)
                             <div class="text-xs text-gray-500">
                                 {{ $r->tasks_completed }} tasks · {{ $r->calls_made }} calls · {{ $r->leads_touched }} leads

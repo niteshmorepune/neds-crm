@@ -49,6 +49,52 @@ it('shows the team view to managers only', function () {
     $this->actingAs($this->user)->get(route('daily-reports.team'))->assertForbidden();
 });
 
+it('shows a partial weekly submission rate excluding Sundays', function () {
+    $manager = User::factory()->role(UserRole::Manager)->create();
+    $person = User::factory()->create(['name' => 'Partial Submitter']);
+
+    // 2026-07-06 is a Monday; the trailing 7-day window (30 Jun - 6 Jul)
+    // contains exactly one Sunday (5 Jul), so 6 business days are expected.
+    foreach (['2026-06-30', '2026-07-01', '2026-07-02', '2026-07-06'] as $date) {
+        DailyReport::factory()->create(['user_id' => $person->id, 'date' => $date]);
+    }
+
+    $this->actingAs($manager)->get(route('daily-reports.team', ['date' => '2026-07-06']))
+        ->assertOk()
+        ->assertSeeInOrder(['Partial Submitter', '4/6 this week'])
+        ->assertSee('bg-amber-100');
+});
+
+it('shows a green badge for perfect weekly submission and a red one for zero', function () {
+    $manager = User::factory()->role(UserRole::Manager)->create();
+    $perfect = User::factory()->create(['name' => 'Perfect Attendance']);
+    $never = User::factory()->create(['name' => 'Never Submits']);
+
+    foreach (['2026-06-30', '2026-07-01', '2026-07-02', '2026-07-03', '2026-07-04', '2026-07-06'] as $date) {
+        DailyReport::factory()->create(['user_id' => $perfect->id, 'date' => $date]);
+    }
+
+    $response = $this->actingAs($manager)->get(route('daily-reports.team', ['date' => '2026-07-06']));
+
+    $response->assertOk()
+        ->assertSeeInOrder(['Perfect Attendance', '6/6 this week'])
+        ->assertSeeInOrder(['Never Submits', '0/6 this week'])
+        ->assertSee('bg-green-100')
+        ->assertSee('bg-red-100');
+});
+
+it('does not count a Sunday submission toward the expected business-day total', function () {
+    $manager = User::factory()->role(UserRole::Manager)->create();
+    $person = User::factory()->create(['name' => 'Sunday Worker']);
+
+    // A report logged on the excluded Sunday (5 Jul) should not inflate the
+    // denominator or count toward the numerator either.
+    DailyReport::factory()->create(['user_id' => $person->id, 'date' => '2026-07-05']);
+
+    $this->actingAs($manager)->get(route('daily-reports.team', ['date' => '2026-07-06']))
+        ->assertOk()->assertSeeInOrder(['Sunday Worker', '0/6 this week']);
+});
+
 it('reminds only users who have not submitted today', function () {
     // Command skips Sundays — travel forward if needed.
     if (now()->isSunday()) {

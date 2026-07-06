@@ -79,7 +79,11 @@ toggle that filters the list to only projects where you are the Lead or a team m
 Useful for managers who also run their own service accounts.
 
 ## Daily reports & attendance
-- **Daily Reports → Team** shows what each person submitted.
+- **Daily Reports → Team** shows what each person submitted for the selected
+  date. Each name also shows a **"X/Y this week"** badge — how many of the
+  last 7 days (excluding Sunday) they've submitted a report for — so a
+  chronic non-submitter stands out (red = zero this week, amber = partial,
+  green = perfect) without checking each day one at a time.
 - **Attendance** — use the dropdown on the Attendance page to switch between team
   members and view their monthly record. You can see all employees except admins.
 - To correct an entry (e.g. someone forgot to check in), go to **Corrections**,
