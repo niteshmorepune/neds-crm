@@ -73,6 +73,43 @@ it('shows both task types when "all tasks" is selected', function () {
         ->assertOk()->assertSee('Fix contact form')->assertSee('Google Search Console review');
 });
 
+it('shows a team workload summary with combined assigned + routine counts, broken down by status and overdue', function () {
+    $mohit = User::factory()->create(['name' => 'Mohit Patil']);
+    // 2 To Do (1 overdue), 1 In Progress (overdue), 1 Review, 1 Done (routine,
+    // not overdue even though its due date is past — Done never counts as overdue).
+    Task::factory()->create(['assignee_id' => $mohit->id, 'created_by' => $this->manager->id, 'status' => TaskStatus::Todo, 'due_date' => now()->subDay()]);
+    Task::factory()->create(['assignee_id' => $mohit->id, 'created_by' => $this->manager->id, 'status' => TaskStatus::Todo, 'due_date' => now()->addWeek()]);
+    Task::factory()->create(['assignee_id' => $mohit->id, 'created_by' => null, 'status' => TaskStatus::InProgress, 'due_date' => now()->subDay()]);
+    Task::factory()->create(['assignee_id' => $mohit->id, 'created_by' => $this->manager->id, 'status' => TaskStatus::Review, 'due_date' => now()->addWeek()]);
+    Task::factory()->create(['assignee_id' => $mohit->id, 'created_by' => null, 'status' => TaskStatus::Done, 'due_date' => now()->subDay()]);
+
+    $response = $this->actingAs($this->manager)->get(route('tasks.index'));
+
+    $response->assertOk()->assertSee('Team workload')
+        // Total=5, To Do=2, In Progress=1, Review=1, Done=1, Overdue=2 — in column order.
+        ->assertSeeInOrder(['Mohit Patil', '5', '2', '1', '1', '1', '2']);
+});
+
+it('hides the team workload summary from non-managers', function () {
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    Task::factory()->create(['assignee_id' => $sales->id, 'created_by' => $sales->id]);
+
+    $this->actingAs($sales)->get(route('tasks.index'))->assertOk()->assertDontSee('Team workload');
+});
+
+it('filters the task list to one team member via the assignee filter', function () {
+    $mohit = User::factory()->create(['name' => 'Mohit Patil']);
+    $manali = User::factory()->create(['name' => 'Manali Jasud']);
+    Task::factory()->create(['title' => 'Mohit task', 'assignee_id' => $mohit->id, 'created_by' => $this->manager->id]);
+    Task::factory()->create(['title' => 'Manali task', 'assignee_id' => $manali->id, 'created_by' => $this->manager->id]);
+
+    $this->actingAs($this->manager)->get(route('tasks.index', ['assignee' => $mohit->id, 'type' => 'all']))
+        ->assertOk()
+        ->assertSee('Mohit task')
+        ->assertDontSee('Manali task')
+        ->assertSee('Filtered to');
+});
+
 it('lets a participant comment but forbids outsiders', function () {
     $task = Task::factory()->assignedTo($this->manager->id)->create();
 

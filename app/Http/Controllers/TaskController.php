@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Notifications\TaskAssigned;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -40,6 +41,7 @@ class TaskController extends Controller
                     ->orWhereHas('project.assignees', fn ($a) => $a->whereKey($user->id));
             }))
             ->when($request->boolean('mine'), fn ($q) => $q->where('assignee_id', $user->id))
+            ->when($request->filled('assignee'), fn ($q) => $q->where('assignee_id', $request->input('assignee')))
             ->when($taskType === 'assigned', fn ($q) => $q->whereNotNull('created_by'))
             ->when($taskType === 'routine', fn ($q) => $q->whereNull('created_by'))
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->input('status')))
@@ -50,7 +52,8 @@ class TaskController extends Controller
 
         return view('tasks.index', $this->formData() + [
             'tasks' => $tasks,
-            'filters' => $request->only(['status', 'priority', 'mine']) + ['type' => $taskType],
+            'filters' => $request->only(['status', 'priority', 'mine', 'assignee']) + ['type' => $taskType],
+            'teamSummary' => $isManager ? $this->teamTaskSummary() : null,
         ]);
     }
 
@@ -150,6 +153,61 @@ class TaskController extends Controller
             ->with('status', 'Attachment uploaded.')
             ->with('attachment_uploaded', $file->getClientOriginalName())
             ->withFragment('attachments');
+    }
+
+    /**
+     * Per-team-member task counts for the Admin/Manager oversight view —
+     * every task the person is assigned, both manually assigned and routine
+     * maintenance combined, since routine tasks still take real time even
+     * though they're hidden from the detailed list by default. Broken down
+     * by status, plus how many are overdue (not a status, computed
+     * separately). Only includes people with at least one task assigned.
+     *
+     * @return Collection<int, array{user: User, total: int, todo: int, in_progress: int, review: int, done: int, overdue: int}>
+     */
+    private function teamTaskSummary(): Collection
+    {
+        // toBase() bypasses Eloquent model hydration — without it, "status"
+        // comes back cast to a TaskStatus enum instance (no __toString()),
+        // and pluck('count', 'status') below would try to use that enum
+        // object as a raw array key, which PHP rejects outright.
+        $byStatus = Task::query()
+            ->whereNotNull('assignee_id')
+            ->selectRaw('assignee_id, status, count(*) as count')
+            ->groupBy('assignee_id', 'status')
+            ->toBase()
+            ->get()
+            ->groupBy('assignee_id');
+
+        $overdueByAssignee = Task::query()
+            ->whereNotNull('assignee_id')
+            ->whereNotNull('due_date')
+            ->where('due_date', '<', now()->startOfDay())
+            ->where('status', '!=', TaskStatus::Done->value)
+            ->selectRaw('assignee_id, count(*) as count')
+            ->groupBy('assignee_id')
+            ->toBase()
+            ->get()
+            ->pluck('count', 'assignee_id');
+
+        $users = User::whereIn('id', $byStatus->keys())->orderBy('name')->get()->keyBy('id');
+
+        return $byStatus->map(function ($rows, $assigneeId) use ($overdueByAssignee, $users) {
+            $counts = $rows->pluck('count', 'status');
+
+            return [
+                'user' => $users[$assigneeId] ?? null,
+                'total' => (int) $rows->sum('count'),
+                'todo' => (int) ($counts[TaskStatus::Todo->value] ?? 0),
+                'in_progress' => (int) ($counts[TaskStatus::InProgress->value] ?? 0),
+                'review' => (int) ($counts[TaskStatus::Review->value] ?? 0),
+                'done' => (int) ($counts[TaskStatus::Done->value] ?? 0),
+                'overdue' => (int) ($overdueByAssignee[$assigneeId] ?? 0),
+            ];
+        })
+            ->filter(fn ($row) => $row['user'] !== null)
+            ->sortBy(fn ($row) => $row['user']->name)
+            ->values();
     }
 
     /**

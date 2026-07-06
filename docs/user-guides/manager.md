@@ -115,6 +115,9 @@ owner if no lead is set) with an in-app bell notification — no email.
   "Assigned tasks") so the list isn't dominated by hundreds of maintenance
   checks — switch to "Routine maintenance" or "All tasks" in the filter bar
   when you specifically need to audit them.
+- Above the filter bar, a **Team workload** table shows each person's total
+  tasks, status breakdown, and overdue count (assigned + routine combined) —
+  click a name to see their full list.
 - The **Employee Performance Report** (Reports on the dashboard) counts these
   tasks in each person's on-time completion %. If someone's % is dropping, check
   whether maintenance tasks are being dismissed without being marked Done.
