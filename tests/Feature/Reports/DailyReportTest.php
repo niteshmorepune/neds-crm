@@ -5,6 +5,7 @@ use App\Enums\UserRole;
 use App\Mail\DailyReportReminder;
 use App\Models\CallLog;
 use App\Models\DailyReport;
+use App\Models\Project;
 use App\Models\Task;
 use App\Models\User;
 use Database\Seeders\MenuItemsSeeder;
@@ -66,4 +67,83 @@ it('reminds only users who have not submitted today', function () {
 
 it('renders the daily report page', function () {
     $this->actingAs($this->user)->get(route('daily-reports.index'))->assertOk()->assertSee('What I did today');
+});
+
+it('groups my tasks by project and separates manual from routine maintenance tasks', function () {
+    $project = Project::factory()->create(['name' => 'Viva Website']);
+    $manual = Task::factory()->create([
+        'title' => 'Fix contact form',
+        'project_id' => $project->id,
+        'assignee_id' => $this->user->id,
+        'created_by' => User::factory()->create()->id,
+        'status' => TaskStatus::Todo,
+    ]);
+    $routine = Task::factory()->create([
+        'title' => 'Google Search Console review',
+        'project_id' => $project->id,
+        'assignee_id' => $this->user->id,
+        'created_by' => null,
+        'status' => TaskStatus::Todo,
+    ]);
+
+    $response = $this->actingAs($this->user)->get(route('daily-reports.index'));
+
+    // The routine task's title still lands in the HTML (inside a native
+    // <details> element) — it's collapsed by default in the browser, not
+    // removed — so assert the manual task comes first and the routine one
+    // is demoted below the "routine maintenance" summary label, not that
+    // its title is absent from the response entirely.
+    $response->assertOk()
+        ->assertSeeInOrder(['Viva Website', 'Fix contact form', 'routine maintenance', 'Google Search Console review']);
+});
+
+it('excludes completed tasks from my tasks', function () {
+    Task::factory()->create([
+        'title' => 'Already done',
+        'assignee_id' => $this->user->id,
+        'status' => TaskStatus::Done,
+    ]);
+
+    $this->actingAs($this->user)->get(route('daily-reports.index'))->assertDontSee('Already done');
+});
+
+it('buckets a task with no project under "Other tasks"', function () {
+    Task::factory()->create([
+        'title' => 'Standalone follow-up',
+        'assignee_id' => $this->user->id,
+        'project_id' => null,
+        'created_by' => User::factory()->create()->id,
+        'status' => TaskStatus::Todo,
+    ]);
+
+    $this->actingAs($this->user)->get(route('daily-reports.index'))
+        ->assertOk()
+        ->assertSee('Other tasks')
+        ->assertSee('Standalone follow-up');
+});
+
+it('orders project groups by their earliest due date, most urgent first', function () {
+    $laterProject = Project::factory()->create(['name' => 'Later Project']);
+    $urgentProject = Project::factory()->create(['name' => 'Urgent Project']);
+
+    Task::factory()->create([
+        'title' => 'Due next week',
+        'project_id' => $laterProject->id,
+        'assignee_id' => $this->user->id,
+        'created_by' => User::factory()->create()->id,
+        'due_date' => now()->addWeek(),
+        'status' => TaskStatus::Todo,
+    ]);
+    Task::factory()->create([
+        'title' => 'Overdue task',
+        'project_id' => $urgentProject->id,
+        'assignee_id' => $this->user->id,
+        'created_by' => User::factory()->create()->id,
+        'due_date' => now()->subDay(),
+        'status' => TaskStatus::Todo,
+    ]);
+
+    $this->actingAs($this->user)->get(route('daily-reports.index'))
+        ->assertOk()
+        ->assertSeeInOrder(['Urgent Project', 'Later Project']);
 });

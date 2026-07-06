@@ -204,6 +204,12 @@ duplicate tasks.
 **Verify it ran:** open any active project in Emptask and check that tasks were
 created today. Or check the server cron log.
 
+**How staff see these:** on the Daily Reports page, **My Tasks** groups tasks
+by project and collapses these auto-created tasks under a "🔄 routine
+maintenance" line (tasks a person assigned directly stay expanded above it).
+The distinction is automatic — any task with no creator recorded is treated
+as routine maintenance — so nothing needs to be tagged manually.
+
 ## 7. NEDS tool integrations (Drishti & SMDost)
 
 The CRM is connected to **nedsdrishti.in** and **socialmediadost.com**. Seven
