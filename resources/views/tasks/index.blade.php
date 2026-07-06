@@ -12,6 +12,11 @@
                     <input type="checkbox" name="mine" value="1" @checked(! empty($filters['mine'])) onchange="this.form.submit()" class="rounded border-gray-300 text-indigo-600" />
                     My tasks
                 </label>
+                <select name="type" class="rounded-md border-gray-300 text-sm shadow-sm">
+                    <option value="assigned" @selected(($filters['type'] ?? 'assigned') === 'assigned')>Assigned tasks</option>
+                    <option value="routine" @selected(($filters['type'] ?? '') === 'routine')>Routine maintenance</option>
+                    <option value="all" @selected(($filters['type'] ?? '') === 'all')>All tasks</option>
+                </select>
                 <select name="status" class="rounded-md border-gray-300 text-sm shadow-sm">
                     <option value="">All statuses</option>
                     @foreach ($statuses as $status)
@@ -31,6 +36,16 @@
             @endcan
         </div>
 
+        @if (($filters['type'] ?? 'assigned') !== 'all')
+            <p class="text-xs text-gray-400">
+                @if (($filters['type'] ?? 'assigned') === 'routine')
+                    Showing only 🔄 routine maintenance tasks — created automatically on a schedule for active projects, not assigned by a person.
+                @else
+                    Hiding 🔄 routine maintenance tasks (auto-created on a schedule for active projects) by default — switch to "Routine maintenance" or "All tasks" above to see them.
+                @endif
+            </p>
+        @endif
+
         <div class="overflow-hidden overflow-x-auto rounded-lg bg-white shadow-sm">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
@@ -46,7 +61,12 @@
                 <tbody class="divide-y divide-gray-100">
                     @forelse ($tasks as $task)
                         <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-3"><a href="{{ route('tasks.show', $task) }}" class="font-medium text-indigo-600 hover:underline">{{ $task->title }}</a></td>
+                            <td class="px-4 py-3">
+                                @if (is_null($task->created_by))
+                                    <span class="mr-1" title="Routine maintenance — created automatically on a schedule">🔄</span>
+                                @endif
+                                <a href="{{ route('tasks.show', $task) }}" class="font-medium text-indigo-600 hover:underline">{{ $task->title }}</a>
+                            </td>
                             <td class="px-4 py-3 text-gray-600">{{ $task->project?->name ?? '—' }}</td>
                             <td class="px-4 py-3 text-gray-600">{{ $task->assignee?->name ?? 'Unassigned' }}</td>
                             <td class="px-4 py-3 text-gray-600">{{ $task->priority->label() }}</td>

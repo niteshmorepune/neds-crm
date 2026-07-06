@@ -111,6 +111,10 @@ owner if no lead is set) with an in-app bell notification — no email.
 **As a manager, what you need to watch:**
 - Open **Project Updates → any project** to see all tasks including auto-created
   ones. Overdue maintenance tasks show with the same red overdue flag as manual tasks.
+- **Emptask** defaults to hiding these routine tasks (filter dropdown shows
+  "Assigned tasks") so the list isn't dominated by hundreds of maintenance
+  checks — switch to "Routine maintenance" or "All tasks" in the filter bar
+  when you specifically need to audit them.
 - The **Employee Performance Report** (Reports on the dashboard) counts these
   tasks in each person's on-time completion %. If someone's % is dropping, check
   whether maintenance tasks are being dismissed without being marked Done.
