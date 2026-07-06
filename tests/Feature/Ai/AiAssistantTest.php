@@ -119,6 +119,21 @@ it('suggests a next action for a flagged client', function () {
     expect(AiUsage::where('feature', 'client_radar_suggestion')->exists())->toBeTrue();
 });
 
+it('drafts a monthly wins note for a client', function () {
+    aiOn();
+    fakeAiText('Acme Corp, this month we wrapped up 5 tasks and kept everything running smoothly!');
+    $customer = Customer::factory()->create(['company_name' => 'Acme Corp']);
+
+    $draft = app(AiAssistant::class)->draftMonthlyWinsNote($customer, [
+        'tasks_completed' => 5,
+        'tickets_resolved' => 1,
+        'amount_paid' => '₹50,000.00',
+    ]);
+
+    expect($draft)->toContain('Acme Corp');
+    expect(AiUsage::where('feature', 'monthly_wins_note')->exists())->toBeTrue();
+});
+
 it('returns null (not an exception) when the API fails', function () {
     aiOn();
     Http::fake(['api.anthropic.com/*' => Http::response('boom', 500)]);
