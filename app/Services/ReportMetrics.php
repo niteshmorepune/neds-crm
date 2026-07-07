@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\AttendanceStatus;
+use App\Enums\DealStage;
 use App\Enums\InvoiceStatus;
 use App\Models\Attendance;
 use App\Models\CallLog;
@@ -148,5 +149,73 @@ class ReportMetrics
             'by_service' => $byService,
             'by_client' => $byClient,
         ];
+    }
+
+    /**
+     * Lead volume and conversion by acquisition channel, for the period leads
+     * were created in. "Converted" means the lead became a client
+     * (converted_at set); "won value" sums the linked deal's value only for
+     * deals that actually closed Won — a converted-but-still-in-pipeline lead
+     * contributes to the conversion rate but not yet to won value.
+     */
+    public function leadSourcePerformance(Carbon $from, Carbon $to): array
+    {
+        $leads = Lead::query()
+            ->whereBetween('created_at', [$from, $to])
+            ->with('convertedDeal')
+            ->get();
+
+        $bySource = $leads
+            ->groupBy(fn (Lead $lead) => $lead->source->label())
+            ->map(fn (Collection $group, string $label) => $this->channelRow($label, $group))
+            ->sortByDesc('total')
+            ->values()
+            ->all();
+
+        $byCampaign = $leads
+            ->filter(fn (Lead $lead) => filled($lead->utm_source))
+            ->groupBy(fn (Lead $lead) => collect([$lead->utm_source, $lead->utm_medium, $lead->utm_campaign])->filter()->implode(' / '))
+            ->map(fn (Collection $group, string $label) => $this->channelRow($label, $group))
+            ->sortByDesc('total')
+            ->values()
+            ->all();
+
+        return [
+            'total' => $leads->count(),
+            'converted' => $leads->whereNotNull('converted_at')->count(),
+            'won_value' => $this->wonValue($leads),
+            'by_source' => $bySource,
+            'by_campaign' => $byCampaign,
+        ];
+    }
+
+    /**
+     * @param  Collection<int, Lead>  $leads
+     * @return array{label: string, total: int, converted: int, conversion_rate: int, won_value: int, avg_score: ?int}
+     */
+    private function channelRow(string $label, Collection $leads): array
+    {
+        $converted = $leads->whereNotNull('converted_at')->count();
+        $scored = $leads->whereNotNull('ai_score');
+
+        return [
+            'label' => $label,
+            'total' => $leads->count(),
+            'converted' => $converted,
+            'conversion_rate' => $leads->count() > 0 ? (int) round($converted / $leads->count() * 100) : 0,
+            'won_value' => $this->wonValue($leads),
+            'avg_score' => $scored->count() > 0 ? (int) round($scored->avg('ai_score')) : null,
+        ];
+    }
+
+    /**
+     * @param  Collection<int, Lead>  $leads
+     */
+    private function wonValue(Collection $leads): int
+    {
+        return (int) $leads
+            ->map(fn (Lead $lead) => $lead->convertedDeal)
+            ->filter(fn ($deal) => $deal !== null && $deal->stage === DealStage::Won)
+            ->sum('value');
     }
 }

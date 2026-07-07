@@ -2,7 +2,9 @@
 
 use App\Actions\ConvertLead;
 use App\Enums\AttendanceStatus;
+use App\Enums\DealStage;
 use App\Enums\InvoiceStatus;
+use App\Enums\LeadSource;
 use App\Enums\TaskStatus;
 use App\Enums\UserRole;
 use App\Models\Attendance;
@@ -118,13 +120,78 @@ it('groups revenue by service via the linked deal', function () {
     expect(collect($data['by_service'])->firstWhere('name', 'SEO')['total'])->toBe(700000);
 });
 
+it('groups leads by source with total, converted count and conversion rate', function () {
+    Lead::factory()->count(3)->create(['source' => LeadSource::Website, 'created_at' => now()]);
+    $converted = Lead::factory()->create(['source' => LeadSource::Website, 'created_at' => now()]);
+    $converted->update(['status' => 'converted', 'converted_at' => now()]);
+
+    $data = $this->metrics->leadSourcePerformance(now()->startOfMonth(), now()->endOfMonth());
+    $row = collect($data['by_source'])->firstWhere('label', 'Website');
+
+    expect($row['total'])->toBe(4)
+        ->and($row['converted'])->toBe(1)
+        ->and($row['conversion_rate'])->toBe(25);
+});
+
+it('only counts won_value for deals that actually closed Won, not merely converted', function () {
+    $lead = Lead::factory()->create(['source' => LeadSource::Website, 'created_at' => now()]);
+    $this->actingAs(User::factory()->role(UserRole::Sales)->create());
+    $deal = app(ConvertLead::class)->handle($lead);
+    $deal->update(['value' => 500000]); // still stage=new, not Won yet
+
+    $stillPipeline = $this->metrics->leadSourcePerformance(now()->startOfMonth(), now()->endOfMonth());
+    expect(collect($stillPipeline['by_source'])->firstWhere('label', 'Website')['won_value'])->toBe(0);
+
+    $deal->update(['stage' => DealStage::Won->value]);
+
+    $won = $this->metrics->leadSourcePerformance(now()->startOfMonth(), now()->endOfMonth());
+    expect(collect($won['by_source'])->firstWhere('label', 'Website')['won_value'])->toBe(500000);
+});
+
+it('groups only UTM-tagged leads by campaign', function () {
+    Lead::factory()->count(2)->create([
+        'source' => LeadSource::Website,
+        'created_at' => now(),
+        'utm_source' => 'google',
+        'utm_medium' => 'cpc',
+        'utm_campaign' => 'seo-pune-2026',
+    ]);
+    Lead::factory()->create(['source' => LeadSource::Website, 'created_at' => now()]); // no UTM
+
+    $data = $this->metrics->leadSourcePerformance(now()->startOfMonth(), now()->endOfMonth());
+
+    expect($data['by_campaign'])->toHaveCount(1)
+        ->and($data['by_campaign'][0]['label'])->toBe('google / cpc / seo-pune-2026')
+        ->and($data['by_campaign'][0]['total'])->toBe(2);
+});
+
+it('averages the AI score per source, ignoring unscored leads', function () {
+    Lead::factory()->create(['source' => LeadSource::Website, 'created_at' => now(), 'ai_score' => 80]);
+    Lead::factory()->create(['source' => LeadSource::Website, 'created_at' => now(), 'ai_score' => 40]);
+    Lead::factory()->create(['source' => LeadSource::Website, 'created_at' => now(), 'ai_score' => null]);
+
+    $data = $this->metrics->leadSourcePerformance(now()->startOfMonth(), now()->endOfMonth());
+
+    expect(collect($data['by_source'])->firstWhere('label', 'Website')['avg_score'])->toBe(60);
+});
+
+it('excludes leads created outside the period', function () {
+    Lead::factory()->create(['source' => LeadSource::Website, 'created_at' => now()->subMonths(2)]);
+
+    $data = $this->metrics->leadSourcePerformance(now()->startOfMonth(), now()->endOfMonth());
+
+    expect($data['total'])->toBe(0);
+});
+
 it('lets a manager view the reports but forbids a sales rep', function () {
     $manager = User::factory()->role(UserRole::Manager)->create();
     $sales = User::factory()->role(UserRole::Sales)->create();
 
     $this->actingAs($manager)->get(route('reports.employee-performance'))->assertOk()->assertSee('Employee Performance Report');
     $this->actingAs($manager)->get(route('reports.revenue'))->assertOk()->assertSee('Revenue Report');
+    $this->actingAs($manager)->get(route('reports.lead-sources'))->assertOk()->assertSee('Lead Source Performance');
     $this->actingAs($sales)->get(route('reports.employee-performance'))->assertForbidden();
+    $this->actingAs($sales)->get(route('reports.lead-sources'))->assertForbidden();
 });
 
 it('lets accounts view revenue but not the performance report', function () {
@@ -144,4 +211,8 @@ it('exports the reports as CSV', function () {
     $rev = $this->actingAs($manager)->get(route('reports.revenue.export'));
     $rev->assertOk();
     expect($rev->headers->get('content-type'))->toContain('text/csv');
+
+    $leadSources = $this->actingAs($manager)->get(route('reports.lead-sources.export'));
+    $leadSources->assertOk();
+    expect($leadSources->headers->get('content-type'))->toContain('text/csv');
 });

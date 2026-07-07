@@ -48,6 +48,17 @@ From the **Reports** panel on the dashboard:
 - income **by month**, **by service**, and **by client**, split **recurring vs
   one-time**. Export CSV.
 
+**Lead Source Performance** — for a chosen month:
+- leads captured, converted, and conversion rate **by source** (Website,
+  WhatsApp, Referral, Cold Call, Other).
+- for website leads with UTM tracking parameters, a second table breaks the
+  same numbers down **by campaign** (e.g. "google / cpc / seo-pune-2026") —
+  this is what tells you which ad or link is actually worth the spend.
+- **Won value** per source/campaign only counts deals that actually closed
+  Won, not just leads that converted to a client and are still in the
+  pipeline. **Avg AI score** shows if one channel tends to bring in
+  higher-quality enquiries. Export CSV.
+
 **Outstanding Receivables** — what clients still owe (shared with accounts).
 
 ## Bell notifications

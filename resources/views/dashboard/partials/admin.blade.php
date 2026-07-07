@@ -106,6 +106,7 @@
         <ul class="mt-3 space-y-2 text-sm">
             <li><a href="{{ route('reports.revenue') }}" class="text-indigo-600 hover:underline">Revenue Report</a></li>
             <li><a href="{{ route('reports.employee-performance') }}" class="text-indigo-600 hover:underline">Employee Performance Report</a></li>
+            <li><a href="{{ route('reports.lead-sources') }}" class="text-indigo-600 hover:underline">Lead Source Performance</a></li>
             <li><a href="{{ route('reports.receivables') }}" class="text-indigo-600 hover:underline">Outstanding Receivables</a></li>
             @if (auth()->user()->isAdmin())
                 <li><a href="{{ route('audit-log') }}" class="text-indigo-600 hover:underline">Audit Log</a></li>
