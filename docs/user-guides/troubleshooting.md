@@ -356,6 +356,42 @@ If changed, update the Elementor webhook URL in WordPress to match (Elementor
 
 ---
 
+## 11a. Meta Lead Ads (Facebook/Instagram) not creating leads
+
+**Symptom:** Someone submits a Facebook or Instagram lead ad form but no new
+lead appears in the CRM with source "Meta Ads."
+
+**Check 1 — Is the integration even configured yet?**
+```
+cd /home/u314035009/neds-crm && grep META_ .env
+```
+If `META_APP_SECRET`, `META_WEBHOOK_VERIFY_TOKEN`, or `META_PAGE_ACCESS_TOKEN`
+is blank, this integration hasn't been set up yet — see Section 8 of the
+Admin guide. Run `php artisan config:cache` after filling these in.
+
+**Check 2 — Is the webhook subscription still active in Meta?**
+In the Meta App Dashboard → Webhooks, confirm the `leadgen` field
+subscription for the Page is still active. Meta occasionally re-verifies the
+subscription (a GET request) — if `META_WEBHOOK_VERIFY_TOKEN` on the server
+doesn't match what's registered in Meta's dashboard, the subscription can
+silently drop.
+
+**Check 3 — Has the Page access token expired?**
+Page access tokens can expire or be revoked (e.g. if the app's permissions
+were reviewed, or the token wasn't generated as a long-lived token). Check
+`storage/logs/laravel-*.log` for `Meta lead fetch failed` warnings — a 401
+status there means the token needs regenerating in the Meta App Dashboard.
+
+**Check 4 — Confirm the webhook event actually arrived**
+```
+cd /home/u314035009/neds-crm && grep "Meta lead" storage/logs/laravel-$(date +%Y-%m-%d).log
+```
+No matching lines at all (not even a warning) means Meta isn't calling the
+webhook — re-check Check 2. A warning line means the event arrived but the
+Graph API fetch failed — see Check 3.
+
+---
+
 ## 12. Database backup not running or backup email not arriving
 
 **Symptom:** No backup notification email at 2 AM, or
