@@ -108,11 +108,34 @@ class LeadCaptureRequest extends FormRequest
             }
         }
 
+        if (! $this->has('utm_source')) {
+            $v = $this->input('utm-source');
+            if ($v !== null) {
+                $merge['utm_source'] = $v;
+            }
+        }
+
+        if (! $this->has('utm_medium')) {
+            $v = $this->input('utm-medium');
+            if ($v !== null) {
+                $merge['utm_medium'] = $v;
+            }
+        }
+
+        if (! $this->has('utm_campaign')) {
+            $v = $this->input('utm-campaign');
+            if ($v !== null) {
+                $merge['utm_campaign'] = $v;
+            }
+        }
+
         // ── 2. Heuristic scan of unknown fields ─────────────────────────────
         // Fields that are either standard API fields or Elementor/form system fields.
         $knownKeys = [
             'name', 'email', 'phone', 'company', 'service', 'service_id',
             'estimated_value', 'message', 'token',
+            'utm_source', 'utm_medium', 'utm_campaign',
+            'utm-source', 'utm-medium', 'utm-campaign',
             // Elementor webhook system fields
             'form_id', 'form_name', 'referer', 'queried_id', 'post_id',
             'remote_ip', 'submitted_on',
@@ -129,6 +152,7 @@ class LeadCaptureRequest extends FormRequest
                 if (! $this->has('email') && ! isset($merge['email'])
                     && filter_var($val, FILTER_VALIDATE_EMAIL)) {
                     $merge['email'] = $val;
+
                     continue;
                 }
 
@@ -136,6 +160,7 @@ class LeadCaptureRequest extends FormRequest
                 if (! $this->has('phone') && ! isset($merge['phone'])
                     && preg_match('/^[\d\s\+\-\(\)]{7,15}$/', $val)) {
                     $merge['phone'] = $val;
+
                     continue;
                 }
 
@@ -143,6 +168,7 @@ class LeadCaptureRequest extends FormRequest
                 if (! $this->has('name') && ! isset($merge['name'])
                     && strlen($val) <= 255) {
                     $merge['name'] = $val;
+
                     continue;
                 }
             }
@@ -170,14 +196,17 @@ class LeadCaptureRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name'            => ['required', 'string', 'max:255'],
-            'company'         => ['nullable', 'string', 'max:255'],
-            'email'           => ['nullable', 'email', 'max:255'],
-            'phone'           => ['nullable', 'string', 'max:20'],
-            'service_id'      => ['nullable', Rule::exists('services', 'id')],
-            'service'         => ['nullable', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255'],
+            'company' => ['nullable', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:20'],
+            'service_id' => ['nullable', Rule::exists('services', 'id')],
+            'service' => ['nullable', 'string', 'max:255'],
             'estimated_value' => ['nullable', 'numeric', 'min:0', 'max:999999999'],
-            'message'         => ['nullable', 'string', 'max:5000'],
+            'message' => ['nullable', 'string', 'max:5000'],
+            'utm_source' => ['nullable', 'string', 'max:255'],
+            'utm_medium' => ['nullable', 'string', 'max:255'],
+            'utm_campaign' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

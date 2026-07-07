@@ -38,6 +38,43 @@ it('creates an unassigned website lead with a valid token', function () {
         ->and($lead->notes()->count())->toBe(1);
 });
 
+it('captures UTM fields when the website form sends them', function () {
+    $this->postJson('/api/leads', [
+        'name' => 'Campaign Visitor',
+        'email' => 'campaign@site.test',
+        'utm_source' => 'google',
+        'utm_medium' => 'cpc',
+        'utm_campaign' => 'seo-pune-2026',
+    ], ['Authorization' => 'Bearer secret-token'])->assertOk();
+
+    $lead = Lead::firstWhere('email', 'campaign@site.test');
+
+    expect($lead->utm_source)->toBe('google')
+        ->and($lead->utm_medium)->toBe('cpc')
+        ->and($lead->utm_campaign)->toBe('seo-pune-2026');
+});
+
+it('accepts dash-cased UTM keys as an alias', function () {
+    $this->postJson('/api/leads', [
+        'name' => 'Dash Visitor',
+        'email' => 'dash@site.test',
+        'utm-source' => 'facebook',
+    ], ['Authorization' => 'Bearer secret-token'])->assertOk();
+
+    expect(Lead::firstWhere('email', 'dash@site.test')->utm_source)->toBe('facebook');
+});
+
+it('leaves UTM fields null when the form does not send them', function () {
+    $this->postJson('/api/leads', ['name' => 'No UTM', 'email' => 'noutm@site.test'], [
+        'Authorization' => 'Bearer secret-token',
+    ])->assertOk();
+
+    $lead = Lead::firstWhere('email', 'noutm@site.test');
+    expect($lead->utm_source)->toBeNull()
+        ->and($lead->utm_medium)->toBeNull()
+        ->and($lead->utm_campaign)->toBeNull();
+});
+
 it('also accepts the X-Lead-Token header', function () {
     $this->postJson('/api/leads', ['name' => 'Hdr', 'phone' => '9999999999'], [
         'X-Lead-Token' => 'secret-token',
