@@ -92,6 +92,9 @@ return [
         'key' => env('ANTHROPIC_API_KEY'),
         'model' => env('ANTHROPIC_MODEL', 'claude-haiku-4-5-20251001'),
         'enabled' => env('AI_ENABLED', false),
+        // Lead score at/above this triggers an immediate HotLeadNotification
+        // to the owner, instead of waiting for the 9am morning digest.
+        'hot_lead_threshold' => env('AI_HOT_LEAD_THRESHOLD', 70),
     ],
 
 ];

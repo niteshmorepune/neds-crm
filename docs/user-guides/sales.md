@@ -19,9 +19,21 @@ When you log in you'll see:
    higher means more promising. Hover over it to see the one-line reason
    (e.g. "Company provided, specific service request, phone available — follow
    up promptly"). The score updates automatically whenever you edit the lead.
+   The lead page also shows the AI's estimate of their **budget**, **urgency**,
+   and whether the requested service looks like a good **fit** for them.
+
+**Score ≥ 70 is a 🔥 Hot lead** — its owner gets an immediate bell notification
+instead of waiting for the next morning digest, so you can call while the
+interest is fresh.
 
 > **Note:** leads that existed before AI was enabled show no badge until you
 > open them, make any edit (even adding a note), and save.
+
+**Auto-assignment:** if a lead comes in with no owner (e.g. from the website
+form), the CRM automatically assigns it to whichever active Sales user
+currently has the fewest open leads — so leads never sit unowned waiting for
+someone to notice them. This runs whether or not AI is enabled. You'll get the
+usual "New lead" bell notification as soon as you're assigned.
 
 **Working a lead:**
 - Open the lead to add **notes**, see the timeline, and log activity.
@@ -153,7 +165,8 @@ events. You'll be notified when:
 
 | Event | Who gets it |
 |---|---|
-| 🟢 **New lead created** | The assigned sales person — or all sales staff if the lead has no owner yet |
+| 🟢 **New lead created** | The assigned sales person — or all sales staff if the lead has no owner yet (rare now that leads auto-assign) |
+| 🔥 **Hot lead (AI score ≥ 70)** | The lead's owner, as soon as the score comes back — no need to wait for the morning digest |
 | 📄 **New quotation created** | The deal's assigned sales person |
 | 🏆 **Deal marked Won** | The deal's assigned sales person + all managers and admins |
 | 🧾 **New invoice created** | The client's assigned sales person (recurring auto-invoices are excluded to avoid noise) |

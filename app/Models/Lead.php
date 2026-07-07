@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
+use App\Enums\LeadBudgetBand;
 use App\Enums\LeadSource;
 use App\Enums\LeadStatus;
-use App\Enums\UserRole;
+use App\Enums\LeadUrgency;
 use App\Models\Concerns\LogsActivity;
 use App\Observers\LeadObserver;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
@@ -43,7 +44,10 @@ class Lead extends Model
      *
      * @var list<string>
      */
-    protected array $activityExcept = ['ai_score', 'ai_score_reason', 'ai_scored_at'];
+    protected array $activityExcept = [
+        'ai_score', 'ai_score_reason', 'ai_scored_at',
+        'ai_budget_band', 'ai_urgency', 'ai_service_fit',
+    ];
 
     protected function casts(): array
     {
@@ -55,7 +59,16 @@ class Lead extends Model
             'converted_at' => 'datetime',
             'ai_score' => 'integer',
             'ai_scored_at' => 'datetime',
+            'ai_budget_band' => LeadBudgetBand::class,
+            'ai_urgency' => LeadUrgency::class,
         ];
+    }
+
+    /** Hot leads get an immediate escalation notification instead of waiting for the digest. */
+    public function isHot(): bool
+    {
+        return $this->ai_score !== null
+            && $this->ai_score >= config('services.anthropic.hot_lead_threshold', 70);
     }
 
     public function service(): BelongsTo

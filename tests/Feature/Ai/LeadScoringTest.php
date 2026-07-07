@@ -1,18 +1,35 @@
 <?php
 
+use App\Enums\LeadBudgetBand;
+use App\Enums\LeadUrgency;
+use App\Enums\UserRole;
 use App\Jobs\ScoreLead;
 use App\Models\AiUsage;
 use App\Models\Lead;
 use App\Models\Service;
+use App\Models\User;
+use App\Notifications\HotLeadNotification;
 use App\Services\AnthropicClient;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
 
-function fakeClaude(int $score = 82, string $reason = 'Strong fit, clear budget'): void
-{
+function fakeClaude(
+    int $score = 82,
+    string $reason = 'Strong fit, clear budget',
+    ?string $budgetBand = 'high',
+    ?string $urgency = 'medium',
+    ?string $serviceFit = 'Good fit for Website Design & Development',
+): void {
     Http::fake([
         'api.anthropic.com/*' => Http::response([
-            'content' => [['type' => 'text', 'text' => json_encode(['score' => $score, 'reason' => $reason])]],
+            'content' => [['type' => 'text', 'text' => json_encode(array_filter([
+                'score' => $score,
+                'reason' => $reason,
+                'budget_band' => $budgetBand,
+                'urgency' => $urgency,
+                'service_fit' => $serviceFit,
+            ], fn ($v) => $v !== null))]],
             'usage' => ['input_tokens' => 120, 'output_tokens' => 25],
         ]),
     ]);
@@ -61,22 +78,38 @@ it('does not re-score when only a non-scoring field changes', function () {
     Queue::assertNothingPushed();
 });
 
-it('stores the score, reason and timestamp, and records usage', function () {
+it('stores the score, reason, qualification fields and timestamp, and records usage', function () {
     enableAi();
-    fakeClaude(score: 90, reason: 'Hot lead');
+    fakeClaude(score: 60, reason: 'Hot lead', budgetBand: 'high', urgency: 'medium', serviceFit: 'Solid fit');
     $service = Service::factory()->create();
     $lead = Lead::factory()->create(['service_id' => $service->id]);
 
     (new ScoreLead($lead->id))->handle(app(AnthropicClient::class));
 
     $lead->refresh();
-    expect($lead->ai_score)->toBe(90)
+    expect($lead->ai_score)->toBe(60)
         ->and($lead->ai_score_reason)->toBe('Hot lead')
-        ->and($lead->ai_scored_at)->not->toBeNull();
+        ->and($lead->ai_scored_at)->not->toBeNull()
+        ->and($lead->ai_budget_band)->toBe(LeadBudgetBand::High)
+        ->and($lead->ai_urgency)->toBe(LeadUrgency::Medium)
+        ->and($lead->ai_service_fit)->toBe('Solid fit');
 
     expect(AiUsage::where('feature', 'lead_scoring')->first())
         ->input_tokens->toBe(120)
         ->output_tokens->toBe(25);
+});
+
+it('ignores an unrecognised budget band or urgency value instead of failing the whole parse', function () {
+    enableAi();
+    fakeClaude(score: 55, budgetBand: 'astronomical', urgency: 'yesterday');
+    $lead = Lead::factory()->create();
+
+    (new ScoreLead($lead->id))->handle(app(AnthropicClient::class));
+
+    $lead->refresh();
+    expect($lead->ai_score)->toBe(55)
+        ->and($lead->ai_budget_band)->toBeNull()
+        ->and($lead->ai_urgency)->toBeNull();
 });
 
 it('clamps an out-of-range score into 0-100', function () {
@@ -120,4 +153,39 @@ it('handles the job gracefully when AI was turned off after dispatch', function 
 
     Http::assertNothingSent();
     expect($lead->refresh()->ai_score)->toBeNull();
+});
+
+it('notifies the owner immediately when a lead scores at or above the hot threshold', function () {
+    Notification::fake();
+    enableAi();
+    fakeClaude(score: 70);
+    $owner = User::factory()->role(UserRole::Sales)->create();
+    $lead = Lead::factory()->ownedBy($owner->id)->create();
+
+    (new ScoreLead($lead->id))->handle(app(AnthropicClient::class));
+
+    Notification::assertSentTo($owner, HotLeadNotification::class);
+});
+
+it('does not send a hot-lead notification for a lead below the threshold', function () {
+    Notification::fake();
+    enableAi();
+    fakeClaude(score: 69);
+    $owner = User::factory()->role(UserRole::Sales)->create();
+    $lead = Lead::factory()->ownedBy($owner->id)->create();
+
+    (new ScoreLead($lead->id))->handle(app(AnthropicClient::class));
+
+    Notification::assertNotSentTo($owner, HotLeadNotification::class);
+});
+
+it('does not send a hot-lead notification when the lead has no owner', function () {
+    Notification::fake();
+    enableAi();
+    fakeClaude(score: 95);
+    $lead = Lead::factory()->create(); // no active Sales user exists, so auto-assign is a no-op
+
+    (new ScoreLead($lead->id))->handle(app(AnthropicClient::class));
+
+    Notification::assertNothingSent();
 });

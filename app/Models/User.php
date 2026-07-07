@@ -8,6 +8,7 @@ use App\Models\Concerns\LogsActivity;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -84,6 +85,11 @@ class User extends Authenticatable
         return $this->belongsToMany(MenuItem::class)
             ->withPivot('access')
             ->withTimestamps();
+    }
+
+    public function leads(): HasMany
+    {
+        return $this->hasMany(Lead::class, 'owner_id');
     }
 
     public function isAdmin(): bool
