@@ -39,6 +39,7 @@ class Lead extends Model
         'utm_source',
         'utm_medium',
         'utm_campaign',
+        'meta_leadgen_id',
     ];
 
     /**

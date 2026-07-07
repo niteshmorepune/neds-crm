@@ -160,8 +160,11 @@ After editing either side, run `php artisan config:cache` on the CRM.
 
 **Check 3 — Is the client's phone number in the CRM?**
 The webhook matches the WhatsApp number to a CRM client via phone number. If
-the client has no phone number on their CRM record, the ticket is still created
-but marked unlinked. Add the phone number to the contact record.
+no client matches, the message creates a **lead** (source WhatsApp) instead
+of a ticket — check **Lead Generation**, not Tickets. If this is actually an
+existing client, add/fix their phone number on the client record; the next
+message from them will then create a proper linked ticket (the earlier lead
+stays as-is — convert or delete it manually).
 
 ---
 

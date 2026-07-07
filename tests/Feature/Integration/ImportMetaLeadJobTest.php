@@ -1,0 +1,144 @@
+<?php
+
+use App\Enums\LeadSource;
+use App\Enums\UserRole;
+use App\Jobs\ImportMetaLead;
+use App\Models\Lead;
+use App\Models\User;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+
+beforeEach(function () {
+    config(['services.meta.page_access_token' => 'test-page-token', 'services.meta.graph_api_version' => 'v19.0']);
+});
+
+function fakeMetaGraphResponse(array $fieldData, array $overrides = []): void
+{
+    Http::fake([
+        'graph.facebook.com/*' => Http::response(array_merge([
+            'id' => 'lg-1',
+            'ad_id' => 'ad-42',
+            'form_id' => 'form-7',
+            'created_time' => now()->toIso8601String(),
+            'field_data' => $fieldData,
+        ], $overrides)),
+    ]);
+}
+
+it('creates a lead from the fetched field data', function () {
+    fakeMetaGraphResponse([
+        ['name' => 'full_name', 'values' => ['Priya Shah']],
+        ['name' => 'email', 'values' => ['priya@shah.test']],
+        ['name' => 'phone_number', 'values' => ['9876543210']],
+        ['name' => 'company_name', 'values' => ['Shah Traders']],
+    ]);
+
+    ImportMetaLead::dispatchSync('lg-1');
+
+    $lead = Lead::where('meta_leadgen_id', 'lg-1')->first();
+    expect($lead)->not->toBeNull()
+        ->and($lead->name)->toBe('Priya Shah')
+        ->and($lead->email)->toBe('priya@shah.test')
+        ->and($lead->phone)->toBe('9876543210')
+        ->and($lead->company)->toBe('Shah Traders')
+        ->and($lead->source)->toBe(LeadSource::MetaAds)
+        ->and($lead->utm_source)->toBe('meta')
+        ->and($lead->utm_medium)->toBe('paid_social')
+        ->and($lead->utm_campaign)->toBe('ad-42');
+});
+
+it('builds the name from first_name + last_name when full_name is absent', function () {
+    fakeMetaGraphResponse([
+        ['name' => 'first_name', 'values' => ['Ravi']],
+        ['name' => 'last_name', 'values' => ['Kumar']],
+    ]);
+
+    ImportMetaLead::dispatchSync('lg-1');
+
+    expect(Lead::where('meta_leadgen_id', 'lg-1')->first()->name)->toBe('Ravi Kumar');
+});
+
+it('falls back to a generic name when nothing usable is present', function () {
+    fakeMetaGraphResponse([]);
+
+    ImportMetaLead::dispatchSync('lg-1');
+
+    expect(Lead::where('meta_leadgen_id', 'lg-1')->first()->name)->toBe('Facebook Lead');
+});
+
+it('falls back to form_id for utm_campaign when ad_id is absent', function () {
+    fakeMetaGraphResponse([], ['ad_id' => null]);
+
+    ImportMetaLead::dispatchSync('lg-1');
+
+    expect(Lead::where('meta_leadgen_id', 'lg-1')->first()->utm_campaign)->toBe('form-7');
+});
+
+it('preserves unmapped custom question answers as a note', function () {
+    fakeMetaGraphResponse([
+        ['name' => 'full_name', 'values' => ['Priya Shah']],
+        ['name' => 'what_is_your_budget', 'values' => ['50000-100000']],
+    ]);
+
+    ImportMetaLead::dispatchSync('lg-1');
+
+    $lead = Lead::where('meta_leadgen_id', 'lg-1')->first();
+    expect($lead->notes()->count())->toBe(1)
+        ->and($lead->notes()->first()->body)->toContain('what_is_your_budget: 50000-100000');
+});
+
+it('does not create a note when there are no unmapped fields', function () {
+    fakeMetaGraphResponse([['name' => 'full_name', 'values' => ['Priya Shah']]]);
+
+    ImportMetaLead::dispatchSync('lg-1');
+
+    expect(Lead::where('meta_leadgen_id', 'lg-1')->first()->notes()->count())->toBe(0);
+});
+
+it('is idempotent — does not create a second lead for an already-imported leadgen_id', function () {
+    Lead::factory()->create(['meta_leadgen_id' => 'lg-1']);
+    Http::fake();
+
+    ImportMetaLead::dispatchSync('lg-1');
+
+    Http::assertNothingSent();
+    expect(Lead::where('meta_leadgen_id', 'lg-1')->count())->toBe(1);
+});
+
+it('does nothing and logs a warning when no page access token is configured', function () {
+    config(['services.meta.page_access_token' => null]);
+    Http::fake();
+    Log::spy();
+
+    ImportMetaLead::dispatchSync('lg-1');
+
+    Http::assertNothingSent();
+    expect(Lead::where('meta_leadgen_id', 'lg-1')->exists())->toBeFalse();
+    Log::shouldHaveReceived('warning')->once();
+});
+
+it('does not create a lead when the Graph API call fails', function () {
+    Http::fake(['graph.facebook.com/*' => Http::response('invalid token', 401)]);
+
+    ImportMetaLead::dispatchSync('lg-1');
+
+    expect(Lead::where('meta_leadgen_id', 'lg-1')->exists())->toBeFalse();
+});
+
+it('does not throw when the Graph API is unreachable', function () {
+    Http::fake(['graph.facebook.com/*' => fn () => throw new ConnectionException('timed out')]);
+
+    ImportMetaLead::dispatchSync('lg-1');
+
+    expect(Lead::where('meta_leadgen_id', 'lg-1')->exists())->toBeFalse();
+});
+
+it('auto-assigns and can be scored like any other new lead', function () {
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    fakeMetaGraphResponse([['name' => 'full_name', 'values' => ['Priya Shah']]]);
+
+    ImportMetaLead::dispatchSync('lg-1');
+
+    expect(Lead::where('meta_leadgen_id', 'lg-1')->first()->owner_id)->toBe($sales->id);
+});

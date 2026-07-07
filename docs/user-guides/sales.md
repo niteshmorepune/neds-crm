@@ -46,6 +46,11 @@ being dropped. If the same unknown number messages again before you've
 converted them, the CRM adds it as a note on the same lead rather than
 creating a duplicate.
 
+**Meta Ads leads:** a submission on a Facebook or Instagram lead ad creates a
+lead automatically (source = Meta Ads). Any question on the ad form beyond
+name/email/phone/company (e.g. a custom budget question) appears as a note
+on the lead.
+
 **Automatic nurture follow-ups:** if a New lead sits with no note or logged
 call from you for **1, 3, or 7 days**, the CRM drafts a follow-up message for
 you automatically — it appears as an "✨ AI-drafted follow-up (touch N/3)"
