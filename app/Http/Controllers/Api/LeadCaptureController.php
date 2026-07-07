@@ -30,15 +30,18 @@ class LeadCaptureController extends Controller
         }
 
         $lead = Lead::create([
-            'name'            => $data['name'],
-            'company'         => $data['company'] ?? null,
-            'email'           => $data['email'] ?? null,
-            'phone'           => $data['phone'] ?? null,
-            'service_id'      => $serviceId,
+            'name' => $data['name'],
+            'company' => $data['company'] ?? null,
+            'email' => $data['email'] ?? null,
+            'phone' => $data['phone'] ?? null,
+            'service_id' => $serviceId,
             'estimated_value' => Money::toPaise($data['estimated_value'] ?? null),
-            'source'          => LeadSource::Website->value,
-            'status'          => LeadStatus::New->value,
-            'owner_id'        => null,
+            'source' => LeadSource::Website->value,
+            'status' => LeadStatus::New->value,
+            'owner_id' => null,
+            'utm_source' => $data['utm_source'] ?? null,
+            'utm_medium' => $data['utm_medium'] ?? null,
+            'utm_campaign' => $data['utm_campaign'] ?? null,
         ]);
 
         if (! empty($data['message'])) {

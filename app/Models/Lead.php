@@ -35,6 +35,10 @@ class Lead extends Model
         'converted_customer_id',
         'converted_deal_id',
         'converted_at',
+        'whatsapp_conversation_id',
+        'utm_source',
+        'utm_medium',
+        'utm_campaign',
     ];
 
     /**

@@ -35,6 +35,11 @@
                         <div><span class="text-gray-400">Email:</span> {{ $lead->email ?? '—' }}</div>
                         <div><span class="text-gray-400">Phone:</span> {{ $lead->phone ?? '—' }}</div>
                         <div><span class="text-gray-400">Source:</span> {{ $lead->source->label() }}</div>
+                        @if ($lead->utm_source || $lead->utm_medium || $lead->utm_campaign)
+                            <div><span class="text-gray-400">Campaign:</span>
+                                {{ collect([$lead->utm_source, $lead->utm_medium, $lead->utm_campaign])->filter()->implode(' / ') }}
+                            </div>
+                        @endif
                         <div><span class="text-gray-400">Service:</span> {{ $lead->service?->name ?? '—' }}</div>
                         <div><span class="text-gray-400">Est. value:</span> {{ \App\Support\Money::format($lead->estimated_value) }}</div>
                         <div><span class="text-gray-400">Owner:</span> {{ $lead->owner?->name ?? 'Unassigned' }}</div>

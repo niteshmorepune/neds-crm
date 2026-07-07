@@ -201,6 +201,13 @@ description — so it's visible in wadesk.in as well.
   webhook, which matches the phone number to a client and opens a **Ticket**
   (channel = WhatsApp) — deduplicated per wadesk.in conversation, so replies
   in the same conversation don't create new tickets.
+- **Inbound from an unknown number:** if the phone doesn't match any client,
+  the CRM now creates a **Lead** instead (source = WhatsApp) — so a genuine
+  new-business enquiry over WhatsApp is never silently dropped. It's also
+  deduplicated per conversation: later messages from the same unmatched
+  conversation are added as notes on that lead rather than creating a second
+  one. The lead is auto-assigned to a sales rep the same way any other new
+  lead is (see the AI features section).
 - **Outbound:** when a staff member replies on that ticket in the CRM (and the
   reply is **not** marked "internal note"), the CRM sends the reply back
   through wadesk.in so the customer receives it on WhatsApp — the staffer
@@ -211,9 +218,12 @@ description — so it's visible in wadesk.in as well.
   as normal.
 - Internal notes (the "internal" checkbox) are never sent to the customer —
   use these for team-only context.
-- If the client can't be matched by phone number, no ticket is created
-  (`no_customer_match`); add/fix the client's phone number in the CRM and ask
-  the customer to send another WhatsApp message.
+- If the client can't be matched by phone number, a **Lead** is created
+  instead of a ticket (see above) — check the **Lead Generation** list rather
+  than assuming the message was lost. If it's actually an existing client
+  with an out-of-date phone number, fix the number on their client record and
+  ask them to send another WhatsApp message so future replies open a proper
+  ticket.
 
 **If a customer says they didn't receive a reply:**
 - Check the ticket wasn't marked as an internal note by mistake.

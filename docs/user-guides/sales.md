@@ -30,10 +30,21 @@ interest is fresh.
 > open them, make any edit (even adding a note), and save.
 
 **Auto-assignment:** if a lead comes in with no owner (e.g. from the website
-form), the CRM automatically assigns it to whichever active Sales user
-currently has the fewest open leads — so leads never sit unowned waiting for
-someone to notice them. This runs whether or not AI is enabled. You'll get the
-usual "New lead" bell notification as soon as you're assigned.
+form or an unmatched WhatsApp number), the CRM automatically assigns it to
+whichever active Sales user currently has the fewest open leads — so leads
+never sit unowned waiting for someone to notice them. This runs whether or
+not AI is enabled. You'll get the usual "New lead" bell notification as soon
+as you're assigned.
+
+**Campaign source:** if a website lead came in through a tracked ad or link,
+the lead page shows a **Campaign** line (e.g. "google / cpc /
+seo-pune-2026") so you know which channel it came from before you call.
+
+**WhatsApp leads:** a WhatsApp message from a number that isn't an existing
+client's now creates a lead automatically (source = WhatsApp) instead of
+being dropped. If the same unknown number messages again before you've
+converted them, the CRM adds it as a note on the same lead rather than
+creating a duplicate.
 
 **Working a lead:**
 - Open the lead to add **notes**, see the timeline, and log activity.
