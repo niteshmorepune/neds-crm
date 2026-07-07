@@ -299,7 +299,7 @@ The database is **backed up automatically every night at 2 AM** (kept 14 daily +
 backup, follow `docs/backup-restore.md`.
 
 ## 12. AI features (optional)
-Eight AI helpers are built into the CRM, powered by Anthropic's Claude. They are
+Nine AI helpers are built into the CRM, powered by Anthropic's Claude. They are
 **off by default** and never take action, send, publish, or score an employee
 automatically — they only draft or summarize for a human to review.
 
@@ -323,6 +323,16 @@ the fewest open leads, so leads never sit unowned. This runs independently of
 clicked, Claude reads the lead/ticket details and history, then writes a suggested
 message. The staff member edits it and sends it themselves. Claude never sends
 anything automatically.
+
+**Automated lead nurture follow-ups** — daily at 10:30 IST, any New lead its
+owner hasn't personally added a note or logged a call on gets an AI-drafted
+follow-up at day 1 (first outreach), day 3 (gentle nudge), and day 7 (final,
+low-pressure check-in) since it came in. Each draft lands as a staff-only
+note on the lead plus a bell notification to the owner — never sent
+automatically. The system-generated note created from the original enquiry
+(website form / WhatsApp message) doesn't count as a staff touch, so a lead
+that's never actually been worked still qualifies. Skips Sundays, same as
+the stagnation alerts.
 
 **Summarize** — a button on client pages and tickets. Claude reads the full
 timeline (notes, calls, interactions) and produces a short paragraph summarising

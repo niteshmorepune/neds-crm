@@ -23,6 +23,13 @@ Schedule::command('app:send-stagnation-alerts')
     ->dailyAt('10:00')
     ->timezone('Asia/Kolkata');
 
+// AI-drafts a nurture follow-up (staff-only note) for New leads nobody has
+// personally followed up on yet, at day 1 / 3 / 7 since they enquired.
+// Idempotent per lead+touch, so a missed run just catches up the next day.
+Schedule::command('app:draft-lead-nurture-followups')
+    ->dailyAt('10:30')
+    ->timezone('Asia/Kolkata');
+
 // Billing schedule (India time): generate recurring invoices, flag overdue,
 // then send payment reminders. Recurring invoice reminders go out at 09:00 IST
 // on days 7, 5, 3, and 1 before the next billing date (alternate days in that window).

@@ -108,6 +108,46 @@ class AiAssistant
         ));
     }
 
+    /**
+     * A scheduled nurture-sequence follow-up for a lead nobody has personally
+     * followed up on yet. Unlike draftLeadFollowUp() (an on-demand button),
+     * this is written for an automated 3-touch cadence — the tone shifts by
+     * $touch so a lead that's gone quiet for a week doesn't get the same
+     * "nice to meet you" opener three times in a row.
+     */
+    public function draftLeadNurtureFollowUp(Lead $lead, int $touch): ?string
+    {
+        if (! Ai::enabled()) {
+            return null;
+        }
+
+        $lead->loadMissing('service');
+
+        $lines = [
+            'Lead: '.$lead->name.($lead->company ? ' ('.$lead->company.')' : ''),
+            'Interested in: '.($lead->service?->name ?? 'unspecified'),
+            'Source: '.$lead->source->label(),
+            'Days since they enquired: '.$lead->created_at->diffInDays(now()),
+        ];
+
+        $tone = match ($touch) {
+            1 => 'This is the FIRST outreach message to this lead — warm and welcoming, introducing yourself as following up on their enquiry.',
+            2 => 'This is a SECOND follow-up — they have not replied to the first message. Keep it a brief, friendly nudge, not pushy.',
+            default => "This is a THIRD and FINAL follow-up — they still have not replied. Keep it short and low-pressure, and give them an easy out (e.g. \"let us know if the timing isn't right\").",
+        };
+
+        $system = 'You draft short follow-up messages (under 80 words, suitable for WhatsApp or email) '
+            .'a salesperson at a digital-solutions agency in India can send to a sales lead who has not '
+            ."replied yet. {$tone} Reference what they're interested in. Do not invent prices or promises. "
+            .'Output only the message body.';
+
+        return $this->trimmed($this->client->message(
+            feature: 'draft_lead_nurture_followup',
+            prompt: implode("\n", $lines),
+            system: $system,
+        ));
+    }
+
     public function draftFestivalGreeting(Festival $festival, Project $project): ?string
     {
         if (! Ai::enabled()) {
