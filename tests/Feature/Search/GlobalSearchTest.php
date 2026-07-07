@@ -4,6 +4,7 @@ use App\Enums\UserRole;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\Lead;
+use App\Models\Ticket;
 use App\Models\User;
 use Database\Seeders\MenuItemsSeeder;
 
@@ -32,13 +33,14 @@ it('ignores a query shorter than two characters', function () {
 });
 
 it('does not search sections the user cannot access', function () {
-    // Sales has no Invoices access, so a matching invoice number must not show.
-    $sales = User::factory()->role(UserRole::Sales)->create();
+    // Support has no Invoices access, so a matching invoice number must not
+    // show — but Support does have Tickets access, so a matching ticket should.
+    $support = User::factory()->role(UserRole::Support)->create();
     Invoice::factory()->create(['invoice_number' => 'INV-QUASAR-1']);
-    Lead::factory()->ownedBy($sales->id)->create(['name' => 'Quasar prospect']);
+    Ticket::factory()->create(['subject' => 'Quasar login issue']);
 
-    $this->actingAs($sales)->get(route('search', ['q' => 'Quasar']))->assertOk()
-        ->assertSee('Quasar prospect')
+    $this->actingAs($support)->get(route('search', ['q' => 'Quasar']))->assertOk()
+        ->assertSee('Quasar login issue')
         ->assertDontSee('INV-QUASAR-1');
 });
 

@@ -49,6 +49,7 @@ class CustomerStoreRequest extends FormRequest
             'tags.*' => ['string', 'max:50'],
             'owner_id' => ['nullable', Rule::exists('users', 'id')],
             'status' => ['required', Rule::enum(CustomerStatus::class)],
+            'referring_partner_id' => ['nullable', Rule::exists('partners', 'id')],
         ];
     }
 

@@ -117,6 +117,19 @@
         <x-input-error :messages="$errors->get('owner_id')" class="mt-1" />
     </div>
 
+    <div>
+        <x-input-label for="referring_partner_id" value="Referred by (agency)" />
+        <select id="referring_partner_id" name="referring_partner_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+            <option value="">—</option>
+            @foreach ($partners as $partner)
+                <option value="{{ $partner->id }}" @selected((string) old('referring_partner_id', $customer->referring_partner_id) === (string) $partner->id)>
+                    {{ $partner->name }}
+                </option>
+            @endforeach
+        </select>
+        <x-input-error :messages="$errors->get('referring_partner_id')" class="mt-1" />
+    </div>
+
     <div class="md:col-span-2">
         <x-input-label for="tags" value="Tags (comma-separated)" />
         <x-text-input id="tags" name="tags" type="text" class="mt-1 block w-full"

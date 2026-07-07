@@ -15,10 +15,10 @@ beforeEach(function () {
     $this->seed(MenuItemsSeeder::class);
 
     config([
-        'services.drishti.base_url'    => 'https://nedsdrishti.test',
+        'services.drishti.base_url' => 'https://nedsdrishti.test',
         'services.drishti.service_key' => 'drishti-secret',
-        'services.smdost.base_url'     => 'https://smdost.test',
-        'services.smdost.service_key'  => 'smdost-secret',
+        'services.smdost.base_url' => 'https://smdost.test',
+        'services.smdost.service_key' => 'smdost-secret',
     ]);
 });
 
@@ -63,8 +63,8 @@ it('does not dispatch when an unrelated deal field changes', function () {
 it('calls Drishti and SMDost and stores returned IDs on the customer', function () {
     Http::fake([
         'nedsdrishti.test/api/clients' => Http::response(['data' => ['id' => 'drishti-abc-123']], 201),
-        'nedsdrishti.test/api/users'   => Http::response(['data' => ['id' => 'drishti-user-1']], 201),
-        'smdost.test/api/clients'      => Http::response(['id' => 'smdost-xyz-789'], 201),
+        'nedsdrishti.test/api/users' => Http::response(['data' => ['id' => 'drishti-user-1']], 201),
+        'smdost.test/api/clients' => Http::response(['id' => 'smdost-xyz-789'], 201),
     ]);
 
     $customer = Customer::factory()->create(['website' => 'https://example.com']);
@@ -80,25 +80,25 @@ it('calls Drishti and SMDost and stores returned IDs on the customer', function 
 it('sends the correct payload to Drishti', function () {
     Http::fake([
         'nedsdrishti.test/api/clients' => Http::response(['data' => ['id' => 'drishti-1']], 201),
-        'nedsdrishti.test/api/users'   => Http::response(['data' => ['id' => 'u1']], 201),
-        'smdost.test/api/clients'      => Http::response(['id' => 'smd-1'], 201),
+        'nedsdrishti.test/api/users' => Http::response(['data' => ['id' => 'u1']], 201),
+        'smdost.test/api/clients' => Http::response(['id' => 'smd-1'], 201),
     ]);
 
-    $service  = Service::factory()->create(['name' => 'SEO']);
+    $service = Service::factory()->create(['name' => 'SEO']);
     $customer = Customer::factory()->create([
         'company_name' => 'Acme Pvt Ltd',
-        'website'      => 'https://acme.co.in',
+        'website' => 'https://acme.co.in',
     ]);
     Contact::factory()->create([
         'customer_id' => $customer->id,
-        'is_primary'  => true,
-        'name'        => 'Ravi Kumar',
-        'email'       => 'ravi@acme.co.in',
+        'is_primary' => true,
+        'name' => 'Ravi Kumar',
+        'email' => 'ravi@acme.co.in',
     ]);
     Deal::factory()->create([
         'customer_id' => $customer->id,
-        'service_id'  => $service->id,
-        'stage'       => DealStage::Won,
+        'service_id' => $service->id,
+        'stage' => DealStage::Won,
     ]);
 
     (new ProvisionClientExternallyJob($customer->id))->handle();
@@ -115,13 +115,13 @@ it('sends the correct payload to Drishti', function () {
 it('sends the correct payload to SMDost', function () {
     Http::fake([
         'nedsdrishti.test/api/clients' => Http::response(['data' => ['id' => 'drishti-1']], 201),
-        'nedsdrishti.test/api/users'   => Http::response(['data' => ['id' => 'u1']], 201),
-        'smdost.test/api/clients'      => Http::response(['id' => 'smd-1'], 201),
+        'nedsdrishti.test/api/users' => Http::response(['data' => ['id' => 'u1']], 201),
+        'smdost.test/api/clients' => Http::response(['id' => 'smd-1'], 201),
     ]);
 
     $customer = Customer::factory()->create([
         'company_name' => 'Bright Digital',
-        'website'      => 'https://brightdigital.in',
+        'website' => 'https://brightdigital.in',
     ]);
 
     (new ProvisionClientExternallyJob($customer->id))->handle();
@@ -136,8 +136,8 @@ it('sends the correct payload to SMDost', function () {
 it('forwards the drishti client id to SMDost so content can be pushed directly', function () {
     Http::fake([
         'nedsdrishti.test/api/clients' => Http::response(['data' => ['id' => 'drishti-abc']], 201),
-        'nedsdrishti.test/api/users'   => Http::response(['data' => ['id' => 'u1']], 201),
-        'smdost.test/api/clients'      => Http::response(['id' => 'smd-1'], 201),
+        'nedsdrishti.test/api/users' => Http::response(['data' => ['id' => 'u1']], 201),
+        'smdost.test/api/clients' => Http::response(['id' => 'smd-1'], 201),
     ]);
 
     $customer = Customer::factory()->create();
@@ -153,7 +153,7 @@ it('forwards the drishti client id to SMDost so content can be pushed directly',
 it('omits drishtiClientId from SMDost payload when Drishti provisioning failed', function () {
     Http::fake([
         'nedsdrishti.test/api/clients' => Http::response('error', 503),
-        'smdost.test/api/clients'      => Http::response(['id' => 'smd-1'], 201),
+        'smdost.test/api/clients' => Http::response(['id' => 'smd-1'], 201),
     ]);
 
     $customer = Customer::factory()->create();
@@ -169,8 +169,8 @@ it('omits drishtiClientId from SMDost payload when Drishti provisioning failed',
 it('writes an activity log entry after successful provisioning', function () {
     Http::fake([
         'nedsdrishti.test/api/clients' => Http::response(['data' => ['id' => 'drishti-1']], 201),
-        'nedsdrishti.test/api/users'   => Http::response(['data' => ['id' => 'u1']], 201),
-        'smdost.test/api/clients'      => Http::response(['id' => 'smd-1'], 201),
+        'nedsdrishti.test/api/users' => Http::response(['data' => ['id' => 'u1']], 201),
+        'smdost.test/api/clients' => Http::response(['id' => 'smd-1'], 201),
     ]);
 
     $customer = Customer::factory()->create();
@@ -194,13 +194,13 @@ it('writes an activity log entry after successful provisioning', function () {
 it('does not throw when Drishti returns a 5xx error', function () {
     Http::fake([
         'nedsdrishti.test/api/clients' => Http::response('error', 503),
-        'smdost.test/api/clients'      => Http::response(['id' => 'smd-1'], 201),
+        'smdost.test/api/clients' => Http::response(['id' => 'smd-1'], 201),
     ]);
 
     $customer = Customer::factory()->create();
 
     expect(fn () => (new ProvisionClientExternallyJob($customer->id))->handle())
-        ->not->toThrow(\Throwable::class);
+        ->not->toThrow(Throwable::class);
 
     // SMDost should still have been provisioned.
     expect($customer->fresh()->smdost_client_id)->toBe('smd-1');
@@ -210,14 +210,14 @@ it('does not throw when Drishti returns a 5xx error', function () {
 it('does not throw when SMDost returns a 5xx error', function () {
     Http::fake([
         'nedsdrishti.test/api/clients' => Http::response(['data' => ['id' => 'drishti-1']], 201),
-        'nedsdrishti.test/api/users'   => Http::response(['data' => ['id' => 'u1']], 201),
-        'smdost.test/api/clients'      => Http::response('error', 503),
+        'nedsdrishti.test/api/users' => Http::response(['data' => ['id' => 'u1']], 201),
+        'smdost.test/api/clients' => Http::response('error', 503),
     ]);
 
     $customer = Customer::factory()->create();
 
     expect(fn () => (new ProvisionClientExternallyJob($customer->id))->handle())
-        ->not->toThrow(\Throwable::class);
+        ->not->toThrow(Throwable::class);
 
     expect($customer->fresh()->drishti_client_id)->toBe('drishti-1');
     expect($customer->fresh()->smdost_client_id)->toBeNull();
@@ -226,13 +226,13 @@ it('does not throw when SMDost returns a 5xx error', function () {
 it('does not throw when both external services are unreachable', function () {
     Http::fake([
         'nedsdrishti.test/*' => Http::response('', 503),
-        'smdost.test/*'      => Http::response('', 503),
+        'smdost.test/*' => Http::response('', 503),
     ]);
 
     $customer = Customer::factory()->create();
 
     expect(fn () => (new ProvisionClientExternallyJob($customer->id))->handle())
-        ->not->toThrow(\Throwable::class);
+        ->not->toThrow(Throwable::class);
 
     expect($customer->fresh()->drishti_client_id)->toBeNull()
         ->and($customer->fresh()->smdost_client_id)->toBeNull();
@@ -256,7 +256,7 @@ it('exits silently when the customer no longer exists', function () {
     Http::fake();
 
     expect(fn () => (new ProvisionClientExternallyJob(99999))->handle())
-        ->not->toThrow(\Throwable::class);
+        ->not->toThrow(Throwable::class);
 
     Http::assertNothingSent();
 });
@@ -264,7 +264,7 @@ it('exits silently when the customer no longer exists', function () {
 it('does not call external apps when service keys are not configured', function () {
     config([
         'services.drishti.service_key' => null,
-        'services.smdost.service_key'  => null,
+        'services.smdost.service_key' => null,
     ]);
     Http::fake();
 
@@ -278,16 +278,15 @@ it('does not call external apps when service keys are not configured', function 
 it('derives the domain from website URL, stripping www', function () {
     Http::fake([
         'nedsdrishti.test/api/clients' => Http::response(['data' => ['id' => 'drishti-1']], 201),
-        'nedsdrishti.test/api/users'   => Http::response(['data' => ['id' => 'u1']], 201),
-        'smdost.test/api/clients'      => Http::response(['id' => 'smd-1'], 201),
+        'nedsdrishti.test/api/users' => Http::response(['data' => ['id' => 'u1']], 201),
+        'smdost.test/api/clients' => Http::response(['id' => 'smd-1'], 201),
     ]);
 
     $customer = Customer::factory()->create(['website' => 'https://www.mybusiness.in/home']);
 
     (new ProvisionClientExternallyJob($customer->id))->handle();
 
-    Http::assertSent(fn ($req) =>
-        str_contains($req->url(), 'nedsdrishti.test/api/clients') &&
+    Http::assertSent(fn ($req) => str_contains($req->url(), 'nedsdrishti.test/api/clients') &&
         $req->data()['domain'] === 'mybusiness.in'
     );
 });
@@ -295,16 +294,58 @@ it('derives the domain from website URL, stripping www', function () {
 it('falls back to email domain when website is blank', function () {
     Http::fake([
         'nedsdrishti.test/api/clients' => Http::response(['data' => ['id' => 'd1']], 201),
-        'nedsdrishti.test/api/users'   => Http::response(['data' => ['id' => 'u1']], 201),
-        'smdost.test/api/clients'      => Http::response(['id' => 's1'], 201),
+        'nedsdrishti.test/api/users' => Http::response(['data' => ['id' => 'u1']], 201),
+        'smdost.test/api/clients' => Http::response(['id' => 's1'], 201),
     ]);
 
     $customer = Customer::factory()->create(['website' => null, 'email' => 'hello@startup.io']);
 
     (new ProvisionClientExternallyJob($customer->id))->handle();
 
-    Http::assertSent(fn ($req) =>
-        str_contains($req->url(), 'nedsdrishti.test/api/clients') &&
+    Http::assertSent(fn ($req) => str_contains($req->url(), 'nedsdrishti.test/api/clients') &&
         $req->data()['domain'] === 'startup.io'
     );
+});
+
+it('does not use a freemail domain as the client identity, since multiple clients would collide on it', function () {
+    Http::fake([
+        'nedsdrishti.test/api/clients' => Http::response(['data' => ['id' => 'd1']], 201),
+        'nedsdrishti.test/api/users' => Http::response(['data' => ['id' => 'u1']], 201),
+        'smdost.test/api/clients' => Http::response(['id' => 's1'], 201),
+    ]);
+
+    $customer = Customer::factory()->create([
+        'company_name' => 'MEnterprises',
+        'website' => null,
+        'email' => 'someone@gmail.com',
+    ]);
+
+    (new ProvisionClientExternallyJob($customer->id))->handle();
+
+    Http::assertSent(fn ($req) => str_contains($req->url(), 'nedsdrishti.test/api/clients') &&
+        $req->data()['domain'] === 'menterprises-'.$customer->id.'.local'
+    );
+});
+
+it('gives two different freemail-email clients different synthesized domains', function () {
+    Http::fake([
+        'nedsdrishti.test/api/clients' => Http::response(['data' => ['id' => 'd1']], 201),
+        'nedsdrishti.test/api/users' => Http::response(['data' => ['id' => 'u1']], 201),
+        'smdost.test/api/clients' => Http::response(['id' => 's1'], 201),
+    ]);
+
+    $a = Customer::factory()->create(['company_name' => 'Alpha Co', 'website' => null, 'email' => 'a@gmail.com']);
+    $b = Customer::factory()->create(['company_name' => 'Beta Co', 'website' => null, 'email' => 'b@gmail.com']);
+
+    (new ProvisionClientExternallyJob($a->id))->handle();
+    (new ProvisionClientExternallyJob($b->id))->handle();
+
+    $domains = collect(Http::recorded())
+        ->map(fn ($pair) => $pair[0])
+        ->filter(fn ($req) => str_contains($req->url(), 'nedsdrishti.test/api/clients'))
+        ->map(fn ($req) => $req->data()['domain'])
+        ->values()
+        ->all();
+
+    expect($domains)->toHaveCount(2)->and($domains[0])->not->toBe($domains[1]);
 });

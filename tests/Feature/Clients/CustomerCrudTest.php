@@ -4,6 +4,7 @@ use App\Enums\CustomerStatus;
 use App\Enums\UserRole;
 use App\Models\Customer;
 use App\Models\Deal;
+use App\Models\Partner;
 use App\Models\Ticket;
 use App\Models\User;
 use Database\Seeders\MenuItemsSeeder;
@@ -32,6 +33,36 @@ it('creates a client with valid data and derives the state name', function () {
         ->and($customer->state)->toBe('Maharashtra')
         ->and($customer->state_code)->toBe('27')
         ->and($customer->tags)->toBe(['seo', 'retainer']);
+});
+
+it('records the referring partner on a client that was directly imported (no lead/deal history)', function () {
+    $partner = Partner::factory()->create(['name' => 'Referral Agency Co']);
+    $client = Customer::factory()->create(['referring_partner_id' => null]);
+
+    $this->actingAs($this->admin)
+        ->put(route('clients.update', $client), [
+            'company_name' => $client->company_name,
+            'country' => 'India',
+            'status' => CustomerStatus::Active->value,
+            'referring_partner_id' => $partner->id,
+        ])
+        ->assertRedirect();
+
+    expect($client->fresh()->referring_partner_id)->toBe($partner->id)
+        ->and($client->fresh()->referringPartner->name)->toBe('Referral Agency Co')
+        ->and($partner->referredCustomers()->pluck('id'))->toContain($client->id);
+});
+
+it('filters the clients list by referring partner', function () {
+    $partnerA = Partner::factory()->create();
+    $partnerB = Partner::factory()->create();
+    $viaA = Customer::factory()->create(['referring_partner_id' => $partnerA->id]);
+    $viaB = Customer::factory()->create(['referring_partner_id' => $partnerB->id]);
+
+    $response = $this->actingAs($this->admin)
+        ->get(route('clients.index', ['referring_partner_id' => $partnerA->id, 'status' => 'all']));
+
+    $response->assertOk()->assertSee($viaA->company_name)->assertDontSee($viaB->company_name);
 });
 
 it('rejects an invalid GSTIN', function () {

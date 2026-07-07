@@ -3,10 +3,12 @@
 use App\Enums\InvoiceStatus;
 use App\Enums\UserRole;
 use App\Livewire\InvoiceBuilder;
+use App\Mail\InvoiceIssued;
 use App\Models\Invoice;
 use App\Models\MenuItem;
 use App\Models\QuotationMilestone;
 use App\Models\User;
+use App\Services\MenuResolver;
 use Database\Seeders\MenuItemsSeeder;
 use Livewire\Livewire;
 
@@ -77,33 +79,39 @@ it('renders invoice index, show and the receivables report', function () {
     $this->actingAs($this->accounts)->get(route('reports.receivables'))->assertOk()->assertSee('Outstanding');
 });
 
-it('restricts invoices to the accounts team', function () {
-    expect(User::factory()->role(UserRole::Sales)->create()->can('viewAny', Invoice::class))->toBeFalse()
+it('restricts invoices to the accounts team plus sales (read-only), blocking other roles', function () {
+    expect(User::factory()->role(UserRole::Sales)->create()->can('viewAny', Invoice::class))->toBeTrue()
         ->and(User::factory()->role(UserRole::Support)->create()->can('viewAny', Invoice::class))->toBeFalse()
         ->and($this->accounts->can('viewAny', Invoice::class))->toBeTrue();
 
-    // Sales is also blocked at the route by menu.access:invoices.
-    $this->actingAs(User::factory()->role(UserRole::Sales)->create())
+    // Support is blocked at the route by menu.access:invoices (no default grant).
+    $this->actingAs(User::factory()->role(UserRole::Support)->create())
         ->get(route('invoices.index'))->assertForbidden();
 });
 
-it('grants a sales user read-only invoice access once their role is added via the Menu Controller', function () {
+it('gives sales read-only invoice access by default, but mutating actions stay accounts-team-only', function () {
     $sales = User::factory()->role(UserRole::Sales)->create();
     $invoice = invoiceWithLine();
-
-    expect($sales->can('viewAny', Invoice::class))->toBeFalse();
-    $this->actingAs($sales)->get(route('invoices.index'))->assertForbidden();
-
-    MenuItem::where('key', 'invoices')->firstOrFail()->roleAssignments()->create(['role' => UserRole::Sales]);
-    app(\App\Services\MenuResolver::class)->flush();
 
     expect($sales->can('viewAny', Invoice::class))->toBeTrue();
     $this->actingAs($sales)->get(route('invoices.index'))->assertOk();
 
-    // Mutating actions stay accounts-team-only even with the menu grant.
     expect($sales->can('update', $invoice))->toBeFalse()
         ->and($sales->can('delete', $invoice))->toBeFalse()
         ->and($sales->can('recordPayment', $invoice))->toBeFalse();
+});
+
+it('grants a support user read-only invoice access once their role is added via the Menu Controller', function () {
+    $support = User::factory()->role(UserRole::Support)->create();
+
+    expect($support->can('viewAny', Invoice::class))->toBeFalse();
+    $this->actingAs($support)->get(route('invoices.index'))->assertForbidden();
+
+    MenuItem::where('key', 'invoices')->firstOrFail()->roleAssignments()->create(['role' => UserRole::Support]);
+    app(MenuResolver::class)->flush();
+
+    expect($support->can('viewAny', Invoice::class))->toBeTrue();
+    $this->actingAs($support)->get(route('invoices.index'))->assertOk();
 });
 
 it('deletes a draft invoice but blocks deleting one with a payment', function () {
@@ -152,6 +160,6 @@ it('includes milestone installment details in the invoice email', function () {
         'due_date' => now()->toDateString(),
     ]);
 
-    $mailable = new App\Mail\InvoiceIssued($invoice);
+    $mailable = new InvoiceIssued($invoice);
     $mailable->assertSeeInHtml('Advance');
 });

@@ -37,7 +37,7 @@ it('hides items a sales user has no access to', function () {
     $response->assertSee('Lead Generation');
     $response->assertSee('Clients');
 
-    // ...but not admin/accounts-only items.
+    // ...but not admin/manager-only items.
     $response->assertDontSee('Menu Controller');
-    $response->assertDontSee('Invoices');
+    $response->assertDontSee('Partners');
 });

@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Enums\TaskStatus;
+use App\Enums\UserRole;
 use App\Models\Project;
 use App\Models\Task;
 use App\Notifications\TaskAssigned;
@@ -14,8 +15,9 @@ use Illuminate\Queue\SerializesModels;
 
 /**
  * Creates the one-time onboarding checklist for a newly created project,
- * matched by service, assigned to the project's lead (or owner as
- * fallback). Dispatched from Project::booted()'s created hook — by the time
+ * matched by service, assigned to a Support-team project assignee (falling
+ * back to the project's lead, then the owner). Dispatched from
+ * Project::booted()'s created hook — by the time
  * a queued job actually runs, assignees()->sync() (called right after
  * Project::create() in both ProjectController::store() and
  * CreateProjectFromDeal) will already have committed, so re-querying the
@@ -168,7 +170,12 @@ class CreateOnboardingTasks implements ShouldQueue
         }
 
         $serviceName = $project->service?->name ?? '';
-        $assignee = $project->assignees->firstWhere('pivot.role', 'lead') ?? $project->owner;
+        // Prefer a Support-team project assignee (owner request 2026-07-07:
+        // route auto-generated tasks to Support), then the pivot-role=lead
+        // assignee, then the project owner.
+        $assignee = $project->assignees->first(fn ($u) => $u->role === UserRole::Support)
+            ?? $project->assignees->firstWhere('pivot.role', 'lead')
+            ?? $project->owner;
 
         if (! $assignee) {
             return;

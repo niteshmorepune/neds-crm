@@ -87,6 +87,21 @@ it('falls back to the project owner when no lead assignee is set', function () {
     expect($task?->assignee_id)->toBe($owner->id);
 });
 
+it('prefers a Support-role project assignee over a non-Support pivot-role=lead assignee', function () {
+    $owner = User::factory()->role(UserRole::Sales)->create();
+    $salesLead = User::factory()->role(UserRole::Sales)->create();
+    $support = User::factory()->role(UserRole::Support)->create();
+    $service = Service::factory()->create(['name' => 'SEO']);
+    $project = Project::factory()->create(['service_id' => $service->id, 'owner_id' => $owner->id, 'status' => ProjectStatus::Active]);
+    $project->assignees()->attach($salesLead->id, ['role' => 'lead']);
+    $project->assignees()->attach($support->id, ['role' => 'member']);
+
+    $this->artisan('app:dispatch-scheduled-tasks', ['--date' => '2026-07-06'])->assertSuccessful(); // Monday
+
+    $task = Task::where('project_id', $project->id)->where('title', 'Technical SEO review')->first();
+    expect($task?->assignee_id)->toBe($support->id);
+});
+
 // ── Bell notification ─────────────────────────────────────────────────────────
 
 it('fires a TaskAssigned in-app notification for each created task', function () {

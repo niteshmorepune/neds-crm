@@ -13,6 +13,16 @@ beforeEach(function () {
     $this->admin = User::factory()->role(UserRole::Admin)->create();
 });
 
+it('renders a distinct color per deal stage column', function () {
+    Livewire::actingAs($this->admin)->test(DealsBoard::class)
+        ->assertSee('border-t-slate-400', false)
+        ->assertSee('border-t-blue-400', false)
+        ->assertSee('border-t-purple-400', false)
+        ->assertSee('border-t-amber-400', false)
+        ->assertSee('border-t-green-400', false)
+        ->assertSee('border-t-red-400', false);
+});
+
 it('moves a deal to a new stage from the board', function () {
     $deal = Deal::factory()->stage(DealStage::New)->create();
 

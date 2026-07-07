@@ -32,6 +32,15 @@
                     @endforeach
                 </select>
 
+                <select name="referring_partner_id" class="rounded-md border-gray-300 text-sm shadow-sm">
+                    <option value="">All referring partners</option>
+                    @foreach ($partners as $partner)
+                        <option value="{{ $partner->id }}" @selected((string) ($filters['referring_partner_id'] ?? '') === (string) $partner->id)>
+                            {{ $partner->name }}
+                        </option>
+                    @endforeach
+                </select>
+
                 <button type="submit" class="rounded-md bg-gray-800 px-3 py-2 text-sm font-medium text-white hover:bg-gray-700">
                     Filter
                 </button>

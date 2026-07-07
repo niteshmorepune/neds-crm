@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Enums\ProjectStatus;
 use App\Enums\TaskStatus;
+use App\Enums\UserRole;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\User;
@@ -322,7 +323,15 @@ class DispatchScheduledTasks extends Command
 
     private function resolveAssignee(Project $project): ?User
     {
-        // Prefer the team member with pivot role = 'lead'; fall back to project owner.
+        // Prefer a Support-team project assignee (owner request 2026-07-07:
+        // route auto-generated tasks to Support). Falls back to the team
+        // member with pivot role = 'lead', then the project owner, when no
+        // Support assignee exists on the project.
+        $support = $project->assignees->first(fn (User $u) => $u->role === UserRole::Support);
+        if ($support) {
+            return $support;
+        }
+
         $lead = $project->assignees->firstWhere('pivot.role', 'lead');
 
         return $lead ?? $project->owner;

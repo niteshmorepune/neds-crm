@@ -64,13 +64,13 @@ class CustomerPolicy
     }
 
     /**
-     * Manage nested resources (contacts): Admin/Manager full access;
-     * Sales only for their own/unassigned clients. Support and Accounts
-     * can view contacts but not add/edit/delete them.
+     * Manage nested resources (contacts): Admin/Manager/Support full access;
+     * Sales only for their own/unassigned clients. Accounts can view contacts
+     * but not add/edit/delete them.
      */
     public function manage(User $user, Customer $customer): bool
     {
-        if ($user->hasRole(UserRole::Admin, UserRole::Manager)) {
+        if ($user->hasRole(UserRole::Admin, UserRole::Manager, UserRole::Support)) {
             return true;
         }
 

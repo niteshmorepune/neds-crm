@@ -21,20 +21,20 @@ it('is reachable only by an admin', function () {
 });
 
 it('toggling a role default grants and revokes actual route access', function () {
-    $sales = User::factory()->role(UserRole::Sales)->create();
-    $item = MenuItem::where('key', 'invoices')->firstOrFail(); // sales has no invoices access by default
+    $support = User::factory()->role(UserRole::Support)->create();
+    $item = MenuItem::where('key', 'invoices')->firstOrFail(); // support has no invoices access by default
 
-    expect(app(MenuResolver::class)->canAccess($sales, 'invoices'))->toBeFalse();
-
-    Livewire::actingAs($this->admin)->test(MenuManager::class)
-        ->call('toggleRole', $item->id, UserRole::Sales->value);
-
-    expect(app(MenuResolver::class)->canAccess($sales->fresh(), 'invoices'))->toBeTrue();
+    expect(app(MenuResolver::class)->canAccess($support, 'invoices'))->toBeFalse();
 
     Livewire::actingAs($this->admin)->test(MenuManager::class)
-        ->call('toggleRole', $item->id, UserRole::Sales->value);
+        ->call('toggleRole', $item->id, UserRole::Support->value);
 
-    expect(app(MenuResolver::class)->canAccess($sales->fresh(), 'invoices'))->toBeFalse();
+    expect(app(MenuResolver::class)->canAccess($support->fresh(), 'invoices'))->toBeTrue();
+
+    Livewire::actingAs($this->admin)->test(MenuManager::class)
+        ->call('toggleRole', $item->id, UserRole::Support->value);
+
+    expect(app(MenuResolver::class)->canAccess($support->fresh(), 'invoices'))->toBeFalse();
 });
 
 it('a per-user override hides a sidebar item without removing access', function () {

@@ -62,7 +62,8 @@ it('shows the accounts panel to an accounts user', function () {
     $accounts = User::factory()->role(UserRole::Accounts)->create();
 
     $this->actingAs($accounts)->get(route('dashboard'))->assertOk()
-        ->assertSee('Outstanding receivables');
+        ->assertSee('Outstanding receivables')
+        ->assertSee('Revenue report');
 });
 
 it('shows the support panel to a support user', function () {
