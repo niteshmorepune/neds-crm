@@ -46,6 +46,14 @@ being dropped. If the same unknown number messages again before you've
 converted them, the CRM adds it as a note on the same lead rather than
 creating a duplicate.
 
+**Automatic nurture follow-ups:** if a New lead sits with no note or logged
+call from you for **1, 3, or 7 days**, the CRM drafts a follow-up message for
+you automatically — it appears as an "✨ AI-drafted follow-up (touch N/3)"
+note on the lead, and you get a bell notification. Copy it into WhatsApp or
+email (editing as needed) and send it yourself — nothing is ever sent
+automatically. The moment you add your own note or log a call on a lead, the
+sequence stops (the CRM assumes you've taken it from here).
+
 **Working a lead:**
 - Open the lead to add **notes**, see the timeline, and log activity.
 - **Log a call** (top bar or the lead page) after you phone them — record the
@@ -178,6 +186,7 @@ events. You'll be notified when:
 |---|---|
 | 🟢 **New lead created** | The assigned sales person — or all sales staff if the lead has no owner yet (rare now that leads auto-assign) |
 | 🔥 **Hot lead (AI score ≥ 70)** | The lead's owner, as soon as the score comes back — no need to wait for the morning digest |
+| ✨ **Nurture follow-up drafted** | The lead's owner, when a New lead has gone 1/3/7 days with no note or call from you |
 | 📄 **New quotation created** | The deal's assigned sales person |
 | 🏆 **Deal marked Won** | The deal's assigned sales person + all managers and admins |
 | 🧾 **New invoice created** | The client's assigned sales person (recurring auto-invoices are excluded to avoid noise) |

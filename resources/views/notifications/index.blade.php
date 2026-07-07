@@ -39,6 +39,7 @@
                                 'leave_request_submitted', 'leave_request_reviewed' => '🌴',
                                 'festival_greeting_drafted'   => '🎉',
                                 'monthly_wins_note_drafted'   => '📈',
+                                'lead_nurture_drafted'        => '✨',
                                 default                       => '🔔',
                             })
                             <p class="text-sm font-medium text-gray-900">
