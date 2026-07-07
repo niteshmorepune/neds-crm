@@ -173,11 +173,13 @@ messages your WhatsApp support number with a **new conversation** (or reopens a
 resolved one), a support ticket is automatically created in the CRM.
 
 - The ticket appears with a green **WhatsApp** badge on the Tickets list.
-- If the client's phone number matches an existing client record, the ticket is
-  linked to them. If no match is found, the ticket is still created (staff can
-  link it to a client manually).
-- Each conversation creates **one ticket** — subsequent messages in the same
-  conversation don't create duplicates.
+- If the client's phone number matches an existing client record, a **ticket**
+  is created and linked to them. If no match is found, a **lead** is created
+  instead (source WhatsApp) — check **Lead Generation**, not Tickets, for
+  enquiries from numbers that aren't clients yet.
+- Each conversation creates **one ticket** (or one lead) — subsequent
+  messages in the same conversation don't create duplicates; for a lead,
+  later messages are added as notes on it instead.
 - Staff reply to the client from **wadesk.in** directly. Replies can also be
   logged as ticket notes in the CRM to keep the record complete.
 
@@ -259,21 +261,42 @@ verifying the server `.env` keys (`DRISHTI_SERVICE_KEY`, `SMDOST_SERVICE_KEY`,
 `PORTAL_SSO_SECRET`) and running `php artisan config:cache`. See the
 [Integrations guide](integrations.md) for step-by-step troubleshooting.
 
-## 8. Website lead capture
-The **niranjanenterprises.com** contact form automatically creates a lead in the
-CRM whenever someone submits it. No manual action is needed.
+## 8. Lead capture channels
+Leads flow into the CRM automatically from three channels — no manual entry
+needed for any of them:
 
-- New leads land in **Lead Generation** with source **Website** and status **New**,
-  unassigned.
-- Assign them to a sales person as soon as possible so the enquiry doesn't sit
-  cold.
-- The message the visitor typed appears in the lead's **Notes** tab.
-- Service and company fields are captured when the visitor fills them in.
+- **Website** — the **niranjanenterprises.com** contact form creates a lead
+  on every submission. The message the visitor typed appears in the lead's
+  **Notes** tab; service and company fields are captured when filled in. If
+  the form was built with hidden UTM fields, the lead's **Campaign** line
+  shows which ad/link it came from (see the Lead Source Performance report
+  in the manager guide). Configured via `LEAD_CAPTURE_TOKEN` in `.env` — if
+  the form stops creating leads, check it matches the Elementor webhook URL.
+- **WhatsApp** — a message from a number that isn't an existing client's
+  creates a lead (source WhatsApp) instead of a ticket — see Section 5.
+- **Meta Lead Ads** (Facebook/Instagram) — a lead form submission on a Meta
+  ad creates a lead (source Meta Ads) via a webhook. Requires a Facebook
+  Developer App, a registered webhook subscription, and a Page access
+  token — **not configured yet**; see below to set it up.
 
-This integration is configured once on the server (a secret token in `.env`).
-You don't need to touch anything — if the contact form stops creating leads,
-check that the server's `LEAD_CAPTURE_TOKEN` matches what's configured in the
-Elementor webhook URL.
+**All new leads auto-assign** to whichever active Sales user currently has
+the fewest open leads, so nothing sits unowned waiting for someone to notice
+it (this runs regardless of whether AI is enabled — see the AI features
+section for the AI-specific parts: scoring, hot-lead alerts, nurture
+follow-ups).
+
+**Setting up Meta Lead Ads** (once you have a Facebook Developer App and Page
+for the ad account):
+1. In the Meta App Dashboard, add the **Webhooks** product, subscribe to the
+   **Page** object's `leadgen` field.
+2. Callback URL: `https://crm.talktonitesh.com/api/webhooks/meta-leads`.
+   Verify token: any value you choose — set the same value in both Meta's
+   dashboard and the server's `META_WEBHOOK_VERIFY_TOKEN`.
+3. Set `META_APP_SECRET` (from the app's Basic Settings) and
+   `META_PAGE_ACCESS_TOKEN` (a Page access token with `leads_retrieval`
+   permission) in the server `.env`, then `php artisan config:cache`.
+4. Submit a test lead on the ad form and confirm it appears in **Lead
+   Generation** with source **Meta Ads**.
 
 ## 9. Partners — content agency directory
 **Partners** in the sidebar is a directory of the external content agencies NEDS

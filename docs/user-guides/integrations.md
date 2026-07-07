@@ -256,6 +256,49 @@ integration can never block the monthly wins note from running.
 
 ---
 
+## Integration 10 — Meta Lead Ads webhook
+
+**Status: built, not yet configured** — needs a Facebook Developer App, a
+registered Page, and a Page access token before it goes live. See Section 8
+of the Admin guide for setup steps.
+
+**What it does:** when someone submits a Facebook or Instagram Lead Ads form,
+Meta calls `POST /api/webhooks/meta-leads` — but that event only carries a
+`leadgen_id`, not the actual name/email/phone submitted. The CRM queues a job
+that fetches the real field data from Meta's Graph API
+(`GET /{leadgen_id}?access_token=...`) and creates a Lead from it (source
+**Meta Ads**). Deduped on `leads.meta_leadgen_id` — a redelivered webhook
+event never creates a second lead.
+
+**Auth (two different mechanisms, both required):**
+- `GET /api/webhooks/meta-leads` — Meta's one-time (and periodic)
+  verification handshake. Authenticated by `hub.verify_token` matching
+  `META_WEBHOOK_VERIFY_TOKEN` — no signature involved for this request.
+- `POST /api/webhooks/meta-leads` — every real lead event. Authenticated by
+  `X-Hub-Signature-256` (HMAC-SHA256 of the raw body, keyed with
+  `META_APP_SECRET`), verified by `VerifyMetaWebhookSignature` middleware.
+
+**Field mapping:** Meta's standard field names (`full_name` or
+`first_name`+`last_name`, `email`/`work_email`, `phone_number`/
+`work_phone_number`, `company_name`) map to the lead's core fields. Any other
+form question (custom questions the advertiser added) is preserved as a note
+on the lead rather than dropped. `utm_source`/`utm_medium` are set to a fixed
+`meta`/`paid_social`; `utm_campaign` stores the raw `ad_id` (or `form_id` if
+no ad_id) — Meta's basic leadgen response doesn't include human-readable
+campaign/ad names, so the Lead Source Performance report will show IDs, not
+names, for this channel until that's enriched with an extra Graph API call.
+
+**What the team sees:** no extra step once configured — the lead appears in
+**Lead Generation** with source **Meta Ads**, auto-assigned and AI-scored
+like any other lead (Phase A applies automatically).
+
+**If the Graph API call fails** (expired token, deleted lead, rate limit):
+logged as a warning, no lead is created, and the job retries up to 3 times
+(60s backoff) before giving up silently — this must never break the webhook
+endpoint itself, which always responds 200 immediately after queueing.
+
+---
+
 ## Checking integration health
 
 All integration events leave a trace in the CRM:
@@ -267,11 +310,13 @@ All integration events leave a trace in the CRM:
 | Tickets list → WhatsApp badge | Tickets auto-created from WhatsApp conversations |
 | Drishti → Posts queue | Content pushed from SMDost |
 | Ticket → replies | Outbound WhatsApp replies sent via wadesk.in |
+| Lead Generation → source filter | Leads auto-created from Website, WhatsApp, and Meta Ads |
 
 If any integration stops working, the most common causes are:
 1. **Server `.env` out of date** — a key (`DRISHTI_SERVICE_KEY`,
    `SMDOST_SERVICE_KEY`, `PORTAL_SSO_SECRET`, `WADESK_API_URL`,
-   `WADESK_SERVICE_KEY`, etc.) is missing or wrong.
+   `WADESK_SERVICE_KEY`, `META_APP_SECRET`, `META_WEBHOOK_VERIFY_TOKEN`,
+   `META_PAGE_ACCESS_TOKEN`, etc.) is missing or wrong.
    Run `php artisan config:cache` after any `.env` change.
 2. **Docker not restarted after env change on VPS** — use
    `docker compose up -d` (not `restart`) so the container picks up new env vars.

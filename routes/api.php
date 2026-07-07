@@ -2,10 +2,12 @@
 
 use App\Http\Controllers\Api\DrishtiWebhookController;
 use App\Http\Controllers\Api\LeadCaptureController;
+use App\Http\Controllers\Api\MetaLeadsWebhookController;
 use App\Http\Controllers\Api\SmdostWebhookController;
 use App\Http\Controllers\Api\WhatsappWebhookController;
 use App\Http\Middleware\VerifyDrishtiWebhookSignature;
 use App\Http\Middleware\VerifyLeadCaptureToken;
+use App\Http\Middleware\VerifyMetaWebhookSignature;
 use App\Http\Middleware\VerifySmdostWebhookToken;
 use App\Http\Middleware\VerifyWhatsappWebhookToken;
 use Illuminate\Support\Facades\Route;
@@ -42,3 +44,15 @@ Route::post('/webhooks/smdost/content-ready', [SmdostWebhookController::class, '
 Route::post('/webhooks/drishti/event', [DrishtiWebhookController::class, 'handle'])
     ->middleware(['throttle:120,1', VerifyDrishtiWebhookSignature::class])
     ->name('api.webhooks.drishti.event');
+
+// Meta (Facebook/Instagram) Lead Ads webhook. Meta calls GET once to verify
+// the subscription (hub.verify_token, no signature involved — the token
+// match IS the auth) and POST on every new lead (X-Hub-Signature-256,
+// verified by VerifyMetaWebhookSignature). The POST payload only carries a
+// leadgen_id; ImportMetaLead fetches the actual field data via the Graph API.
+Route::get('/webhooks/meta-leads', [MetaLeadsWebhookController::class, 'verify'])
+    ->middleware('throttle:60,1')
+    ->name('api.webhooks.meta-leads.verify');
+Route::post('/webhooks/meta-leads', [MetaLeadsWebhookController::class, 'receive'])
+    ->middleware(['throttle:120,1', VerifyMetaWebhookSignature::class])
+    ->name('api.webhooks.meta-leads.receive');

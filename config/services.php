@@ -82,6 +82,20 @@ return [
         'secret' => env('PORTAL_SSO_SECRET'),
     ],
 
+    // Meta (Facebook/Instagram) Lead Ads webhook. app_secret verifies the
+    // X-Hub-Signature-256 header on inbound events; webhook_verify_token is
+    // checked against Meta's GET handshake (hub.verify_token) when the
+    // webhook subscription is registered in the Meta App Dashboard;
+    // page_access_token authorizes the follow-up Graph API call that fetches
+    // the actual lead field data (Meta's webhook payload only contains a
+    // leadgen_id, never the submitted fields themselves).
+    'meta' => [
+        'app_secret' => env('META_APP_SECRET'),
+        'webhook_verify_token' => env('META_WEBHOOK_VERIFY_TOKEN'),
+        'page_access_token' => env('META_PAGE_ACCESS_TOKEN'),
+        'graph_api_version' => env('META_GRAPH_API_VERSION', 'v19.0'),
+    ],
+
     /*
      | Anthropic (Claude) API — Phase 5 AI features. All AI is gated by the
      | `enabled` flag (AI_ENABLED). The key is never hardcoded; request/response
