@@ -72,21 +72,6 @@
             </tr>
           </table>
 
-          @php
-            function digestTable($rows) {
-                return '<table width="100%" cellpadding="0" cellspacing="0" style="font-size:13px;margin-bottom:8px;">'
-                    . implode('', $rows)
-                    . '</table>';
-            }
-            function digestRow($col1, $col2 = '', $highlight = false) {
-                $bg = $highlight ? '#fef2f2' : '#f9fafb';
-                return '<tr style="background:' . $bg . ';border-bottom:1px solid #e5e7eb;">'
-                    . '<td style="padding:8px 10px;color:#111827;">' . $col1 . '</td>'
-                    . '<td style="padding:8px 10px;color:#6b7280;text-align:right;white-space:nowrap;">' . $col2 . '</td>'
-                    . '</tr>';
-            }
-          @endphp
-
           {{-- Overdue tasks --}}
           @if ($overdueTasks->isNotEmpty())
             <h3 style="margin:0 0 10px;font-size:14px;font-weight:700;color:#dc2626;border-left:3px solid #dc2626;padding-left:10px;">

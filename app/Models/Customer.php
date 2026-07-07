@@ -36,6 +36,7 @@ class Customer extends Model
         'status',
         'drishti_client_id',
         'smdost_client_id',
+        'referring_partner_id',
     ];
 
     protected function casts(): array
@@ -98,6 +99,11 @@ class Customer extends Model
     public function owner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'owner_id');
+    }
+
+    public function referringPartner(): BelongsTo
+    {
+        return $this->belongsTo(Partner::class, 'referring_partner_id');
     }
 
     public function notes(): MorphMany

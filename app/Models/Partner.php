@@ -17,4 +17,9 @@ class Partner extends Model
     {
         return $this->hasMany(ContentPiece::class);
     }
+
+    public function referredCustomers(): HasMany
+    {
+        return $this->hasMany(Customer::class, 'referring_partner_id');
+    }
 }

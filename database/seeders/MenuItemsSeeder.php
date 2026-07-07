@@ -36,7 +36,7 @@ class MenuItemsSeeder extends Seeder
             ['key' => 'client-radar',     'label' => 'Client Radar',     'route' => 'client-radar.index', 'icon' => 'radar',    'roles' => [UserRole::Manager]],
             ['key' => 'quotations',       'label' => 'Quotations',       'route' => 'quotations.index', 'icon' => 'document',   'roles' => [UserRole::Manager, UserRole::Sales, UserRole::Accounts]],
             ['key' => 'customer',         'label' => 'Clients',          'route' => 'clients.index',    'icon' => 'users',      'roles' => [UserRole::Manager, UserRole::Sales, UserRole::Support, UserRole::Accounts, UserRole::Intern]],
-            ['key' => 'invoices',         'label' => 'Invoices',         'route' => 'invoices.index',   'icon' => 'receipt',    'roles' => [UserRole::Manager, UserRole::Accounts]],
+            ['key' => 'invoices',         'label' => 'Invoices',         'route' => 'invoices.index',   'icon' => 'receipt',    'roles' => [UserRole::Manager, UserRole::Accounts, UserRole::Sales]],
             ['key' => 'calling',          'label' => 'Calling',          'route' => 'calls.index',      'icon' => 'phone',      'roles' => [UserRole::Manager, UserRole::Sales, UserRole::Support]],
             ['key' => 'emptask',          'label' => 'Employee Task',    'route' => 'tasks.index',      'icon' => 'check',      'roles' => $all],
             ['key' => 'daily-reports',    'label' => 'Daily Reports',    'route' => 'daily-reports.index', 'icon' => 'clipboard', 'roles' => $all],

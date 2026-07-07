@@ -57,12 +57,24 @@
 
     <div class="grid grid-cols-1 gap-4 md:grid-cols-3 xl:grid-cols-6">
         @foreach ($columns as $stage)
-            <div class="flex flex-col rounded-lg bg-gray-50 p-3"
+            @php
+                $stageColors = match ($stage) {
+                    \App\Enums\DealStage::New => ['border' => 'border-t-slate-400', 'badge' => 'bg-slate-100 text-slate-700'],
+                    \App\Enums\DealStage::Contacted => ['border' => 'border-t-blue-400', 'badge' => 'bg-blue-100 text-blue-700'],
+                    \App\Enums\DealStage::Proposal => ['border' => 'border-t-purple-400', 'badge' => 'bg-purple-100 text-purple-700'],
+                    \App\Enums\DealStage::Negotiation => ['border' => 'border-t-amber-400', 'badge' => 'bg-amber-100 text-amber-700'],
+                    \App\Enums\DealStage::Won => ['border' => 'border-t-green-400', 'badge' => 'bg-green-100 text-green-700'],
+                    \App\Enums\DealStage::Lost => ['border' => 'border-t-red-400', 'badge' => 'bg-red-100 text-red-700'],
+                };
+            @endphp
+            <div class="flex flex-col rounded-lg border-t-4 {{ $stageColors['border'] }} bg-gray-50 p-3"
                  x-on:dragover.prevent
                  x-on:drop.prevent="if (dragId) { $wire.moveDeal(dragId, '{{ $stage->value }}'); dragId = null }">
                 <div class="mb-2 flex items-center justify-between">
                     <h3 class="text-sm font-semibold text-gray-700">{{ $stage->label() }}</h3>
-                    <span class="text-xs text-gray-400">{{ ($dealsByStage[$stage->value] ?? collect())->count() }}</span>
+                    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $stageColors['badge'] }}">
+                        {{ ($dealsByStage[$stage->value] ?? collect())->count() }}
+                    </span>
                 </div>
 
                 <div class="space-y-2">

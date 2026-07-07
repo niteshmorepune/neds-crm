@@ -57,22 +57,22 @@ class ProvisionClientExternallyJob implements ShouldQueue
             ->first()?->service;
 
         $drishtiId = $this->provisionDrishti($customer, $contact, $service);
-        $smdostId  = $this->provisionSmdost($customer, $contact, $service, $drishtiId);
+        $smdostId = $this->provisionSmdost($customer, $contact, $service, $drishtiId);
 
         if ($drishtiId !== null || $smdostId !== null) {
             $customer->updateQuietly([
                 'drishti_client_id' => $drishtiId,
-                'smdost_client_id'  => $smdostId,
+                'smdost_client_id' => $smdostId,
             ]);
 
             Activity::create([
-                'user_id'      => null,
+                'user_id' => null,
                 'subject_type' => Customer::class,
-                'subject_id'   => $customer->id,
-                'event'        => 'updated',
-                'changes'      => array_filter([
+                'subject_id' => $customer->id,
+                'event' => 'updated',
+                'changes' => array_filter([
                     'drishti_client_id' => $drishtiId,
-                    'smdost_client_id'  => $smdostId,
+                    'smdost_client_id' => $smdostId,
                 ]),
             ]);
         }
@@ -80,7 +80,7 @@ class ProvisionClientExternallyJob implements ShouldQueue
 
     private function provisionDrishti(Customer $customer, $contact, $service): ?string
     {
-        $baseUrl    = rtrim(config('services.drishti.base_url'), '/');
+        $baseUrl = rtrim(config('services.drishti.base_url'), '/');
         $serviceKey = config('services.drishti.service_key');
 
         if (! $baseUrl || ! $serviceKey) {
@@ -93,19 +93,20 @@ class ProvisionClientExternallyJob implements ShouldQueue
             $response = Http::withHeaders(['X-Service-Key' => $serviceKey])
                 ->timeout(15)
                 ->post("{$baseUrl}/api/clients", array_filter([
-                    'name'           => $customer->company_name,
-                    'domain'         => $domain,
-                    'industry'       => $service?->name,
-                    'contactName'    => $contact?->name,
-                    'contactEmail'   => $contact?->email ?? $customer->email,
-                    'monthlyRetainer'=> null,
+                    'name' => $customer->company_name,
+                    'domain' => $domain,
+                    'industry' => $service?->name,
+                    'contactName' => $contact?->name,
+                    'contactEmail' => $contact?->email ?? $customer->email,
+                    'monthlyRetainer' => null,
                 ]));
 
             if (! $response->successful()) {
                 Log::warning('Drishti client provision failed', [
                     'customer_id' => $customer->id,
-                    'status'      => $response->status(),
+                    'status' => $response->status(),
                 ]);
+
                 return null;
             }
 
@@ -121,8 +122,9 @@ class ProvisionClientExternallyJob implements ShouldQueue
         } catch (\Throwable $e) {
             Log::warning('Drishti provision exception', [
                 'customer_id' => $customer->id,
-                'error'       => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
+
             return null;
         }
     }
@@ -135,9 +137,9 @@ class ProvisionClientExternallyJob implements ShouldQueue
             Http::withHeaders(['X-Service-Key' => $serviceKey])
                 ->timeout(15)
                 ->post("{$baseUrl}/api/users", [
-                    'email'    => $contact->email,
-                    'name'     => $contact->name ?? $companyName,
-                    'role'     => 'CLIENT',
+                    'email' => $contact->email,
+                    'name' => $contact->name ?? $companyName,
+                    'role' => 'CLIENT',
                     'password' => Str::password(16),
                 ]);
         } catch (\Throwable) {
@@ -147,7 +149,7 @@ class ProvisionClientExternallyJob implements ShouldQueue
 
     private function provisionSmdost(Customer $customer, $contact, $service, ?string $drishtiId): ?string
     {
-        $baseUrl    = rtrim(config('services.smdost.base_url'), '/');
+        $baseUrl = rtrim(config('services.smdost.base_url'), '/');
         $serviceKey = config('services.smdost.service_key');
 
         if (! $baseUrl || ! $serviceKey) {
@@ -158,33 +160,51 @@ class ProvisionClientExternallyJob implements ShouldQueue
             $response = Http::withHeaders(['X-Service-Key' => $serviceKey])
                 ->timeout(15)
                 ->post("{$baseUrl}/api/clients", array_filter([
-                    'name'            => $customer->company_name,
-                    'industry'        => $service?->name ?? 'Digital Marketing',
-                    'brandTone'       => 'Professional and friendly',
-                    'targetAudience'  => 'To be defined — please update in Social Media Dost',
-                    'website'         => $customer->website,
+                    'name' => $customer->company_name,
+                    'industry' => $service?->name ?? 'Digital Marketing',
+                    'brandTone' => 'Professional and friendly',
+                    'targetAudience' => 'To be defined — please update in Social Media Dost',
+                    'website' => $customer->website,
                     'drishtiClientId' => $drishtiId,
                 ]));
 
             if (! $response->successful()) {
                 Log::warning('SMDost client provision failed', [
                     'customer_id' => $customer->id,
-                    'status'      => $response->status(),
+                    'status' => $response->status(),
                 ]);
+
                 return null;
             }
 
             $clientId = $response->json('id');
+
             return $clientId ? (string) $clientId : null;
 
         } catch (\Throwable $e) {
             Log::warning('SMDost provision exception', [
                 'customer_id' => $customer->id,
-                'error'       => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
+
             return null;
         }
     }
+
+    /**
+     * Domains never trusted as a client's unique identity — many small local
+     * businesses have no website and use a free email provider, so two
+     * different clients sharing "gmail.com" would otherwise collide on
+     * Drishti's per-agency domain-uniqueness constraint and silently fail to
+     * provision after the first one (confirmed live 2026-07-07: 11 of 12
+     * no-website customers had all resolved to "gmail.com").
+     *
+     * @var list<string>
+     */
+    private const FREEMAIL_DOMAINS = [
+        'gmail.com', 'yahoo.com', 'yahoo.co.in', 'hotmail.com', 'outlook.com',
+        'rediffmail.com', 'icloud.com', 'live.com', 'aol.com', 'protonmail.com',
+    ];
 
     private function extractDomain(Customer $customer): string
     {
@@ -195,12 +215,16 @@ class ProvisionClientExternallyJob implements ShouldQueue
             }
         }
 
-        // Fall back to email domain.
         if ($customer->email && str_contains($customer->email, '@')) {
-            return strtolower(explode('@', $customer->email)[1]);
+            $domain = strtolower(explode('@', $customer->email)[1]);
+            if (! in_array($domain, self::FREEMAIL_DOMAINS, true)) {
+                return $domain;
+            }
         }
 
-        // Last resort: slugify the company name.
-        return Str::slug($customer->company_name).'.com';
+        // No website, and either no email or a freemail address — synthesize
+        // a domain that's guaranteed unique per customer (appending the id,
+        // not just the slugified name, since two clients can share a name).
+        return Str::slug($customer->company_name).'-'.$customer->id.'.local';
     }
 }

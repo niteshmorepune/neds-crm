@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\ProjectStatus;
+use App\Enums\UserRole;
 use App\Jobs\CreateOnboardingTasks;
 use App\Models\Project;
 use App\Models\Service;
@@ -62,6 +63,25 @@ it('falls back to the project owner when no lead assignee is set', function () {
 
     $task = Task::where('project_id', $project->id)->where('title', 'GMB profile setup')->first();
     expect($task?->assignee_id)->toBe($owner->id);
+});
+
+it('prefers a Support-role project assignee over a non-Support pivot-role=lead assignee', function () {
+    // Bus::fake() suppresses the automatic dispatch-on-create (see the
+    // comment on the "assigned to the lead" test above) so the assignees
+    // below are attached before the job actually runs.
+    Bus::fake();
+    $owner = User::factory()->role(UserRole::Sales)->create();
+    $salesLead = User::factory()->role(UserRole::Sales)->create();
+    $support = User::factory()->role(UserRole::Support)->create();
+    $service = Service::factory()->create(['name' => 'GMB']);
+    $project = Project::factory()->create(['service_id' => $service->id, 'owner_id' => $owner->id, 'status' => ProjectStatus::Active]);
+    $project->assignees()->attach($salesLead->id, ['role' => 'lead']);
+    $project->assignees()->attach($support->id, ['role' => 'member']);
+
+    (new CreateOnboardingTasks($project->id))->handle();
+
+    $task = Task::where('project_id', $project->id)->where('title', 'GMB profile setup')->first();
+    expect($task?->assignee_id)->toBe($support->id);
 });
 
 it('does not create duplicate onboarding tasks when the job runs twice', function () {

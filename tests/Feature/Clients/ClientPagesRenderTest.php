@@ -61,13 +61,23 @@ it('shows real deals and tickets data on the client tabs', function () {
 });
 
 it('hides invoice data on the client tab from a role without invoice access', function () {
+    $support = User::factory()->role(UserRole::Support)->create();
+    $client = Customer::factory()->create();
+
+    $this->actingAs($support)
+        ->get(route('clients.show', $client))
+        ->assertOk()
+        ->assertSee('have access to invoices');
+});
+
+it('shows invoice data on the client tab to sales, who have invoice access by default', function () {
     $sales = User::factory()->role(UserRole::Sales)->create();
     $client = Customer::factory()->create(['owner_id' => $sales->id]);
 
     $this->actingAs($sales)
         ->get(route('clients.show', $client))
         ->assertOk()
-        ->assertSee('have access to invoices');
+        ->assertDontSee('have access to invoices');
 });
 
 it('renders the services tab with recurring services and projects', function () {

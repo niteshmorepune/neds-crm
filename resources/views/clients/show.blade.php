@@ -23,6 +23,7 @@
                     <dl class="mt-3 grid grid-cols-1 gap-x-8 gap-y-1 text-sm text-gray-600 sm:grid-cols-2">
                         <div><span class="text-gray-400">GSTIN:</span> {{ $client->gstin ?? '—' }}</div>
                         <div><span class="text-gray-400">Owner:</span> {{ $client->owner?->name ?? 'Unassigned' }}</div>
+                        <div><span class="text-gray-400">Referred by:</span> {{ $client->referringPartner?->name ?? '—' }}</div>
                         <div><span class="text-gray-400">Email:</span> {{ $client->email ?? '—' }}</div>
                         <div><span class="text-gray-400">Phone:</span> {{ $client->phone ?? '—' }}</div>
                         <div><span class="text-gray-400">Website:</span> {{ $client->website ?? '—' }}</div>

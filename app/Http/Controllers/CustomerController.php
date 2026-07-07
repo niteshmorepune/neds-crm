@@ -8,6 +8,7 @@ use App\Http\Requests\CustomerStoreRequest;
 use App\Http\Requests\CustomerUpdateRequest;
 use App\Models\Customer;
 use App\Models\Invoice;
+use App\Models\Partner;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -35,6 +36,7 @@ class CustomerController extends Controller
             })
             ->when($statusFilter !== 'all', fn ($q) => $q->where('status', $statusFilter))
             ->when($request->filled('owner_id'), fn ($q) => $q->where('owner_id', $request->integer('owner_id')))
+            ->when($request->filled('referring_partner_id'), fn ($q) => $q->where('referring_partner_id', $request->integer('referring_partner_id')))
             ->latest()
             ->paginate(15)
             ->withQueryString();
@@ -44,7 +46,8 @@ class CustomerController extends Controller
             'owners' => $this->assignableOwners(),
             'statuses' => CustomerStatus::cases(),
             'statusFilter' => $statusFilter,
-            'filters' => $request->only(['search', 'status', 'owner_id']),
+            'partners' => Partner::orderBy('name')->get(),
+            'filters' => $request->only(['search', 'status', 'owner_id', 'referring_partner_id']),
         ]);
     }
 
@@ -57,6 +60,7 @@ class CustomerController extends Controller
             'states' => config('india.states'),
             'owners' => $this->assignableOwners(),
             'statuses' => CustomerStatus::cases(),
+            'partners' => Partner::orderBy('name')->get(),
         ]);
     }
 
@@ -77,6 +81,7 @@ class CustomerController extends Controller
 
         $client->load([
             'owner',
+            'referringPartner',
             'contacts' => fn ($q) => $q->orderByDesc('is_primary')->orderBy('name'),
             'callLogs.user',
             'deals.owner',
@@ -108,6 +113,7 @@ class CustomerController extends Controller
             'states' => config('india.states'),
             'owners' => $this->assignableOwners(),
             'statuses' => CustomerStatus::cases(),
+            'partners' => Partner::orderBy('name')->get(),
         ]);
     }
 

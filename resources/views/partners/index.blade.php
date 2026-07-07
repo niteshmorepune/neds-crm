@@ -20,6 +20,7 @@
                         <th class="px-4 py-3">Email</th>
                         <th class="px-4 py-3">Phone</th>
                         <th class="px-4 py-3 text-right">Content Pieces</th>
+                        <th class="px-4 py-3 text-right">Referred Clients</th>
                         <th class="px-4 py-3"></th>
                     </tr>
                 </thead>
@@ -30,6 +31,10 @@
                             <td class="px-4 py-3 text-gray-600">{{ $partner->email ?? '—' }}</td>
                             <td class="px-4 py-3 text-gray-600">{{ $partner->phone ?? '—' }}</td>
                             <td class="px-4 py-3 text-right text-gray-600">{{ $partner->contentPieces->count() }}</td>
+                            <td class="px-4 py-3 text-right">
+                                <a href="{{ route('clients.index', ['referring_partner_id' => $partner->id, 'status' => 'all']) }}"
+                                   class="text-indigo-600 hover:underline">{{ $partner->referredCustomers->count() }}</a>
+                            </td>
                             <td class="px-4 py-3 text-right">
                                 @can('update', $partner)
                                     <a href="{{ route('partners.edit', $partner) }}" class="text-indigo-600 hover:underline">Edit</a>
