@@ -34,9 +34,10 @@ password only you know.
   by name or number.
 - **☎ Log a call** (top) — quickly record a phone call with a client or lead.
 - **🔔 Bell icon** (top) — your notification centre. Alerts vary by role but
-  include: tasks assigned to you, call follow-up reminders, new leads, deal won,
-  payment recorded, and upcoming recurring invoice due dates. Click a notification
-  to go straight to the record; click **Dismiss** to clear it.
+  include: tasks assigned to you, call follow-up reminders, new leads, hot
+  leads (AI score ≥ 70), deal won, payment recorded, and upcoming recurring
+  invoice due dates. Click a notification to go straight to the record; click
+  **Dismiss** to clear it.
 - **Your name** (top-right) — Profile and Log out.
 
 ## 4a. Overdue tasks alert

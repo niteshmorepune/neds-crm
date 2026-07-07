@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use App\Enums\LeadStatus;
 use App\Enums\UserRole;
 use App\Jobs\ScoreLead;
 use App\Models\Lead;
@@ -14,6 +15,10 @@ use App\Support\Ai;
  * could change its score. Covers every creation path (back-office form, public
  * lead-capture API, future Livewire) because it hooks the model, not a
  * controller. Gated by Ai::enabled() so it is a true no-op when AI is off.
+ *
+ * Also auto-assigns unowned leads to the least-loaded active Sales user, on
+ * create, independent of AI_ENABLED — this is routing, not an AI feature, and
+ * leads shouldn't sit unowned just because AI is off.
  */
 class LeadObserver
 {
@@ -22,6 +27,7 @@ class LeadObserver
 
     public function created(Lead $lead): void
     {
+        $this->autoAssign($lead);
         $this->queueScore($lead);
         $this->notifyNewLead($lead);
     }
@@ -33,6 +39,39 @@ class LeadObserver
         if ($lead->wasChanged(self::SCORING_FIELDS)) {
             $this->queueScore($lead);
         }
+    }
+
+    /**
+     * Assign the lead to whichever active Sales user currently owns the
+     * fewest open leads, so new leads stop sitting at owner_id=null. Ties
+     * break on user id for deterministic behaviour. A normal (non-quiet)
+     * save is used deliberately — who a lead got assigned to is a real
+     * business fact worth an activity-log entry, unlike the AI columns.
+     */
+    private function autoAssign(Lead $lead): void
+    {
+        if ($lead->owner_id !== null) {
+            return;
+        }
+
+        $openStatuses = array_map(
+            fn (LeadStatus $status) => $status->value,
+            array_values(array_filter(LeadStatus::cases(), fn (LeadStatus $status) => $status->isOpen())),
+        );
+
+        $assignee = User::where('is_active', true)
+            ->where('role', UserRole::Sales->value)
+            ->withCount(['leads as open_leads_count' => fn ($query) => $query->whereIn('status', $openStatuses)])
+            ->orderBy('open_leads_count')
+            ->orderBy('id')
+            ->first();
+
+        if ($assignee === null) {
+            return;
+        }
+
+        $lead->owner_id = $assignee->id;
+        $lead->save();
     }
 
     private function queueScore(Lead $lead): void

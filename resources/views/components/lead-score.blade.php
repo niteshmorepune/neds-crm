@@ -9,4 +9,9 @@
     ]) @if ($lead->ai_score_reason) title="{{ $lead->ai_score_reason }}" @endif>
         <span class="font-semibold">AI {{ $lead->ai_score }}</span>
     </span>
+    @if ($lead->isHot())
+        <span class="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
+            🔥 Hot
+        </span>
+    @endif
 @endif

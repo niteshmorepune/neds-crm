@@ -305,10 +305,19 @@ automatically — they only draft or summarize for a human to review.
 
 **Lead scoring** — when a lead is created or edited, the CRM automatically sends
 its details to Claude and stores a **0–100 score** with a one-line reason
-(e.g. "Specific service requested, phone and company provided — high intent").
-The score badge appears on the leads list so sales staff can prioritise without
+(e.g. "Specific service requested, phone and company provided — high intent"),
+plus an estimated **budget band**, **urgency**, and **service fit** note. The
+score badge appears on the leads list so sales staff can prioritise without
 reading every entry. Existing leads (created before AI was enabled) get scored
-the next time they are edited and saved.
+the next time they are edited and saved. A lead scoring **70 or above** is
+flagged 🔥 Hot and its owner gets an immediate bell notification instead of
+waiting for the next morning digest — configurable via `AI_HOT_LEAD_THRESHOLD`
+in `.env` (default 70).
+
+**Lead auto-assignment** — a new lead with no owner (e.g. from the website
+form) is automatically assigned to whichever active Sales user currently owns
+the fewest open leads, so leads never sit unowned. This runs independently of
+`AI_ENABLED` — it's routing, not an AI feature.
 
 **Draft follow-up / Draft reply (✨)** — a button on leads and tickets. When
 clicked, Claude reads the lead/ticket details and history, then writes a suggested

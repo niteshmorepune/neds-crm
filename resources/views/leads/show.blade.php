@@ -16,6 +16,19 @@
                     @if (! is_null($lead->ai_score) && $lead->ai_score_reason)
                         <p class="mt-1 text-xs text-gray-500">AI: {{ $lead->ai_score_reason }}</p>
                     @endif
+                    @if ($lead->ai_budget_band || $lead->ai_urgency || $lead->ai_service_fit)
+                        <div class="mt-2 flex flex-wrap items-center gap-3 text-xs text-gray-500">
+                            @if ($lead->ai_budget_band)
+                                <span><span class="text-gray-400">Budget:</span> {{ $lead->ai_budget_band->label() }}</span>
+                            @endif
+                            @if ($lead->ai_urgency)
+                                <span><span class="text-gray-400">Urgency:</span> {{ $lead->ai_urgency->label() }}</span>
+                            @endif
+                            @if ($lead->ai_service_fit)
+                                <span><span class="text-gray-400">Service fit:</span> {{ $lead->ai_service_fit }}</span>
+                            @endif
+                        </div>
+                    @endif
                     <dl class="mt-3 grid grid-cols-1 gap-x-8 gap-y-1 text-sm text-gray-600 sm:grid-cols-2">
                         <div><span class="text-gray-400">Company:</span> {{ $lead->company ?: '—' }}</div>
                         <div><span class="text-gray-400">Status:</span> {{ $lead->status->label() }}</div>

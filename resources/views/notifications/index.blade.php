@@ -29,6 +29,7 @@
                         @elseif (! empty($data['message']))
                             @php($typeIcon = match ($type) {
                                 'new_lead'                    => '🟢',
+                                'hot_lead'                    => '🔥',
                                 'new_quotation'               => '📄',
                                 'deal_won'                    => '🏆',
                                 'new_invoice'                 => '🧾',
