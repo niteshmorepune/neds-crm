@@ -80,6 +80,37 @@ class ReportController extends Controller
         });
     }
 
+    public function leadSources(Request $request): View
+    {
+        $this->authorizePerformance($request);
+        [$from, $to] = $this->monthRange($request);
+
+        return view('reports.lead-sources', [
+            'data' => $this->metrics->leadSourcePerformance($from, $to),
+            'from' => $from,
+            'to' => $to,
+        ]);
+    }
+
+    public function exportLeadSources(Request $request): StreamedResponse
+    {
+        $this->authorizePerformance($request);
+        [$from, $to] = $this->monthRange($request);
+        $data = $this->metrics->leadSourcePerformance($from, $to);
+
+        return $this->csv("lead-sources-{$from->format('Y-m-d')}_to_{$to->format('Y-m-d')}.csv", function ($out) use ($data) {
+            fputcsv($out, ['Source', 'Leads', 'Converted', 'Conversion %', 'Won value (₹)', 'Avg AI score']);
+            foreach ($data['by_source'] as $r) {
+                fputcsv($out, [$r['label'], $r['total'], $r['converted'], $r['conversion_rate'], Money::toRupees($r['won_value']), $r['avg_score'] ?? '—']);
+            }
+            fputcsv($out, []);
+            fputcsv($out, ['Campaign (source / medium / campaign)', 'Leads', 'Converted', 'Conversion %', 'Won value (₹)', 'Avg AI score']);
+            foreach ($data['by_campaign'] as $r) {
+                fputcsv($out, [$r['label'], $r['total'], $r['converted'], $r['conversion_rate'], Money::toRupees($r['won_value']), $r['avg_score'] ?? '—']);
+            }
+        });
+    }
+
     private function authorizePerformance(Request $request): void
     {
         abort_unless($request->user()->hasRole(UserRole::Admin, UserRole::Manager), 403);
