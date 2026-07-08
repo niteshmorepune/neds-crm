@@ -89,7 +89,7 @@ class LeadObserver
             User::find($lead->owner_id)?->notify($notification);
         } else {
             User::where('is_active', true)
-                ->where('role', UserRole::Sales->value)
+                ->withAnyRole(UserRole::Sales)
                 ->get()
                 ->each(fn (User $u) => $u->notify($notification));
         }

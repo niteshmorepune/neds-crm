@@ -44,7 +44,7 @@ class LeaveRequestController extends Controller
         ]);
 
         $recipients = User::where('is_active', true)
-            ->whereIn('role', [UserRole::Admin->value, UserRole::Manager->value])
+            ->withAnyRole(UserRole::Admin, UserRole::Manager)
             ->where('id', '!=', $request->user()->id)
             ->get();
         $recipients->each(fn (User $u) => $u->notify(new LeaveRequestSubmitted($leaveRequest)));

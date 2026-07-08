@@ -72,3 +72,14 @@ it('shows the support panel to a support user', function () {
     $this->actingAs($support)->get(route('dashboard'))->assertOk()
         ->assertSee('Open tickets by priority');
 });
+
+it('keeps showing the support panel even when Sales is granted as an additional role', function () {
+    // Regression test: DashboardController is deliberately keyed on the
+    // primary role only ($user->role), not hasRole() — a secondary role must
+    // never change which dashboard panel someone lands on.
+    $support = User::factory()->role(UserRole::Support)->withAdditionalRoles(UserRole::Sales)->create();
+
+    $this->actingAs($support)->get(route('dashboard'))->assertOk()
+        ->assertSee('Open tickets by priority')
+        ->assertDontSee('Open pipeline by stage');
+});

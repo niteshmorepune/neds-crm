@@ -41,6 +41,20 @@ it('limits a sales rep to their own and unassigned clients', function () {
         ->and($sales->can('view', $foreignClient))->toBeFalse();
 });
 
+it('limits a support user to their own and unassigned clients once Sales is granted as an additional role', function () {
+    // Mirrors CustomerPolicy::view's existing "if hasRole(Sales) at all,
+    // restrict" priority — an additional Sales role now reaches that branch
+    // even though the primary role (Support) would otherwise see everything.
+    $supportPlusSales = User::factory()->role(UserRole::Support)->withAdditionalRoles(UserRole::Sales)->create();
+    $ownClient = Customer::factory()->ownedBy($supportPlusSales->id)->create();
+    $foreignClient = Customer::factory()->ownedBy(User::factory()->create()->id)->create();
+
+    $visible = Customer::visibleTo($supportPlusSales)->pluck('id');
+
+    expect($visible)->toContain($ownClient->id)
+        ->and($visible)->not->toContain($foreignClient->id);
+});
+
 it('only allows admin/manager or the owning sales rep to delete', function () {
     $owner = User::factory()->role(UserRole::Sales)->create();
     $client = Customer::factory()->ownedBy($owner->id)->create();

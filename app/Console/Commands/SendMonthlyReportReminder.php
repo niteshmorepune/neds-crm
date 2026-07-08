@@ -45,7 +45,7 @@ class SendMonthlyReportReminder extends Command
         }
 
         $recipients = User::where('is_active', true)
-            ->whereIn('role', [UserRole::Admin->value, UserRole::Manager->value, UserRole::Accounts->value])
+            ->withAnyRole(UserRole::Admin, UserRole::Manager, UserRole::Accounts)
             ->get();
 
         foreach ($recipients as $recipient) {

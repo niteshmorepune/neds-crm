@@ -26,7 +26,7 @@
                         <tr class="hover:bg-gray-50">
                             <td class="px-4 py-3 font-medium text-gray-900">{{ $user->name }}</td>
                             <td class="px-4 py-3 text-gray-600">{{ $user->email }}</td>
-                            <td class="px-4 py-3 text-gray-600">{{ $user->role->label() }}</td>
+                            <td class="px-4 py-3 text-gray-600">{{ $user->allRoles()->map->label()->join(' + ') }}</td>
                             <td class="px-4 py-3">
                                 <span @class([
                                     'inline-flex rounded-full px-2 py-0.5 text-xs font-medium',

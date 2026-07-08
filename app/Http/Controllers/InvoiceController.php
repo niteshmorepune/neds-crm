@@ -319,7 +319,7 @@ class InvoiceController extends Controller
         $recorder = $request->user();
         $notification = new PaymentRecordedNotification($invoice, $payment);
         $recipients = User::where('is_active', true)
-            ->where('role', UserRole::Accounts->value)
+            ->withAnyRole(UserRole::Accounts)
             ->where('id', '!=', $recorder->id)
             ->get();
         $ownerId = Customer::where('id', $invoice->customer_id)->value('owner_id');
