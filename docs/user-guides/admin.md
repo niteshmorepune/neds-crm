@@ -19,6 +19,21 @@ Public sign-up is disabled, so **you create every staff account**.
 - You **can't** disable, demote, or delete **your own** account (so you can't
   lock yourself out).
 
+**Additional roles (someone doing two jobs):** every user has one **primary
+role** (the dropdown above) plus an optional set of **additional roles** —
+checkboxes further down the same Add/Edit form. Additional roles:
+- **Do** expand what the person can directly do (Policies), who they show up
+  for in role-targeted notifications (Deal Won, SLA breach, leave-request
+  approvals, recurring-invoice due warnings, etc.), and owner-picker
+  dropdowns (Client/Lead "assign to").
+- **Do not** change their sidebar or their dashboard panel — those always
+  follow the primary role only. If someone needs the extra sidebar items
+  their additional role would normally show, grant them individually via
+  **Menu Controller → per-user overrides**.
+- **Do not** affect auto-assignment/routing (new-lead auto-owner, automatic
+  task routing to a project's Support assignee) — those also stay
+  primary-role-only, by design.
+
 **Roles available:**
 
 | Role | What they can access |
@@ -395,6 +410,39 @@ to report that month are skipped entirely (no hollow note, no AI call spent).
 The Drishti numbers are pulled live via a service-to-service call — if
 Drishti is unreachable that day, the note still drafts from whatever the CRM
 itself knows (tasks/tickets/payments).
+
+**Project daily update drafts** — every evening at 6:30 PM (skipped on
+Sundays), for each active project with at least one task completed that day,
+Claude drafts a short client-facing progress update from the completed task
+titles and stores it as a pending note (`ai_generated = true`,
+`visible_to_client = false`) — not yet visible anywhere the client can see it.
+The project owner gets a bell notification and, on the project's page, a
+**Pending Client Update** panel to edit and either **Approve & Send** (flips
+the note to `visible_to_client = true`, which is what makes it appear in the
+client portal feed, and emails the client's billing contact) or **Discard**.
+Admin/Manager can also approve or discard on any project, not just their own.
+This differs from the monthly wins note above in one important way: that one
+is staff-only forever, meant to be copied and sent manually; this one has a
+real send step built in, and is what actually reaches the client once
+approved. Projects with no activity that day are skipped silently — no
+hollow draft, no AI call spent, no notification.
+
+**Project Updates Digest (leadership oversight)** — every morning at 9:15 AM
+(skipped on Sundays), every active Admin/Manager gets one email covering the
+whole project daily-update workflow across the team, not just their own
+projects:
+- **Yesterday's client updates** — how many were drafted, how many got
+  approved & sent, how many are still awaiting review.
+- **Client updates awaiting review 2+ days** — a table of drafts nobody has
+  approved or discarded yet, with the project, its Project Manager, and how
+  long it's been waiting. Keeps surfacing every day until someone acts on it.
+- **Projects gone quiet 5+ days** — active projects with no completed task
+  and no note (of any kind) in the last 5 days, so a project that's stalled
+  doesn't go unnoticed just because nobody happened to look at it. New
+  projects get a grace period before they can be flagged this way.
+Nothing is sent if there's genuinely nothing to report that day — no filler
+email. Both thresholds (`--stale-days`, default 2; `--quiet-days`, default 5)
+are command options if they ever need adjusting.
 
 **To turn on:** add these two lines to the server `.env`, then run
 `php artisan config:cache`:

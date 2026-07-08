@@ -81,6 +81,12 @@ Click a project to see:
 If you have a question about a project, use the **Raise a ticket** link on the
 project page — it keeps everything tracked in one place.
 
+**Scheduling a call:** if your project has a **Schedule a Meeting** link on its
+page, click it to open your team member's Google Calendar booking page in a
+new tab — pick a time that works for you and it creates a Google Meet
+invitation automatically. This link only appears once your account manager
+has set one up.
+
 ## Raising a support ticket
 1. Go to **Tickets → New Ticket** (or click the "Raise a ticket" link anywhere
    in the portal).

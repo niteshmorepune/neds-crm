@@ -169,11 +169,7 @@ class CustomerController extends Controller
     private function assignableOwners()
     {
         return User::query()
-            ->whereIn('role', [
-                UserRole::Sales->value,
-                UserRole::Manager->value,
-                UserRole::Admin->value,
-            ])
+            ->withAnyRole(UserRole::Sales, UserRole::Manager, UserRole::Admin)
             ->orderBy('name')
             ->get(['id', 'name', 'role']);
     }

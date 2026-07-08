@@ -206,3 +206,62 @@ Record every "we chose X because Y" here — this is the project's memory.
   shows this same person as "Account Manager" — left as-is, since that's the
   right word for that audience and was already distinct from the internal
   label.
+- **2026-07-08 — Multi-role support: primary role (`users.role`, unchanged)
+  + additional roles (`role_user` pivot), not a full role-model rewrite.**
+  The team asked whether a person can hold two roles at once (e.g. both
+  Sales and Support). A full codebase scan first confirmed the blast radius:
+  ~14 Policies and ~15 Controllers already call `hasRole(...$roles)` as a
+  variadic OR-check, so they needed zero changes once `hasRole()`/`isAdmin()`
+  were taught to also look at a new `role_user` pivot (`App\Models\
+  UserRoleAssignment`) alongside the existing scalar `users.role` column.
+  Kept `users.role` as the single **primary** role driving everything that
+  must pick exactly one value:
+  - **Menu Controller sidebar** (`App\Services\MenuResolver`) — left
+    untouched; its cache keys and role-lookup query are structurally keyed
+    on the single scalar role. An additional role does not auto-expand the
+    sidebar — grant the extra items via the existing per-user
+    `menu_item_user` override instead (already built for this).
+  - **Dashboard panel** (`App\Http\Controllers\DashboardController`) — this
+    one required an actual code change, not just "leave it alone": its
+    `match(true)` panel-priority ladder was built on `hasRole()`, so
+    rewriting `hasRole()` would have let a secondary role silently outrank
+    the primary role and switch someone's panel (e.g. a Support user given
+    Sales as a secondary role would start seeing the Sales panel). Rewrote
+    it to branch on `$user->role` directly so the panel always follows the
+    primary role only, consistent with the sidebar decision.
+  - **2FA enforcement** (`User::requiresTwoFactor()`, unchanged code) — DOES
+    now also trigger for a secondary Admin/Manager role, since it already
+    called `hasRole()`. Considered desirable, not a bug.
+  Additional roles DO expand: direct Policy/permission checks (automatic,
+  via `hasRole()`); role-targeted broadcast notifications and eligibility
+  (Deal Won, SLA-breach escalation, leave-request approval + its
+  notification, recurring-invoice due warnings, monthly report reminder,
+  SMDost brief-approved, payment-recorded — all converted from raw
+  `where('role', ...)`/`whereIn('role', [...])` to a new
+  `User::scopeWithAnyRole()`, which unions the primary column with the
+  pivot); and Client/Lead owner-picker dropdowns (manual admin selection, so
+  it doesn't conflict with keeping auto-assignment primary-role-only).
+  **Deliberately left as single-assignee/primary-role-only** (picking ONE
+  person to own/route something is a different concern from "who's
+  notified" or "who's a valid dropdown candidate," confirmed via
+  AskUserQuestion): `LeadObserver::autoAssign()` (least-loaded Sales rep for
+  a new lead — only its *fallback broadcast* to all Sales reps when nothing
+  is auto-assigned was converted), `CreateOnboardingTasks` /
+  `DispatchScheduledTasks` (routing an auto-generated task to a project's
+  Support-role assignee), `DraftFestivalGreetingContent` (single fallback
+  admin creator/recipient), and `AttendanceController`'s
+  `where('role', '!=', Admin)` negation (a hypothetical secondary-Admin
+  would still appear in a manager's attendance list — accepted, since Admin
+  as a secondary role is not a realistic scenario here).
+  **One pre-existing behavior surfaced, not introduced, by this change:**
+  `Customer::scopeVisibleTo` (converted from a raw `$user->role ===
+  UserRole::Sales` check to `hasRole()`, to keep mirroring
+  `CustomerPolicy::view`, which already used `hasRole()`) — and
+  `CustomerPolicy::view` itself — both check "has the Sales role at all"
+  *before* any broader role's access, so a user whose primary role already
+  grants full client visibility (e.g. Support) will be narrowed to
+  owned-or-unassigned-only once Sales is added as an additional role. This
+  is how the Policy was already written for a hypothetical multi-role user;
+  multi-role support just made it reachable. Not changed, since altering
+  Policy priority order was out of scope for this feature — flagged here in
+  case it ever surprises someone.

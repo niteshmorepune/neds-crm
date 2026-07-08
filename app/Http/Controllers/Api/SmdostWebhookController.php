@@ -91,7 +91,7 @@ class SmdostWebhookController
         });
 
         // Notify all accounts and admin users so they know to price and send.
-        $recipients = User::whereIn('role', [UserRole::Accounts->value, UserRole::Admin->value])->get();
+        $recipients = User::withAnyRole(UserRole::Accounts, UserRole::Admin)->get();
         Notification::send($recipients, new SmdostBriefApproved($invoice, $customer, $data['brief_title']));
 
         Activity::create([

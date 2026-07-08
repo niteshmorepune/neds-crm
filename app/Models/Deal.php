@@ -70,7 +70,7 @@ class Deal extends Model
                 // Notify the deal owner + all admin/manager users.
                 $notification = new DealWonNotification($deal);
                 $recipients = User::where('is_active', true)
-                    ->whereIn('role', [UserRole::Admin->value, UserRole::Manager->value])
+                    ->withAnyRole(UserRole::Admin, UserRole::Manager)
                     ->get();
                 if ($deal->owner_id) {
                     $owner = User::find($deal->owner_id);

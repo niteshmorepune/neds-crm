@@ -32,7 +32,7 @@ class SendRecurringInvoiceDueWarnings extends Command
         }
 
         $recipients = User::where('is_active', true)
-            ->whereIn('role', [UserRole::Accounts->value, UserRole::Admin->value, UserRole::Manager->value])
+            ->withAnyRole(UserRole::Accounts, UserRole::Admin, UserRole::Manager)
             ->get();
 
         $sent = 0;

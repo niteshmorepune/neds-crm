@@ -165,12 +165,12 @@ class Customer extends Model
 
     /**
      * Admins/managers/support/accounts see all clients.
-     * Sales reps see only clients they own or that are unassigned.
-     * Mirrors CustomerPolicy::view.
+     * Sales reps (including anyone with Sales as an additional role) see
+     * only clients they own or that are unassigned. Mirrors CustomerPolicy::view.
      */
     public function scopeVisibleTo(Builder $query, User $user): Builder
     {
-        if ($user->role === UserRole::Sales) {
+        if ($user->hasRole(UserRole::Sales)) {
             $query->where(function (Builder $q) use ($user) {
                 $q->where('owner_id', $user->id)->orWhereNull('owner_id');
             });

@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Models\Festival;
 use App\Models\Lead;
 use App\Models\Project;
+use App\Models\Task;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Support\Ai;
@@ -217,6 +218,50 @@ class AiAssistant
         return $this->trimmed($this->client->message(
             feature: 'daily_priorities_summary',
             prompt: "Staff member: {$user->name}\n".implode("\n", $lines),
+            system: $system,
+        ));
+    }
+
+    /**
+     * A short, warm client-facing "here's today's progress" note for one
+     * project, based only on the task titles completed that day. Stored as a
+     * draft note the project owner reviews/edits before it's shared with the
+     * client — never invents specifics beyond the task titles given.
+     *
+     * @param  Collection<int, Task>  $completedTasks
+     */
+    public function draftProjectDailyUpdate(Project $project, Collection $completedTasks): ?string
+    {
+        if (! Ai::enabled()) {
+            return null;
+        }
+
+        $project->loadMissing('customer');
+
+        $lines = [
+            'Client: '.$project->customer->company_name,
+            'Project: '.$project->name,
+            '',
+            'Completed today:',
+        ];
+
+        foreach ($completedTasks as $task) {
+            $lines[] = '- '.$task->title;
+        }
+
+        $system = <<<'PROMPT'
+        You draft a short, warm client-facing project update for a
+        digital-solutions agency in India, based ONLY on the task titles
+        given as completed today. Name the client's business, mention what
+        was completed in plain, non-technical language, and keep it to 2-3
+        sentences (about 50-70 words). Do not invent specifics, numbers, or
+        commitments beyond the task titles given. Output only the update
+        text.
+        PROMPT;
+
+        return $this->trimmed($this->client->message(
+            feature: 'project_daily_update',
+            prompt: implode("\n", $lines),
             system: $system,
         ));
     }

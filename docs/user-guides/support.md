@@ -51,6 +51,12 @@ you are not assigned to it — ask a manager to add you.
 correct it inline, or **Delete** to remove it. Managers can edit or delete any
 note; you can only edit/delete your own.
 
+**Automated daily draft (if AI is enabled):** if a task on the project was
+marked Done today, Claude may draft a short client update automatically each
+evening. This shows as a **Pending Client Update** to the project owner (or an
+admin/manager) for them to review and approve — you don't need to do anything
+for this unless you are the project's owner.
+
 **Note on client profiles:** Support staff cannot add, edit, or delete contacts
 on a client profile — that is handled by the Sales team. You can view client and
 contact details but not change them.

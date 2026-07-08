@@ -20,6 +20,8 @@ class UserStoreRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'role' => ['required', Rule::enum(UserRole::class)],
+            'additional_roles' => ['nullable', 'array'],
+            'additional_roles.*' => [Rule::enum(UserRole::class)],
             'password' => ['required', 'confirmed', Password::min(8)],
             'is_active' => ['boolean'],
             'device_user_id' => ['nullable', 'string', 'max:20', 'unique:users,device_user_id'],

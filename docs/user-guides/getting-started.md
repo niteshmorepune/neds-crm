@@ -28,6 +28,12 @@ From then on, you'll enter a 6-digit code each time you log in.
 Click your **name** (top-right) → **Profile** → **Update Password**. Set a
 password only you know.
 
+**If you own or lead any client projects:** on the same **Profile** page,
+paste your Google Calendar appointment-scheduling link into the **Google Meet
+scheduling link** field and save. This is what powers the **Schedule a
+Meeting** button clients see on their portal project page — without it set,
+that button simply won't appear for your clients.
+
 ## 4. Finding your way around
 - **Left sidebar** — your modules. What you see depends on your role.
 - **Search bar** (top) — find any client, lead, deal, invoice, ticket or project

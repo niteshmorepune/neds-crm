@@ -54,4 +54,13 @@ class UserFactory extends Factory
             'role' => $role,
         ]);
     }
+
+    /**
+     * Grant one or more additional roles beyond the primary role().
+     */
+    public function withAdditionalRoles(UserRole ...$roles): static
+    {
+        return $this->afterCreating(fn (User $user) => collect($roles)
+            ->each(fn (UserRole $role) => $user->additionalRoles()->create(['role' => $role])));
+    }
 }

@@ -64,6 +64,77 @@ it('keeps a password unchanged when the field is left blank on edit', function (
         ->and($staff->name)->toBe('Renamed');
 });
 
+it('assigns additional roles when creating a user', function () {
+    $this->actingAs($this->admin)->post(route('users.store'), [
+        'name' => 'Priya Support',
+        'email' => 'priya-support@neds.test',
+        'role' => UserRole::Support->value,
+        'additional_roles' => [UserRole::Sales->value],
+        'password' => 'password123',
+        'password_confirmation' => 'password123',
+        'is_active' => '1',
+    ])->assertRedirect(route('users.index'));
+
+    $user = User::firstWhere('email', 'priya-support@neds.test');
+    expect($user->hasRole(UserRole::Sales))->toBeTrue()
+        ->and($user->allRoles()->pluck('value')->all())->toBe(['support', 'sales']);
+});
+
+it('replaces additional roles when editing a user', function () {
+    $staff = User::factory()->role(UserRole::Support)->withAdditionalRoles(UserRole::Sales)->create();
+
+    $this->actingAs($this->admin)->put(route('users.update', $staff), [
+        'name' => $staff->name,
+        'email' => $staff->email,
+        'role' => UserRole::Support->value,
+        'additional_roles' => [UserRole::Accounts->value],
+        'is_active' => '1',
+    ])->assertRedirect();
+
+    $staff->refresh();
+    expect($staff->hasRole(UserRole::Sales))->toBeFalse()
+        ->and($staff->hasRole(UserRole::Accounts))->toBeTrue();
+});
+
+it('silently drops an additional role that duplicates the primary role, rather than erroring', function () {
+    $this->actingAs($this->admin)->post(route('users.store'), [
+        'name' => 'Redundant Role',
+        'email' => 'redundant@neds.test',
+        'role' => UserRole::Sales->value,
+        'additional_roles' => [UserRole::Sales->value, UserRole::Support->value],
+        'password' => 'password123',
+        'password_confirmation' => 'password123',
+        'is_active' => '1',
+    ])->assertSessionHasNoErrors()->assertRedirect(route('users.index'));
+
+    $user = User::firstWhere('email', 'redundant@neds.test');
+    expect($user->additionalRoles()->count())->toBe(1)
+        ->and($user->hasRole(UserRole::Support))->toBeTrue();
+});
+
+it('does not flush the menu cache when only additional roles change', function () {
+    $staff = User::factory()->role(UserRole::Support)->create();
+
+    Cache::spy();
+
+    $this->actingAs($this->admin)->put(route('users.update', $staff), [
+        'name' => $staff->name,
+        'email' => $staff->email,
+        'role' => UserRole::Support->value,
+        'additional_roles' => [UserRole::Sales->value],
+        'is_active' => '1',
+    ])->assertRedirect();
+
+    Cache::shouldNotHaveReceived('forever');
+});
+
+it('renders the additional roles checkboxes on the create and edit forms', function () {
+    $staff = User::factory()->role(UserRole::Support)->withAdditionalRoles(UserRole::Sales)->create();
+
+    $this->actingAs($this->admin)->get(route('users.create'))->assertOk()->assertSee('Additional roles');
+    $this->actingAs($this->admin)->get(route('users.edit', $staff))->assertOk()->assertSee('Additional roles');
+});
+
 it('stops an admin from disabling or deleting their own account', function () {
     // Self-deactivate is ignored.
     $this->actingAs($this->admin)->put(route('users.update', $this->admin), [

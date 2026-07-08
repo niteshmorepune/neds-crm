@@ -18,6 +18,15 @@ Schedule::command('app:send-followup-reminders')
     ->dailyAt('09:00')
     ->timezone('Asia/Kolkata');
 
+// Leadership digest at 09:15 IST: yesterday's AI-drafted client updates
+// (approved vs still pending), any drafts sitting unapproved 2+ days, and
+// active projects with no completed task or note in 5+ days. Recomputes live
+// state every run (no "already sent" suppression) so an unresolved item
+// keeps surfacing until it's actually dealt with.
+Schedule::command('app:send-project-updates-digest')
+    ->dailyAt('09:15')
+    ->timezone('Asia/Kolkata');
+
 // Stagnation alerts at 10:00 IST — leads untouched 7d, deals untouched 10d.
 Schedule::command('app:send-stagnation-alerts')
     ->dailyAt('10:00')
@@ -48,6 +57,12 @@ Schedule::command('app:check-ticket-sla')->hourly();
 
 // Remind staff to submit their daily report at 6pm India time.
 Schedule::command('app:send-daily-report-reminders')->dailyAt('18:00')->timezone('Asia/Kolkata');
+
+// AI-drafts a client-facing "today's progress" note (pending review) for
+// each active project with tasks completed today, at 18:30 IST. The
+// project owner/admin/manager approves via ProjectDailyUpdateReview before
+// it reaches the client (portal + email) — never sent automatically.
+Schedule::command('app:draft-project-daily-updates')->dailyAt('18:30')->timezone('Asia/Kolkata');
 
 // Nightly database backup at 02:00 India time (quiet hours).
 Schedule::command('app:backup-database')->dailyAt('02:00')->timezone('Asia/Kolkata');
