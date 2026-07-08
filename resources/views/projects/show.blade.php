@@ -19,7 +19,7 @@
                             @endif
                         </div>
                         <div><span class="text-gray-400">Status:</span> {{ $project->status->label() }}</div>
-                        <div><span class="text-gray-400">Owner:</span> {{ $project->owner?->name ?? '—' }}</div>
+                        <div><span class="text-gray-400">Project Manager:</span> {{ $project->owner?->name ?? '—' }}</div>
                         <div><span class="text-gray-400">Service:</span> {{ $project->service?->name ?? '—' }}</div>
                         <div><span class="text-gray-400">Timeline:</span> {{ $project->start_date?->format('d M Y') ?? '—' }} → {{ $project->end_date?->format('d M Y') ?? '—' }}</div>
                         @if ($project->deal)<div><span class="text-gray-400">Deal:</span> <a href="{{ route('deals.show', $project->deal) }}" class="text-indigo-600 hover:underline">{{ $project->deal->title }}</a></div>@endif

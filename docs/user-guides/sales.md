@@ -148,10 +148,10 @@ client's **Notes** tab (marked "AI-drafted monthly update"). It's
 staff-only — the client never sees it automatically. Review it, personalize it,
 and send it yourself via email or WhatsApp if it reads right.
 
-## 5. Content pieces (when you own a project)
-If you are set as the **owner** of a project, you can track content pieces for
-that project — useful when NEDS is managing social media or other content for
-a client alongside a partner agency.
+## 5. Content pieces (when you're a project's Project Manager)
+If you are set as the **Project Manager** of a project, you can track content
+pieces for that project — useful when NEDS is managing social media or other
+content for a client alongside a partner agency.
 
 **Adding a content piece:** open the project → **Content Pieces** card →
 **Add piece**. Choose the workflow type:

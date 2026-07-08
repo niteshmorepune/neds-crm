@@ -186,3 +186,23 @@ Record every "we chose X because Y" here — this is the project's memory.
   `App\Jobs\CreateOnboardingTasks` (hooked off `Project::booted()`'s
   `created` event) when a project starts, using the same
   consolidated-per-section shape.
+- **2026-07-08 — No new "Project Manager" role added; relabeled the existing
+  `Project.owner_id` field instead.** The team asked for a "Project Manager
+  role... since there might be a different person for different projects, or
+  one person with many projects." Investigated before building: `Project`
+  already has an `owner_id` (any user, any global role, can be set per
+  project) plus a per-project `assignees` pivot with a `role` of `lead`/
+  `member`; `ProjectPolicy` already scopes update rights to the owner (or
+  admin/manager); the Projects index already auto-scopes non-admin/manager
+  users to only their own owned/assigned projects, and admin/manager get a
+  `?mine=1` toggle for the same view. This already fully satisfies "different
+  manager per project, one person many projects" with zero new code — adding
+  a literal `UserRole::ProjectManager` enum case would have meant deciding a
+  whole new permission profile and touching every policy that branches on
+  role, for no behavior the app doesn't already have. Confirmed the gap was
+  purely internal terminology via AskUserQuestion, then just relabeled
+  "Owner" → "Project Manager" in the internal project form/show page
+  (`owner_id` column name unchanged). The client portal already independently
+  shows this same person as "Account Manager" — left as-is, since that's the
+  right word for that audience and was already distinct from the internal
+  label.

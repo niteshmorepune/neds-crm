@@ -82,8 +82,13 @@ anywhere. Use the **search bar** to jump to any record.
 
 **Seeing who services which client:** open any client's profile and click the
 **Services** tab. The **Projects** table now has a **Team** column showing the
-Lead (primary owner) and any additional team members for each project/service.
-This is the fastest way to answer "which of our team handles GMB for ABC Corp?"
+Lead and any additional team members for each project/service. This is the
+fastest way to answer "which of our team handles GMB for ABC Corp?"
+
+Every project also has a **Project Manager** (set on the project's Edit page)
+who is ultimately accountable for it — a different person can be the Project
+Manager on every project, and one person can be the Project Manager on as
+many projects as needed.
 
 **Project Updates → My Services:** the Project Updates page has a new **My Services**
 toggle that filters the list to only projects where you are the Lead or a team member.

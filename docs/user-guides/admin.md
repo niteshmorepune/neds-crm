@@ -216,8 +216,8 @@ automatically from a won deal) and its status is Active, the CRM also
 one-time-creates a matching onboarding checklist for its service (e.g. SEO
 gets "Technical SEO setup", "On-page SEO setup", "Off-page SEO setup", and
 "Initial SEO report", each due a few days to a few weeks out) — assigned to
-the project lead (or owner if no lead is set yet). This only fires once per
-project, not on a schedule.
+the project lead (or the project manager if no lead is set yet). This only
+fires once per project, not on a schedule.
 
 **How staff see these:** on the Daily Reports page, **My Tasks** groups tasks
 by project and collapses these auto-created tasks under a "🔄 routine

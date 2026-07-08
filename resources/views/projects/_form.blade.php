@@ -29,7 +29,7 @@
     </div>
 
     <div>
-        <x-input-label for="owner_id" value="Owner" />
+        <x-input-label for="owner_id" value="Project Manager" />
         <select id="owner_id" name="owner_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
             <option value="">—</option>
             @foreach ($staff as $person)
