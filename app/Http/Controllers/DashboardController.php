@@ -15,17 +15,20 @@ class DashboardController extends Controller
 
         // Admin & manager get the full company dashboard; everyone else gets a
         // role-focused panel. Common widgets (attendance, daily report) render
-        // for all from the parent view.
+        // for all from the parent view. Deliberately keyed on the PRIMARY
+        // role only ($user->role, not hasRole()) — an additional role never
+        // changes which dashboard panel someone lands on, matching the
+        // sidebar's primary-role-only behavior (see CLAUDE.md decisions log).
         [$panel, $data] = match (true) {
-            $user->hasRole(UserRole::Admin, UserRole::Manager) => ['admin', [
+            in_array($user->role, [UserRole::Admin, UserRole::Manager], true) => ['admin', [
                 'stats' => $metrics->adminStats(),
                 'services' => $metrics->servicesOverview(),
                 'tasks' => $metrics->taskSummary(),
             ]],
-            $user->hasRole(UserRole::Sales) => ['sales', ['stats' => $metrics->salesStats($user)]],
-            $user->hasRole(UserRole::Accounts) => ['accounts', ['stats' => $metrics->accountsStats()]],
-            $user->hasRole(UserRole::Support) => ['support', ['stats' => $metrics->supportStats($user)]],
-            $user->hasRole(UserRole::Intern) => ['intern', ['stats' => $metrics->internStats($user)]],
+            $user->role === UserRole::Sales => ['sales', ['stats' => $metrics->salesStats($user)]],
+            $user->role === UserRole::Accounts => ['accounts', ['stats' => $metrics->accountsStats()]],
+            $user->role === UserRole::Support => ['support', ['stats' => $metrics->supportStats($user)]],
+            $user->role === UserRole::Intern => ['intern', ['stats' => $metrics->internStats($user)]],
             default => ['blank', []],
         };
 

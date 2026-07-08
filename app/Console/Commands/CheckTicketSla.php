@@ -32,7 +32,7 @@ class CheckTicketSla extends Command
         }
 
         $managers = User::query()
-            ->whereIn('role', [UserRole::Admin->value, UserRole::Manager->value])
+            ->withAnyRole(UserRole::Admin, UserRole::Manager)
             ->get();
 
         foreach ($managers as $manager) {

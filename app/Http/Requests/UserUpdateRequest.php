@@ -22,6 +22,8 @@ class UserUpdateRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
             'role' => ['required', Rule::enum(UserRole::class)],
+            'additional_roles' => ['nullable', 'array'],
+            'additional_roles.*' => [Rule::enum(UserRole::class)],
             'password' => ['nullable', 'confirmed', Password::min(8)],
             'is_active' => ['boolean'],
             'device_user_id' => ['nullable', 'string', 'max:20', Rule::unique('users', 'device_user_id')->ignore($user->id)],

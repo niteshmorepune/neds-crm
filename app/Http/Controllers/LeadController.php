@@ -153,7 +153,7 @@ class LeadController extends Controller
             'statuses' => [LeadStatus::New, LeadStatus::Contacted, LeadStatus::Qualified, LeadStatus::Lost],
             'services' => Service::active()->orderBy('sort_order')->get(),
             'owners' => User::query()
-                ->whereIn('role', [UserRole::Sales->value, UserRole::Manager->value, UserRole::Admin->value])
+                ->withAnyRole(UserRole::Sales, UserRole::Manager, UserRole::Admin)
                 ->orderBy('name')->get(['id', 'name']),
         ];
     }

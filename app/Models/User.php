@@ -6,11 +6,13 @@ namespace App\Models;
 use App\Enums\UserRole;
 use App\Models\Concerns\LogsActivity;
 use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Collection;
 
 class User extends Authenticatable
 {
@@ -92,9 +94,21 @@ class User extends Authenticatable
         return $this->hasMany(Lead::class, 'owner_id');
     }
 
+    /**
+     * Additional roles held beyond the primary `role` column. The primary
+     * role still drives sidebar caching (MenuResolver), the dashboard panel
+     * (DashboardController), and 2FA enforcement — additional roles only
+     * expand permission checks (hasRole/isAdmin) and role-targeted
+     * notifications/dropdowns (see scopeWithAnyRole).
+     */
+    public function additionalRoles(): HasMany
+    {
+        return $this->hasMany(UserRoleAssignment::class);
+    }
+
     public function isAdmin(): bool
     {
-        return $this->role === UserRole::Admin;
+        return $this->hasRole(UserRole::Admin);
     }
 
     /**
@@ -102,9 +116,43 @@ class User extends Authenticatable
      */
     public function hasRole(...$roles): bool
     {
-        return in_array($this->role, array_map(
+        $wanted = array_map(
             fn ($role) => $role instanceof UserRole ? $role : UserRole::from($role),
             $roles,
-        ), true);
+        );
+
+        if (in_array($this->role, $wanted, true)) {
+            return true;
+        }
+
+        return $this->additionalRoles->pluck('role')->contains(fn (UserRole $role) => in_array($role, $wanted, true));
+    }
+
+    /**
+     * Primary + additional roles, deduped, for display (e.g. "Sales + Support").
+     *
+     * @return Collection<int, UserRole>
+     */
+    public function allRoles(): Collection
+    {
+        return collect([$this->role])
+            ->merge($this->additionalRoles->pluck('role'))
+            ->unique();
+    }
+
+    /**
+     * Users holding any of the given roles, whether as their primary role or
+     * an additional one. Use for role-targeted notification/eligibility
+     * queries (e.g. `User::where('is_active', true)->withAnyRole(Admin, Manager)`)
+     * — not for auto-assignment/routing, which stays primary-role-only by
+     * design (see the multi-role-support decisions log entry in CLAUDE.md).
+     */
+    public function scopeWithAnyRole(Builder $query, UserRole|string ...$roles): Builder
+    {
+        $values = array_map(fn ($role) => $role instanceof UserRole ? $role->value : $role, $roles);
+
+        return $query->where(fn (Builder $q) => $q
+            ->whereIn('role', $values)
+            ->orWhereHas('additionalRoles', fn (Builder $a) => $a->whereIn('role', $values)));
     }
 }

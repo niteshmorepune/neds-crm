@@ -26,6 +26,25 @@
         @endif
     </div>
 
+    @php
+        $selectedAdditionalRoles = old('additional_roles', $user->exists ? $user->additionalRoles->pluck('role')->map(fn ($r) => $r->value)->all() : []);
+    @endphp
+    <div>
+        <x-input-label value="Additional roles" />
+        <p class="mt-1 text-xs text-gray-500">Grants extra permissions/notifications on top of the primary role above. Does not change the sidebar or dashboard, which always follow the primary role.</p>
+        <div class="mt-2 flex flex-wrap gap-4">
+            @foreach ($roles as $role)
+                <label class="flex items-center gap-1.5 text-sm text-gray-700">
+                    <input type="checkbox" name="additional_roles[]" value="{{ $role->value }}"
+                           class="rounded border-gray-300 text-indigo-600"
+                           @checked(in_array($role->value, $selectedAdditionalRoles, true))>
+                    {{ $role->label() }}
+                </label>
+            @endforeach
+        </div>
+        <x-input-error :messages="$errors->get('additional_roles')" class="mt-1" />
+    </div>
+
     <div>
         <x-input-label for="password" :value="$user->exists ? 'New password (leave blank to keep current)' : 'Password *'" />
         <x-text-input id="password" name="password" type="password" class="mt-1 block w-full" :required="! $user->exists" autocomplete="new-password" />

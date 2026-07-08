@@ -19,6 +19,21 @@ Public sign-up is disabled, so **you create every staff account**.
 - You **can't** disable, demote, or delete **your own** account (so you can't
   lock yourself out).
 
+**Additional roles (someone doing two jobs):** every user has one **primary
+role** (the dropdown above) plus an optional set of **additional roles** —
+checkboxes further down the same Add/Edit form. Additional roles:
+- **Do** expand what the person can directly do (Policies), who they show up
+  for in role-targeted notifications (Deal Won, SLA breach, leave-request
+  approvals, recurring-invoice due warnings, etc.), and owner-picker
+  dropdowns (Client/Lead "assign to").
+- **Do not** change their sidebar or their dashboard panel — those always
+  follow the primary role only. If someone needs the extra sidebar items
+  their additional role would normally show, grant them individually via
+  **Menu Controller → per-user overrides**.
+- **Do not** affect auto-assignment/routing (new-lead auto-owner, automatic
+  task routing to a project's Support assignee) — those also stay
+  primary-role-only, by design.
+
 **Roles available:**
 
 | Role | What they can access |
