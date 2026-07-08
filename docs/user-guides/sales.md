@@ -148,6 +148,17 @@ client's **Notes** tab (marked "AI-drafted monthly update"). It's
 staff-only — the client never sees it automatically. Review it, personalize it,
 and send it yourself via email or WhatsApp if it reads right.
 
+**Daily project update drafts (AI, optional):** if AI is enabled, every evening
+at 6:30 PM Claude drafts a short client-facing update for each of your active
+projects that had a task completed that day (skipped on Sundays, and skipped
+entirely if nothing was completed). Unlike the monthly wins note, this one has
+a built-in send step: open the project page and you'll see a **Pending Client
+Update** panel above Notes & Client Updates. Edit the wording if you like, then
+click **Approve & Send** — this posts it to the client's portal under "Updates
+from Our Team" *and* emails it to the client's billing contact, in one step.
+Click **Discard** instead if a day's draft isn't worth sharing. Nothing reaches
+the client until you approve it.
+
 ## 5. Content pieces (when you own a project)
 If you are set as the **owner** of a project, you can track content pieces for
 that project — useful when NEDS is managing social media or other content for
@@ -196,6 +207,7 @@ events. You'll be notified when:
 | 🏆 **Deal marked Won** | The deal's assigned sales person + all managers and admins |
 | 🧾 **New invoice created** | The client's assigned sales person (recurring auto-invoices are excluded to avoid noise) |
 | 📈 **Monthly wins note drafted** | The client's assigned sales person, on the 1st of each month for clients with something to report the month before |
+| 📝 **Project daily update ready to review** | The project owner, at 6:30 PM on days a task was completed on one of their projects |
 
 Click any notification to jump straight to the record. Click **Dismiss** to clear it.
 
