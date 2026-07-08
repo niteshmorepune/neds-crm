@@ -18,6 +18,15 @@ Schedule::command('app:send-followup-reminders')
     ->dailyAt('09:00')
     ->timezone('Asia/Kolkata');
 
+// Leadership digest at 09:15 IST: yesterday's AI-drafted client updates
+// (approved vs still pending), any drafts sitting unapproved 2+ days, and
+// active projects with no completed task or note in 5+ days. Recomputes live
+// state every run (no "already sent" suppression) so an unresolved item
+// keeps surfacing until it's actually dealt with.
+Schedule::command('app:send-project-updates-digest')
+    ->dailyAt('09:15')
+    ->timezone('Asia/Kolkata');
+
 // Stagnation alerts at 10:00 IST — leads untouched 7d, deals untouched 10d.
 Schedule::command('app:send-stagnation-alerts')
     ->dailyAt('10:00')
