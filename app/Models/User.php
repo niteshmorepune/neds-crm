@@ -29,6 +29,7 @@ class User extends Authenticatable
         'role',
         'is_active',
         'device_user_id',
+        'google_meet_scheduling_link',
     ];
 
     /**

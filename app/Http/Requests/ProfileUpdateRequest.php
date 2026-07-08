@@ -26,6 +26,7 @@ class ProfileUpdateRequest extends FormRequest
                 'max:255',
                 Rule::unique(User::class)->ignore($this->user()->id),
             ],
+            'google_meet_scheduling_link' => ['nullable', 'url', 'max:500'],
         ];
     }
 }

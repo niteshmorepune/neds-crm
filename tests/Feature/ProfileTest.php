@@ -33,6 +33,37 @@ test('profile information can be updated', function () {
     $this->assertNull($user->email_verified_at);
 });
 
+test('a Google Meet scheduling link can be saved on the profile', function () {
+    $user = User::factory()->create();
+
+    $response = $this
+        ->actingAs($user)
+        ->patch('/profile', [
+            'name' => $user->name,
+            'email' => $user->email,
+            'google_meet_scheduling_link' => 'https://calendar.google.com/calendar/appointments/schedules/abc123',
+        ]);
+
+    $response->assertSessionHasNoErrors()->assertRedirect('/profile');
+
+    expect($user->refresh()->google_meet_scheduling_link)
+        ->toBe('https://calendar.google.com/calendar/appointments/schedules/abc123');
+});
+
+test('the scheduling link is optional and rejected when not a valid URL', function () {
+    $user = User::factory()->create();
+
+    $response = $this
+        ->actingAs($user)
+        ->patch('/profile', [
+            'name' => $user->name,
+            'email' => $user->email,
+            'google_meet_scheduling_link' => 'not-a-url',
+        ]);
+
+    $response->assertSessionHasErrors('google_meet_scheduling_link');
+});
+
 test('email verification status is unchanged when the email address is unchanged', function () {
     $user = User::factory()->create();
 
