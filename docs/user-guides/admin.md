@@ -412,6 +412,23 @@ real send step built in, and is what actually reaches the client once
 approved. Projects with no activity that day are skipped silently — no
 hollow draft, no AI call spent, no notification.
 
+**Project Updates Digest (leadership oversight)** — every morning at 9:15 AM
+(skipped on Sundays), every active Admin/Manager gets one email covering the
+whole project daily-update workflow across the team, not just their own
+projects:
+- **Yesterday's client updates** — how many were drafted, how many got
+  approved & sent, how many are still awaiting review.
+- **Client updates awaiting review 2+ days** — a table of drafts nobody has
+  approved or discarded yet, with the project, its Project Manager, and how
+  long it's been waiting. Keeps surfacing every day until someone acts on it.
+- **Projects gone quiet 5+ days** — active projects with no completed task
+  and no note (of any kind) in the last 5 days, so a project that's stalled
+  doesn't go unnoticed just because nobody happened to look at it. New
+  projects get a grace period before they can be flagged this way.
+Nothing is sent if there's genuinely nothing to report that day — no filler
+email. Both thresholds (`--stale-days`, default 2; `--quiet-days`, default 5)
+are command options if they ever need adjusting.
+
 **To turn on:** add these two lines to the server `.env`, then run
 `php artisan config:cache`:
 ```

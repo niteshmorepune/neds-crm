@@ -114,6 +114,12 @@ to you. If AI is enabled, it opens with a short AI-written line on what to
 prioritise — the same line also shows as a banner on your dashboard for the
 rest of the day.
 
+**Project Updates Digest (9:15 AM daily, if AI is enabled)** — a leadership-only
+summary of yesterday's AI-drafted client updates (drafted vs. approved &
+sent), any drafts still awaiting review after 2+ days, and any active project
+with no completed task or note in 5+ days. Only sent when there's something
+to report. See the Admin guide's AI section for the full breakdown.
+
 **Stagnation alerts (10 AM daily)** — if any lead owned by a team member has had
 no activity for 7 days, or a deal for 10 days, the owner is emailed automatically.
 You don't need to chase people — the system does it.
