@@ -15,10 +15,12 @@ class Note extends Model
         'user_id',
         'body',
         'visible_to_client',
+        'ai_generated',
     ];
 
     protected $casts = [
         'visible_to_client' => 'boolean',
+        'ai_generated' => 'boolean',
     ];
 
     public function author(): BelongsTo

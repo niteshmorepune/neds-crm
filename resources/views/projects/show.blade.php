@@ -106,6 +106,10 @@
             @endif
         </div>
 
+        @can('update', $project)
+            @livewire('project-daily-update-review', ['project' => $project])
+        @endcan
+
         {{-- Notes / client updates --}}
         <div class="rounded-lg bg-white p-6 shadow-sm">
             <h2 class="mb-4 text-base font-semibold text-gray-900">Notes &amp; Client Updates</h2>

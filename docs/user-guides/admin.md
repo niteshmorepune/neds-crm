@@ -396,6 +396,22 @@ The Drishti numbers are pulled live via a service-to-service call — if
 Drishti is unreachable that day, the note still drafts from whatever the CRM
 itself knows (tasks/tickets/payments).
 
+**Project daily update drafts** — every evening at 6:30 PM (skipped on
+Sundays), for each active project with at least one task completed that day,
+Claude drafts a short client-facing progress update from the completed task
+titles and stores it as a pending note (`ai_generated = true`,
+`visible_to_client = false`) — not yet visible anywhere the client can see it.
+The project owner gets a bell notification and, on the project's page, a
+**Pending Client Update** panel to edit and either **Approve & Send** (flips
+the note to `visible_to_client = true`, which is what makes it appear in the
+client portal feed, and emails the client's billing contact) or **Discard**.
+Admin/Manager can also approve or discard on any project, not just their own.
+This differs from the monthly wins note above in one important way: that one
+is staff-only forever, meant to be copied and sent manually; this one has a
+real send step built in, and is what actually reaches the client once
+approved. Projects with no activity that day are skipped silently — no
+hollow draft, no AI call spent, no notification.
+
 **To turn on:** add these two lines to the server `.env`, then run
 `php artisan config:cache`:
 ```

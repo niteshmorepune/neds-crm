@@ -49,6 +49,12 @@ Schedule::command('app:check-ticket-sla')->hourly();
 // Remind staff to submit their daily report at 6pm India time.
 Schedule::command('app:send-daily-report-reminders')->dailyAt('18:00')->timezone('Asia/Kolkata');
 
+// AI-drafts a client-facing "today's progress" note (pending review) for
+// each active project with tasks completed today, at 18:30 IST. The
+// project owner/admin/manager approves via ProjectDailyUpdateReview before
+// it reaches the client (portal + email) — never sent automatically.
+Schedule::command('app:draft-project-daily-updates')->dailyAt('18:30')->timezone('Asia/Kolkata');
+
 // Nightly database backup at 02:00 India time (quiet hours).
 Schedule::command('app:backup-database')->dailyAt('02:00')->timezone('Asia/Kolkata');
 
