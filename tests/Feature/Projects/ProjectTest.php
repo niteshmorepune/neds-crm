@@ -69,8 +69,8 @@ it('renders project index, create and show pages', function () {
     $project = Project::factory()->create(['owner_id' => $this->manager->id]);
 
     $this->actingAs($this->manager)->get(route('projects.index'))->assertOk()->assertSee('Project Updates');
-    $this->actingAs($this->manager)->get(route('projects.create'))->assertOk()->assertSee('Project name');
-    $this->actingAs($this->manager)->get(route('projects.show', $project))->assertOk()->assertSee($project->name);
+    $this->actingAs($this->manager)->get(route('projects.create'))->assertOk()->assertSee('Project name')->assertSee('Project Manager');
+    $this->actingAs($this->manager)->get(route('projects.show', $project))->assertOk()->assertSee($project->name)->assertSee('Project Manager:');
 });
 
 it('lets a manager delete a project but blocks a sales rep who only owns it', function () {

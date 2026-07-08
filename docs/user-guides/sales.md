@@ -159,10 +159,10 @@ from Our Team" *and* emails it to the client's billing contact, in one step.
 Click **Discard** instead if a day's draft isn't worth sharing. Nothing reaches
 the client until you approve it.
 
-## 5. Content pieces (when you own a project)
-If you are set as the **owner** of a project, you can track content pieces for
-that project — useful when NEDS is managing social media or other content for
-a client alongside a partner agency.
+## 5. Content pieces (when you're a project's Project Manager)
+If you are set as the **Project Manager** of a project, you can track content
+pieces for that project — useful when NEDS is managing social media or other
+content for a client alongside a partner agency.
 
 **Adding a content piece:** open the project → **Content Pieces** card →
 **Add piece**. Choose the workflow type:
