@@ -113,6 +113,20 @@
         @endforelse
     </div>
 
+    {{-- Schedule a meeting callout --}}
+    @if ($schedulingLink = $project->schedulingLink())
+        <div class="flex items-start gap-3 rounded-xl border border-emerald-100 bg-emerald-50 px-5 py-4 mb-5">
+            <svg class="mt-0.5 shrink-0 text-emerald-500" style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <p class="text-sm text-emerald-800">
+                Want to talk this project through live?
+                <a href="{{ $schedulingLink }}" target="_blank" rel="noopener noreferrer" class="font-semibold underline hover:text-emerald-600">Schedule a Meeting</a>
+                to book a Google Meet call at a time that works for you.
+            </p>
+        </div>
+    @endif
+
     {{-- Raise a ticket callout --}}
     <div class="flex items-start gap-3 rounded-xl border border-indigo-100 bg-indigo-50 px-5 py-4 mb-5">
         <svg class="mt-0.5 shrink-0 text-indigo-500" style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">

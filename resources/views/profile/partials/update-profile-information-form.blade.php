@@ -47,6 +47,17 @@
             @endif
         </div>
 
+        <div>
+            <x-input-label for="google_meet_scheduling_link" :value="__('Google Meet scheduling link')" />
+            <x-text-input id="google_meet_scheduling_link" name="google_meet_scheduling_link" type="url"
+                          class="mt-1 block w-full" placeholder="https://calendar.google.com/calendar/appointments/schedules/..."
+                          :value="old('google_meet_scheduling_link', $user->google_meet_scheduling_link)" />
+            <p class="mt-1 text-xs text-gray-500">
+                {{ __('Paste your Google Calendar appointment-scheduling link here so clients on projects you lead or own can book a call with you from their portal.') }}
+            </p>
+            <x-input-error class="mt-2" :messages="$errors->get('google_meet_scheduling_link')" />
+        </div>
+
         <div class="flex items-center gap-4">
             <x-primary-button>{{ __('Save') }}</x-primary-button>
 

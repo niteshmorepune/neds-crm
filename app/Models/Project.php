@@ -80,4 +80,25 @@ class Project extends Model
     {
         return $this->morphMany(Note::class, 'notable')->latest();
     }
+
+    /**
+     * The primary staff contact for this project — same "lead assignee, else
+     * owner" resolution already used for portal display and auto-routing
+     * elsewhere in the app.
+     */
+    public function schedulingContact(): ?User
+    {
+        return $this->assignees->firstWhere('pivot.role', 'lead') ?? $this->owner;
+    }
+
+    /**
+     * The Google Calendar appointment-scheduling link to offer the client for
+     * this project: the primary contact's personal link, falling back to the
+     * company-wide default. Null when neither is set.
+     */
+    public function schedulingLink(): ?string
+    {
+        return $this->schedulingContact()?->google_meet_scheduling_link
+            ?: (config('company.meet_scheduling_link') ?: null);
+    }
 }
