@@ -142,6 +142,42 @@ it('uploads an attachment and streams it back, blocking outsiders', function () 
     $this->actingAs($outsider)->get(route('attachments.download', $attachment))->assertForbidden();
 });
 
+it('blocks support from assigning a task to another employee', function () {
+    $support = User::factory()->role(UserRole::Support)->create();
+    $colleague = User::factory()->create();
+
+    $this->actingAs($support)->post(route('tasks.store'), [
+        'title' => 'Follow up with client', 'priority' => 'normal', 'status' => 'todo',
+        'assignee_id' => $colleague->id,
+    ])->assertSessionHasErrors('assignee_id');
+
+    expect(Task::firstWhere('title', 'Follow up with client'))->toBeNull();
+});
+
+it('lets support assign a task to themselves or leave it unassigned', function () {
+    $support = User::factory()->role(UserRole::Support)->create();
+
+    $this->actingAs($support)->post(route('tasks.store'), [
+        'title' => 'Self task', 'priority' => 'normal', 'status' => 'todo',
+        'assignee_id' => $support->id,
+    ])->assertRedirect();
+
+    expect(Task::firstWhere('title', 'Self task'))->not->toBeNull();
+});
+
+it('lets support update other fields on a task already assigned to someone else without re-triggering the assignment block', function () {
+    $support = User::factory()->role(UserRole::Support)->create();
+    $colleague = User::factory()->create();
+    $task = Task::factory()->create(['assignee_id' => $colleague->id, 'created_by' => $support->id, 'status' => TaskStatus::Todo]);
+
+    $this->actingAs($support)->put(route('tasks.update', $task), [
+        'title' => $task->title, 'priority' => 'normal', 'status' => 'in_progress',
+        'assignee_id' => $colleague->id,
+    ])->assertRedirect();
+
+    expect($task->fresh()->status)->toBe(TaskStatus::InProgress);
+});
+
 it('renders task index, create and show pages', function () {
     $task = Task::factory()->assignedTo($this->manager->id)->create();
 

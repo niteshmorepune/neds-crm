@@ -65,11 +65,18 @@ it('only allows admin/manager or the owning sales rep to delete', function () {
         ->and(User::factory()->role(UserRole::Manager)->create()->can('delete', $client))->toBeTrue();
 });
 
-it('lets support manage (add/edit/delete) contacts, unlike accounts who can only view them', function () {
+it('lets support view but never edit client profiles or manage contacts', function () {
     $client = Customer::factory()->create();
     $support = User::factory()->role(UserRole::Support)->create();
+
+    expect($support->can('view', $client))->toBeTrue()
+        ->and($support->can('update', $client))->toBeFalse()
+        ->and($support->can('manage', $client))->toBeFalse();
+});
+
+it('confirms accounts cannot manage (add/edit/delete) contacts either, only view them', function () {
+    $client = Customer::factory()->create();
     $accounts = User::factory()->role(UserRole::Accounts)->create();
 
-    expect($support->can('manage', $client))->toBeTrue()
-        ->and($accounts->can('manage', $client))->toBeFalse();
+    expect($accounts->can('manage', $client))->toBeFalse();
 });
