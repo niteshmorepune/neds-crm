@@ -97,7 +97,7 @@ class TaskController extends Controller
     {
         $this->authorize('update', $task);
 
-        return view('tasks.edit', $this->formData() + ['task' => $task]);
+        return view('tasks.edit', $this->formData($task) + ['task' => $task]);
     }
 
     public function update(TaskStoreRequest $request, Task $task): RedirectResponse
@@ -213,14 +213,37 @@ class TaskController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function formData(): array
+    private function formData(?Task $task = null): array
     {
         return [
             'projects' => Project::orderBy('name')->get(['id', 'name']),
-            'staff' => User::orderBy('name')->get(['id', 'name']),
+            'staff' => $this->assignableStaff($task),
             'statuses' => TaskStatus::cases(),
             'priorities' => TaskPriority::cases(),
         ];
+    }
+
+    /**
+     * Support staff don't manage employee tasks, so their assignee dropdown
+     * only offers themselves — plus the task's current assignee (if any)
+     * so re-saving an existing task they merely participate in doesn't
+     * silently unassign it.
+     */
+    private function assignableStaff(?Task $task): Collection
+    {
+        $user = $this->user();
+
+        if (! $user->hasRole(UserRole::Support)) {
+            return User::orderBy('name')->get(['id', 'name']);
+        }
+
+        return User::where('id', $user->id)
+            ->when(
+                $task?->assignee_id && $task->assignee_id !== $user->id,
+                fn ($q) => $q->orWhere('id', $task->assignee_id),
+            )
+            ->orderBy('name')
+            ->get(['id', 'name']);
     }
 
     private function user(): User

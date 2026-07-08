@@ -9,6 +9,7 @@ use App\Models\User;
 /**
  * Client (Customer) access rules:
  *  - admin/manager/support/accounts: can view and list all clients.
+ *  - support: view-only — cannot edit client profiles or manage contacts.
  *  - sales: can only view/edit/manage clients they own or that are unassigned.
  *  - admin / manager: full access including delete.
  *
@@ -42,7 +43,7 @@ class CustomerPolicy
 
     public function update(User $user, Customer $customer): bool
     {
-        if ($user->hasRole(UserRole::Intern)) {
+        if ($user->hasRole(UserRole::Intern, UserRole::Support)) {
             return false;
         }
 
@@ -64,13 +65,13 @@ class CustomerPolicy
     }
 
     /**
-     * Manage nested resources (contacts): Admin/Manager/Support full access;
-     * Sales only for their own/unassigned clients. Accounts can view contacts
-     * but not add/edit/delete them.
+     * Manage nested resources (contacts): Admin/Manager full access; Sales
+     * only for their own/unassigned clients. Support and Accounts can view
+     * contacts but not add/edit/delete them.
      */
     public function manage(User $user, Customer $customer): bool
     {
-        if ($user->hasRole(UserRole::Admin, UserRole::Manager, UserRole::Support)) {
+        if ($user->hasRole(UserRole::Admin, UserRole::Manager)) {
             return true;
         }
 
