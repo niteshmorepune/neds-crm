@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Enums\LeadSource;
 use App\Enums\LeadStatus;
 use App\Models\Lead;
+use App\Models\Service;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -29,6 +30,13 @@ use Illuminate\Support\Facades\Log;
  * leadgen response doesn't include human-readable campaign/ad names; mapping
  * those would need an extra Graph API call this job deliberately doesn't make
  * until the mapping's been verified against a real payload.
+ *
+ * Custom form questions beyond the standard fields are opportunistically
+ * mapped too, so Meta leads score as well as manually-entered ones: an
+ * answer matching an active Service name (exact, case-insensitive) sets
+ * service_id, and a "budget"-keyed answer with a parseable number sets
+ * estimated_value. Anything that doesn't match either is preserved as a
+ * note, same as before. See matchServiceId()/matchBudget().
  */
 class ImportMetaLead implements ShouldQueue
 {
@@ -84,6 +92,8 @@ class ImportMetaLead implements ShouldQueue
         }
 
         [$fields, $extra] = $this->parseFieldData($response->json('field_data', []));
+        [$serviceId, $extra] = $this->matchServiceId($extra);
+        [$estimatedValue, $extra] = $this->matchBudget($extra);
 
         $lead = Lead::create([
             'name' => $fields['name'] ?: 'Facebook Lead',
@@ -91,6 +101,8 @@ class ImportMetaLead implements ShouldQueue
             'email' => $fields['email'],
             'phone' => $fields['phone'],
             'source' => LeadSource::MetaAds->value,
+            'service_id' => $serviceId,
+            'estimated_value' => $estimatedValue,
             'status' => LeadStatus::New->value,
             'owner_id' => null,
             'meta_leadgen_id' => $this->leadgenId,
@@ -139,5 +151,75 @@ class ImportMetaLead implements ShouldQueue
         $extra = collect($flat)->except($usedKeys)->all();
 
         return [$mapped, $extra];
+    }
+
+    /**
+     * Matches a custom question's answer against an active Service name
+     * (exact, case-insensitive) — this only works if the advertiser's form
+     * uses the service names verbatim as multiple-choice options, which is
+     * why the ad-setup guidance tells them to do exactly that. Matched on
+     * the answer value, not the field key, since Meta slugifies the key from
+     * whatever question text the advertiser typed and isn't predictable.
+     *
+     * @param  array<string, string>  $extra
+     * @return array{0: ?int, 1: array<string, string>}
+     */
+    private function matchServiceId(array $extra): array
+    {
+        $services = Service::active()->get(['id', 'name'])
+            ->keyBy(fn (Service $service) => mb_strtolower(trim($service->name)));
+
+        foreach ($extra as $key => $value) {
+            $service = $services->get(mb_strtolower(trim($value)));
+
+            if ($service !== null) {
+                unset($extra[$key]);
+
+                return [$service->id, $extra];
+            }
+        }
+
+        return [null, $extra];
+    }
+
+    /**
+     * Parses a rupee amount (as integer paise) out of a "budget"-labelled
+     * custom question. Only fields whose key mentions "budget" are attempted
+     * — matching on the value alone would misread any unrelated numeric
+     * answer (e.g. "years in business: 5") as a budget. A single number is
+     * taken as-is; two or more (a "10000-25000" style range) are averaged.
+     * Anything with no usable number is left as a note untouched.
+     *
+     * @param  array<string, string>  $extra
+     * @return array{0: ?int, 1: array<string, string>}
+     */
+    private function matchBudget(array $extra): array
+    {
+        foreach ($extra as $key => $value) {
+            if (! str_contains(mb_strtolower($key), 'budget')) {
+                continue;
+            }
+
+            preg_match_all('/(\d[\d,]*(?:\.\d+)?)\s*([kK])?/', $value, $matches, PREG_SET_ORDER);
+
+            $numbers = array_map(
+                fn (array $match) => (float) str_replace(',', '', $match[1]) * (($match[2] ?? '') !== '' ? 1000 : 1),
+                $matches
+            );
+
+            if ($numbers === []) {
+                continue;
+            }
+
+            $rupees = count($numbers) >= 2
+                ? array_sum(array_slice($numbers, 0, 2)) / 2
+                : $numbers[0];
+
+            unset($extra[$key]);
+
+            return [(int) round($rupees * 100), $extra];
+        }
+
+        return [null, $extra];
     }
 }
