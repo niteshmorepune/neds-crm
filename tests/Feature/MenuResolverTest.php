@@ -25,3 +25,19 @@ it('busts the per-user cache when flush() is called', function () {
     $after = $this->resolver->visibleItems($admin)->firstWhere('key', 'customer');
     expect($after->route)->toBe('something.else');
 });
+
+it('expands accessible keys and sidebar visibility for an additional role', function () {
+    $support = User::factory()->role(UserRole::Support)->create();
+
+    // 'account' is Manager + Accounts only per MenuItemsSeeder — a plain
+    // Support user should not see or be able to reach it.
+    expect($this->resolver->canAccess($support, 'account'))->toBeFalse()
+        ->and($this->resolver->visibleItems($support)->pluck('key'))->not->toContain('account');
+
+    $support->additionalRoles()->create(['role' => UserRole::Accounts]);
+    $support->load('additionalRoles');
+    $this->resolver->flush();
+
+    expect($this->resolver->canAccess($support, 'account'))->toBeTrue()
+        ->and($this->resolver->visibleItems($support)->pluck('key'))->toContain('account');
+});

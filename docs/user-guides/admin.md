@@ -24,15 +24,19 @@ role** (the dropdown above) plus an optional set of **additional roles** —
 checkboxes further down the same Add/Edit form. Additional roles:
 - **Do** expand what the person can directly do (Policies), who they show up
   for in role-targeted notifications (Deal Won, SLA breach, leave-request
-  approvals, recurring-invoice due warnings, etc.), and owner-picker
-  dropdowns (Client/Lead "assign to").
-- **Do not** change their sidebar or their dashboard panel — those always
-  follow the primary role only. If someone needs the extra sidebar items
-  their additional role would normally show, grant them individually via
-  **Menu Controller → per-user overrides**.
+  approvals, recurring-invoice due warnings, etc.), owner-picker dropdowns
+  (Client/Lead "assign to"), **and their sidebar** — an additional role's
+  menu items now appear and are reachable automatically, no separate Menu
+  Controller step needed.
+- **Do not** change their dashboard panel — that always follows the primary
+  role only (e.g. a Support user given Sales as an additional role still
+  sees the Support dashboard, but gets the Sales sidebar items too).
 - **Do not** affect auto-assignment/routing (new-lead auto-owner, automatic
   task routing to a project's Support assignee) — those also stay
   primary-role-only, by design.
+- Menu Controller → per-user overrides still exists for one-off exceptions
+  (granting/hiding a single item for one person without giving them a whole
+  extra role, or hiding an item their role would normally show).
 
 **Roles available:**
 
