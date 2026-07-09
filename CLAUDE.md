@@ -265,3 +265,21 @@ Record every "we chose X because Y" here — this is the project's memory.
   multi-role support just made it reachable. Not changed, since altering
   Policy priority order was out of scope for this feature — flagged here in
   case it ever surprises someone.
+- **2026-07-09 — Menu Controller: additional roles now auto-expand the
+  sidebar.** Supersedes the "left untouched" call in the 2026-07-08 entry
+  above. `MenuResolver::accessibleKeys()` now unions the primary role with
+  the `role_user` pivot (via `$user->allRoles()`) instead of checking
+  `$user->role->value` alone, and its cache key moved from per-role
+  (`access:role:{role}`) to per-user (`access:user:{id}`) since access is no
+  longer determined by primary role alone. Since `computeVisibleItems()`
+  already derives sidebar visibility from `accessibleKeys()`, this same
+  change also makes the sidebar follow additional roles — no separate
+  visibility change was needed. `UserController::update()` now flushes the
+  menu cache when additional roles change, not just when the primary role
+  changes. The dashboard panel (`DashboardController`) is untouched and
+  still follows the primary role only — that decision (avoid a secondary
+  role silently outranking the primary role's panel) still stands and is
+  unrelated to sidebar/route access. Owner confirmed this had become real
+  friction (manual per-user Menu Controller overrides for every additional
+  role grant), which is exactly the trigger condition the original
+  deferred-item note called for.

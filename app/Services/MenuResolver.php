@@ -12,9 +12,10 @@ use Illuminate\Support\Facades\Cache;
  *
  * Two distinct concepts, deliberately kept separate:
  *
- *  - ACCESS (security): which menu keys a user's ROLE may reach. Admin gets
- *    everything. Used by the EnsureMenuAccess middleware to protect routes.
- *    Per-user overrides do NOT affect this.
+ *  - ACCESS (security): which menu keys a user's ROLE(s) may reach — primary
+ *    role plus any additional roles (role_user pivot). Admin gets everything.
+ *    Used by the EnsureMenuAccess middleware to protect routes. Per-user
+ *    overrides (menu_item_user) do NOT affect this.
  *
  *  - VISIBILITY (cosmetic): which items show in the sidebar. Starts from the
  *    role defaults, then applies per-user overrides (granted shows an item,
@@ -47,7 +48,10 @@ class MenuResolver
     }
 
     /**
-     * Menu keys the user's role may access. Admin sees all.
+     * Menu keys the user's role(s) may access — primary role plus any
+     * additional roles. Admin sees all. Cached per-user (rather than
+     * per-role) since additional roles make the set of granted keys
+     * user-specific, not just role-specific.
      *
      * @return array<int, string>
      */
@@ -62,10 +66,13 @@ class MenuResolver
         }
 
         return Cache::remember(
-            $this->key("access:role:{$user->role->value}"),
+            $this->key("access:user:{$user->getKey()}"),
             self::TTL,
             fn () => MenuItem::query()
-                ->whereHas('roleAssignments', fn ($q) => $q->where('role', $user->role->value))
+                ->whereHas('roleAssignments', fn ($q) => $q->whereIn(
+                    'role',
+                    $user->allRoles()->map(fn ($role) => $role->value)->all(),
+                ))
                 ->pluck('key')
                 ->all(),
         );

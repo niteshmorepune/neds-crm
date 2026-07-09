@@ -82,13 +82,17 @@ class UserController extends Controller
             unset($data['password']);
         }
 
+        $existingAdditionalRoles = $user->additionalRoles->map(fn ($assignment) => $assignment->role->value)->sort()->values()->all();
+
         $user->update($data);
         $this->syncAdditionalRoles($user, $additionalRoles);
 
-        // The sidebar cache is keyed on the primary role only — additional
-        // roles never affect menu visibility (see the multi-role-support
-        // decisions log entry in CLAUDE.md), so no flush is needed for them.
-        if ($roleChanging) {
+        // Additional roles now expand real menu access (MenuResolver::accessibleKeys()
+        // checks the role_user pivot), so a change there needs the same cache
+        // flush as a primary role change.
+        $additionalRolesChanging = $existingAdditionalRoles !== collect($additionalRoles)->sort()->values()->all();
+
+        if ($roleChanging || $additionalRolesChanging) {
             $menu->flush();
         }
 

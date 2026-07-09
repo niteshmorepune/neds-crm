@@ -112,13 +112,29 @@ it('silently drops an additional role that duplicates the primary role, rather t
         ->and($user->hasRole(UserRole::Support))->toBeTrue();
 });
 
-it('does not flush the menu cache when only additional roles change', function () {
+it('flushes the menu cache when only additional roles change', function () {
     $staff = User::factory()->role(UserRole::Support)->create();
 
     Cache::spy();
 
     $this->actingAs($this->admin)->put(route('users.update', $staff), [
         'name' => $staff->name,
+        'email' => $staff->email,
+        'role' => UserRole::Support->value,
+        'additional_roles' => [UserRole::Sales->value],
+        'is_active' => '1',
+    ])->assertRedirect();
+
+    Cache::shouldHaveReceived('forever')->once();
+});
+
+it('does not flush the menu cache when nothing role-related changes', function () {
+    $staff = User::factory()->role(UserRole::Support)->withAdditionalRoles(UserRole::Sales)->create();
+
+    Cache::spy();
+
+    $this->actingAs($this->admin)->put(route('users.update', $staff), [
+        'name' => 'Renamed Only',
         'email' => $staff->email,
         'role' => UserRole::Support->value,
         'additional_roles' => [UserRole::Sales->value],
