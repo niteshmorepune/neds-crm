@@ -7,6 +7,7 @@ use App\Http\Requests\UserStoreRequest;
 use App\Http\Requests\UserUpdateRequest;
 use App\Models\User;
 use App\Services\MenuResolver;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -104,7 +105,18 @@ class UserController extends Controller
         abort_unless($request->user()->isAdmin(), 403);
         abort_if($user->id === $request->user()->id, 403, 'You cannot delete your own account.');
 
-        $user->delete();
+        try {
+            $user->delete();
+        } catch (QueryException $e) {
+            if ($e->getCode() !== '23000') {
+                throw $e;
+            }
+
+            return redirect()->route('users.index')->with(
+                'error',
+                "{$user->name} can't be deleted — they created content pieces (SMDost briefs) that reference them. Reassign or delete those first, or deactivate the user instead."
+            );
+        }
 
         return redirect()->route('users.index')->with('status', 'User deleted.');
     }

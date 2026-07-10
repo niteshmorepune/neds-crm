@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\UserRole;
+use App\Models\ContentPiece;
 use App\Models\User;
 use Database\Seeders\MenuItemsSeeder;
 
@@ -165,4 +166,24 @@ it('stops an admin from disabling or deleting their own account', function () {
 
     // Self-delete is blocked.
     $this->actingAs($this->admin)->delete(route('users.destroy', $this->admin))->assertForbidden();
+});
+
+it('deletes a user with no related records', function () {
+    $staff = User::factory()->role(UserRole::Manager)->create();
+
+    $this->actingAs($this->admin)->delete(route('users.destroy', $staff))
+        ->assertRedirect(route('users.index'));
+
+    expect(User::find($staff->id))->toBeNull();
+});
+
+it('shows a friendly error instead of a 500 when deleting a user blocked by a foreign key', function () {
+    $staff = User::factory()->role(UserRole::Manager)->create();
+    ContentPiece::factory()->create(['created_by' => $staff->id]);
+
+    $this->actingAs($this->admin)->delete(route('users.destroy', $staff))
+        ->assertRedirect(route('users.index'))
+        ->assertSessionHas('error');
+
+    expect(User::find($staff->id))->not->toBeNull();
 });
