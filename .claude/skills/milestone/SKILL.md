@@ -90,7 +90,7 @@ jar (scrape the `_token` from the form). Commit only when the user asks;
 
 ## Maintenance / post-launch (the app is LIVE)
 
-M0–M7 are built, merged, and **deployed live** at https://crm.talktonitesh.com
+M0–M7 are built, merged, and **deployed live** at https://crm.niranjanenterprises.co.in
 (Hostinger; details + one-time bootstrap in `docs/deploy-checklist.md`,
 `docs/deploy-github-actions.md`, and the [[deployment]] memory). The build phase
 is done; new work is maintenance.

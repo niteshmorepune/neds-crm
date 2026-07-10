@@ -24,7 +24,7 @@ echo 'BIOMETRIC_DEVICE_SERIAL=NFZ8243301103' >> .env && php artisan config:cache
 
 **Check 2 — Is the device pointing at the CRM?**
 On the machine: Menu → Cloud Server → ADMS. Verify:
-- Server Address: `crm.talktonitesh.com`
+- Server Address: `crm.niranjanenterprises.co.in`
 - Port: (blank or 443)
 - HTTPS: ON
 
@@ -35,7 +35,7 @@ field must contain their numeric ID from the machine's Device Users list
 
 **Check 4 — Is the endpoint reachable?**
 ```
-curl -s "https://crm.talktonitesh.com/api/iclock/cdata?SN=NFZ8243301103"
+curl -s "https://crm.niranjanenterprises.co.in/api/iclock/cdata?SN=NFZ8243301103"
 ```
 Should return `GET OPTION FROM:NFZ8243301103`. If it doesn't, the CRM is down
 or config:cache wasn't run after setting the env var.

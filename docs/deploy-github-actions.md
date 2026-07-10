@@ -34,7 +34,7 @@ are identical to that repo — copy them over (or reuse the same SSH key):
 
 ## 2. One-time server bootstrap (SSH, run once)
 ```bash
-# a) Create the subdomain in hPanel → Subdomains: crm.talktonitesh.com
+# a) Create the subdomain in hPanel → Subdomains: crm.niranjanenterprises.co.in
 #    Then set its Document Root to the clone's /public (step c).
 
 # b) Clone the repo to the app folder (DEPLOY_PATH). Use a remote the server can
@@ -46,7 +46,7 @@ cd neds-crm
 git checkout master
 
 # c) Point the subdomain's Document Root at this clone's public folder, in
-#    hPanel → Subdomains → crm.talktonitesh.com → Document Root:
+#    hPanel → Subdomains → crm.niranjanenterprises.co.in → Document Root:
 #       /home/USER/neds-crm/public
 #    (No index.php path edits needed when the docroot IS the repo's /public.)
 

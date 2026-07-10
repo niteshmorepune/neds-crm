@@ -1,7 +1,7 @@
 # Biometric Bridge
 
 Fallback for the eSSL biometric attendance device. The device's own outbound
-HTTPS push to `crm.talktonitesh.com` never reaches the server — Hostinger's
+HTTPS push to `crm.niranjanenterprises.co.in` never reaches the server — Hostinger's
 edge terminates/redirects the connection before this budget ADMS terminal can
 complete a real TLS handshake (see the CRM's `docs/user-guides/troubleshooting.md`
 Section 1 and the project's backlog notes for the full investigation).

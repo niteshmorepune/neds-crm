@@ -3,7 +3,7 @@
 Welcome to the NEDS CRM. This covers the basics every team member needs.
 
 ## 1. Logging in
-1. Go to **https://crm.talktonitesh.com**.
+1. Go to **https://crm.niranjanenterprises.co.in**.
 2. Enter the **email** and **temporary password** your administrator gave you.
 3. Click **Log in**.
 

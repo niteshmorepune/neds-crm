@@ -54,7 +54,7 @@ be substantially wrong once before and had to be re-mapped from scratch.
 
 **Check 4 — Is the CRM endpoint itself reachable?**
 ```
-curl -s "https://crm.talktonitesh.com/iclock/cdata?SN=NFZ8243301103"
+curl -s "https://crm.niranjanenterprises.co.in/iclock/cdata?SN=NFZ8243301103"
 ```
 Should return `GET OPTION FROM:NFZ8243301103`. If it doesn't, the CRM is down
 or `BIOMETRIC_DEVICE_SERIAL` isn't set in the server `.env` (should be

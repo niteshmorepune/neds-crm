@@ -78,7 +78,7 @@ From that point on, the machine's punches update their attendance automatically.
 
 **If the sync stops working**, check that `BIOMETRIC_DEVICE_SERIAL` is set
 correctly in the server `.env` and run `php artisan config:cache`. The
-machine's Cloud Server settings should point to `crm.talktonitesh.com` on
+machine's Cloud Server settings should point to `crm.niranjanenterprises.co.in` on
 port 443 with HTTPS on.
 
 **Occasional missing punches:** the biometric machine's own stored log can
@@ -308,7 +308,7 @@ follow-ups).
 for the ad account):
 1. In the Meta App Dashboard, add the **Webhooks** product, subscribe to the
    **Page** object's `leadgen` field.
-2. Callback URL: `https://crm.talktonitesh.com/api/webhooks/meta-leads`.
+2. Callback URL: `https://crm.niranjanenterprises.co.in/api/webhooks/meta-leads`.
    Verify token: any value you choose — set the same value in both Meta's
    dashboard and the server's `META_WEBHOOK_VERIFY_TOKEN`.
 3. Set `META_APP_SECRET` (from the app's Basic Settings) and

@@ -1,7 +1,7 @@
 # NEDS CRM — User Guides
 
 Help documentation for the Niranjan Enterprises Digital Solutions CRM at
-**https://crm.talktonitesh.com**.
+**https://crm.niranjanenterprises.co.in**.
 
 Start with **Getting Started**, then read the guide for your role.
 

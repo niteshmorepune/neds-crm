@@ -7,7 +7,7 @@ tickets, and stay updated on the work we're doing for you. This guide is for
 ## Getting access
 1. NEDS sends you an **invitation email** with a link to set your password.
 2. Click the link, choose a password, and you're in.
-3. After that, log in any time at **https://crm.talktonitesh.com/portal/login**
+3. After that, log in any time at **https://crm.niranjanenterprises.co.in/portal/login**
    with your email and password.
 
 ## Finding your way around

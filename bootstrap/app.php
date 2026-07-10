@@ -22,7 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
             // to /iclock/cdata with NO configurable path (only server address
             // and port are settable on the device), so this must live outside
             // the api.php file's /api prefix.
-            //   Server Address: crm.talktonitesh.com, Port: 443, HTTPS: ON
+            //   Server Address: crm.niranjanenterprises.co.in, Port: 443, HTTPS: ON
             //   Auth: SN query param validated against BIOMETRIC_DEVICE_SERIAL.
             // GET = device ping/registration handshake; POST = attendance log push.
             Route::middleware(['throttle:300,1', VerifyBiometricDeviceSerial::class])
