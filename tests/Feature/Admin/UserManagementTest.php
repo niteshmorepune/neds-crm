@@ -186,4 +186,12 @@ it('shows a friendly error instead of a 500 when deleting a user blocked by a fo
         ->assertSessionHas('error');
 
     expect(User::find($staff->id))->not->toBeNull();
+
+    // The flash must actually render on the page users.index redirects to,
+    // not just exist in the session (users/index.blade.php previously had
+    // no markup for session('error') at all, so it was silently dropped).
+    $this->followingRedirects()
+        ->actingAs($this->admin)
+        ->delete(route('users.destroy', $staff))
+        ->assertSee("can&#039;t be deleted", false);
 });

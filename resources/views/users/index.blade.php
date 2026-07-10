@@ -6,6 +6,10 @@
             <div class="rounded-md bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-800">{{ session('status') }}</div>
         @endif
 
+        @if (session('error'))
+            <div class="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{{ session('error') }}</div>
+        @endif
+
         <div class="flex justify-end">
             <a href="{{ route('users.create') }}" class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">Add user</a>
         </div>
