@@ -67,6 +67,11 @@ exits without polling the device if it's invoked outside it — a backstop for
 if the PC wakes from sleep and the trigger fires late, or someone runs
 `npm start` by hand outside hours, not the primary schedule control.
 
+It also skips office holidays, listed by date in `holidays.json` in this
+folder (e.g. `{"dates": ["2026-08-15", "2026-10-20"]}`). Task Scheduler has
+no holiday-calendar concept, so this list is read fresh from disk on every
+run — add next year's dates to it once a year, no restart needed.
+
 ## Why re-sending is safe
 
 The CRM's biometric webhook (`BiometricWebhookController::push()`) is

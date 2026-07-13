@@ -13,6 +13,20 @@ function log(message) {
     fs.appendFileSync(logFile, line + '\n');
 }
 
+// node-zklib has a bug: when a device-data request fails, readWithBuffer()
+// calls reject(err) without returning, then dereferences the still-null
+// reply — a second throw inside its `new Promise(async ...)` executor that
+// never gets attached to anything. Node treats that as fatal and kills the
+// process before our own try/catch in main() ever runs. Intercept it here so
+// a device-side hiccup (stale session, device unreachable mid-read, etc.)
+// logs cleanly and exits instead of dumping a raw stack trace with no log
+// entry at all.
+process.on('unhandledRejection', (reason) => {
+    const message = reason instanceof Error ? reason.message : String(reason);
+    log(`ERROR (unhandled rejection, likely a node-zklib device-read failure): ${message}`);
+    process.exit(1);
+});
+
 function required(name) {
     const value = process.env[name];
     if (!value) {
@@ -41,22 +55,43 @@ function localDateKey(date) {
 // or late finisher still gets picked up on the next in-window run.
 const RUN_WINDOW_START_HOUR = 8.5; // 8:30am
 const RUN_WINDOW_END_HOUR = 19; // 7:00pm
+const HOLIDAYS_FILE = path.join(__dirname, 'holidays.json');
 
-function isWithinRunWindow(date) {
-    const day = date.getDay(); // 0 = Sunday, 6 = Saturday
-    if (day === 0) {
-        return false;
+// Read fresh on every run (not cached at module load) so editing the file
+// takes effect on the very next 5-minute tick without restarting anything.
+function loadHolidays() {
+    try {
+        const parsed = JSON.parse(fs.readFileSync(HOLIDAYS_FILE, 'utf8'));
+        return new Set(parsed.dates ?? []);
+    } catch (error) {
+        log(`WARNING: could not read holidays.json (${error.message}) — treating today as a normal working day.`);
+        return new Set();
+    }
+}
+
+// Returns null when it's fine to run, otherwise a reason string for the log.
+function skipReason(date) {
+    if (date.getDay() === 0) { // 0 = Sunday
+        return 'Sunday';
+    }
+
+    if (loadHolidays().has(localDateKey(date))) {
+        return 'office holiday';
     }
 
     const hour = date.getHours() + date.getMinutes() / 60;
+    if (hour < RUN_WINDOW_START_HOUR || hour >= RUN_WINDOW_END_HOUR) {
+        return 'outside 8:30am-7:00pm';
+    }
 
-    return hour >= RUN_WINDOW_START_HOUR && hour < RUN_WINDOW_END_HOUR;
+    return null;
 }
 
 async function main() {
     const now = new Date();
-    if (!isWithinRunWindow(now)) {
-        log('Outside the office run window (Mon-Sat, 8:30am-7:00pm). Skipping this run.');
+    const reason = skipReason(now);
+    if (reason) {
+        log(`Skipping this run (${reason}).`);
         return;
     }
 

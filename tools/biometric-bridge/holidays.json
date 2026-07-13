@@ -1,0 +1,4 @@
+{
+  "_comment": "Office holidays (YYYY-MM-DD) the bridge skips even on an in-window, non-Sunday day. Edit this list once a year — no restart needed, it's read fresh on every run.",
+  "dates": []
+}
