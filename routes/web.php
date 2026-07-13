@@ -180,6 +180,8 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
     Route::get('reports/revenue/export', [ReportController::class, 'exportRevenue'])->name('reports.revenue.export');
     Route::get('reports/lead-sources', [ReportController::class, 'leadSources'])->name('reports.lead-sources');
     Route::get('reports/lead-sources/export', [ReportController::class, 'exportLeadSources'])->name('reports.lead-sources.export');
+    Route::get('reports/business-overview', [ReportController::class, 'businessOverview'])->name('reports.business-overview');
+    Route::get('reports/business-overview/export', [ReportController::class, 'exportBusinessOverview'])->name('reports.business-overview.export');
 
     /*
      * Partners — content agency collaborators. Admin/manager only (menu.access:partners).

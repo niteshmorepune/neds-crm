@@ -331,6 +331,14 @@ projects (see [Manager guide → Content collaboration](manager.md)).
 them — the CRM will block the delete and show an error if any pieces still
 reference that partner.
 
+How much business each partner has actually brought in — referred clients,
+plus won/pipeline/lost deal value attributed via a deal's **Referred by**
+field — shows up in **Business Overview** (Reports panel; see [Manager guide
+→ Reports](manager.md)). As Admin you see the full financial detail there
+(itemized overdue invoices, named client breakdown, itemized upcoming
+renewals) — Manager sees the same report with those three itemized sections
+trimmed to summary numbers only.
+
 ## 10. Audit Log
 **Audit Log** (admin) shows who created, updated or deleted records, and when.
 Filter by record type or event. Use it to investigate "who changed this?".
