@@ -33,6 +33,18 @@ never run automatically as a batch.
 ## Reports
 From the **Reports** panel on the dashboard:
 
+**Business Overview** — the executive snapshot, for a chosen financial year:
+- **Partner Performance**: which partners referred which clients and how much
+  won/pipeline/lost business is attributed to each.
+- **AR Aging**, **MRR / Recurring Snapshot**, and **Client Concentration**
+  (% of revenue from your top 5/10 clients): as a manager you see the summary
+  numbers here (e.g. total outstanding, total MRR, the concentration
+  percentages) but not the itemized invoice-level or named-client detail —
+  that's limited to Admin/Accounts.
+- **Pipeline & Funnel**: company-wide open pipeline by stage, win rate, avg
+  deal size, and avg sales-cycle length for the period — full detail, same as
+  Admin. Export CSV.
+
 **Employee Performance Report** — per person, for a chosen month:
 - tasks completed, **on-time %**, calls made, leads converted, **attendance %**,
   and daily reports submitted.

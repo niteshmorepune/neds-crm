@@ -87,6 +87,13 @@ This gives you a full week to follow up before the invoice becomes overdue.
   what, and how overdue.
 - From the **Dashboard → Reports** panel → **Revenue Report**: income by month,
   by service, and by client, split into **recurring vs one-time**. Export to CSV.
+- From the same panel → **Business Overview**: the executive snapshot. As
+  Accounts you get the full financial detail (same as Admin) — AR aging broken
+  into current/0-30/31-60/61-90/90+ day buckets with the itemized overdue
+  invoice list, the full MRR breakdown by service plus which recurring
+  contracts expire in the next 30 days, and the named top-5/top-10 client
+  breakdown behind the concentration percentages. Also shows partner referral
+  performance and the company-wide pipeline/win-rate funnel. Export to CSV.
 
 ## 5. Invoice emails
 Invoice emails sent to clients now have a **professional branded layout**: NEDS

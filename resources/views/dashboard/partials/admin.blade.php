@@ -104,6 +104,7 @@
     <div class="rounded-lg bg-white p-6 shadow-sm">
         <h3 class="text-base font-semibold text-gray-900">Reports</h3>
         <ul class="mt-3 space-y-2 text-sm">
+            <li><a href="{{ route('reports.business-overview') }}" class="text-indigo-600 hover:underline">Business Overview</a></li>
             <li><a href="{{ route('reports.revenue') }}" class="text-indigo-600 hover:underline">Revenue Report</a></li>
             <li><a href="{{ route('reports.employee-performance') }}" class="text-indigo-600 hover:underline">Employee Performance Report</a></li>
             <li><a href="{{ route('reports.lead-sources') }}" class="text-indigo-600 hover:underline">Lead Source Performance</a></li>
