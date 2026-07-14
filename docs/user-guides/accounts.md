@@ -51,10 +51,27 @@ invoice that was wrongly issued as GST, open it in **Edit** and untick the GST
 box — this only works before any payment has been recorded; once a payment
 exists the invoice is locked and needs a credit note instead.
 
+**Deleting an invoice:** if an invoice was created by mistake or is otherwise
+wrong, open it and click **Delete** (Admin, Manager, and Accounts can all do
+this). This works even if a payment has already been recorded against it —
+deleting removes the invoice and any of its payments together, so use it
+deliberately, not as a routine correction (for a GST mistake on an
+already-paid invoice, a credit note is usually the right tool instead — see
+above). Deleted invoices and payments are kept internally in case they ever
+need to be recovered, but they no longer show up anywhere in the CRM.
+
 ## 2. Recording payments
 Open an invoice → **record a payment** (amount, date, mode — UPI / NEFT / cheque
 / cash / gateway). **Partial payments are allowed**: the invoice moves to
 *Partially paid*, then *Paid* once fully settled. Status updates automatically.
+
+**TDS (Tax Deducted at Source):** if the client deducted TDS before paying,
+enter it in the optional **TDS Amount** field alongside the payment amount.
+The invoice's TDS total and balance update automatically — an invoice counts
+as fully settled once **amount paid + TDS deducted** reaches the total, even
+though the actual cash received is less. The invoice page shows a TDS tile
+next to Total/Paid/Balance, and the PDF adds a "TDS deducted" / "Net payable"
+line once any TDS has been recorded on that invoice.
 
 **Sending a payment receipt:** when any of the client's contacts has an email
 address on file, a **Send payment receipt to client** checkbox appears at the
