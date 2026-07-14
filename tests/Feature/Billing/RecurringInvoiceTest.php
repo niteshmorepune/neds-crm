@@ -1,9 +1,11 @@
 <?php
 
+use App\Enums\UserRole;
 use App\Mail\InvoiceIssued;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\RecurringInvoice;
+use App\Models\User;
 use Illuminate\Support\Facades\Mail;
 
 function recurringWithLine(array $attributes = []): RecurringInvoice
@@ -56,6 +58,29 @@ it('skips templates that are not yet due', function () {
     $this->artisan('app:generate-recurring-invoices')->assertSuccessful();
 
     expect(Invoice::count())->toBe(0);
+});
+
+it('generates via the "Generate & Send Now" button, self-healing a drifted invoice-number counter', function () {
+    $this->seed(\Database\Seeders\MenuItemsSeeder::class);
+    Mail::fake();
+
+    // Reproduces the production bug: a manually-logged invoice landed ahead of
+    // the invoice_number_sequences counter, so the counter is stuck behind the
+    // real max and a naive generate() call would collide on every attempt.
+    $manuallyLogged = Invoice::factory()->create();
+    $manuallyLogged->update(['invoice_number' => 'NEDS/'.$manuallyLogged->financial_year.'/0050']);
+
+    $template = recurringWithLine(['next_run_on' => now()->addWeek()->toDateString()]);
+    $accounts = User::factory()->role(UserRole::Accounts)->create();
+
+    $response = $this->actingAs($accounts)->post(route('recurring-invoices.generate-now', $template));
+
+    $response->assertRedirect(route('recurring-invoices.show', $template));
+    $invoice = Invoice::where('recurring_invoice_id', $template->id)->first();
+    expect($invoice)->not->toBeNull()
+        ->and($invoice->invoice_number)->not->toBe($manuallyLogged->invoice_number);
+
+    Mail::assertSent(InvoiceIssued::class);
 });
 
 it('deactivates a template once it passes its end date', function () {

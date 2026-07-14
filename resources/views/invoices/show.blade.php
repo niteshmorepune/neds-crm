@@ -59,9 +59,10 @@
                 </div>
             </div>
 
-            <div class="mt-4 grid grid-cols-3 gap-4 text-sm">
+            <div class="mt-4 grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
                 <div class="rounded-md bg-gray-50 p-3"><div class="text-gray-500">Total</div><div class="font-semibold">{{ \App\Support\Money::format($invoice->total) }}</div></div>
                 <div class="rounded-md bg-gray-50 p-3"><div class="text-gray-500">Paid</div><div class="font-semibold">{{ \App\Support\Money::format($invoice->amount_paid) }}</div></div>
+                <div class="rounded-md bg-gray-50 p-3"><div class="text-gray-500">TDS</div><div class="font-semibold">{{ \App\Support\Money::format($invoice->tdsTotal()) }}</div></div>
                 <div class="rounded-md bg-gray-50 p-3"><div class="text-gray-500">Balance</div><div class="font-semibold">{{ \App\Support\Money::format($invoice->balance()) }}</div></div>
             </div>
         </div>
@@ -112,7 +113,12 @@
                 <ul class="mt-3 divide-y divide-gray-100 text-sm">
                     @forelse ($invoice->payments as $payment)
                         <li class="flex items-center justify-between py-2">
-                            <span>{{ \App\Support\Money::format($payment->amount) }} · {{ $payment->mode->label() }} {{ $payment->reference ? "($payment->reference)" : '' }}</span>
+                            <span>
+                                {{ \App\Support\Money::format($payment->amount) }} · {{ $payment->mode->label() }} {{ $payment->reference ? "($payment->reference)" : '' }}
+                                @if ($payment->tds_amount > 0)
+                                    <span class="text-gray-400">(TDS: {{ \App\Support\Money::format($payment->tds_amount) }})</span>
+                                @endif
+                            </span>
                             <span class="text-gray-400">{{ $payment->paid_on->format('d M Y') }}</span>
                         </li>
                     @empty
@@ -150,6 +156,10 @@
                             <div>
                                 <x-input-label for="amount" value="Amount (₹)" />
                                 <x-text-input id="amount" name="amount" type="number" step="0.01" min="0" class="mt-1 block w-full" :value="old('amount')" />
+                            </div>
+                            <div>
+                                <x-input-label for="tds_amount" value="TDS Amount (₹) — optional" />
+                                <x-text-input id="tds_amount" name="tds_amount" type="number" step="0.01" min="0" class="mt-1 block w-full" :value="old('tds_amount')" />
                             </div>
                             <div>
                                 <x-input-label for="paid_on" value="Date" />

@@ -12,7 +12,7 @@ class Payment extends Model
     use HasFactory;
 
     protected $fillable = [
-        'invoice_id', 'paid_on', 'mode', 'reference', 'amount', 'recorded_by',
+        'invoice_id', 'paid_on', 'mode', 'reference', 'amount', 'tds_amount', 'recorded_by',
     ];
 
     protected function casts(): array
@@ -21,6 +21,7 @@ class Payment extends Model
             'paid_on' => 'date',
             'mode' => PaymentMode::class,
             'amount' => 'integer',
+            'tds_amount' => 'integer',
         ];
     }
 
