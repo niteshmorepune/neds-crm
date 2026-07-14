@@ -152,19 +152,27 @@ it('grants a support user read-only invoice access once their role is added via 
     $this->actingAs($support)->get(route('invoices.index'))->assertOk();
 });
 
-it('deletes a draft invoice but blocks deleting one with a payment', function () {
+it('deletes a draft invoice', function () {
+    $admin = User::factory()->role(UserRole::Admin)->create();
+    $unpaid = invoiceWithLine();
+
+    $this->actingAs($admin)->delete(route('invoices.destroy', $unpaid))->assertRedirect(route('invoices.index'));
+    expect(Invoice::find($unpaid->id))->toBeNull();
+});
+
+it('deletes an invoice that already has a payment recorded, soft-deleting the payment alongside it', function () {
     $admin = User::factory()->role(UserRole::Admin)->create();
     $invoice = invoiceWithLine();
 
-    $unpaid = invoiceWithLine();
-    $this->actingAs($admin)->delete(route('invoices.destroy', $unpaid))->assertRedirect(route('invoices.index'));
-    expect(Invoice::find($unpaid->id))->toBeNull();
-
-    $invoice->payments()->create(['paid_on' => now(), 'mode' => 'cash', 'amount' => 1000, 'recorded_by' => $admin->id]);
+    $payment = $invoice->payments()->create(['paid_on' => now(), 'mode' => 'cash', 'amount' => 1000, 'recorded_by' => $admin->id]);
     $invoice->refreshPaymentStatus();
 
-    $this->actingAs($admin)->delete(route('invoices.destroy', $invoice))->assertForbidden();
-    expect(Invoice::find($invoice->id))->not->toBeNull();
+    $this->actingAs($admin)->delete(route('invoices.destroy', $invoice))->assertRedirect(route('invoices.index'));
+
+    expect(Invoice::find($invoice->id))->toBeNull()
+        ->and(Invoice::withTrashed()->find($invoice->id))->not->toBeNull()
+        ->and(\App\Models\Payment::find($payment->id))->toBeNull()
+        ->and(\App\Models\Payment::withTrashed()->find($payment->id))->not->toBeNull();
 });
 
 it('lets an accounts-role user delete an unpaid invoice', function () {

@@ -54,7 +54,7 @@
                     @endcan
                     @can('delete', $invoice)
                         <button type="submit" form="delete-invoice" class="text-sm font-medium text-red-600 hover:text-red-500"
-                                onclick="return confirm('Delete this invoice?')">Delete</button>
+                                onclick="return confirm(@js($invoice->payments->isNotEmpty() ? 'This invoice has payment(s) recorded. Deleting it will also remove those payment records. Continue?' : 'Delete this invoice?'))">Delete</button>
                     @endcan
                 </div>
             </div>

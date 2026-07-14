@@ -390,6 +390,7 @@ class InvoiceController extends Controller
         $this->authorize('delete', $invoice);
 
         $invoice->items()->delete();
+        $invoice->payments()->delete(); // soft-deleted, recoverable alongside the invoice
         $invoice->delete();
 
         return redirect()->route('invoices.index')->with('status', 'Invoice deleted.');
