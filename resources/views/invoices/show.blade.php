@@ -35,6 +35,11 @@
                     @if ($invoice->status === \App\Enums\InvoiceStatus::Draft)
                         <span class="inline-flex items-center rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800">Draft — not visible to client</span>
                     @endif
+                    @if ($invoice->promiseBroken())
+                        <span class="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-800">
+                            Payment promise broken — was due {{ $invoice->payment_promised_date->format('d M Y') }}
+                        </span>
+                    @endif
                     @can('recordPayment', $invoice)
                         @if ($invoice->status === \App\Enums\InvoiceStatus::Draft)
                             <form method="POST" action="{{ route('invoices.send', $invoice) }}">
@@ -118,7 +123,27 @@
 
             @can('recordPayment', $invoice)
                 @if ($invoice->balance() > 0)
-                    <div class="rounded-lg bg-white p-6 shadow-sm">
+                    <div class="rounded-lg bg-white p-6 shadow-sm space-y-4">
+                        <div>
+                            <h2 class="text-base font-semibold text-gray-900">Payment follow-up</h2>
+                            <form method="POST" action="{{ route('invoices.payment-promise.update', $invoice) }}" class="mt-3 flex items-end gap-2">
+                                @csrf
+                                <div class="flex-1">
+                                    <x-input-label for="payment_promised_date" value="Client promised to pay by" />
+                                    <x-text-input id="payment_promised_date" name="payment_promised_date" type="date" class="mt-1 block w-full"
+                                                  :value="old('payment_promised_date', $invoice->payment_promised_date?->toDateString())" />
+                                </div>
+                                <x-primary-button>Save</x-primary-button>
+                                @if ($invoice->payment_promised_date)
+                                    <button type="submit" form="clear-payment-promise" class="text-sm text-gray-500 hover:text-gray-700">Clear</button>
+                                @endif
+                            </form>
+                            @if ($invoice->payment_promised_date)
+                                <form id="clear-payment-promise" method="POST" action="{{ route('invoices.payment-promise.update', $invoice) }}" class="hidden">
+                                    @csrf
+                                </form>
+                            @endif
+                        </div>
                         <h2 class="text-base font-semibold text-gray-900">Record payment</h2>
                         <form method="POST" action="{{ route('invoices.payments.store', $invoice) }}" class="mt-4 space-y-3">
                             @csrf
@@ -156,6 +181,10 @@
                 @endif
             @endcan
         </div>
+
+        @can('recordPayment', $invoice)
+            <livewire:record-notes :record="$invoice" :can-manage="true" />
+        @endcan
 
         @can('delete', $invoice)
             <form id="delete-invoice" method="POST" action="{{ route('invoices.destroy', $invoice) }}" class="hidden">

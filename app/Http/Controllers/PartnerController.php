@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StorePartnerRequest;
 use App\Http\Requests\UpdatePartnerRequest;
 use App\Models\Partner;
+use App\Services\CollectionsMetrics;
 
 class PartnerController extends Controller
 {
@@ -15,6 +16,15 @@ class PartnerController extends Controller
         $partners = Partner::orderBy('name')->get();
 
         return view('partners.index', compact('partners'));
+    }
+
+    public function show(Partner $partner, CollectionsMetrics $collectionsMetrics)
+    {
+        $this->authorize('view', $partner);
+
+        $rows = $collectionsMetrics->clientHealth($partner->id);
+
+        return view('partners.show', compact('partner', 'rows'));
     }
 
     public function create()

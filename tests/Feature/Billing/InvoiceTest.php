@@ -201,3 +201,65 @@ it('includes milestone installment details in the invoice email', function () {
     $mailable = new InvoiceIssued($invoice);
     $mailable->assertSeeInHtml('Advance');
 });
+
+it('is not promise-broken with no promised date, and not broken while the date is still in the future', function () {
+    $noPromise = invoiceWithLine();
+    $futurePromise = invoiceWithLine(['payment_promised_date' => now()->addDays(2)->toDateString()]);
+
+    expect($noPromise->promiseBroken())->toBeFalse()
+        ->and($futurePromise->promiseBroken())->toBeFalse();
+});
+
+it('is promise-broken once the promised date has passed and a balance is still owed', function () {
+    $invoice = invoiceWithLine(['payment_promised_date' => now()->subDays(2)->toDateString()]);
+
+    expect($invoice->promiseBroken())->toBeTrue();
+});
+
+it('is not promise-broken once the invoice is fully paid, even past the promised date', function () {
+    $invoice = invoiceWithLine(['payment_promised_date' => now()->subDays(2)->toDateString()]);
+    $invoice->payments()->create(['paid_on' => now(), 'mode' => 'cash', 'amount' => $invoice->total, 'recorded_by' => $this->accounts->id]);
+    $invoice->refreshPaymentStatus();
+
+    expect($invoice->fresh()->promiseBroken())->toBeFalse();
+});
+
+it('lets accounts set and clear a payment promise date on an invoice', function () {
+    $invoice = invoiceWithLine();
+
+    $this->actingAs($this->accounts)
+        ->post(route('invoices.payment-promise.update', $invoice), ['payment_promised_date' => now()->addDays(3)->toDateString()])
+        ->assertRedirect();
+
+    expect($invoice->fresh()->payment_promised_date)->not->toBeNull();
+
+    $this->actingAs($this->accounts)
+        ->post(route('invoices.payment-promise.update', $invoice), [])
+        ->assertRedirect();
+
+    expect($invoice->fresh()->payment_promised_date)->toBeNull();
+});
+
+it('blocks a non-accounts role from setting a payment promise date', function () {
+    $invoice = invoiceWithLine();
+    $sales = User::factory()->role(UserRole::Sales)->create();
+
+    $this->actingAs($sales)
+        ->post(route('invoices.payment-promise.update', $invoice), ['payment_promised_date' => now()->addDays(3)->toDateString()])
+        ->assertForbidden();
+
+    expect($invoice->fresh()->payment_promised_date)->toBeNull();
+});
+
+it('renders a follow-up note against an invoice via the generic RecordNotes component', function () {
+    $invoice = invoiceWithLine();
+
+    Livewire::actingAs($this->accounts)
+        ->test(\App\Livewire\RecordNotes::class, ['record' => $invoice, 'canManage' => true])
+        ->set('body', 'Client called, promised to pay by Friday.')
+        ->call('addNote')
+        ->assertHasNoErrors();
+
+    expect($invoice->notes()->count())->toBe(1)
+        ->and($invoice->notes()->first()->body)->toBe('Client called, promised to pay by Friday.');
+});

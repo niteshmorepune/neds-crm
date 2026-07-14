@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ProjectStatus;
+use App\Enums\TaskStatus;
 use App\Jobs\CreateOnboardingTasks;
 use App\Models\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -79,6 +80,24 @@ class Project extends Model
     public function notes(): MorphMany
     {
         return $this->morphMany(Note::class, 'notable')->latest();
+    }
+
+    /**
+     * Rough delivery progress from task completion — null when there are no
+     * tasks yet to measure against. A general signal only; milestone-billed
+     * projects track "ready to invoice" separately via QuotationMilestone
+     * status, since tasks aren't mapped one-to-one to billing milestones.
+     */
+    public function completionPercentage(): ?int
+    {
+        $total = $this->tasks()->count();
+        if ($total === 0) {
+            return null;
+        }
+
+        $done = $this->tasks()->where('status', TaskStatus::Done)->count();
+
+        return (int) round($done / $total * 100);
     }
 
     /**

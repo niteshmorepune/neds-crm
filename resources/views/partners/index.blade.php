@@ -27,7 +27,9 @@
                 <tbody class="divide-y divide-gray-100">
                     @forelse ($partners as $partner)
                         <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-3 font-medium text-gray-900">{{ $partner->name }}</td>
+                            <td class="px-4 py-3 font-medium text-gray-900">
+                                <a href="{{ route('partners.show', $partner) }}" class="text-indigo-600 hover:underline">{{ $partner->name }}</a>
+                            </td>
                             <td class="px-4 py-3 text-gray-600">{{ $partner->email ?? '—' }}</td>
                             <td class="px-4 py-3 text-gray-600">{{ $partner->phone ?? '—' }}</td>
                             <td class="px-4 py-3 text-right text-gray-600">{{ $partner->contentPieces->count() }}</td>

@@ -14,8 +14,20 @@
                     <span class="font-medium text-gray-900">{{ $m->title }}</span>
                     <span class="text-gray-500">· {{ rtrim(rtrim($m->percentage, '0'), '.') }}% · {{ \App\Support\Money::format($m->amount) }}</span>
                     @if ($m->due_date)<span class="text-gray-400"> · due {{ $m->due_date->format('d M Y') }}</span>@endif
+                    @if (! $m->isBilled() && $m->readyToInvoice())
+                        <span class="ml-2 inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">Ready to invoice</span>
+                    @endif
                 </div>
                 <div class="flex items-center gap-3">
+                    @if (! $m->isBilled() && $canManage)
+                        <select wire:change="updateStatus({{ $m->id }}, $event.target.value)" class="rounded-md border-gray-300 text-xs shadow-sm">
+                            @foreach (\App\Enums\MilestoneStatus::cases() as $status)
+                                <option value="{{ $status->value }}" @selected($m->status === $status)>{{ $status->label() }}</option>
+                            @endforeach
+                        </select>
+                    @elseif (! $m->isBilled())
+                        <span class="text-xs text-gray-500">{{ $m->status->label() }}</span>
+                    @endif
                     @if ($m->isBilled())
                         <a href="{{ route('invoices.show', $m->invoice) }}" class="text-indigo-600 hover:underline">{{ $m->invoice->invoice_number }}</a>
                     @elseif ($canManage)

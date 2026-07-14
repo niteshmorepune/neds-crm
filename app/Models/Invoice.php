@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Invoice extends Model
@@ -18,7 +19,7 @@ class Invoice extends Model
 
     protected $fillable = [
         'invoice_number', 'financial_year', 'customer_id', 'deal_id', 'project_id', 'quotation_id', 'recurring_invoice_id',
-        'status', 'issue_date', 'due_date', 'place_of_supply_state_code', 'is_intra_state', 'is_gst_exempt',
+        'status', 'issue_date', 'due_date', 'payment_promised_date', 'place_of_supply_state_code', 'is_intra_state', 'is_gst_exempt',
         'subtotal', 'discount', 'taxable_total', 'cgst_total', 'sgst_total', 'igst_total',
         'round_off', 'total', 'amount_paid',
     ];
@@ -29,6 +30,7 @@ class Invoice extends Model
             'status' => InvoiceStatus::class,
             'issue_date' => 'date',
             'due_date' => 'date',
+            'payment_promised_date' => 'date',
             'is_intra_state' => 'boolean',
             'is_gst_exempt' => 'boolean',
             'subtotal' => 'integer',
@@ -103,9 +105,22 @@ class Invoice extends Model
         return $this->hasMany(QuotationMilestone::class);
     }
 
+    public function notes(): MorphMany
+    {
+        return $this->morphMany(Note::class, 'notable')->latest();
+    }
+
     public function balance(): int
     {
         return max(0, (int) $this->total - (int) $this->amount_paid);
+    }
+
+    /** A client promised payment by a date that has now passed, and it's still unpaid. */
+    public function promiseBroken(): bool
+    {
+        return $this->payment_promised_date !== null
+            && $this->payment_promised_date->isPast()
+            && $this->balance() > 0;
     }
 
     /** Editable/deletable only before any payment is recorded. */

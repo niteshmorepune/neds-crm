@@ -1,6 +1,9 @@
 <?php
 
+use App\Enums\InvoiceStatus;
 use App\Enums\UserRole;
+use App\Models\Customer;
+use App\Models\Invoice;
 use App\Models\Partner;
 use App\Models\User;
 use Database\Seeders\MenuItemsSeeder;
@@ -70,5 +73,38 @@ it('admin can delete a partner', function () {
 it('support cannot create a partner', function () {
     actingAs(User::factory()->create(['role' => UserRole::Support]))
         ->post(route('partners.store'), ['name' => 'Sneaky Agency'])
+        ->assertForbidden();
+});
+
+it('admin can view a partner\'s client-health page, showing only that partner\'s overdue clients', function () {
+    $partner = Partner::factory()->create();
+    $otherPartner = Partner::factory()->create();
+
+    $theirClient = Customer::factory()->create(['company_name' => 'Referred Co', 'referring_partner_id' => $partner->id]);
+    Invoice::factory()->create([
+        'customer_id' => $theirClient->id, 'status' => InvoiceStatus::Overdue,
+        'recurring_invoice_id' => \App\Models\RecurringInvoice::factory()->create(['customer_id' => $theirClient->id])->id,
+        'due_date' => now()->subDays(10), 'total' => 100000, 'amount_paid' => 0,
+    ]);
+
+    $otherClient = Customer::factory()->create(['company_name' => 'Not Referred Co', 'referring_partner_id' => $otherPartner->id]);
+    Invoice::factory()->create([
+        'customer_id' => $otherClient->id, 'status' => InvoiceStatus::Overdue,
+        'recurring_invoice_id' => \App\Models\RecurringInvoice::factory()->create(['customer_id' => $otherClient->id])->id,
+        'due_date' => now()->subDays(10), 'total' => 100000, 'amount_paid' => 0,
+    ]);
+
+    actingAs(User::factory()->create(['role' => UserRole::Admin]))
+        ->get(route('partners.show', $partner))
+        ->assertOk()
+        ->assertSee('Referred Co')
+        ->assertDontSee('Not Referred Co');
+});
+
+it('sales cannot view a partner show page', function () {
+    $partner = Partner::factory()->create();
+
+    actingAs(User::factory()->create(['role' => UserRole::Sales]))
+        ->get(route('partners.show', $partner))
         ->assertForbidden();
 });
