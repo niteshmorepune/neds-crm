@@ -29,6 +29,10 @@ class CustomerStoreRequest extends FormRequest
                     ->all(),
             ]);
         }
+
+        // Normalise the checkbox: an unchecked box submits no key at all, so
+        // without this an update() would leave the previous value untouched.
+        $this->merge(['gst_exempt' => $this->boolean('gst_exempt')]);
     }
 
     public function rules(): array
@@ -36,6 +40,7 @@ class CustomerStoreRequest extends FormRequest
         return [
             'company_name' => ['required', 'string', 'max:255'],
             'gstin' => ['nullable', 'string', 'size:15', new Gstin, $this->gstinUniqueRule()],
+            'gst_exempt' => ['boolean'],
             'email' => ['nullable', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:20'],
             'website' => ['nullable', 'url', 'max:255'],

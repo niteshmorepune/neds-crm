@@ -95,6 +95,34 @@ it('requires a company name', function () {
         ->assertSessionHasErrors('company_name');
 });
 
+it('creates a client flagged as GST-exempt', function () {
+    $this->actingAs($this->admin)
+        ->post(route('clients.store'), [
+            'company_name' => 'Non-GST Co',
+            'country' => 'India',
+            'status' => CustomerStatus::Active->value,
+            'gst_exempt' => '1',
+        ])
+        ->assertRedirect();
+
+    expect(Customer::firstWhere('company_name', 'Non-GST Co')->gst_exempt)->toBeTrue();
+});
+
+it('unchecking the GST-exempt box on update actually clears it (not just leaves it untouched)', function () {
+    $customer = Customer::factory()->create(['gst_exempt' => true]);
+
+    $this->actingAs($this->admin)
+        ->put(route('clients.update', $customer), [
+            'company_name' => $customer->company_name,
+            'country' => 'India',
+            'status' => CustomerStatus::Active->value,
+            // gst_exempt intentionally omitted, exactly like an unchecked checkbox submits
+        ])
+        ->assertRedirect();
+
+    expect($customer->fresh()->gst_exempt)->toBeFalse();
+});
+
 it('updates a client', function () {
     $customer = Customer::factory()->create(['company_name' => 'Old Name']);
 

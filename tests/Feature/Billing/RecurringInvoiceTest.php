@@ -36,6 +36,19 @@ it('generates an invoice for a due template, emails it, and advances the schedul
     expect($template->fresh()->next_run_on->greaterThan(now()))->toBeTrue();
 });
 
+it('carries the customer\'s GST-exempt default onto a generated recurring invoice', function () {
+    Mail::fake();
+    $exemptCustomer = Customer::factory()->create(['state_code' => '27', 'email' => 'exempt@x.test', 'gst_exempt' => true]);
+    recurringWithLine(['customer_id' => $exemptCustomer->id, 'next_run_on' => now()->subDay()->toDateString()]);
+
+    $this->artisan('app:generate-recurring-invoices')->assertSuccessful();
+
+    $invoice = Invoice::first();
+    expect($invoice->is_gst_exempt)->toBeTrue()
+        ->and($invoice->cgst_total)->toBe(0)
+        ->and($invoice->total)->toBe(100000);
+});
+
 it('skips templates that are not yet due', function () {
     Mail::fake();
     recurringWithLine(['next_run_on' => now()->addWeek()->toDateString()]);

@@ -61,6 +61,7 @@ class SmdostWebhookController
                 'due_date' => $dueDate->toDateString(),
                 'place_of_supply_state_code' => $stateCode,
                 'is_intra_state' => $stateCode === '27',
+                'is_gst_exempt' => $customer->gst_exempt,
                 'subtotal' => 0,
                 'discount' => 0,
                 'taxable_total' => 0,

@@ -34,6 +34,16 @@
         <x-input-error :messages="$errors->get('gstin')" class="mt-1" />
     </div>
 
+    <div class="md:col-span-2">
+        <label class="inline-flex items-center gap-2">
+            <input type="checkbox" id="gst_exempt" name="gst_exempt" value="1" class="rounded border-gray-300 text-indigo-600 shadow-sm"
+                   @checked(old('gst_exempt', $customer->gst_exempt ?? false))>
+            <span class="text-sm text-gray-700">Non-GST client</span>
+        </label>
+        <p class="mt-1 text-xs text-gray-400">New quotations/invoices for this client default to no GST charged. Can still be overridden per document.</p>
+        <x-input-error :messages="$errors->get('gst_exempt')" class="mt-1" />
+    </div>
+
     <div>
         <x-input-label for="status" value="Status *" />
         <select id="status" name="status" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">

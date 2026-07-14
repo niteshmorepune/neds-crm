@@ -24,6 +24,8 @@ class InvoiceBuilder extends Component
 
     public string $discount = '0'; // rupees
 
+    public bool $is_gst_exempt = false;
+
     /** @var array<int, array{description:string, sac_code:?string, quantity:string, rate:string, gst_rate:string}> */
     public array $items = [];
 
@@ -36,6 +38,7 @@ class InvoiceBuilder extends Component
         $this->customer_id = $invoice->customer_id;
         $this->due_date = $invoice->due_date?->toDateString();
         $this->discount = (string) Money::toRupees($invoice->discount);
+        $this->is_gst_exempt = $invoice->is_gst_exempt;
         $this->items = $invoice->items->map(fn ($item) => [
             'description' => $item->description,
             'sac_code' => $item->sac_code,
@@ -79,6 +82,7 @@ class InvoiceBuilder extends Component
             Money::toPaise($this->discount ?: 0) ?? 0,
             $customer?->state_code,
             $customer?->isOverseas() ?? false,
+            $this->is_gst_exempt,
         );
     }
 
@@ -103,6 +107,7 @@ class InvoiceBuilder extends Component
             $invoice->fill([
                 'due_date' => $this->due_date ?: null,
                 'discount' => Money::toPaise($this->discount ?: 0) ?? 0,
+                'is_gst_exempt' => $this->is_gst_exempt,
             ])->save();
 
             $invoice->items()->delete();
