@@ -10,6 +10,7 @@ use App\Models\CallLog;
 use App\Models\Customer;
 use App\Models\Lead;
 use App\Models\User;
+use App\Services\MenuResolver;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -17,6 +18,8 @@ use Illuminate\View\View;
 
 class CallLogController extends Controller
 {
+    public function __construct(private readonly MenuResolver $menu) {}
+
     public function index(Request $request): View
     {
         $this->authorize('viewAny', CallLog::class);
@@ -41,6 +44,7 @@ class CallLogController extends Controller
             'outcomes' => CallOutcome::cases(),
             'filters' => $request->only(['user_id', 'outcome', 'date', 'pending_followup']),
             'isManager' => $isManager,
+            'canLogLeads' => $this->menu->canAccess($user, 'lead-generation'),
         ]);
     }
 
@@ -48,11 +52,13 @@ class CallLogController extends Controller
     {
         $this->authorize('create', CallLog::class);
 
+        $canLogLeads = $this->menu->canAccess($request->user(), 'lead-generation');
+
         return view('calls.create', [
             'directions' => CallDirection::cases(),
             'outcomes' => CallOutcome::cases(),
             'customers' => Customer::orderBy('company_name')->get(['id', 'company_name']),
-            'leads' => Lead::orderBy('name')->get(['id', 'name']),
+            'leads' => $canLogLeads ? Lead::orderBy('name')->get(['id', 'name']) : collect(),
             'selectedCustomer' => $request->integer('customer_id') ?: null,
             'selectedLead' => $request->integer('lead_id') ?: null,
         ]);

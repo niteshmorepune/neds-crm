@@ -57,7 +57,11 @@
                                 @if ($call->callable instanceof \App\Models\Customer)
                                     <a href="{{ route('clients.show', $call->callable) }}" class="text-indigo-600 hover:underline">{{ $call->callable->company_name }}</a>
                                 @elseif ($call->callable instanceof \App\Models\Lead)
-                                    <a href="{{ route('leads.show', $call->callable) }}" class="text-indigo-600 hover:underline">{{ $call->callable->name }}</a>
+                                    @if ($canLogLeads)
+                                        <a href="{{ route('leads.show', $call->callable) }}" class="text-indigo-600 hover:underline">{{ $call->callable->name }}</a>
+                                    @else
+                                        {{ $call->callable->name }}
+                                    @endif
                                 @else —
                                 @endif
                             </td>

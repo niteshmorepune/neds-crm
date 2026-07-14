@@ -69,3 +69,41 @@ it('renders the call create and index pages', function () {
     $this->actingAs($this->sales)->get(route('calls.index'))->assertOk()->assertSee('Calling');
     $this->actingAs($this->sales)->get(route('calls.create'))->assertOk()->assertSee('Log a Call');
 });
+
+it('does not let support log a call against a lead', function () {
+    $support = User::factory()->role(UserRole::Support)->create();
+    $lead = Lead::factory()->create();
+
+    $this->actingAs($support)->post(route('calls.store'), [
+        'lead_id' => $lead->id,
+        'direction' => 'outgoing',
+        'outcome' => 'connected',
+        'called_at' => now()->format('Y-m-d H:i:s'),
+    ])->assertSessionHasErrors('lead_id');
+
+    expect(CallLog::count())->toBe(0);
+});
+
+it('still lets support log a call against a client', function () {
+    $support = User::factory()->role(UserRole::Support)->create();
+    $customer = Customer::factory()->create();
+
+    $this->actingAs($support)->post(route('calls.store'), [
+        'customer_id' => $customer->id,
+        'direction' => 'outgoing',
+        'outcome' => 'connected',
+        'called_at' => now()->format('Y-m-d H:i:s'),
+    ])->assertRedirect(route('clients.show', $customer));
+
+    expect(CallLog::count())->toBe(1);
+});
+
+it('does not offer the lead dropdown to support on the log-a-call form', function () {
+    $support = User::factory()->role(UserRole::Support)->create();
+    Lead::factory()->create(['name' => 'Hidden Lead']);
+
+    $this->actingAs($support)->get(route('calls.create'))
+        ->assertOk()
+        ->assertDontSee('Hidden Lead')
+        ->assertDontSee('…or Lead');
+});

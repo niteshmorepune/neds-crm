@@ -21,15 +21,17 @@
                     @endforeach
                 </select>
             </div>
-            <div>
-                <x-input-label for="lead_id" value="…or Lead" />
-                <select id="lead_id" name="lead_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                    <option value="">—</option>
-                    @foreach ($leads as $lead)
-                        <option value="{{ $lead->id }}" @selected((int) old('lead_id', $selectedLead) === $lead->id)>{{ $lead->name }}</option>
-                    @endforeach
-                </select>
-            </div>
+            @if ($leads->isNotEmpty())
+                <div>
+                    <x-input-label for="lead_id" value="…or Lead" />
+                    <select id="lead_id" name="lead_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        <option value="">—</option>
+                        @foreach ($leads as $lead)
+                            <option value="{{ $lead->id }}" @selected((int) old('lead_id', $selectedLead) === $lead->id)>{{ $lead->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            @endif
             <div>
                 <x-input-label for="direction" value="Direction *" />
                 <select id="direction" name="direction" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
