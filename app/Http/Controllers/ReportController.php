@@ -169,7 +169,7 @@ class ReportController extends Controller
                 fputcsv($out, ['Overdue invoices']);
                 fputcsv($out, ['Customer', 'Invoice #', 'Due date', 'Days overdue', 'Balance (₹)']);
                 foreach ($arAging['invoices'] as $i) {
-                    fputcsv($out, [$i['customer'], $i['invoice_number'], $i['due_date']->toDateString(), $i['days_overdue'], Money::toRupees($i['balance'])]);
+                    fputcsv($out, [$i['customer'], $i['invoice_number'], $i['due_date']?->toDateString() ?? '—', $i['days_overdue'], Money::toRupees($i['balance'])]);
                 }
             } else {
                 fputcsv($out, ['Total outstanding (₹)']);

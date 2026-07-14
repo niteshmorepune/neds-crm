@@ -81,6 +81,7 @@ class BusinessOverviewMetrics
             '31_60' => '31–60 days overdue',
             '61_90' => '61–90 days overdue',
             '90_plus' => '90+ days overdue',
+            'no_due_date' => 'No due date set',
         ];
         $totals = array_fill_keys(array_keys($bucketLabels), 0);
 
@@ -90,15 +91,23 @@ class BusinessOverviewMetrics
             ->get()
             ->filter(fn (Invoice $invoice) => $invoice->balance() > 0)
             ->map(function (Invoice $invoice) use ($today, &$totals) {
-                // Positive once $today is past due_date (i.e. overdue).
-                $daysOverdue = (int) $invoice->due_date->copy()->startOfDay()->diffInDays($today, false);
-                $bucket = match (true) {
-                    $daysOverdue <= 0 => 'current',
-                    $daysOverdue <= 30 => '0_30',
-                    $daysOverdue <= 60 => '31_60',
-                    $daysOverdue <= 90 => '61_90',
-                    default => '90_plus',
-                };
+                // due_date is nullable on the invoices table; a handful of manually
+                // backfilled invoices were entered without one. Can't compute an
+                // overdue age for those, so bucket them separately instead of guessing.
+                if ($invoice->due_date === null) {
+                    $daysOverdue = null;
+                    $bucket = 'no_due_date';
+                } else {
+                    // Positive once $today is past due_date (i.e. overdue).
+                    $daysOverdue = (int) $invoice->due_date->copy()->startOfDay()->diffInDays($today, false);
+                    $bucket = match (true) {
+                        $daysOverdue <= 0 => 'current',
+                        $daysOverdue <= 30 => '0_30',
+                        $daysOverdue <= 60 => '31_60',
+                        $daysOverdue <= 90 => '61_90',
+                        default => '90_plus',
+                    };
+                }
                 $balance = $invoice->balance();
                 $totals[$bucket] += $balance;
 
