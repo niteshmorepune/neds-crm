@@ -56,6 +56,30 @@ it('builds a quotation with live GST totals and assigns a number', function () {
         ->and($quotation->items()->count())->toBe(1);
 });
 
+it('defaults the QuotationBuilder GST-exempt toggle from the selected client, and can still be overridden', function () {
+    $exemptClient = Customer::factory()->create(['state_code' => '27', 'gst_exempt' => true]);
+    $normalClient = Customer::factory()->create(['state_code' => '27', 'gst_exempt' => false]);
+
+    Livewire::actingAs($this->admin)
+        ->test(QuotationBuilder::class)
+        ->set('customer_id', $exemptClient->id)
+        ->assertSet('is_gst_exempt', true)
+        ->set('customer_id', $normalClient->id)
+        ->assertSet('is_gst_exempt', false)
+        ->set('is_gst_exempt', true) // manual override survives the save
+        ->set('items', [[
+            'description' => 'SEO retainer', 'sac_code' => '998361',
+            'quantity' => '1', 'rate' => '1000', 'gst_rate' => '18',
+        ]])
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $quotation = Quotation::first();
+    expect($quotation->is_gst_exempt)->toBeTrue()
+        ->and($quotation->cgst_total)->toBe(0)
+        ->and($quotation->total)->toBe(100000);
+});
+
 it('allows valid status transitions and blocks invalid ones', function () {
     $quotation = quotationWithLine();
 
@@ -84,6 +108,18 @@ it('converts an accepted quotation into an invoice with copied items and totals'
         ->and($invoice->total)->toBe(118000)
         ->and($invoice->items()->count())->toBe(1)
         ->and($invoice->invoice_number)->toBeNull(); // Accounts assigns the number manually
+});
+
+it('carries the GST-exempt flag through when converting a quotation to an invoice', function () {
+    $quotation = quotationWithLine(['status' => QuotationStatus::Accepted, 'is_gst_exempt' => true]);
+
+    $this->actingAs($this->admin)->post(route('quotations.convert', $quotation))->assertRedirect();
+
+    $invoice = Invoice::firstWhere('quotation_id', $quotation->id);
+
+    expect($invoice->is_gst_exempt)->toBeTrue()
+        ->and($invoice->cgst_total)->toBe(0)
+        ->and($invoice->total)->toBe(100000);
 });
 
 it('refuses to convert a quotation that is not accepted', function () {

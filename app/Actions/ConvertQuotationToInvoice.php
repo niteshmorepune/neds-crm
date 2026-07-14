@@ -49,6 +49,7 @@ class ConvertQuotationToInvoice
                 'due_date' => $dueDate->toDateString(),
                 'place_of_supply_state_code' => $quotation->place_of_supply_state_code,
                 'discount' => $quotation->discount,
+                'is_gst_exempt' => $quotation->is_gst_exempt,
             ]);
 
             foreach ($quotation->items as $item) {

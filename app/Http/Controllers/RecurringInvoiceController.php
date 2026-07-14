@@ -62,6 +62,7 @@ class RecurringInvoiceController extends Controller
                 'due_date' => $issueDate->copy()->addDays(15)->toDateString(),
                 'place_of_supply_state_code' => $recurring->customer->state_code,
                 'discount' => $recurring->discount,
+                'is_gst_exempt' => $recurring->customer->gst_exempt,
             ]);
 
             foreach ($recurring->items as $item) {

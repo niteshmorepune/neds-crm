@@ -28,6 +28,7 @@ trait HasGstTotals
             (int) $this->discount,
             $this->place_of_supply_state_code,
             $isOverseas,
+            (bool) $this->is_gst_exempt,
         );
 
         $this->forceFill([

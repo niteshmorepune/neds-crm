@@ -18,7 +18,7 @@ class Invoice extends Model
 
     protected $fillable = [
         'invoice_number', 'financial_year', 'customer_id', 'deal_id', 'project_id', 'quotation_id', 'recurring_invoice_id',
-        'status', 'issue_date', 'due_date', 'place_of_supply_state_code', 'is_intra_state',
+        'status', 'issue_date', 'due_date', 'place_of_supply_state_code', 'is_intra_state', 'is_gst_exempt',
         'subtotal', 'discount', 'taxable_total', 'cgst_total', 'sgst_total', 'igst_total',
         'round_off', 'total', 'amount_paid',
     ];
@@ -30,6 +30,7 @@ class Invoice extends Model
             'issue_date' => 'date',
             'due_date' => 'date',
             'is_intra_state' => 'boolean',
+            'is_gst_exempt' => 'boolean',
             'subtotal' => 'integer',
             'discount' => 'integer',
             'taxable_total' => 'integer',

@@ -82,6 +82,12 @@
                         <x-input-label value="Discount (₹)" />
                         <x-text-input wire:model.live="discount" type="number" step="0.01" min="0" class="mt-1 block w-full" />
                     </div>
+                    <div class="flex items-end pb-2">
+                        <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+                            <input type="checkbox" wire:model.live="is_gst_exempt" class="rounded border-gray-300 text-indigo-600 shadow-sm">
+                            Non-GST quotation (don't charge GST)
+                        </label>
+                    </div>
                 </div>
 
                 <div class="mt-4">
@@ -98,7 +104,9 @@
                 <div class="flex justify-between"><dt class="text-gray-500">Subtotal</dt><dd>{{ \App\Support\Money::format($t['subtotal']) }}</dd></div>
                 <div class="flex justify-between"><dt class="text-gray-500">Discount</dt><dd>− {{ \App\Support\Money::format($t['discount']) }}</dd></div>
                 <div class="flex justify-between"><dt class="text-gray-500">Taxable</dt><dd>{{ \App\Support\Money::format($t['taxable_total']) }}</dd></div>
-                @if ($t['is_intra_state'])
+                @if ($is_gst_exempt)
+                    <div class="flex justify-between"><dt class="text-gray-500">GST</dt><dd class="text-green-600">Not charged</dd></div>
+                @elseif ($t['is_intra_state'])
                     <div class="flex justify-between"><dt class="text-gray-500">CGST</dt><dd>{{ \App\Support\Money::format($t['cgst_total']) }}</dd></div>
                     <div class="flex justify-between"><dt class="text-gray-500">SGST</dt><dd>{{ \App\Support\Money::format($t['sgst_total']) }}</dd></div>
                 @else

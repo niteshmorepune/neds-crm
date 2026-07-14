@@ -69,3 +69,28 @@ it('handles mixed GST rates per line', function () {
         ->and($r['sgst_total'])->toBe(11500)
         ->and($r['total'])->toBe(223000);
 });
+
+it('charges no GST at all for a GST-exempt domestic client, unlike a normal intra-state supply', function () {
+    $r = $this->gst->calculate([['quantity' => 1, 'rate' => 100000, 'gst_rate' => 18]], 0, '27', false, true);
+
+    expect($r['cgst_total'])->toBe(0)
+        ->and($r['sgst_total'])->toBe(0)
+        ->and($r['igst_total'])->toBe(0)
+        ->and($r['taxable_total'])->toBe(100000)
+        ->and($r['total'])->toBe(100000);
+});
+
+it('charges no GST for a GST-exempt inter-state client either', function () {
+    $r = $this->gst->calculate([['quantity' => 1, 'rate' => 100000, 'gst_rate' => 18]], 0, '29', false, true);
+
+    expect($r['igst_total'])->toBe(0)
+        ->and($r['total'])->toBe(100000);
+});
+
+it('applies the document discount even when GST-exempt', function () {
+    $r = $this->gst->calculate([['quantity' => 1, 'rate' => 100000, 'gst_rate' => 18]], 20000, '27', false, true);
+
+    expect($r['discount'])->toBe(20000)
+        ->and($r['taxable_total'])->toBe(80000)
+        ->and($r['total'])->toBe(80000);
+});

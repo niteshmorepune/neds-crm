@@ -30,7 +30,7 @@ class Quotation extends Model
 
     protected $fillable = [
         'number', 'customer_id', 'deal_id', 'status', 'place_of_supply_state_code',
-        'is_intra_state', 'subtotal', 'discount', 'taxable_total', 'cgst_total',
+        'is_intra_state', 'is_gst_exempt', 'subtotal', 'discount', 'taxable_total', 'cgst_total',
         'sgst_total', 'igst_total', 'round_off', 'total', 'terms', 'validity_date',
     ];
 
@@ -39,6 +39,7 @@ class Quotation extends Model
         return [
             'status' => QuotationStatus::class,
             'is_intra_state' => 'boolean',
+            'is_gst_exempt' => 'boolean',
             'validity_date' => 'date',
             'subtotal' => 'integer',
             'discount' => 'integer',

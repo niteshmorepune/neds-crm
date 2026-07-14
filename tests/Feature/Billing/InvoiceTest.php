@@ -71,6 +71,18 @@ it('streams a PDF invoice', function () {
     expect($response->getContent())->toStartWith('%PDF');
 });
 
+it('renders the PDF template with non-GST wording and no tax breakup for a GST-exempt invoice', function () {
+    $invoice = invoiceWithLine(['is_gst_exempt' => true]);
+    $invoice->load(['customer', 'items']);
+
+    $html = view('invoices.pdf', ['invoice' => $invoice])->render();
+
+    expect($html)->toContain('Non-GST Invoice')
+        ->toContain('GST not charged')
+        ->not->toContain('TAX INVOICE')
+        ->not->toContain('CGST');
+});
+
 it('renders invoice index, show and the receivables report', function () {
     $invoice = invoiceWithLine();
 
@@ -148,6 +160,32 @@ it('edits a draft invoice via the InvoiceBuilder and recalculates totals, but lo
 
     expect($invoice->fresh()->isEditable())->toBeFalse()
         ->and($this->accounts->can('update', $invoice->fresh()))->toBeFalse();
+});
+
+it('flips a GST invoice to non-GST via the InvoiceBuilder and drops the tax to zero', function () {
+    $invoice = invoiceWithLine(); // total ₹1180 = 118000 paise, CGST+SGST 9000 each
+
+    expect($invoice->cgst_total)->toBe(9000);
+
+    Livewire::actingAs($this->accounts)
+        ->test(InvoiceBuilder::class, ['invoice' => $invoice])
+        ->set('is_gst_exempt', true)
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $invoice->refresh();
+    expect($invoice->is_gst_exempt)->toBeTrue()
+        ->and($invoice->cgst_total)->toBe(0)
+        ->and($invoice->sgst_total)->toBe(0)
+        ->and($invoice->total)->toBe(100000);
+});
+
+it('defaults the InvoiceBuilder GST-exempt toggle from the invoice\'s stored value', function () {
+    $invoice = invoiceWithLine(['is_gst_exempt' => true]);
+
+    Livewire::actingAs($this->accounts)
+        ->test(InvoiceBuilder::class, ['invoice' => $invoice])
+        ->assertSet('is_gst_exempt', true);
 });
 
 it('includes milestone installment details in the invoice email', function () {

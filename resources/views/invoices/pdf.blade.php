@@ -32,7 +32,7 @@
                     <div class="muted">{{ $company['email'] }}</div>
                 </td>
                 <td class="right">
-                    <div style="font-size:16px;font-weight:bold;">{{ $invoice->customer?->isOverseas() ? 'INVOICE' : 'TAX INVOICE' }}</div>
+                    <div style="font-size:16px;font-weight:bold;">{{ ($invoice->customer?->isOverseas() || $invoice->is_gst_exempt) ? 'INVOICE' : 'TAX INVOICE' }}</div>
                     <div>{{ $invoice->invoice_number }}</div>
                     <div class="muted">Issued: {{ $invoice->issue_date->format('d M Y') }}</div>
                     @if ($invoice->due_date)<div class="muted">Due: {{ $invoice->due_date->format('d M Y') }}</div>@endif
@@ -64,6 +64,9 @@
                 @if($invoice->customer?->isOverseas())
                     <strong>Export of Services</strong><br>
                     <span style="color:#059669;">Zero-Rated Supply (GST not applicable)</span>
+                @elseif($invoice->is_gst_exempt)
+                    <strong>Non-GST Invoice</strong><br>
+                    <span style="color:#059669;">GST not charged on this invoice</span>
                 @else
                     <strong>Place of supply</strong><br>
                     {{ $invoice->customer?->state ?? '—' }} ({{ $invoice->place_of_supply_state_code }})<br>
@@ -103,6 +106,8 @@
         <tr><td class="label-cell right muted">Taxable value</td><td class="right">{{ \App\Support\Money::format($invoice->taxable_total) }}</td></tr>
         @if($invoice->customer?->isOverseas())
             <tr><td class="label-cell right muted">GST</td><td class="right" style="color:#059669;">Nil (Export / Zero-Rated)</td></tr>
+        @elseif($invoice->is_gst_exempt)
+            <tr><td class="label-cell right muted">GST</td><td class="right" style="color:#059669;">Not charged</td></tr>
         @elseif ($invoice->is_intra_state)
             <tr><td class="label-cell right muted">CGST</td><td class="right">{{ \App\Support\Money::format($invoice->cgst_total) }}</td></tr>
             <tr><td class="label-cell right muted">SGST</td><td class="right">{{ \App\Support\Money::format($invoice->sgst_total) }}</td></tr>
@@ -141,6 +146,8 @@
     <p class="muted" style="margin-top:24px;font-size:11px;">
         @if($invoice->customer?->isOverseas())
             This is a computer-generated invoice for export of services. Supply is zero-rated under the IGST Act, 2017. Subject to Maharashtra jurisdiction.
+        @elseif($invoice->is_gst_exempt)
+            This is a computer-generated invoice. No GST has been charged on this invoice. Subject to Maharashtra jurisdiction.
         @else
             This is a computer-generated tax invoice. Subject to Maharashtra jurisdiction.
         @endif

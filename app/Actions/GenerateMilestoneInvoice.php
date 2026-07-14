@@ -41,6 +41,7 @@ class GenerateMilestoneInvoice
                 'due_date' => ($milestone->due_date ?? $issueDate->copy()->addDays(15))->toDateString(),
                 'place_of_supply_state_code' => $quotation->place_of_supply_state_code,
                 'discount' => 0,
+                'is_gst_exempt' => $quotation->is_gst_exempt,
             ]);
 
             foreach ($quotation->items as $item) {

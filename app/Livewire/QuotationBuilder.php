@@ -33,6 +33,8 @@ class QuotationBuilder extends Component
 
     public string $discount = '0'; // rupees
 
+    public bool $is_gst_exempt = false;
+
     /** @var array<int, array{description:string, sac_code:?string, quantity:string, rate:string, gst_rate:string}> */
     public array $items = [];
 
@@ -47,6 +49,7 @@ class QuotationBuilder extends Component
             $this->validity_date = $quotation->validity_date?->toDateString();
             $this->terms = (string) $quotation->terms;
             $this->discount = (string) Money::toRupees($quotation->discount);
+            $this->is_gst_exempt = $quotation->is_gst_exempt;
             $this->items = $quotation->items->map(fn ($item) => [
                 'description' => $item->description,
                 'sac_code' => $item->sac_code,
@@ -59,8 +62,21 @@ class QuotationBuilder extends Component
             // mount() only receives route params; query-string values must be read from request()
             $this->customer_id = $customer_id ?? (request()->integer('customer_id') ?: null);
             $this->deal_id = $deal_id ?? (request()->integer('deal_id') ?: null);
+            $this->is_gst_exempt = $this->customer_id
+                ? (bool) Customer::find($this->customer_id)?->gst_exempt
+                : false;
             $this->addItem();
         }
+    }
+
+    /**
+     * Refresh the GST-exempt default whenever the client changes, mirroring
+     * that client's own default — the team can still override the checkbox
+     * afterward before saving.
+     */
+    public function updatedCustomerId(?int $value): void
+    {
+        $this->is_gst_exempt = $value ? (bool) Customer::find($value)?->gst_exempt : false;
     }
 
     public function addItem(): void
@@ -97,6 +113,7 @@ class QuotationBuilder extends Component
             Money::toPaise($this->discount ?: 0) ?? 0,
             $customer?->state_code,
             $customer?->isOverseas() ?? false,
+            $this->is_gst_exempt,
         );
     }
 
@@ -127,6 +144,7 @@ class QuotationBuilder extends Component
                 'deal_id' => $this->deal_id,
                 'place_of_supply_state_code' => $customer->state_code,
                 'discount' => Money::toPaise($this->discount ?: 0) ?? 0,
+                'is_gst_exempt' => $this->is_gst_exempt,
                 'terms' => $this->terms ?: null,
                 'validity_date' => $this->validity_date ?: null,
             ])->save();

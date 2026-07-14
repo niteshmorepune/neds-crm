@@ -21,6 +21,7 @@ class Customer extends Model
     protected $fillable = [
         'company_name',
         'gstin',
+        'gst_exempt',
         'email',
         'phone',
         'website',
@@ -44,6 +45,7 @@ class Customer extends Model
         return [
             'tags' => 'array',
             'status' => CustomerStatus::class,
+            'gst_exempt' => 'boolean',
         ];
     }
 
