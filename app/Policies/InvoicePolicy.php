@@ -57,7 +57,7 @@ class InvoicePolicy
 
     public function delete(User $user, Invoice $invoice): bool
     {
-        return $user->hasRole(UserRole::Admin, UserRole::Manager) && $invoice->payments()->doesntExist();
+        return $this->accountsTeam($user) && $invoice->payments()->doesntExist();
     }
 
     private function accountsTeam(User $user): bool

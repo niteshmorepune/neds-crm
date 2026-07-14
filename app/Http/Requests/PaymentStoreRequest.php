@@ -20,6 +20,7 @@ class PaymentStoreRequest extends FormRequest
             'mode' => ['required', Rule::enum(PaymentMode::class)],
             'reference' => ['nullable', 'string', 'max:255'],
             'amount' => ['required', 'numeric', 'gt:0'], // rupees; controller checks balance
+            'tds_amount' => ['nullable', 'numeric', 'min:0'], // rupees; controller checks balance
             'send_receipt' => ['nullable', 'boolean'],
         ];
     }

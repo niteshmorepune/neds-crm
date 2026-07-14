@@ -50,6 +50,32 @@ it('records a partial payment then marks paid in full', function () {
         ->and($invoice->balance())->toBe(0);
 });
 
+it('records TDS alongside a payment, deducting it from the balance and settling the invoice', function () {
+    $invoice = invoiceWithLine(); // total ₹1180 = 118000 paise
+
+    $this->actingAs($this->accounts)->post(route('invoices.payments.store', $invoice), [
+        'amount' => '1000', 'tds_amount' => '180', 'paid_on' => now()->toDateString(), 'mode' => 'neft',
+    ]);
+
+    $invoice->refresh();
+    expect($invoice->amount_paid)->toBe(100000)
+        ->and($invoice->tdsTotal())->toBe(18000)
+        ->and($invoice->balance())->toBe(0)
+        ->and($invoice->status)->toBe(InvoiceStatus::Paid);
+});
+
+it('rejects a payment whose amount plus TDS exceeds the balance', function () {
+    $invoice = invoiceWithLine(); // total ₹1180
+
+    $this->actingAs($this->accounts)
+        ->post(route('invoices.payments.store', $invoice), [
+            'amount' => '1000', 'tds_amount' => '200', 'paid_on' => now()->toDateString(), 'mode' => 'neft',
+        ])
+        ->assertSessionHasErrors('amount');
+
+    expect($invoice->fresh()->payments()->count())->toBe(0);
+});
+
 it('rejects a payment that exceeds the balance', function () {
     $invoice = invoiceWithLine();
 
@@ -139,6 +165,13 @@ it('deletes a draft invoice but blocks deleting one with a payment', function ()
 
     $this->actingAs($admin)->delete(route('invoices.destroy', $invoice))->assertForbidden();
     expect(Invoice::find($invoice->id))->not->toBeNull();
+});
+
+it('lets an accounts-role user delete an unpaid invoice', function () {
+    $invoice = invoiceWithLine();
+
+    $this->actingAs($this->accounts)->delete(route('invoices.destroy', $invoice))->assertRedirect(route('invoices.index'));
+    expect(Invoice::find($invoice->id))->toBeNull();
 });
 
 it('edits a draft invoice via the InvoiceBuilder and recalculates totals, but locks once paid', function () {

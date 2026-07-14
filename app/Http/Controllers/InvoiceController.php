@@ -301,8 +301,9 @@ class InvoiceController extends Controller
         $this->authorize('recordPayment', $invoice);
 
         $amount = Money::toPaise($request->validated()['amount']);
+        $tds = Money::toPaise($request->validated()['tds_amount'] ?? 0);
 
-        if ($amount > $invoice->balance()) {
+        if ($amount + $tds > $invoice->balance()) {
             return back()->withErrors(['amount' => 'Payment exceeds the outstanding balance of '.Money::format($invoice->balance()).'.']);
         }
 
@@ -311,6 +312,7 @@ class InvoiceController extends Controller
             'mode' => $request->validated()['mode'],
             'reference' => $request->validated()['reference'] ?? null,
             'amount' => $amount,
+            'tds_amount' => $tds,
             'recorded_by' => $request->user()->id,
         ]);
 

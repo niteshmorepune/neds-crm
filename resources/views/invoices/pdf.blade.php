@@ -117,7 +117,12 @@
         <tr><td class="label-cell right muted">Round off</td><td class="right">{{ \App\Support\Money::format($invoice->round_off) }}</td></tr>
         <tr><td class="label-cell right grand">Total</td><td class="right grand">{{ \App\Support\Money::format($invoice->total) }}</td></tr>
         <tr><td class="label-cell right muted">Amount paid</td><td class="right">{{ \App\Support\Money::format($invoice->amount_paid) }}</td></tr>
-        <tr><td class="label-cell right muted">Balance due</td><td class="right">{{ \App\Support\Money::format($invoice->balance()) }}</td></tr>
+        @if ($invoice->tdsTotal() > 0)
+            <tr><td class="label-cell right muted">TDS deducted</td><td class="right">− {{ \App\Support\Money::format($invoice->tdsTotal()) }}</td></tr>
+            <tr><td class="label-cell right grand">Net payable</td><td class="right grand">{{ \App\Support\Money::format($invoice->balance()) }}</td></tr>
+        @else
+            <tr><td class="label-cell right muted">Balance due</td><td class="right">{{ \App\Support\Money::format($invoice->balance()) }}</td></tr>
+        @endif
     </table>
 
     <p style="margin-top:12px;"><strong>Amount in words:</strong> {{ $invoice->amountInWords() }}</p>

@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Invoice;
 use App\Services\InvoiceNumberGenerator;
 use Illuminate\Support\Carbon;
 
@@ -37,4 +38,15 @@ it('keeps separate sequences per financial year', function () {
 
     expect($fy1)->toBe('NEDS/2026-27/0001')
         ->and($fy2)->toBe('NEDS/2027-28/0001');
+});
+
+it('self-heals when the counter has drifted behind a manually-assigned invoice number', function () {
+    // Simulates a manually-logged/CSV-imported invoice (InvoiceController::store/
+    // importStore), which assigns its number directly without advancing the
+    // shared counter — leaving the counter stuck well behind the real max.
+    Invoice::factory()->create(['financial_year' => '2026-27', 'invoice_number' => 'NEDS/2026-27/0050']);
+
+    $next = $this->gen->generate(Carbon::parse('2026-06-10'));
+
+    expect($next)->toBe('NEDS/2026-27/0051');
 });

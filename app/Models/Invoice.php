@@ -112,7 +112,13 @@ class Invoice extends Model
 
     public function balance(): int
     {
-        return max(0, (int) $this->total - (int) $this->amount_paid);
+        return max(0, (int) $this->total - (int) $this->amount_paid - $this->tdsTotal());
+    }
+
+    /** Total TDS deducted by the client across all payments on this invoice. */
+    public function tdsTotal(): int
+    {
+        return (int) $this->payments()->sum('tds_amount');
     }
 
     /** A client promised payment by a date that has now passed, and it's still unpaid. */
@@ -144,9 +150,11 @@ class Invoice extends Model
         $paid = (int) $this->payments()->sum('amount');
         $this->amount_paid = $paid;
 
-        if ($paid <= 0) {
+        $settled = $paid + $this->tdsTotal();
+
+        if ($settled <= 0) {
             // leave as-is (draft/sent/overdue)
-        } elseif ($paid >= (int) $this->total) {
+        } elseif ($settled >= (int) $this->total) {
             $this->status = InvoiceStatus::Paid;
         } else {
             $this->status = InvoiceStatus::PartiallyPaid;
