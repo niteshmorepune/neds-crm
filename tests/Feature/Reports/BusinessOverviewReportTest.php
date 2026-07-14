@@ -123,6 +123,16 @@ it('uses the remaining balance not the full total for a partially paid invoice',
     expect($row['balance'])->toBe(60000);
 });
 
+it('buckets an unpaid invoice with no due date set into no_due_date instead of erroring', function () {
+    Invoice::factory()->create(['status' => InvoiceStatus::Sent, 'due_date' => null, 'total' => 100000, 'amount_paid' => 0]);
+
+    $row = collect($this->metrics->arAging()['invoices'])->first();
+
+    expect($row['bucket'])->toBe('no_due_date')
+        ->and($row['days_overdue'])->toBeNull()
+        ->and($this->metrics->arAging()['total_outstanding'])->toBe(100000);
+});
+
 it('sums AR bucket totals to the reported total outstanding', function () {
     Invoice::factory()->create(['status' => InvoiceStatus::Sent, 'due_date' => now(), 'total' => 100000, 'amount_paid' => 0]);
     Invoice::factory()->create(['status' => InvoiceStatus::Sent, 'due_date' => now()->subDays(45), 'total' => 200000, 'amount_paid' => 0]);
@@ -328,6 +338,16 @@ it('includes itemized overdue invoices in the admin CSV export but not the manag
     $managerCsv = $this->actingAs($manager)->get(route('reports.business-overview.export'));
     $managerCsv->assertOk();
     expect($managerCsv->streamedContent())->not->toContain('Overdue invoices');
+});
+
+it('exports an overdue invoice with no due date set without erroring', function () {
+    $admin = User::factory()->role(UserRole::Admin)->create();
+    Invoice::factory()->create(['status' => InvoiceStatus::Sent, 'due_date' => null, 'total' => 100000, 'amount_paid' => 0]);
+
+    $csv = $this->actingAs($admin)->get(route('reports.business-overview.export'));
+
+    $csv->assertOk();
+    expect($csv->streamedContent())->toContain('Overdue invoices');
 });
 
 it('changes the period-scoped funnel stats when a different financial year is selected', function () {

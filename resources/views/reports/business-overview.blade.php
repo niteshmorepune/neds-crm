@@ -93,7 +93,7 @@
                                     <tr>
                                         <td class="py-2 text-gray-700">{{ $i['customer'] }}</td>
                                         <td class="py-2 text-gray-600">{{ $i['invoice_number'] ?? '—' }}</td>
-                                        <td class="py-2 text-right text-gray-600">{{ max(0, $i['days_overdue']) }}</td>
+                                        <td class="py-2 text-right text-gray-600">{{ $i['days_overdue'] === null ? '—' : max(0, $i['days_overdue']) }}</td>
                                         <td class="py-2 text-right font-medium text-gray-900">{{ \App\Support\Money::format($i['balance']) }}</td>
                                     </tr>
                                 @empty
