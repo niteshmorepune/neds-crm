@@ -33,6 +33,24 @@ you can send or download the invoice PDF.
 on signing, balance on delivery) — each milestone becomes its own invoice. These
 also start with a pending number; assign it when you're ready to issue the invoice.
 
+**Milestone work status:** each milestone on the quotation now has a status —
+**Pending / In Progress / Done** — separate from whether it's been invoiced.
+Whoever is running the project marks a milestone **Done** once that phase of
+work is actually finished (e.g. "UAT complete"). Once Done and not yet
+invoiced, it shows a green **Ready to invoice** badge on the quotation's
+Milestone Manager and on the **Collections** report (below) — that's your
+signal to raise the next invoice. This is set manually by the team, not
+auto-detected — nothing infers "50% done" from tasks.
+
+**Non-GST clients:** some clients need a plain bill with no GST charged. Open
+the client and tick **Non-GST client** — new quotations and invoices for them
+default to no GST (PDF shows "INVOICE" instead of "TAX INVOICE", no CGST/SGST/
+IGST rows). You can still override it per document with the same checkbox on
+the Quotation/Invoice builder if a one-off exception is needed. To fix an
+invoice that was wrongly issued as GST, open it in **Edit** and untick the GST
+box — this only works before any payment has been recorded; once a payment
+exists the invoice is locked and needs a credit note instead.
+
 ## 2. Recording payments
 Open an invoice → **record a payment** (amount, date, mode — UPI / NEFT / cheque
 / cash / gateway). **Partial payments are allowed**: the invoice moves to
@@ -49,6 +67,14 @@ paid in full).
 notification is sent to all accounts staff (except the person who recorded it)
 and to the client's assigned sales person. No action needed — it's purely
 informational so everyone stays aware of cash coming in.
+
+**Payment follow-up tracking:** when a client says "I'll pay in a day or two"
+past the due date, open the invoice and set **Client promised to pay by** to
+that date, so it's not just in your head. If that date passes and the invoice
+is still unpaid, it's flagged **Payment promise broken** (red badge on the
+invoice, and on the **Collections** report below) — a clear signal to call
+again. Use the notes box on the same page to log what was actually said each
+time you follow up.
 
 ## 3. Recurring invoices
 For monthly retainers (SEO, GMB, social, ads, AMC), set up a **recurring invoice
@@ -85,6 +111,16 @@ This gives you a full week to follow up before the invoice becomes overdue.
 ## 4. Reports
 - **Account** (in the sidebar) → the **outstanding receivables** report: who owes
   what, and how overdue.
+- **Collections** (in the sidebar) → the client-by-client follow-up worklist.
+  For each client with something outstanding: how much is **recurring not
+  paid** (a retainer client hasn't paid at all), **other unpaid** (a one-time/
+  milestone invoice with zero payment), and **partial — pending** (some paid,
+  some still owed), plus the oldest overdue days, any payment-promise date
+  (red if broken), and — for milestone-billed projects — the completion %
+  and whether the next milestone is **Ready to invoice**. Use the picker at
+  the top to view **All clients**, **Direct clients** (no referring partner),
+  or one specific partner's clients only. This is the page to work down each
+  morning if you're chasing payments.
 - From the **Dashboard → Reports** panel → **Revenue Report**: income by month,
   by service, and by client, split into **recurring vs one-time**. Export to CSV.
 - From the same panel → **Business Overview**: the executive snapshot. As

@@ -113,7 +113,10 @@ The **Sales Department** board shows your deals in columns by stage:
 2. Add **line items** (description, HSN/SAC, quantity, rate). GST is calculated
    per line (CGST+SGST for Maharashtra clients, IGST otherwise).
 3. For milestone/project work, add **milestones** (e.g. advance on signing,
-   balance on delivery).
+   balance on delivery). Once work starts, whoever runs the project marks each
+   milestone **Pending / In Progress / Done** on the quotation page — that's
+   how accounts knows a phase is finished and it's time to raise the next
+   invoice.
 4. Save, then **download the PDF** to send to the client.
 5. When the client agrees, mark the quotation **Accepted**, then **Convert to
    invoice** — accounts takes it from there.
@@ -139,6 +142,12 @@ country (e.g. "United States"). This hides the GSTIN and State fields (which
 don't apply) and tells the system to produce zero-rated invoices for that client
 — no GST is charged, and the PDF is labelled "Export of Services" automatically.
 Leave Country as "India" for all domestic clients.
+
+**Non-GST clients (domestic):** for a domestic client who has arranged to be
+billed without GST, tick **Non-GST client** on their profile — new quotations
+and invoices for them default to no GST charged. This is different from
+Overseas: the client is still in India, NEDS is just not charging GST on
+their bills. Can still be overridden per document if needed.
 
 **Monthly wins note (AI, optional):** on the 1st of each month, if AI is enabled
 and one of your clients had tasks completed, tickets resolved, a payment, or
