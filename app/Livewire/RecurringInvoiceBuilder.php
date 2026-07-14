@@ -34,6 +34,8 @@ class RecurringInvoiceBuilder extends Component
 
     public string $discount = '0';
 
+    public bool $is_gst_exempt = false;
+
     public string $terms = '';
 
     /** @var array<int, array<string, string>> */
@@ -51,6 +53,7 @@ class RecurringInvoiceBuilder extends Component
             $this->start_date = $recurring->start_date->toDateString();
             $this->end_date = $recurring->end_date?->toDateString();
             $this->discount = (string) Money::toRupees($recurring->discount);
+            $this->is_gst_exempt = $recurring->is_gst_exempt;
             $this->terms = (string) $recurring->terms;
             $this->items = $recurring->items->map(fn ($i) => [
                 'description' => $i->description, 'sac_code' => $i->sac_code,
@@ -61,6 +64,12 @@ class RecurringInvoiceBuilder extends Component
             $this->start_date = now()->startOfMonth()->toDateString();
             $this->addItem();
         }
+    }
+
+    /** Defaults the non-GST checkbox from the selected client, same as QuotationBuilder. */
+    public function updatedCustomerId(?int $value): void
+    {
+        $this->is_gst_exempt = $value ? (bool) Customer::find($value)?->gst_exempt : false;
     }
 
     public function addItem(): void
@@ -105,6 +114,7 @@ class RecurringInvoiceBuilder extends Component
                 'start_date' => $this->start_date,
                 'end_date' => $this->end_date ?: null,
                 'discount' => Money::toPaise($this->discount ?: 0) ?? 0,
+                'is_gst_exempt' => $this->is_gst_exempt,
                 'terms' => $this->terms ?: null,
             ]);
 

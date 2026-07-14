@@ -40,6 +40,12 @@
             <x-input-label value="Discount (₹)" />
             <x-text-input wire:model="discount" type="number" step="0.01" min="0" class="mt-1 block w-full" />
         </div>
+        <div class="flex items-end pb-2">
+            <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+                <input type="checkbox" wire:model="is_gst_exempt" class="rounded border-gray-300 text-indigo-600 shadow-sm">
+                Non-GST client (don't charge GST on generated invoices)
+            </label>
+        </div>
     </div>
 
     <div class="rounded-lg bg-white p-6 shadow-sm">

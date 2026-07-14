@@ -17,7 +17,7 @@ class RecurringInvoice extends Model
     protected $fillable = [
         'customer_id', 'service_id', 'frequency', 'day_of_month',
         'start_date', 'end_date', 'next_run_on', 'is_active',
-        'last_reminder_sent_at', 'discount', 'terms',
+        'last_reminder_sent_at', 'discount', 'is_gst_exempt', 'terms',
     ];
 
     protected function casts(): array
@@ -30,6 +30,7 @@ class RecurringInvoice extends Model
             'last_reminder_sent_at' => 'date',
             'is_active' => 'boolean',
             'discount' => 'integer',
+            'is_gst_exempt' => 'boolean',
             'day_of_month' => 'integer',
         ];
     }
