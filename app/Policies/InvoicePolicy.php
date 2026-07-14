@@ -57,7 +57,7 @@ class InvoicePolicy
 
     public function delete(User $user, Invoice $invoice): bool
     {
-        return $this->accountsTeam($user) && $invoice->payments()->doesntExist();
+        return $this->accountsTeam($user);
     }
 
     private function accountsTeam(User $user): bool
