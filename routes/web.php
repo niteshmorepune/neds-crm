@@ -159,6 +159,7 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
         Route::post('invoices/{invoice}/send', [InvoiceController::class, 'send'])->name('invoices.send');
         Route::post('invoices/{invoice}/assign-number', [InvoiceController::class, 'assignNumber'])->name('invoices.assign-number');
         Route::post('invoices/{invoice}/payments', [InvoiceController::class, 'storePayment'])->name('invoices.payments.store');
+        Route::post('invoices/{invoice}/payment-promise', [InvoiceController::class, 'updatePaymentPromise'])->name('invoices.payment-promise.update');
         Route::delete('invoices/{invoice}', [InvoiceController::class, 'destroy'])->name('invoices.destroy');
     });
 
@@ -182,6 +183,14 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
     Route::get('reports/lead-sources/export', [ReportController::class, 'exportLeadSources'])->name('reports.lead-sources.export');
     Route::get('reports/business-overview', [ReportController::class, 'businessOverview'])->name('reports.business-overview');
     Route::get('reports/business-overview/export', [ReportController::class, 'exportBusinessOverview'])->name('reports.business-overview.export');
+
+    /*
+     * Collections & delivery tracking — partner-wise + direct-client
+     * receivables and milestone billing readiness. Gated by menu.access:collections.
+     */
+    Route::middleware('menu.access:collections')->group(function () {
+        Route::get('reports/collections', [ReportController::class, 'collections'])->name('reports.collections');
+    });
 
     /*
      * Partners — content agency collaborators. Admin/manager only (menu.access:partners).

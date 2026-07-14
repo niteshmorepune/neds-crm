@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\MilestoneStatus;
 use App\Enums\QuotationStatus;
 use App\Enums\UserRole;
 use App\Livewire\MilestoneManager;
@@ -73,4 +74,48 @@ it('does not bill the same milestone twice', function () {
     $manager->call('generate', $milestone->id);
 
     expect(Invoice::where('quotation_id', $quotation->id)->count())->toBe(1);
+});
+
+it('defaults a new milestone to Pending and is not ready to invoice', function () {
+    $quotation = acceptedQuotation();
+    $milestone = $quotation->milestones()->create(['title' => 'Advance', 'percentage' => 40, 'amount' => 40000])->refresh();
+
+    expect($milestone->status)->toBe(MilestoneStatus::Pending)
+        ->and($milestone->readyToInvoice())->toBeFalse();
+});
+
+it('marks a milestone Done via the manager and flags it ready to invoice', function () {
+    $quotation = acceptedQuotation();
+    $milestone = $quotation->milestones()->create(['title' => 'Advance', 'percentage' => 40, 'amount' => 40000]);
+
+    Livewire::actingAs($this->admin)
+        ->test(MilestoneManager::class, ['quotation' => $quotation, 'canManage' => true])
+        ->call('updateStatus', $milestone->id, 'done');
+
+    $milestone->refresh();
+    expect($milestone->status)->toBe(MilestoneStatus::Done)
+        ->and($milestone->readyToInvoice())->toBeTrue();
+});
+
+it('a Done-but-billed milestone is no longer ready to invoice', function () {
+    $quotation = acceptedQuotation();
+    $milestone = $quotation->milestones()->create(['title' => 'Advance', 'percentage' => 40, 'amount' => 40000, 'status' => MilestoneStatus::Done]);
+
+    Livewire::actingAs($this->admin)
+        ->test(MilestoneManager::class, ['quotation' => $quotation, 'canManage' => true])
+        ->call('generate', $milestone->id);
+
+    expect($milestone->refresh()->readyToInvoice())->toBeFalse();
+});
+
+it('blocks updating milestone status without manage permission', function () {
+    $quotation = acceptedQuotation();
+    $milestone = $quotation->milestones()->create(['title' => 'Advance', 'percentage' => 40, 'amount' => 40000]);
+
+    Livewire::actingAs($this->admin)
+        ->test(MilestoneManager::class, ['quotation' => $quotation, 'canManage' => false])
+        ->call('updateStatus', $milestone->id, 'done')
+        ->assertForbidden();
+
+    expect($milestone->fresh()->status)->toBe(MilestoneStatus::Pending);
 });

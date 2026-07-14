@@ -8,6 +8,7 @@ use App\Enums\UserRole;
 use App\Http\Requests\InvoiceLogImportRequest;
 use App\Http\Requests\InvoiceLogStoreRequest;
 use App\Http\Requests\InvoiceLogUpdateRequest;
+use App\Http\Requests\InvoicePaymentPromiseUpdateRequest;
 use App\Http\Requests\PaymentStoreRequest;
 use App\Mail\InvoiceIssued;
 use App\Mail\PaymentReceived;
@@ -345,6 +346,21 @@ class InvoiceController extends Controller
         }
 
         return back()->with('status', $status);
+    }
+
+    /**
+     * Set or clear the date a client promised to pay by — logged manually by
+     * whoever takes the call, so a "I'll pay in a day or two" doesn't get lost.
+     * Same accounts-team gate as recording a payment.
+     */
+    public function updatePaymentPromise(InvoicePaymentPromiseUpdateRequest $request, Invoice $invoice): RedirectResponse
+    {
+        $this->authorize('recordPayment', $invoice);
+
+        $promisedDate = $request->validated()['payment_promised_date'] ?? null;
+        $invoice->update(['payment_promised_date' => $promisedDate]);
+
+        return back()->with('status', $promisedDate ? 'Payment promise date saved.' : 'Payment promise date cleared.');
     }
 
     /**

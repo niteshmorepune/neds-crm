@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Actions\GenerateMilestoneInvoice;
+use App\Enums\MilestoneStatus;
 use App\Models\Quotation;
 use Livewire\Component;
 
@@ -58,6 +59,19 @@ class MilestoneManager extends Component
         $milestone = $this->quotation->milestones()->findOrFail($milestoneId);
         abort_if($milestone->isBilled(), 403, 'A billed milestone cannot be removed.');
         $milestone->delete();
+    }
+
+    /**
+     * Team-set work-progress status, independent of billing (isBilled()).
+     * Marking a milestone Done is the manual signal that flips readyToInvoice().
+     */
+    public function updateStatus(int $milestoneId, string $status): void
+    {
+        $this->authorizeManage();
+        abort_unless(in_array($status, MilestoneStatus::values(), true), 422);
+
+        $milestone = $this->quotation->milestones()->findOrFail($milestoneId);
+        $milestone->update(['status' => $status]);
     }
 
     public function generate(int $milestoneId, GenerateMilestoneInvoice $action): void

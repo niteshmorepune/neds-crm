@@ -2,10 +2,12 @@
 
 use App\Actions\CreateProjectFromDeal;
 use App\Enums\DealStage;
+use App\Enums\TaskStatus;
 use App\Enums\UserRole;
 use App\Models\Customer;
 use App\Models\Deal;
 use App\Models\Project;
+use App\Models\Task;
 use App\Models\User;
 use Database\Seeders\MenuItemsSeeder;
 
@@ -82,4 +84,18 @@ it('lets a manager delete a project but blocks a sales rep who only owns it', fu
 
     $this->actingAs($this->manager)->delete(route('projects.destroy', $project))->assertRedirect(route('projects.index'));
     expect(Project::find($project->id))->toBeNull();
+});
+
+it('returns null completion percentage for a project with no tasks', function () {
+    $project = Project::factory()->create(['owner_id' => $this->manager->id]);
+
+    expect($project->completionPercentage())->toBeNull();
+});
+
+it('computes completion percentage from the ratio of Done tasks', function () {
+    $project = Project::factory()->create(['owner_id' => $this->manager->id]);
+    Task::factory()->count(2)->create(['project_id' => $project->id, 'status' => TaskStatus::Done]);
+    Task::factory()->count(2)->create(['project_id' => $project->id, 'status' => TaskStatus::Todo]);
+
+    expect($project->completionPercentage())->toBe(50);
 });

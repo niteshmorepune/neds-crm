@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Enums\UserRole;
+use App\Models\Partner;
 use App\Services\BusinessOverviewMetrics;
+use App\Services\CollectionsMetrics;
 use App\Services\ReportMetrics;
 use App\Support\Money;
 use Illuminate\Http\Request;
@@ -16,6 +18,7 @@ class ReportController extends Controller
     public function __construct(
         private readonly ReportMetrics $metrics,
         private readonly BusinessOverviewMetrics $overview,
+        private readonly CollectionsMetrics $collectionsMetrics,
     ) {}
 
     public function employeePerformance(Request $request): View
@@ -218,6 +221,39 @@ class ReportController extends Controller
             fputcsv($out, ['Avg deal size (₹)', $pipeline['avg_deal_size'] !== null ? Money::toRupees($pipeline['avg_deal_size']) : '—']);
             fputcsv($out, ['Avg sales cycle (days)', $pipeline['avg_sales_cycle_days'] ?? '—']);
         });
+    }
+
+    /**
+     * "Collections & Delivery" client health, optionally scoped to one
+     * referring partner or to direct (unassigned) clients via ?partner_id=.
+     */
+    public function collections(Request $request): View
+    {
+        $this->authorizeRevenue($request);
+        [$partnerId, $directOnly] = $this->partnerScope($request);
+
+        return view('reports.collections', [
+            'rows' => $this->collectionsMetrics->clientHealth($partnerId, $directOnly),
+            'partners' => Partner::orderBy('name')->get(),
+            'selectedPartnerId' => $request->string('partner_id')->value(),
+        ]);
+    }
+
+    /**
+     * Interpret ?partner_id= as: empty = all clients, "direct" = clients with
+     * no referring partner, else a specific partner id.
+     *
+     * @return array{0: int|null, 1: bool}
+     */
+    private function partnerScope(Request $request): array
+    {
+        $raw = $request->string('partner_id')->value();
+
+        if ($raw === 'direct') {
+            return [null, true];
+        }
+
+        return [$raw !== '' ? (int) $raw : null, false];
     }
 
     private function authorizePerformance(Request $request): void
