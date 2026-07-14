@@ -125,6 +125,10 @@ Useful for managers who also run their own service accounts.
   pick the date, and update the **status** and **notes**. Times are set by
   the employee's own check-in/check-out and cannot be edited here — corrections
   are logged to the audit trail.
+- **Sync from biometric** — click this button on the Attendance page if a
+  punch looks missing or a check-in/out time looks wrong. It pulls fresh data
+  from the biometric machine within about a minute and shows a status line
+  once done. See `admin.md` Section 1a for the full biometric setup/troubleshooting.
 - **Leave Requests → Review pending** — any admin or manager can approve or
   reject a leave request (you can't approve your own). Approving a request
   automatically marks the employee's attendance as **Leave** for each office
