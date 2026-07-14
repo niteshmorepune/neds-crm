@@ -73,6 +73,13 @@ From the **Reports** panel on the dashboard:
 
 **Outstanding Receivables** — what clients still owe (shared with accounts).
 
+**Collections** — a client-by-client follow-up worklist (shared with accounts):
+recurring clients who haven't paid, invoices only partially paid, payment
+promises that have been broken, and for milestone-billed projects whether the
+next milestone is marked **Ready to invoice**. Filter by **All clients**,
+**Direct clients**, or one specific partner. Open any partner's page (below)
+to see the same view already scoped to them.
+
 ## Bell notifications
 As a manager, you receive bell notifications for:
 
@@ -241,6 +248,14 @@ edit it like any other content piece before it goes anywhere; nothing is
 posted automatically. If a festival you expect to see isn't showing up,
 check with an admin — only fixed-date holidays are pre-loaded, so
 lunar/regional festivals (Diwali, Holi, etc.) need to be added each year.
+
+### Partner client health
+Click a partner's **name** on the Partners list to open their page — alongside
+their contact details, it shows the same collections/delivery table as the
+Collections report (above), already filtered to that partner's referred
+clients: who hasn't paid, who's only partially paid, and how each of their
+active projects is progressing. Useful when a partner asks "how are my
+clients doing with us" or before a check-in call with them.
 
 ## Automated integrations
 The CRM runs automated workflows with **Drishti** and **Social Media Dost**.
