@@ -100,6 +100,14 @@ the invoice each cycle** (every morning the scheduler checks for due templates)
 and emails it to the client automatically. You can pause/resume a template
 anytime.
 
+**Non-GST clients:** when you pick a client marked **Non-GST client** on their
+profile, the template's **Non-GST client** checkbox is ticked automatically —
+every invoice generated from that template (auto or via Generate & Send Now)
+skips GST. You can still tick or untick it yourself for a one-off exception;
+once saved, the template keeps whatever you set even if the client's own
+Non-GST setting changes later, so update the template directly if that ever
+needs to change.
+
 **Deleting a recurring template:** if a retainer has ended, open the template and
 click **Delete** (or use the Delete button on the Recurring Invoices list). This
 removes the template and its schedule; **previously generated invoices are kept**.

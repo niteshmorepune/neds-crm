@@ -37,7 +37,7 @@ class GenerateRecurringInvoices extends Command
                     'due_date' => $issueDate->copy()->addDays(15)->toDateString(),
                     'place_of_supply_state_code' => $template->customer->state_code,
                     'discount' => $template->discount,
-                    'is_gst_exempt' => $template->customer->gst_exempt,
+                    'is_gst_exempt' => $template->is_gst_exempt,
                 ]);
 
                 foreach ($template->items as $item) {
