@@ -72,6 +72,40 @@ folder (e.g. `{"dates": ["2026-08-15", "2026-10-20"]}`). Task Scheduler has
 no holiday-calendar concept, so this list is read fresh from disk on every
 run — add next year's dates to it once a year, no restart needed.
 
+## Manual "Sync now" (from the CRM's Attendance page)
+
+Admins/managers can click **Sync from biometric** on the Attendance page
+instead of waiting for the next 5-minute scheduled run. The CRM has no
+network path into the office LAN (it's on Hostinger, the device is only
+reachable from here), so clicking the button doesn't reach the device
+directly — it just queues a request. `check-manual-sync.mjs`, running as a
+separate Scheduled Task every minute, polls the CRM for a pending request and
+runs the same sync logic immediately (ignoring the office-hours window,
+since a manual click is a deliberate action) when it finds one, then reports
+the outcome back so the button's status line updates ("Synced 40 seconds
+ago" / "Sync failed: ..."). Setup:
+
+1. Same one-time setup as above, plus two more `.env` values:
+   `CRM_BASE_URL` (plain site root, not the `/iclock/cdata` URL) and
+   `BIOMETRIC_BRIDGE_TOKEN` (must match the CRM server's own
+   `BIOMETRIC_BRIDGE_TOKEN` — a different secret from `DEVICE_SERIAL`, which
+   authenticates the device's push, not this script).
+2. Register a second Scheduled Task (same **Create Task** dialog as above):
+   name it `NEDS Biometric Bridge - Manual Sync Check`, same "Run whether
+   user is logged on or not" security option, **Triggers** → New → "Daily",
+   repeat every 1 minute, no end date (this one runs all day, not just
+   office hours — it's a cheap check, and someone might click the button
+   after hours). **Actions** → Start a program → same `node.exe` path, but
+   arguments `check-manual-sync.mjs`.
+3. Test it: click **Sync from biometric** on the CRM, then within a minute
+   check `bridge.log` for a `Manual sync requested (id=N) — running now.`
+   line followed by its outcome, and refresh the Attendance page to see the
+   status line update.
+
+This script is quiet on purpose when there's nothing to do — it only writes
+to `bridge.log` when it actually finds and processes a pending request, so it
+doesn't add a line every single minute.
+
 ## Why re-sending is safe
 
 The CRM's biometric webhook (`BiometricWebhookController::push()`) is
@@ -97,3 +131,12 @@ runs, with no risk of overwriting a correct time with a stale one.
   member mapping.
 - Nothing here needs the biometric device's own HTTPS/ADMS settings to be
   touched — leave those as they are.
+- **`ERROR (unhandled rejection, likely a node-zklib device-read failure): Cannot read properties of null (reading 'subarray')`** —
+  this was a real bug in `node-zklib`'s `getAttendances()`: it crashes instead
+  of returning an empty list when the device reports exactly 0 records
+  (`logCounts: 0`, which happens on its own as the device's local buffer
+  empties, or via "hitech" polling/clearing the same terminal). Fixed by
+  checking `zk.getInfo().logCounts` first and skipping straight to "nothing
+  to forward" when it's 0, instead of ever calling the buggy path. If this
+  error reappears despite that guard, it's a genuinely different failure —
+  don't assume it's the same known issue without checking `logCounts` again.

@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AttendanceStatus;
+use App\Enums\BiometricSyncStatus;
 use App\Enums\UserRole;
 use App\Models\Attendance;
+use App\Models\BiometricSyncRequest;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -48,7 +50,31 @@ class AttendanceController extends Controller
             'isManager' => $isManager,
             'users' => $users,
             'viewingUser' => $viewingUser,
+            'latestSync' => $isManager ? BiometricSyncRequest::latest('requested_at')->first() : null,
         ]);
+    }
+
+    /**
+     * Queues a manual biometric sync request. The CRM has no network path to
+     * the device (office LAN only), so this doesn't sync anything itself —
+     * the office-LAN bridge script polls for a pending request every minute
+     * and does the actual work (see check-manual-sync.mjs).
+     */
+    public function requestSync(Request $request): RedirectResponse
+    {
+        $this->authorize('correct', Attendance::class);
+
+        $existing = BiometricSyncRequest::where('status', BiometricSyncStatus::Pending)->exists();
+
+        if (! $existing) {
+            BiometricSyncRequest::create([
+                'requested_by_id' => $request->user()->id,
+                'requested_at' => now(),
+                'status' => BiometricSyncStatus::Pending,
+            ]);
+        }
+
+        return back()->with('status', 'Sync requested — the office bridge checks every minute and will pick it up shortly.');
     }
 
     public function corrections(Request $request): View

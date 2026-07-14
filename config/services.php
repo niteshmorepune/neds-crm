@@ -71,8 +71,12 @@ return [
 
     // eSSL biometric device ADMS push. BIOMETRIC_DEVICE_SERIAL must match the
     // serial number printed on the device (shown in its Command Center screen).
+    // BIOMETRIC_BRIDGE_TOKEN is a separate shared secret for the office-LAN
+    // bridge script polling/reporting on manual "Sync now" requests — not the
+    // device itself, which only ever sends BIOMETRIC_DEVICE_SERIAL.
     'biometric' => [
         'device_serial' => env('BIOMETRIC_DEVICE_SERIAL'),
+        'bridge_token' => env('BIOMETRIC_BRIDGE_TOKEN'),
     ],
 
     // Shared secret for cross-portal SSO tokens (CRM → Drishti / SMDost).

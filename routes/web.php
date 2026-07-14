@@ -254,6 +254,7 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
         Route::get('attendance/corrections', [AttendanceController::class, 'corrections'])->name('attendance.corrections');
         Route::post('attendance/corrections', [AttendanceController::class, 'storeCorrection'])->name('attendance.corrections.store');
         Route::get('attendance/import', HitechAttendanceImport::class)->name('attendance.import');
+        Route::post('attendance/biometric-sync', [AttendanceController::class, 'requestSync'])->name('attendance.biometric-sync');
     });
 
     /*

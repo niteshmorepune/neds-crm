@@ -85,7 +85,15 @@ port 443 with HTTPS on.
 get trimmed during the day by other software that also reads it (the
 "hitech" billing software), so a punch can occasionally never reach the
 CRM at all. If someone's check-in or check-out looks wrong or missing on
-the Attendance page:
+the Attendance page, try this first:
+
+- Click **Sync from biometric** at the top of the Attendance page
+  (admin/manager only). This pulls fresh punches from the machine within
+  about a minute — a status line appears showing whether it found anything
+  and synced ("Biometric sync completed ...") or hit a problem ("Biometric
+  sync failed ..."). If it doesn't resolve it, fall back to the Hitech
+  import below.
+
 1. In **hitech**, open that staff member's **Attendance** tab, pick the
    date range, and click **Export To Excel**.
 2. In the CRM, go to **Attendance → Import from Hitech**, pick the staff

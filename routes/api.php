@@ -1,10 +1,12 @@
 <?php
 
+use App\Http\Controllers\Api\BiometricSyncController;
 use App\Http\Controllers\Api\DrishtiWebhookController;
 use App\Http\Controllers\Api\LeadCaptureController;
 use App\Http\Controllers\Api\MetaLeadsWebhookController;
 use App\Http\Controllers\Api\SmdostWebhookController;
 use App\Http\Controllers\Api\WhatsappWebhookController;
+use App\Http\Middleware\VerifyBiometricBridgeToken;
 use App\Http\Middleware\VerifyDrishtiWebhookSignature;
 use App\Http\Middleware\VerifyLeadCaptureToken;
 use App\Http\Middleware\VerifyMetaWebhookSignature;
@@ -56,3 +58,18 @@ Route::get('/webhooks/meta-leads', [MetaLeadsWebhookController::class, 'verify']
 Route::post('/webhooks/meta-leads', [MetaLeadsWebhookController::class, 'receive'])
     ->middleware(['throttle:120,1', VerifyMetaWebhookSignature::class])
     ->name('api.webhooks.meta-leads.receive');
+
+// Office-LAN bridge (tools/biometric-bridge/check-manual-sync.mjs) polls
+// this once a minute to see if an admin/manager has clicked "Sync now" on
+// the Attendance page, then reports back when it's done. The CRM can't
+// reach the device directly (office LAN only), so this request/poll flag
+// is the only way to shrink the wait below the normal 5-minute schedule
+// without exposing the office PC to the internet. Bearer/X-Bridge-Token
+// auth via BIOMETRIC_BRIDGE_TOKEN — separate secret from the device's own
+// BIOMETRIC_DEVICE_SERIAL.
+Route::get('/biometric-sync/pending', [BiometricSyncController::class, 'pending'])
+    ->middleware(['throttle:120,1', VerifyBiometricBridgeToken::class])
+    ->name('api.biometric-sync.pending');
+Route::post('/biometric-sync/{syncRequest}/complete', [BiometricSyncController::class, 'complete'])
+    ->middleware(['throttle:120,1', VerifyBiometricBridgeToken::class])
+    ->name('api.biometric-sync.complete');

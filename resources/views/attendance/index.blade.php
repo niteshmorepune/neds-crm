@@ -23,6 +23,10 @@
                 @can('correct', \App\Models\Attendance::class)
                     <a href="{{ route('attendance.import') }}" class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Import from Hitech</a>
                     <a href="{{ route('attendance.corrections') }}" class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">Corrections</a>
+                    <form method="POST" action="{{ route('attendance.biometric-sync') }}">
+                        @csrf
+                        <button type="submit" class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Sync from biometric</button>
+                    </form>
                 @endcan
             </div>
         </div>
@@ -32,6 +36,25 @@
                 Viewing: <strong>{{ $viewingUser->name }}</strong>
             </div>
         @endif
+
+        @can('correct', \App\Models\Attendance::class)
+            @if ($latestSync)
+                <div @class([
+                    'rounded-md border px-4 py-2 text-sm',
+                    'bg-amber-50 border-amber-100 text-amber-700' => $latestSync->status === \App\Enums\BiometricSyncStatus::Pending,
+                    'bg-green-50 border-green-100 text-green-700' => $latestSync->status === \App\Enums\BiometricSyncStatus::Completed,
+                    'bg-red-50 border-red-100 text-red-700' => $latestSync->status === \App\Enums\BiometricSyncStatus::Failed,
+                ])>
+                    @if ($latestSync->status === \App\Enums\BiometricSyncStatus::Pending)
+                        Biometric sync requested {{ $latestSync->requested_at->diffForHumans() }} — the office bridge checks every minute.
+                    @elseif ($latestSync->status === \App\Enums\BiometricSyncStatus::Completed)
+                        Biometric sync completed {{ $latestSync->completed_at->diffForHumans() }}{{ $latestSync->summary ? ': '.$latestSync->summary : '' }}
+                    @else
+                        Biometric sync failed {{ $latestSync->completed_at->diffForHumans() }}{{ $latestSync->error ? ': '.$latestSync->error : '' }}
+                    @endif
+                </div>
+            @endif
+        @endcan
 
         <div class="overflow-hidden overflow-x-auto rounded-lg bg-white shadow-sm">
             <table class="min-w-full divide-y divide-gray-200 text-sm">

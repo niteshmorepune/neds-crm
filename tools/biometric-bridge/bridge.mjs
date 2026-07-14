@@ -2,30 +2,40 @@ import 'dotenv/config';
 import ZKLib from 'node-zklib';
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const logFile = path.join(__dirname, 'bridge.log');
 
-function log(message) {
+// Only auto-run/install a crash handler when executed directly
+// (`node bridge.mjs`), not when imported by check-manual-sync.mjs for its
+// runSync() call — that script installs its own handler instead, so it can
+// report the failure back to the CRM before exiting. Computed here (not just
+// near main() below) so the guard around the handler registration further
+// down can use it.
+const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+
+export function log(message) {
     const line = `[${new Date().toISOString()}] ${message}`;
     console.log(line);
     fs.appendFileSync(logFile, line + '\n');
 }
 
-// node-zklib has a bug: when a device-data request fails, readWithBuffer()
-// calls reject(err) without returning, then dereferences the still-null
-// reply — a second throw inside its `new Promise(async ...)` executor that
-// never gets attached to anything. Node treats that as fatal and kills the
-// process before our own try/catch in main() ever runs. Intercept it here so
-// a device-side hiccup (stale session, device unreachable mid-read, etc.)
-// logs cleanly and exits instead of dumping a raw stack trace with no log
-// entry at all.
-process.on('unhandledRejection', (reason) => {
-    const message = reason instanceof Error ? reason.message : String(reason);
-    log(`ERROR (unhandled rejection, likely a node-zklib device-read failure): ${message}`);
-    process.exit(1);
-});
+if (isMain) {
+    // node-zklib has a bug: when a device-data request fails, readWithBuffer()
+    // calls reject(err) without returning, then dereferences the still-null
+    // reply — a second throw inside its `new Promise(async ...)` executor that
+    // never gets attached to anything. Node treats that as fatal and kills the
+    // process before our own try/catch in main() ever runs. Intercept it here so
+    // a device-side hiccup (stale session, device unreachable mid-read, etc.)
+    // logs cleanly and exits instead of dumping a raw stack trace with no log
+    // entry at all.
+    process.on('unhandledRejection', (reason) => {
+        const message = reason instanceof Error ? reason.message : String(reason);
+        log(`ERROR (unhandled rejection, likely a node-zklib device-read failure): ${message}`);
+        process.exit(1);
+    });
+}
 
 function required(name) {
     const value = process.env[name];
@@ -70,7 +80,7 @@ function loadHolidays() {
 }
 
 // Returns null when it's fine to run, otherwise a reason string for the log.
-function skipReason(date) {
+export function skipReason(date) {
     if (date.getDay() === 0) { // 0 = Sunday
         return 'Sunday';
     }
@@ -87,12 +97,32 @@ function skipReason(date) {
     return null;
 }
 
-async function main() {
+/**
+ * Connects to the device, pulls recent punches, and forwards them to the
+ * CRM's ADMS webhook. Shared by the normal scheduled run (bridge.mjs, every
+ * 5 minutes) and the manual "Sync now" check (check-manual-sync.mjs, every
+ * minute) so both go through identical logic — no separate code path to
+ * drift out of sync.
+ *
+ * Never throws for expected/handled outcomes (skip, device error, CRM
+ * rejection) — always returns a result object instead, so callers can report
+ * a clean status back to the CRM without needing their own try/catch for
+ * every failure mode. A node-zklib internal bug can still kill the process
+ * via an unhandled rejection outside this function's control (see the
+ * process-level handler above); callers that need to survive that must
+ * install their own handler too.
+ *
+ * @param {boolean} ignoreWindow Skip the office-hours/holiday guard. Used by
+ *   a manual sync request — an admin clicking "Sync now" is an explicit,
+ *   deliberate action, not a background tick, so it should run immediately
+ *   even outside normal hours rather than silently no-op.
+ * @returns {Promise<{ok: boolean, skipped: boolean, reason?: string, summary?: string, error?: string}>}
+ */
+export async function runSync({ ignoreWindow = false } = {}) {
     const now = new Date();
-    const reason = skipReason(now);
+    const reason = ignoreWindow ? null : skipReason(now);
     if (reason) {
-        log(`Skipping this run (${reason}).`);
-        return;
+        return { ok: true, skipped: true, reason };
     }
 
     const deviceIp = required('DEVICE_IP');
@@ -110,6 +140,21 @@ async function main() {
     let logs;
     try {
         await zk.createSocket();
+
+        // node-zklib's getAttendances() has a bug: when the device reports
+        // exactly 0 records, it dereferences a null reply instead of
+        // returning an empty list, which is what triggers the "unhandled
+        // rejection" crash this module guards against above. That crash is
+        // not a device fault — it's genuinely just "no data right now" (the
+        // device's local buffer can empty out on its own, or via the
+        // "hitech" billing software polling/clearing the same terminal).
+        // Check first via getInfo() so we can return the correct "nothing to
+        // forward" result instead of ever calling the buggy path.
+        const info = await zk.getInfo();
+        if (info.logCounts === 0) {
+            return { ok: true, skipped: false, summary: 'No punches on the device right now (logCounts: 0). Nothing to forward.' };
+        }
+
         const result = await zk.getAttendances();
         logs = result.data;
     } finally {
@@ -123,8 +168,7 @@ async function main() {
     const recent = logs.filter((r) => new Date(r.recordTime) >= cutoff);
 
     if (recent.length === 0) {
-        log(`No punches in the last ${daysBack} day(s) on the device. Nothing to forward.`);
-        return;
+        return { ok: true, skipped: false, summary: `No punches in the last ${daysBack} day(s) on the device. Nothing to forward.` };
     }
 
     // Group by device_user_id + calendar day, then collapse to first/last
@@ -164,14 +208,34 @@ async function main() {
     });
 
     const responseText = await response.text();
-    log(`Forwarded ${groups.size} user-day group(s) from ${recent.length} raw punch(es). CRM responded ${response.status}: ${responseText.trim()}`);
+    const summary = `Forwarded ${groups.size} user-day group(s) from ${recent.length} raw punch(es). CRM responded ${response.status}: ${responseText.trim()}`;
 
     if (!response.ok) {
+        return { ok: false, skipped: false, error: summary };
+    }
+
+    return { ok: true, skipped: false, summary };
+}
+
+async function main() {
+    const result = await runSync();
+
+    if (result.skipped) {
+        log(`Skipping this run (${result.reason}).`);
+        return;
+    }
+
+    if (result.ok) {
+        log(result.summary);
+    } else {
+        log(result.error);
         process.exitCode = 1;
     }
 }
 
-main().catch((error) => {
-    log(`ERROR: ${error.message}`);
-    process.exitCode = 1;
-});
+if (isMain) {
+    main().catch((error) => {
+        log(`ERROR: ${error.message}`);
+        process.exitCode = 1;
+    });
+}
