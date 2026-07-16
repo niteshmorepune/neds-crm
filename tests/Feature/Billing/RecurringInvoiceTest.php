@@ -148,3 +148,15 @@ it('deactivates a template once it passes its end date', function () {
 
     expect($template->fresh()->is_active)->toBeFalse();
 });
+
+it('hasEnded is true only when inactive with a past end date, not a manual pause', function () {
+    $ended = recurringWithLine(['is_active' => false, 'end_date' => now()->subDay()->toDateString()]);
+    $pausedNoEndDate = recurringWithLine(['is_active' => false, 'end_date' => null]);
+    $pausedFutureEndDate = recurringWithLine(['is_active' => false, 'end_date' => now()->addMonth()->toDateString()]);
+    $activePastEndDate = recurringWithLine(['is_active' => true, 'end_date' => now()->subDay()->toDateString()]);
+
+    expect($ended->hasEnded())->toBeTrue()
+        ->and($pausedNoEndDate->hasEnded())->toBeFalse()
+        ->and($pausedFutureEndDate->hasEnded())->toBeFalse()
+        ->and($activePastEndDate->hasEnded())->toBeFalse();
+});

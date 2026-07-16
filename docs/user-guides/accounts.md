@@ -106,6 +106,18 @@ the invoice each cycle** (every morning the scheduler checks for due templates)
 and emails it to the client automatically. You can pause/resume a template
 anytime.
 
+**"Ended" vs. "On Hold" / "Paused":** this describes the *template's own
+schedule*, not whether its invoice got paid — the invoice's own Paid/Sent/
+Overdue status (visible on the invoice itself) is separate and unaffected.
+**Ended** means the template had an end date, that date has passed, and it
+won't bill again — nothing to do, it ran its course. **On Hold** / **Paused**
+means someone clicked Pause, or the template simply has no end date set yet
+still isn't active — check whether it should be resumed. If you set up one
+template per one-month period, expect to see it flip to Ended right after its
+single invoice generates; if you want an ongoing retainer to keep billing
+every month automatically, leave **End date** blank instead of re-creating a
+new template each month.
+
 **Non-GST clients:** when you pick a client marked **Non-GST client** on their
 profile, the template's **Non-GST client** checkbox is ticked automatically —
 every invoice generated from that template (auto or via Generate & Send Now)

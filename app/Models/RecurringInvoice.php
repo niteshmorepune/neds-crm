@@ -60,4 +60,15 @@ class RecurringInvoice extends Model
     {
         return $query->where('is_active', true)->whereDate('next_run_on', '<=', $date);
     }
+
+    /**
+     * Distinguishes an inactive template that ran its course (end_date already
+     * passed — nothing wrong, no action needed) from one a human paused via
+     * the Pause/Activate button (end_date blank or still in the future) —
+     * both just set is_active=false, but they read very differently to staff.
+     */
+    public function hasEnded(): bool
+    {
+        return ! $this->is_active && $this->end_date !== null && $this->end_date->isPast();
+    }
 }

@@ -71,7 +71,7 @@
                             'inline-flex rounded-full px-2 py-0.5 text-xs font-medium',
                             'bg-green-100 text-green-800' => $recurring->is_active,
                             'bg-gray-100 text-gray-600' => ! $recurring->is_active,
-                        ])>{{ $recurring->is_active ? 'Active' : 'Paused' }}</span>
+                        ])>{{ $recurring->is_active ? 'Active' : ($recurring->hasEnded() ? 'Ended' : 'Paused') }}</span>
                     </dd>
                 </div>
                 @if($recurring->service)

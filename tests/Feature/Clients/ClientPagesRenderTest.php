@@ -111,6 +111,44 @@ it('renders the services tab with recurring services and projects', function () 
         ->assertSee('SEO Launch');
 });
 
+it('labels a naturally-finished one-cycle recurring invoice "Ended", not "On Hold"', function () {
+    $service = Service::factory()->create(['name' => 'GMB']);
+    $client = Customer::factory()->create(['company_name' => 'Finished Cycle Co']);
+
+    RecurringInvoice::factory()->create([
+        'customer_id' => $client->id,
+        'service_id' => $service->id,
+        'is_active' => false,
+        'start_date' => now()->subMonths(2),
+        'end_date' => now()->subMonth(),
+        'next_run_on' => now()->addMonth(),
+    ]);
+
+    $this->actingAs($this->admin)
+        ->get(route('clients.show', $client))
+        ->assertOk()
+        ->assertSee('Ended')
+        ->assertDontSee('On Hold');
+});
+
+it('still labels a manually-paused recurring invoice "On Hold"', function () {
+    $service = Service::factory()->create(['name' => 'SEO']);
+    $client = Customer::factory()->create(['company_name' => 'Paused Co']);
+
+    RecurringInvoice::factory()->create([
+        'customer_id' => $client->id,
+        'service_id' => $service->id,
+        'is_active' => false,
+        'end_date' => null,
+    ]);
+
+    $this->actingAs($this->admin)
+        ->get(route('clients.show', $client))
+        ->assertOk()
+        ->assertSee('On Hold')
+        ->assertDontSee('Ended');
+});
+
 it('hides the +GST hint on the services tab for a GST-exempt recurring invoice', function () {
     $service = Service::factory()->create(['name' => 'AMC Service']);
     $client = Customer::factory()->create(['company_name' => 'Exempt Co']);

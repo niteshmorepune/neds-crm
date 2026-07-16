@@ -33,7 +33,7 @@
                                     'inline-flex rounded-full px-2 py-0.5 text-xs font-medium',
                                     'bg-green-100 text-green-800' => $r->is_active,
                                     'bg-gray-100 text-gray-600' => ! $r->is_active,
-                                ])>{{ $r->is_active ? 'Active' : 'Paused' }}</span>
+                                ])>{{ $r->is_active ? 'Active' : ($r->hasEnded() ? 'Ended' : 'Paused') }}</span>
                             </td>
                             <td class="px-4 py-3 text-right">
                                 <a href="{{ route('recurring-invoices.show', $r) }}" class="text-indigo-600 hover:text-indigo-500">Invoices</a>

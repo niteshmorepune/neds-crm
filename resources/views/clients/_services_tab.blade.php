@@ -72,6 +72,8 @@
                         <td class="px-4 py-3">
                             @if ($r->is_active)
                                 <span class="inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">Active</span>
+                            @elseif ($r->hasEnded())
+                                <span class="inline-flex rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">Ended</span>
                             @else
                                 <span class="inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">On Hold</span>
                             @endif
