@@ -151,6 +151,10 @@ the template will actually charge GST.
 **Deleting a recurring template:** if a retainer has ended, open the template and
 click **Delete** (or use the Delete button on the Recurring Invoices list). This
 removes the template and its schedule; **previously generated invoices are kept**.
+**Pause is not the same as Delete** — Pause just stops future billing but keeps
+the template (it'll show as On Hold); if you're cleaning up a duplicate or
+test template you created by mistake, make sure you click **Delete**, not
+Pause, or it'll still be there.
 
 **Viewing generated invoices:** click **Invoices** on any recurring template row
 to open its history — every invoice that has been auto-generated for that
