@@ -80,7 +80,9 @@
                         @if ($canViewInvoices)
                             <td class="px-4 py-3 text-right text-gray-600">
                                 {{ $cycleAmount ? \App\Support\Money::format($cycleAmount) : '—' }}
-                                <span class="text-xs text-gray-400">+GST</span>
+                                @unless ($r->is_gst_exempt)
+                                    <span class="text-xs text-gray-400">+GST</span>
+                                @endunless
                             </td>
                             <td class="px-4 py-3">
                                 @if ($r->is_active && $r->next_run_on)

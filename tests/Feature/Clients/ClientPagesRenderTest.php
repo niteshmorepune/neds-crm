@@ -111,6 +111,28 @@ it('renders the services tab with recurring services and projects', function () 
         ->assertSee('SEO Launch');
 });
 
+it('hides the +GST hint on the services tab for a GST-exempt recurring invoice', function () {
+    $service = Service::factory()->create(['name' => 'AMC Service']);
+    $client = Customer::factory()->create(['company_name' => 'Exempt Co']);
+
+    $exempt = RecurringInvoice::factory()->create([
+        'customer_id' => $client->id,
+        'service_id' => $service->id,
+        'is_active' => true,
+        'is_gst_exempt' => true,
+    ]);
+    $exempt->items()->create([
+        'description' => 'AMC retainer', 'sac_code' => '998313',
+        'quantity' => 1, 'rate' => 300000, 'gst_rate' => 18,
+    ]);
+
+    $this->actingAs($this->admin)
+        ->get(route('clients.show', $client))
+        ->assertOk()
+        ->assertSee('AMC Service')
+        ->assertDontSee('+GST');
+});
+
 it('renders the edit form', function () {
     $client = Customer::factory()->create();
 
