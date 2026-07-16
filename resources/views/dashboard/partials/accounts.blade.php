@@ -19,5 +19,6 @@
         <a href="{{ route('reports.receivables') }}" class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">Receivables report</a>
         <a href="{{ route('reports.revenue') }}" class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Revenue report</a>
         <a href="{{ route('reports.business-overview') }}" class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Business overview</a>
+        <a href="{{ route('reports.cash-forecast') }}" class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cash forecast</a>
     </div>
 </div>

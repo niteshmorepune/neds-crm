@@ -69,6 +69,35 @@
             @endif
         </div>
 
+        @if (! $ticket->status->isOpen())
+            <div class="rounded-xl bg-white px-6 py-5 shadow-sm ring-1 ring-gray-100">
+                @if ($ticket->satisfactionRating)
+                    <p class="text-sm text-gray-600">
+                        Thanks for your feedback — you rated this {{ $ticket->satisfactionRating->rating }}/5.
+                    </p>
+                @else
+                    <h2 class="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-3">How did we do?</h2>
+                    <form method="POST" action="{{ route('portal.tickets.rate', $ticket->id) }}" x-data="{ rating: 0 }">
+                        @csrf
+                        <div class="flex gap-1">
+                            @for ($i = 1; $i <= 5; $i++)
+                                <button type="button" @click="rating = {{ $i }}"
+                                        class="text-2xl leading-none"
+                                        :class="rating >= {{ $i }} ? 'text-amber-400' : 'text-gray-300'">★</button>
+                            @endfor
+                        </div>
+                        <input type="hidden" name="rating" x-model="rating">
+                        <x-input-error :messages="$errors->get('rating')" class="mt-1" />
+                        <textarea name="comment" rows="2" placeholder="Anything you'd like to add? (optional)"
+                                  class="mt-3 block w-full rounded-xl border-gray-200 text-sm shadow-sm focus:border-indigo-400 focus:ring-indigo-400 resize-none"></textarea>
+                        <div class="mt-3 flex justify-end">
+                            <x-primary-button type="submit" x-bind:disabled="rating === 0">Submit feedback</x-primary-button>
+                        </div>
+                    </form>
+                @endif
+            </div>
+        @endif
+
         <a href="{{ route('portal.tickets.index') }}" class="inline-block text-sm text-gray-500 hover:text-gray-700">← Back to tickets</a>
     </div>
 </x-portal-app-layout>

@@ -24,6 +24,9 @@ flagged) surfaces active clients worth a proactive check-in:
 - **Overdue Invoice** — at least one overdue invoice.
 - **Growth Opportunity** — only using one service line even though more are
   active — a natural upsell prompt.
+- **Low Satisfaction** — at least one ticket rated 2/5 or below by the client
+  in the last 60 days (clients rate a ticket once it's Resolved/Closed, from
+  the client portal — see `client-portal.md`).
 
 Everything is computed live from existing data, nothing is stored. Click
 **✨ Suggest action** next to a client to have Claude draft a specific next
@@ -44,6 +47,17 @@ From the **Reports** panel on the dashboard:
 - **Pipeline & Funnel**: company-wide open pipeline by stage, win rate, avg
   deal size, and avg sales-cycle length for the period — full detail, same as
   Admin. Export CSV.
+
+**Cash Forecast** (linked from Business Overview, or the dashboard's Reports
+panel) — a near-term cash view, blending:
+- **Recurring expected**: active recurring-invoice templates projected
+  forward month by month.
+- **Receivables due**: already-invoiced amounts bucketed by due month
+  (anything already overdue collapses into the first month — it's owed now
+  regardless of the original date).
+- **Weighted pipeline**: shown separately and clearly labelled indicative —
+  deals don't have an expected-close date, so it isn't blended into the
+  monthly chart as if it were committed cash.
 
 **Employee Performance Report** — per person, for a chosen month:
 - tasks completed, **on-time %**, calls made, leads converted, **attendance %**,
@@ -107,6 +121,10 @@ As a manager, you receive bell notifications for:
   date passes with the invoice still unpaid, you're alerted alongside the
   accounts team. Fires once per promise, and again if a new promised date is
   set and also breaks.
+- 📅 **Contract renewal due soon** — when an active recurring contract's end
+  date is within 30 days, you and the accounts team (plus that client's sales
+  rep) are notified once. Fires again if the contract is renewed to a later
+  date and that new date later comes within the window too.
 - **SMDost brief approved** — ✅ when a brief is approved in SMDost, a draft
   invoice appears in the CRM for accounts to price.
 - 🌴 **Leave request submitted / reviewed** — whenever anyone requests leave,

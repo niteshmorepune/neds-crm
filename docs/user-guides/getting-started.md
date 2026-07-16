@@ -51,6 +51,13 @@ If you have any tasks past their due date, a **red banner** appears at the top o
 your dashboard when you log in. Click **View tasks →** to see them and clear the
 backlog.
 
+## 4b. My Day
+**Sidebar → My Day** is a single worklist pulling together everything due or
+overdue that's yours: tasks, lead/deal follow-ups, call follow-ups, and (for
+Support) SLA-breached tickets. Instead of checking five separate screens each
+morning, check this one page first — each item links straight to the record so
+you can act on it, and the list disappears once you're caught up.
+
 ## 5. Attendance — check in and out
 On the **Dashboard**, use the attendance widget:
 - **Check in** when you start your day.

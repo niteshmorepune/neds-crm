@@ -10,6 +10,7 @@ use App\Http\Controllers\ContentPieceController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DailyReportController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\MyDayController;
 use App\Http\Controllers\DealController;
 use App\Http\Controllers\SalesDashboardController;
 use App\Http\Controllers\SalesTargetController;
@@ -196,6 +197,7 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
     Route::get('reports/lead-sources/export', [ReportController::class, 'exportLeadSources'])->name('reports.lead-sources.export');
     Route::get('reports/business-overview', [ReportController::class, 'businessOverview'])->name('reports.business-overview');
     Route::get('reports/business-overview/export', [ReportController::class, 'exportBusinessOverview'])->name('reports.business-overview.export');
+    Route::get('reports/cash-forecast', [ReportController::class, 'cashForecast'])->name('reports.cash-forecast');
 
     /*
      * Collections & delivery tracking — partner-wise + direct-client
@@ -257,6 +259,15 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
     // Attachment download/remove (authorized against the parent record).
     Route::get('attachments/{attachment}/download', [AttachmentController::class, 'download'])->name('attachments.download');
     Route::delete('attachments/{attachment}', [AttachmentController::class, 'destroy'])->name('attachments.destroy');
+
+    /*
+     * My Day — consolidated personal worklist (tasks, follow-ups, calls,
+     * SLA-breached tickets). Gated by menu.access:my-day. Always scoped to
+     * the viewer themselves, regardless of role.
+     */
+    Route::middleware('menu.access:my-day')->group(function () {
+        Route::get('my-day', [MyDayController::class, 'index'])->name('my-day.index');
+    });
 
     /*
      * Attendance — Milestone 4b. Gated by menu.access:attendance.
@@ -408,6 +419,7 @@ Route::prefix('portal')->name('portal.')->group(function () {
         Route::post('tickets', [App\Http\Controllers\Portal\TicketController::class, 'store'])->name('tickets.store');
         Route::get('tickets/{ticket}', [App\Http\Controllers\Portal\TicketController::class, 'show'])->name('tickets.show');
         Route::post('tickets/{ticket}/reply', [App\Http\Controllers\Portal\TicketController::class, 'reply'])->name('tickets.reply');
+        Route::post('tickets/{ticket}/rate', [App\Http\Controllers\Portal\TicketController::class, 'rate'])->name('tickets.rate');
 
         // SSO bridge — generates a short-lived signed token and redirects the
         // contact to Drishti or SMDost so they log in without a separate password.

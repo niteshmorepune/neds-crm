@@ -21,6 +21,10 @@ class ClientRadarService
 
     private const ACTIVITY_WINDOW_DAYS = 30;
 
+    private const LOW_SATISFACTION_THRESHOLD = 2;
+
+    private const LOW_SATISFACTION_WINDOW_DAYS = 60;
+
     /**
      * @return Collection<int, array{customer: Customer, flags: array<string, array{label: string, detail: string}>}>
      */
@@ -30,7 +34,7 @@ class ClientRadarService
 
         return Customer::query()
             ->where('status', CustomerStatus::Active)
-            ->with(['owner', 'notes', 'callLogs', 'tickets', 'invoices', 'projects.service', 'recurringInvoices.service'])
+            ->with(['owner', 'notes', 'callLogs', 'tickets.satisfactionRating', 'invoices', 'projects.service', 'recurringInvoices.service'])
             ->get()
             ->map(fn (Customer $customer) => [
                 'customer' => $customer,
@@ -87,6 +91,20 @@ class ClientRadarService
             $flags['upsell_opportunity'] = [
                 'label' => 'Growth Opportunity',
                 'detail' => "Only using {$serviceName} — {$activeServiceCount} services available",
+            ];
+        }
+
+        $recentLowRatings = $customer->tickets
+            ->pluck('satisfactionRating')
+            ->filter()
+            ->filter(fn ($rating) => $rating->created_at->gt(now()->subDays(self::LOW_SATISFACTION_WINDOW_DAYS)))
+            ->filter(fn ($rating) => $rating->rating <= self::LOW_SATISFACTION_THRESHOLD);
+
+        if ($recentLowRatings->isNotEmpty()) {
+            $count = $recentLowRatings->count();
+            $flags['low_satisfaction'] = [
+                'label' => 'Low Satisfaction',
+                'detail' => 'Rated '.$recentLowRatings->min('rating')."/5 on a recent ticket".($count > 1 ? " ({$count} low ratings)" : ''),
             ];
         }
 

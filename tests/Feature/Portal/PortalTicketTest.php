@@ -70,3 +70,53 @@ it('hides internal notes from the portal thread', function () {
 it('renders the portal ticket create page', function () {
     $this->actingAs($this->contactA, 'portal')->get(route('portal.tickets.create'))->assertOk()->assertSee('Raise a Ticket');
 });
+
+it('lets a portal contact rate a resolved ticket', function () {
+    $ticket = Ticket::factory()->create(['customer_id' => $this->customerA->id, 'status' => TicketStatus::Resolved]);
+
+    $this->actingAs($this->contactA, 'portal')
+        ->post(route('portal.tickets.rate', $ticket->id), ['rating' => 4, 'comment' => 'Quick turnaround'])
+        ->assertRedirect();
+
+    $rating = $ticket->satisfactionRating()->firstOrFail();
+    expect($rating->rating)->toBe(4)
+        ->and($rating->comment)->toBe('Quick turnaround')
+        ->and($rating->contact_id)->toBe($this->contactA->id);
+});
+
+it('forbids rating a still-open ticket', function () {
+    $ticket = Ticket::factory()->create(['customer_id' => $this->customerA->id, 'status' => TicketStatus::Open]);
+
+    $this->actingAs($this->contactA, 'portal')
+        ->post(route('portal.tickets.rate', $ticket->id), ['rating' => 4])
+        ->assertForbidden();
+});
+
+it('forbids rating a ticket that already has a rating', function () {
+    $ticket = Ticket::factory()->create(['customer_id' => $this->customerA->id, 'status' => TicketStatus::Resolved]);
+    $ticket->satisfactionRating()->create(['contact_id' => $this->contactA->id, 'rating' => 5]);
+
+    $this->actingAs($this->contactA, 'portal')
+        ->post(route('portal.tickets.rate', $ticket->id), ['rating' => 1])
+        ->assertForbidden();
+
+    expect($ticket->satisfactionRating()->count())->toBe(1);
+});
+
+it('cannot rate another customers ticket', function () {
+    $foreign = Ticket::factory()->create(['customer_id' => $this->customerB->id, 'status' => TicketStatus::Resolved]);
+
+    $this->actingAs($this->contactA, 'portal')
+        ->post(route('portal.tickets.rate', $foreign->id), ['rating' => 1])
+        ->assertNotFound();
+
+    expect($foreign->satisfactionRating()->count())->toBe(0);
+});
+
+it('rejects a rating outside the 1-5 range', function () {
+    $ticket = Ticket::factory()->create(['customer_id' => $this->customerA->id, 'status' => TicketStatus::Resolved]);
+
+    $this->actingAs($this->contactA, 'portal')
+        ->post(route('portal.tickets.rate', $ticket->id), ['rating' => 6])
+        ->assertSessionHasErrors('rating');
+});

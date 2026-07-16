@@ -7,6 +7,7 @@ use App\Models\Partner;
 use App\Services\BusinessOverviewMetrics;
 use App\Services\CollectionsMetrics;
 use App\Services\ReportMetrics;
+use App\Services\SalesPipelineMetrics;
 use App\Support\Money;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -19,6 +20,7 @@ class ReportController extends Controller
         private readonly ReportMetrics $metrics,
         private readonly BusinessOverviewMetrics $overview,
         private readonly CollectionsMetrics $collectionsMetrics,
+        private readonly SalesPipelineMetrics $pipelineMetrics,
     ) {}
 
     public function employeePerformance(Request $request): View
@@ -133,6 +135,16 @@ class ReportController extends Controller
             'mrr' => $this->overview->mrrSnapshot(),
             'concentration' => $this->overview->clientConcentration($revenue['by_client'], $revenue['total']),
             'pipeline' => $this->overview->pipelineFunnel($from, $to),
+        ]);
+    }
+
+    public function cashForecast(Request $request): View
+    {
+        $this->authorizeRevenue($request);
+
+        return view('reports.cash-forecast', [
+            'forecast' => $this->overview->cashForecast(),
+            'pipelineWeighted' => $this->pipelineMetrics->kpis($request->user())['weighted_forecast'],
         ]);
     }
 
