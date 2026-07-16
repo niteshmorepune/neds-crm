@@ -122,8 +122,9 @@
                             <x-input-error :messages="$errors->get('stage')" class="mt-1" />
                         </div>
                         <div>
-                            <x-input-label for="value" value="Value (₹)" />
+                            <x-input-label for="value" value="Value (₹) *" />
                             <x-text-input id="value" name="value" type="number" step="0.01" min="0" class="mt-1 block w-full" :value="$valueRupees" />
+                            <x-input-error :messages="$errors->get('value')" class="mt-1" />
                         </div>
                         <div>
                             <x-input-label for="service_id" value="Service" />

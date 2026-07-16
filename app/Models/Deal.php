@@ -30,9 +30,19 @@ class Deal extends Model
         'owner_id',
         'next_follow_up_at',
         'won_at',
+        'stage_changed_at',
         'lead_id',
         'partner_id',
     ];
+
+    /**
+     * Stashed by the saving() hook (before Eloquent syncs $original) so the
+     * saved() hook can still see the pre-change stage once the deal has an
+     * id. Not a DB column — deliberately outside $fillable/casts.
+     */
+    private bool $hasPendingStageTransition = false;
+
+    private ?string $pendingStageTransitionFrom = null;
 
     protected function casts(): array
     {
@@ -41,6 +51,7 @@ class Deal extends Model
             'value' => 'integer',
             'next_follow_up_at' => 'datetime',
             'won_at' => 'datetime',
+            'stage_changed_at' => 'datetime',
         ];
     }
 
@@ -53,6 +64,26 @@ class Deal extends Model
                 } else {
                     $deal->won_at = null;
                 }
+
+                $deal->stage_changed_at = now();
+
+                // Capture now — getOriginal('stage') would already reflect
+                // the new value by the time the saved() hook below fires.
+                $original = $deal->exists ? $deal->getOriginal('stage') : null;
+                $deal->pendingStageTransitionFrom = $original instanceof DealStage ? $original->value : $original;
+                $deal->hasPendingStageTransition = true;
+            }
+        });
+
+        static::saved(function (Deal $deal) {
+            if ($deal->hasPendingStageTransition) {
+                DealStageTransition::create([
+                    'deal_id' => $deal->id,
+                    'from_stage' => $deal->pendingStageTransitionFrom,
+                    'to_stage' => $deal->stage->value,
+                ]);
+                $deal->hasPendingStageTransition = false;
+                $deal->pendingStageTransitionFrom = null;
             }
         });
 
@@ -121,6 +152,11 @@ class Deal extends Model
     public function quotations(): HasMany
     {
         return $this->hasMany(Quotation::class)->latest();
+    }
+
+    public function stageTransitions(): HasMany
+    {
+        return $this->hasMany(DealStageTransition::class)->latest();
     }
 
     /**

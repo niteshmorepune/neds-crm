@@ -2,13 +2,20 @@
      x-on:deal-move-blocked.window="alert('That deal is Won or Lost and can\'t be moved.')">
     <div class="mb-4 flex items-center justify-between">
         <h1 class="text-xl font-semibold text-gray-900">Sales Pipeline</h1>
-        @can('create', \App\Models\Deal::class)
-            <button wire:click="$toggle('showAddForm')"
-                    class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">
-                {{ $showAddForm ? 'Close' : 'Add deal' }}
-            </button>
-        @endcan
+        <div class="flex items-center gap-4">
+            <a href="{{ route('sales-dashboard.index') }}" class="text-sm font-medium text-indigo-600 hover:underline">Sales Dashboard →</a>
+            @can('create', \App\Models\Deal::class)
+                <button wire:click="$toggle('showAddForm')"
+                        class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">
+                    {{ $showAddForm ? 'Close' : 'Add deal' }}
+                </button>
+            @endcan
+        </div>
     </div>
+
+    <x-kpi-strip :kpis="$kpis" class="mb-4" />
+
+    <x-stage-conversion :stage-conversion="$stageConversion" class="mb-4" />
 
     @if ($showAddForm)
         <div class="mb-4 grid grid-cols-1 gap-4 rounded-lg bg-white p-4 shadow-sm md:grid-cols-5">
@@ -37,8 +44,9 @@
                 </select>
             </div>
             <div>
-                <x-input-label value="Value (₹)" />
+                <x-input-label value="Value (₹) *" />
                 <x-text-input wire:model="value" type="number" step="0.01" min="0" class="mt-1 block w-full" />
+                @error('value') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
             </div>
             <div>
                 <x-input-label value="Owner" />
@@ -90,6 +98,12 @@
                             <div class="mt-1 text-xs text-gray-400">
                                 {{ $deal->service?->name ?? 'No service' }} · {{ $deal->owner?->name ?? 'Unassigned' }}
                             </div>
+                            @unless ($stage->isTerminal())
+                                @php $daysInStage = (int) floor($deal->stage_changed_at?->diffInDays(now()) ?? 0); @endphp
+                                <div class="mt-1 text-xs {{ $daysInStage > 10 ? 'font-medium text-red-500' : 'text-gray-400' }}">
+                                    @if ($daysInStage > 10) ⚠ @endif{{ $daysInStage }} {{ Str::plural('day', $daysInStage) }} in stage
+                                </div>
+                            @endunless
                         </div>
                     @empty
                         <p class="py-4 text-center text-xs text-gray-300">Drop deals here</p>

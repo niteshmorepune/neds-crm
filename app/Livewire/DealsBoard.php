@@ -7,6 +7,7 @@ use App\Models\Customer;
 use App\Models\Deal;
 use App\Models\Service;
 use App\Models\User;
+use App\Services\SalesPipelineMetrics;
 use App\Support\Money;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
@@ -57,7 +58,7 @@ class DealsBoard extends Component
             'title' => ['required', 'string', 'max:255'],
             'service_id' => ['nullable', Rule::exists('services', 'id')],
             'owner_id' => ['nullable', Rule::exists('users', 'id')],
-            'value' => ['nullable', 'numeric', 'min:0', 'max:999999999'],
+            'value' => ['required', 'numeric', 'min:0', 'max:999999999'],
         ]);
 
         Deal::create([
@@ -65,7 +66,7 @@ class DealsBoard extends Component
             'title' => $validated['title'],
             'service_id' => $validated['service_id'],
             'owner_id' => $validated['owner_id'],
-            'value' => Money::toPaise($validated['value'] ?? null) ?? 0,
+            'value' => Money::toPaise($validated['value']),
             'stage' => DealStage::New->value,
         ]);
 
@@ -81,9 +82,13 @@ class DealsBoard extends Component
             ->get()
             ->groupBy(fn (Deal $deal) => $deal->stage->value);
 
+        $metrics = app(SalesPipelineMetrics::class);
+
         return view('livewire.deals-board', [
             'columns' => DealStage::columns(),
             'dealsByStage' => $deals,
+            'kpis' => $metrics->kpis(auth()->user()),
+            'stageConversion' => $metrics->stageConversion(auth()->user()),
             'customers' => Customer::query()->visibleTo(auth()->user())->orderBy('company_name')->get(['id', 'company_name']),
             'services' => Service::active()->orderBy('sort_order')->get(),
             'owners' => User::query()->orderBy('name')->get(['id', 'name']),

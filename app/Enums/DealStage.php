@@ -25,6 +25,23 @@ enum DealStage: string
     }
 
     /**
+     * Rough likelihood (%) that a deal in this stage eventually closes Won.
+     * A generic linear ramp — not calibrated from historical conversion data
+     * yet, so treat the weighted-forecast figure it feeds as indicative only.
+     */
+    public function probability(): int
+    {
+        return match ($this) {
+            self::New => 10,
+            self::Contacted => 25,
+            self::Proposal => 50,
+            self::Negotiation => 75,
+            self::Won => 100,
+            self::Lost => 0,
+        };
+    }
+
+    /**
      * Stages shown as Kanban columns, in order.
      *
      * @return array<int, self>
