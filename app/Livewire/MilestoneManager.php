@@ -91,7 +91,7 @@ class MilestoneManager extends Component
 
     public function render()
     {
-        $milestones = $this->quotation->milestones()->with('invoice')->get();
+        $milestones = $this->quotation->milestones()->with(['invoice', 'tasks'])->get();
         $billed = $milestones->filter->isBilled()->sum(fn ($m) => (int) $m->invoice?->total);
         $collected = $milestones->filter->isBilled()->sum(fn ($m) => (int) $m->invoice?->amount_paid);
 

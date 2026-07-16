@@ -2,10 +2,12 @@
 
 use App\Enums\MilestoneStatus;
 use App\Enums\QuotationStatus;
+use App\Enums\TaskStatus;
 use App\Enums\UserRole;
 use App\Livewire\MilestoneManager;
 use App\Models\Invoice;
 use App\Models\Quotation;
+use App\Models\Task;
 use App\Models\User;
 use Livewire\Livewire;
 
@@ -106,6 +108,51 @@ it('a Done-but-billed milestone is no longer ready to invoice', function () {
         ->call('generate', $milestone->id);
 
     expect($milestone->refresh()->readyToInvoice())->toBeFalse();
+});
+
+it('suggests Done once every linked task is done, but never auto-changes the status', function () {
+    $quotation = acceptedQuotation();
+    $milestone = $quotation->milestones()->create(['title' => 'Advance', 'percentage' => 40, 'amount' => 40000]);
+    $task1 = Task::factory()->create(['milestone_id' => $milestone->id, 'status' => TaskStatus::Done]);
+    $task2 = Task::factory()->create(['milestone_id' => $milestone->id, 'status' => TaskStatus::InProgress]);
+
+    $milestone->load('tasks');
+    expect($milestone->suggestDone())->toBeFalse();
+
+    $task2->update(['status' => TaskStatus::Done]);
+    $milestone->load('tasks');
+    expect($milestone->suggestDone())->toBeTrue()
+        ->and($milestone->fresh()->status)->toBe(MilestoneStatus::Pending);
+});
+
+it('does not suggest Done for a milestone with no linked tasks at all', function () {
+    $quotation = acceptedQuotation();
+    $milestone = $quotation->milestones()->create(['title' => 'Advance', 'percentage' => 40, 'amount' => 40000]);
+
+    $milestone->load('tasks');
+    expect($milestone->suggestDone())->toBeFalse();
+});
+
+it('does not suggest Done for a milestone that is already Done', function () {
+    $quotation = acceptedQuotation();
+    $milestone = $quotation->milestones()->create(['title' => 'Advance', 'percentage' => 40, 'amount' => 40000, 'status' => MilestoneStatus::Done]);
+    Task::factory()->create(['milestone_id' => $milestone->id, 'status' => TaskStatus::Done]);
+
+    $milestone->load('tasks');
+    expect($milestone->suggestDone())->toBeFalse();
+});
+
+it('shows the "Mark Done" suggestion banner and applies it via the existing updateStatus action', function () {
+    $quotation = acceptedQuotation();
+    $milestone = $quotation->milestones()->create(['title' => 'Advance', 'percentage' => 40, 'amount' => 40000]);
+    Task::factory()->create(['milestone_id' => $milestone->id, 'status' => TaskStatus::Done]);
+
+    Livewire::actingAs($this->admin)
+        ->test(MilestoneManager::class, ['quotation' => $quotation, 'canManage' => true])
+        ->assertSee('mark this milestone Done')
+        ->call('updateStatus', $milestone->id, 'done');
+
+    expect($milestone->fresh()->status)->toBe(MilestoneStatus::Done);
 });
 
 it('blocks updating milestone status without manage permission', function () {

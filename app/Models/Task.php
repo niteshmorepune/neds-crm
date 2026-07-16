@@ -17,7 +17,7 @@ class Task extends Model
     use HasFactory, LogsActivity;
 
     protected $fillable = [
-        'title', 'description', 'project_id', 'assignee_id', 'created_by',
+        'title', 'description', 'project_id', 'milestone_id', 'assignee_id', 'created_by',
         'due_date', 'priority', 'status',
     ];
 
@@ -54,6 +54,11 @@ class Task extends Model
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class);
+    }
+
+    public function milestone(): BelongsTo
+    {
+        return $this->belongsTo(QuotationMilestone::class, 'milestone_id');
     }
 
     public function assignee(): BelongsTo

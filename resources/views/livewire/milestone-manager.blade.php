@@ -17,6 +17,14 @@
                     @if (! $m->isBilled() && $m->readyToInvoice())
                         <span class="ml-2 inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">Ready to invoice</span>
                     @endif
+                    @if ($m->suggestDone())
+                        <div class="mt-1 flex items-center gap-2 text-xs text-indigo-700">
+                            <span>All {{ $m->tasks->count() }} linked {{ Str::plural('task', $m->tasks->count()) }} done — mark this milestone Done?</span>
+                            @if ($canManage)
+                                <button wire:click="updateStatus({{ $m->id }}, 'done')" class="font-medium text-indigo-600 hover:text-indigo-500 underline">Mark Done</button>
+                            @endif
+                        </div>
+                    @endif
                 </div>
                 <div class="flex items-center gap-3">
                     @if (! $m->isBilled() && $canManage)

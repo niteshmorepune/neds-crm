@@ -3,6 +3,9 @@
 use App\Enums\TaskStatus;
 use App\Enums\UserRole;
 use App\Livewire\TaskComments;
+use App\Models\Deal;
+use App\Models\Project;
+use App\Models\Quotation;
 use App\Models\Task;
 use App\Models\User;
 use Database\Seeders\MenuItemsSeeder;
@@ -13,6 +16,45 @@ use Livewire\Livewire;
 beforeEach(function () {
     $this->seed(MenuItemsSeeder::class);
     $this->manager = User::factory()->role(UserRole::Manager)->create();
+});
+
+it('links a task to a milestone belonging to its own project\'s deal', function () {
+    $deal = Deal::factory()->create();
+    $project = Project::factory()->create(['deal_id' => $deal->id]);
+    $quotation = Quotation::factory()->create(['deal_id' => $deal->id]);
+    $milestone = $quotation->milestones()->create(['title' => 'Advance', 'percentage' => 40, 'amount' => 40000]);
+
+    $this->actingAs($this->manager)->post(route('tasks.store'), [
+        'title' => 'Deliver advance work', 'priority' => 'normal', 'status' => 'todo',
+        'project_id' => $project->id, 'milestone_id' => $milestone->id,
+    ])->assertRedirect();
+
+    $task = Task::firstWhere('title', 'Deliver advance work');
+    expect($task->milestone_id)->toBe($milestone->id);
+});
+
+it('rejects linking a task to a milestone from a different deal', function () {
+    $deal = Deal::factory()->create();
+    $project = Project::factory()->create(['deal_id' => $deal->id]);
+    $otherQuotation = Quotation::factory()->create(['deal_id' => Deal::factory()->create()->id]);
+    $unrelatedMilestone = $otherQuotation->milestones()->create(['title' => 'Advance', 'percentage' => 40, 'amount' => 40000]);
+
+    $this->actingAs($this->manager)->post(route('tasks.store'), [
+        'title' => 'Mismatched link', 'priority' => 'normal', 'status' => 'todo',
+        'project_id' => $project->id, 'milestone_id' => $unrelatedMilestone->id,
+    ])->assertSessionHasErrors('milestone_id');
+
+    expect(Task::where('title', 'Mismatched link')->exists())->toBeFalse();
+});
+
+it('rejects a milestone link with no project selected', function () {
+    $quotation = Quotation::factory()->create(['deal_id' => Deal::factory()->create()->id]);
+    $milestone = $quotation->milestones()->create(['title' => 'Advance', 'percentage' => 40, 'amount' => 40000]);
+
+    $this->actingAs($this->manager)->post(route('tasks.store'), [
+        'title' => 'Standalone with milestone', 'priority' => 'normal', 'status' => 'todo',
+        'milestone_id' => $milestone->id,
+    ])->assertSessionHasErrors('milestone_id');
 });
 
 it('creates a task and records the creator', function () {

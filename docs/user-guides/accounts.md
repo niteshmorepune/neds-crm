@@ -39,8 +39,15 @@ Whoever is running the project marks a milestone **Done** once that phase of
 work is actually finished (e.g. "UAT complete"). Once Done and not yet
 invoiced, it shows a green **Ready to invoice** badge on the quotation's
 Milestone Manager and on the **Collections** report (below) — that's your
-signal to raise the next invoice. This is set manually by the team, not
-auto-detected — nothing infers "50% done" from tasks.
+signal to raise the next invoice. This is still set manually by the team —
+nothing flips it automatically.
+
+**Milestone Done suggestion:** if the project's tasks (Emptask) are tagged to
+a milestone via the task's **Milestone** field, the Milestone Manager shows a
+one-click "All N linked tasks done — mark this milestone Done?" nudge once
+every linked task is completed. It's only a suggestion — someone still has to
+click it, so a milestone never flips to Done on its own just because tasks
+finished.
 
 **Non-GST clients:** some clients need a plain bill with no GST charged. Open
 the client and tick **Non-GST client** — new quotations and invoices for them

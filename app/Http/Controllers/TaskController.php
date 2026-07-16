@@ -7,6 +7,7 @@ use App\Enums\TaskStatus;
 use App\Enums\UserRole;
 use App\Http\Requests\TaskStoreRequest;
 use App\Models\Project;
+use App\Models\QuotationMilestone;
 use App\Models\Task;
 use App\Models\User;
 use App\Notifications\TaskAssigned;
@@ -220,7 +221,30 @@ class TaskController extends Controller
             'staff' => $this->assignableStaff($task),
             'statuses' => TaskStatus::cases(),
             'priorities' => TaskPriority::cases(),
+            'milestonesByProject' => $this->milestonesByProject(),
         ];
+    }
+
+    /**
+     * Milestones a task's project could be tagged to, keyed by project id —
+     * a project's deal's quotation's milestones (only projects with a
+     * linked deal have any). Used to filter the Milestone dropdown client-side
+     * as the Project dropdown changes, and to validate the link server-side
+     * in TaskStoreRequest.
+     *
+     * @return array<int, array<int, array{id: int, title: string}>>
+     */
+    private function milestonesByProject(): array
+    {
+        return Project::whereNotNull('deal_id')->get(['id', 'deal_id'])
+            ->mapWithKeys(fn (Project $project) => [
+                $project->id => QuotationMilestone::whereHas(
+                    'quotation', fn ($q) => $q->where('deal_id', $project->deal_id)
+                )->orderBy('sort_order')->get(['id', 'title'])
+                    ->map(fn (QuotationMilestone $m) => ['id' => $m->id, 'title' => $m->title])
+                    ->all(),
+            ])
+            ->all();
     }
 
     /**
