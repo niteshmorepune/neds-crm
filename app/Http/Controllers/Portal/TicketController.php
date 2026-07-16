@@ -81,7 +81,7 @@ class TicketController extends PortalController
     public function show(int $ticket): View
     {
         $ticket = $this->customer()->tickets()
-            ->with(['replies' => fn ($q) => $q->where('is_internal', false), 'replies.author', 'replies.contact'])
+            ->with(['replies' => fn ($q) => $q->where('is_internal', false), 'replies.author', 'replies.contact', 'satisfactionRating'])
             ->findOrFail($ticket);
 
         return view('portal.tickets.show', ['ticket' => $ticket]);
@@ -100,5 +100,26 @@ class TicketController extends PortalController
         ]);
 
         return back()->with('status', 'Reply sent.');
+    }
+
+    public function rate(Request $request, int $ticket): RedirectResponse
+    {
+        $ticket = $this->customer()->tickets()->findOrFail($ticket);
+
+        abort_if($ticket->status->isOpen(), 403);
+        abort_if($ticket->satisfactionRating()->exists(), 403);
+
+        $data = $request->validate([
+            'rating' => ['required', 'integer', 'min:1', 'max:5'],
+            'comment' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $ticket->satisfactionRating()->create([
+            'contact_id' => auth('portal')->id(),
+            'rating' => $data['rating'],
+            'comment' => $data['comment'] ?? null,
+        ]);
+
+        return back()->with('status', 'Thanks for the feedback!');
     }
 }

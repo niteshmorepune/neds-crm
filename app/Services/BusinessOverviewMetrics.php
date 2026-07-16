@@ -184,6 +184,102 @@ class BusinessOverviewMetrics
     }
 
     /**
+     * Blended near-term cash view: recurring revenue expected to bill in
+     * each of the next $months calendar months (projected forward from each
+     * active template's next_run_on/frequency, same pre-GST cycle-amount
+     * formula as mrrSnapshot), plus already-invoiced receivables bucketed by
+     * due month — anything already overdue or due within the current month
+     * collapses into bucket 0, since cash flow doesn't care about the
+     * original due date once it's in the past, only that it's owed now.
+     * Deliberately does NOT fold in the open pipeline's weighted forecast —
+     * deals have no expected-close-date field to bucket by month, and
+     * blending a speculative pipeline figure into "committed" cash would
+     * overstate confidence. Callers should show that as a separate,
+     * clearly-labelled indicative total (see SalesPipelineMetrics::kpis()).
+     *
+     * @return array{buckets: list<array{label: string, recurring_expected: int, receivables_due: int, total: int}>, total_forecast: int}
+     */
+    public function cashForecast(int $months = 3): array
+    {
+        $now = Carbon::now();
+        $monthStarts = [];
+        for ($i = 0; $i < $months; $i++) {
+            $monthStarts[] = $now->copy()->startOfMonth()->addMonthsNoOverflow($i);
+        }
+        $windowEnd = $now->copy()->startOfMonth()->addMonthsNoOverflow($months)->startOfDay();
+
+        $recurringByMonth = array_fill(0, $months, 0);
+
+        RecurringInvoice::query()
+            ->where('is_active', true)
+            ->with('items')
+            ->get()
+            ->each(function (RecurringInvoice $template) use (&$recurringByMonth, $monthStarts, $windowEnd) {
+                $cycleAmount = (int) $template->items->sum(fn ($item) => (int) round(((float) $item->quantity) * (int) $item->rate));
+                $cycleAmount = max(0, $cycleAmount - (int) $template->discount);
+
+                $cursor = $template->next_run_on->copy();
+                $safety = 0; // guards against a pathological/stuck template looping forever
+                while ($cursor->lt($windowEnd) && $safety < 60) {
+                    if ($template->end_date !== null && $cursor->gt($template->end_date)) {
+                        break;
+                    }
+
+                    foreach ($monthStarts as $i => $monthStart) {
+                        if ($cursor->betweenIncluded($monthStart, $monthStart->copy()->endOfMonth())) {
+                            $recurringByMonth[$i] += $cycleAmount;
+                            break;
+                        }
+                    }
+
+                    $cursor = $template->frequency->advance($cursor);
+                    $safety++;
+                }
+            });
+
+        $receivablesByMonth = array_fill(0, $months, 0);
+        $lastMonthEnd = end($monthStarts)->copy()->endOfMonth();
+
+        Invoice::query()
+            ->whereNotIn('status', [InvoiceStatus::Paid->value, InvoiceStatus::Cancelled->value, InvoiceStatus::Draft->value])
+            ->get()
+            ->each(function (Invoice $invoice) use (&$receivablesByMonth, $monthStarts, $now, $lastMonthEnd) {
+                $balance = $invoice->balance();
+                if ($balance <= 0) {
+                    return;
+                }
+
+                $dueDate = $invoice->due_date ?? $now;
+                if ($dueDate->gt($lastMonthEnd)) {
+                    return; // due beyond this forecast window — not counted here
+                }
+
+                foreach ($monthStarts as $i => $monthStart) {
+                    if ($dueDate->lte($monthStart->copy()->endOfMonth())) {
+                        $receivablesByMonth[$i] += $balance;
+
+                        return;
+                    }
+                }
+            });
+
+        $buckets = [];
+        foreach ($monthStarts as $i => $monthStart) {
+            $buckets[] = [
+                'label' => $monthStart->format('M Y'),
+                'recurring_expected' => $recurringByMonth[$i],
+                'receivables_due' => $receivablesByMonth[$i],
+                'total' => $recurringByMonth[$i] + $receivablesByMonth[$i],
+            ];
+        }
+
+        return [
+            'buckets' => $buckets,
+            'total_forecast' => array_sum($recurringByMonth) + array_sum($receivablesByMonth),
+        ];
+    }
+
+    /**
      * % of period revenue coming from the top 5 / top 10 clients. Pure
      * function over data the caller already has (ReportMetrics::revenue()'s
      * by_client, already sorted desc) — kept decoupled from ReportMetrics.

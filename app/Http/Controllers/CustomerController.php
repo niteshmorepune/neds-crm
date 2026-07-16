@@ -86,6 +86,7 @@ class CustomerController extends Controller
             'callLogs.user',
             'deals.owner',
             'tickets.assignee',
+            'tickets.satisfactionRating',
             'projects.service',
             'projects.owner',
             'projects.assignees',

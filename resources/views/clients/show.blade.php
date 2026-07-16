@@ -125,6 +125,23 @@
                     @endif
                 </div>
                 <div x-show="tab === 'tickets'" x-cloak>
+                    @php
+                        $ratings = $client->tickets->pluck('satisfactionRating')->filter()->sortByDesc('created_at');
+                    @endphp
+                    @if ($ratings->isNotEmpty())
+                        <div class="mb-4 rounded-lg bg-gray-50 p-4">
+                            <p class="text-xs font-medium text-gray-500">
+                                Client feedback — avg {{ round($ratings->avg('rating'), 1) }}/5 from {{ $ratings->count() }} rating{{ $ratings->count() === 1 ? '' : 's' }}
+                            </p>
+                            <ul class="mt-2 space-y-1 text-xs text-gray-600">
+                                @foreach ($ratings->take(3) as $rating)
+                                    @if ($rating->comment)
+                                        <li>"{{ $rating->comment }}" — {{ str_repeat('★', $rating->rating) }}{{ str_repeat('☆', 5 - $rating->rating) }}</li>
+                                    @endif
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
                     <ul class="divide-y divide-gray-100 text-sm">
                         @forelse ($client->tickets as $ticket)
                             <li class="flex items-center justify-between py-2">

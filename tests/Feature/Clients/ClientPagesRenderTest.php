@@ -60,6 +60,18 @@ it('shows real deals and tickets data on the client tabs', function () {
         ->assertSee('Login issue');
 });
 
+it('shows a client feedback summary on the tickets tab when a rating exists', function () {
+    $client = Customer::factory()->create();
+    $ticket = Ticket::factory()->create(['customer_id' => $client->id]);
+    $ticket->satisfactionRating()->create(['rating' => 5, 'comment' => 'Great support']);
+
+    $this->actingAs($this->admin)
+        ->get(route('clients.show', $client))
+        ->assertOk()
+        ->assertSee('avg 5')
+        ->assertSee('Great support');
+});
+
 it('hides invoice data on the client tab from a role without invoice access', function () {
     $support = User::factory()->role(UserRole::Support)->create();
     $client = Customer::factory()->create();

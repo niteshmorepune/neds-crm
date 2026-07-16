@@ -368,3 +368,113 @@ it('changes the period-scoped funnel stats when a different financial year is se
 
     expect($current['won_count'])->toBe(0)->and($prior['won_count'])->toBe(1);
 });
+
+// --- Cash forecast --------------------------------------------------------------
+
+it('buckets a monthly recurring templates current-month cycle into month 0', function () {
+    $template = RecurringInvoice::factory()->create([
+        'frequency' => RecurringFrequency::Monthly,
+        'next_run_on' => now(),
+        'end_date' => null,
+        'discount' => 0,
+    ]);
+    $template->items()->create(['description' => 'SEO', 'quantity' => 1, 'rate' => 100000, 'gst_rate' => 18, 'sort_order' => 1]);
+
+    $forecast = $this->metrics->cashForecast(3);
+
+    expect($forecast['buckets'][0]['recurring_expected'])->toBe(100000)
+        ->and($forecast['buckets'][1]['recurring_expected'])->toBe(100000)
+        ->and($forecast['buckets'][2]['recurring_expected'])->toBe(100000);
+});
+
+it('projects a quarterly recurring template into only the month its next cycle actually falls in', function () {
+    $template = RecurringInvoice::factory()->create([
+        'frequency' => RecurringFrequency::Quarterly,
+        'next_run_on' => now()->addMonthsNoOverflow(2)->startOfMonth(),
+        'end_date' => null,
+        'discount' => 0,
+    ]);
+    $template->items()->create(['description' => 'AMC', 'quantity' => 1, 'rate' => 300000, 'gst_rate' => 18, 'sort_order' => 1]);
+
+    $forecast = $this->metrics->cashForecast(3);
+
+    expect($forecast['buckets'][0]['recurring_expected'])->toBe(0)
+        ->and($forecast['buckets'][1]['recurring_expected'])->toBe(0)
+        ->and($forecast['buckets'][2]['recurring_expected'])->toBe(300000);
+});
+
+it('excludes an inactive recurring template from the cash forecast', function () {
+    $template = RecurringInvoice::factory()->create(['is_active' => false, 'next_run_on' => now()]);
+    $template->items()->create(['description' => 'SEO', 'quantity' => 1, 'rate' => 100000, 'gst_rate' => 18, 'sort_order' => 1]);
+
+    $forecast = $this->metrics->cashForecast(3);
+
+    expect(collect($forecast['buckets'])->sum('recurring_expected'))->toBe(0);
+});
+
+it('stops projecting a recurring template once its cycles pass end_date', function () {
+    $template = RecurringInvoice::factory()->create([
+        'frequency' => RecurringFrequency::Monthly,
+        'next_run_on' => now(),
+        'end_date' => now()->addMonthsNoOverflow(1)->endOfMonth(),
+        'discount' => 0,
+    ]);
+    $template->items()->create(['description' => 'SEO', 'quantity' => 1, 'rate' => 100000, 'gst_rate' => 18, 'sort_order' => 1]);
+
+    $forecast = $this->metrics->cashForecast(3);
+
+    expect($forecast['buckets'][0]['recurring_expected'])->toBe(100000)
+        ->and($forecast['buckets'][1]['recurring_expected'])->toBe(100000)
+        ->and($forecast['buckets'][2]['recurring_expected'])->toBe(0);
+});
+
+it('collapses an already-overdue invoice into the cash forecasts first bucket', function () {
+    Invoice::factory()->create(['status' => InvoiceStatus::Overdue, 'due_date' => now()->subDays(45), 'total' => 200000, 'amount_paid' => 0]);
+
+    $forecast = $this->metrics->cashForecast(3);
+
+    expect($forecast['buckets'][0]['receivables_due'])->toBe(200000);
+});
+
+it('buckets an invoice due in a future month by its actual due month', function () {
+    Invoice::factory()->create(['status' => InvoiceStatus::Sent, 'due_date' => now()->addMonthsNoOverflow(2), 'total' => 150000, 'amount_paid' => 0]);
+
+    $forecast = $this->metrics->cashForecast(3);
+
+    expect($forecast['buckets'][0]['receivables_due'])->toBe(0)
+        ->and($forecast['buckets'][2]['receivables_due'])->toBe(150000);
+});
+
+it('excludes an invoice due beyond the forecast window entirely', function () {
+    Invoice::factory()->create(['status' => InvoiceStatus::Sent, 'due_date' => now()->addMonthsNoOverflow(5), 'total' => 150000, 'amount_paid' => 0]);
+
+    $forecast = $this->metrics->cashForecast(3);
+
+    expect(collect($forecast['buckets'])->sum('receivables_due'))->toBe(0)
+        ->and($forecast['total_forecast'])->toBe(0);
+});
+
+it('sums recurring and receivables buckets into the reported total_forecast', function () {
+    $template = RecurringInvoice::factory()->create(['frequency' => RecurringFrequency::Monthly, 'next_run_on' => now(), 'end_date' => null, 'discount' => 0]);
+    $template->items()->create(['description' => 'SEO', 'quantity' => 1, 'rate' => 100000, 'gst_rate' => 18, 'sort_order' => 1]);
+    Invoice::factory()->create(['status' => InvoiceStatus::Sent, 'due_date' => now(), 'total' => 50000, 'amount_paid' => 0]);
+
+    $forecast = $this->metrics->cashForecast(3);
+
+    expect($forecast['total_forecast'])->toBe(collect($forecast['buckets'])->sum('total'));
+});
+
+it('lets admin, manager and accounts view the cash forecast page but forbids sales/support/intern', function () {
+    foreach ([UserRole::Admin, UserRole::Manager, UserRole::Accounts] as $role) {
+        $this->actingAs(User::factory()->role($role)->create())
+            ->get(route('reports.cash-forecast'))
+            ->assertOk()
+            ->assertSee('Cash Forecast');
+    }
+
+    foreach ([UserRole::Sales, UserRole::Support, UserRole::Intern] as $role) {
+        $this->actingAs(User::factory()->role($role)->create())
+            ->get(route('reports.cash-forecast'))
+            ->assertForbidden();
+    }
+});

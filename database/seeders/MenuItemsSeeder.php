@@ -24,6 +24,7 @@ class MenuItemsSeeder extends Seeder
 
         $this->items = [
             ['key' => 'dashboard',        'label' => 'Dashboard',        'route' => 'dashboard',        'icon' => 'dashboard',  'roles' => $all],
+            ['key' => 'my-day',           'label' => 'My Day',           'route' => 'my-day.index',     'icon' => 'sun',        'roles' => $all],
             ['key' => 'attendance',       'label' => 'Attendance',       'route' => 'attendance.index', 'icon' => 'clock',      'roles' => $all],
             ['key' => 'leave-requests',   'label' => 'Leave Requests',   'route' => 'leave-requests.index', 'icon' => 'calendar', 'roles' => $all],
             ['key' => 'lead-generation',  'label' => 'Lead Generation',  'route' => 'leads.index',      'icon' => 'funnel',     'roles' => [UserRole::Manager, UserRole::Sales]],

@@ -100,6 +100,9 @@ has set one up.
 4. You can **reply** to the ticket from the ticket page to continue the
    conversation. Replies appear as a chat thread.
 5. Internal NEDS notes are never shown to you — you only see messages meant for you.
+6. Once your ticket is marked **Resolved** or **Closed**, you'll see a **"How
+   did we do?"** prompt on the ticket page — rate it 1–5 stars and optionally
+   leave a comment. It's a one-time rating per ticket and entirely optional.
 
 ## Your NEDS Tools
 If your account has access to other NEDS platforms (such as **Drishti** for

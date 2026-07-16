@@ -177,10 +177,21 @@ recurring-linked invoice has a due date exactly 7 days away and hasn't been paid
 yet, a ⚠️ bell notification is sent to all accounts staff, admin, and managers.
 This gives you a full week to follow up before the invoice becomes overdue.
 
+**Bell notification — contract renewal due soon:** every morning at **8:30 AM**,
+if an active recurring template's **end date** falls within the next 30 days,
+you (and admin/manager, plus that client's sales rep) get a 📅 bell
+notification — a nudge to renew the contract or follow up before it lapses.
+Fires once per end date; if the contract is renewed to a later date, you'll be
+notified again once that new date comes within 30 days.
+
 ## 4. Reports
 - **Account** (in the sidebar) → the **outstanding receivables** report: who owes
   what, and how overdue.
 - **Collections** (in the sidebar) → the client-by-client follow-up worklist.
+- **Cash Forecast** (linked from Business Overview) → recurring revenue
+  expected + receivables due, bucketed by the next 3 months, plus the
+  open pipeline's weighted forecast shown separately (it's indicative, not
+  committed cash — deals don't have an expected-close date to bucket by month).
   For each client with something outstanding: how much is **recurring not
   paid** (a retainer client hasn't paid at all), **other unpaid** (a one-time/
   milestone invoice with zero payment), and **partial — pending** (some paid,
