@@ -69,3 +69,36 @@ it('requires a value when updating a deal', function () {
         ])
         ->assertSessionHasErrors('value');
 });
+
+it('shows a stage conversion percentage once enough deals have moved through', function () {
+    // 5 deals enter New (via creation); 3 of them advance to Contacted.
+    $deals = Deal::factory()->count(5)->create();
+    $deals->take(3)->each(fn (Deal $deal) => $deal->moveToStage(DealStage::Contacted));
+
+    Livewire::actingAs($this->admin)->test(DealsBoard::class)
+        ->assertSee('60%'); // 3 of 5 New deals advanced to Contacted
+});
+
+it('shows "not enough data yet" for a stage pair below the minimum sample', function () {
+    Deal::factory()->count(2)->create();
+
+    Livewire::actingAs($this->admin)->test(DealsBoard::class)
+        ->assertSee('Not enough data yet');
+});
+
+it('flags a deal as stale after more than 10 days in its current stage', function () {
+    $deal = Deal::factory()->create();
+    $deal->forceFill(['stage_changed_at' => now()->subDays(14)])->saveQuietly();
+
+    Livewire::actingAs($this->admin)->test(DealsBoard::class)
+        ->assertSee('⚠')
+        ->assertSee('14 days in stage');
+});
+
+it('does not flag a deal as stale within 10 days of its current stage', function () {
+    Deal::factory()->create();
+
+    Livewire::actingAs($this->admin)->test(DealsBoard::class)
+        ->assertSee('0 days in stage')
+        ->assertDontSee('⚠');
+});

@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Enums\DealStage;
 use App\Models\Customer;
 use App\Models\Deal;
+use App\Models\DealStageTransition;
 use App\Models\Service;
 use App\Models\User;
 use App\Support\Money;
@@ -86,6 +87,7 @@ class DealsBoard extends Component
             'columns' => DealStage::columns(),
             'dealsByStage' => $deals,
             'kpis' => $this->kpis(auth()->user()),
+            'stageConversion' => $this->stageConversion(auth()->user()),
             'customers' => Customer::query()->visibleTo(auth()->user())->orderBy('company_name')->get(['id', 'company_name']),
             'services' => Service::active()->orderBy('sort_order')->get(),
             'owners' => User::query()->orderBy('name')->get(['id', 'name']),
@@ -158,5 +160,45 @@ class DealsBoard extends Component
                 ? (int) round($wonWithCycle->avg(fn (Deal $deal) => $deal->created_at->diffInDays($deal->won_at)))
                 : null,
         ];
+    }
+
+    /**
+     * Stage-to-stage advance rate for each adjacent pair in the pipeline
+     * sequence, e.g. what % of deals that ever reached "Contacted" went on
+     * to reach "Proposal". Built from deal_stage_transitions, which only
+     * starts accumulating the day this feature shipped (see that migration's
+     * docblock) — so each pair reports null (rendered as "Not enough data
+     * yet") until at least self::MIN_CONVERSION_SAMPLE deals have entered
+     * the "from" stage. Scoped by the same visibleTo() rule as the rest of
+     * the board via whereHas('deal', ...).
+     */
+    private const MIN_CONVERSION_SAMPLE = 5;
+
+    private function stageConversion(User $user): array
+    {
+        $sequence = [DealStage::New, DealStage::Contacted, DealStage::Proposal, DealStage::Negotiation, DealStage::Won];
+
+        $transitions = DealStageTransition::query()
+            ->whereHas('deal', fn ($q) => $q->visibleTo($user))
+            ->get(['deal_id', 'from_stage', 'to_stage']);
+
+        $pairs = [];
+        for ($i = 0; $i < count($sequence) - 1; $i++) {
+            $from = $sequence[$i];
+            $to = $sequence[$i + 1];
+
+            $entered = $transitions->where('to_stage', $from)->pluck('deal_id')->unique();
+            $advanced = $transitions->where('from_stage', $from)->where('to_stage', $to)->pluck('deal_id')->unique();
+
+            $pairs[] = [
+                'from' => $from,
+                'to' => $to,
+                'rate' => $entered->count() >= self::MIN_CONVERSION_SAMPLE
+                    ? (int) round($advanced->count() / $entered->count() * 100)
+                    : null,
+            ];
+        }
+
+        return $pairs;
     }
 }

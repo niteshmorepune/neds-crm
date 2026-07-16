@@ -30,6 +30,20 @@
         @endforeach
     </div>
 
+    <div class="mb-4 rounded-lg bg-white p-4 shadow-sm">
+        <p class="mb-2 text-xs font-medium text-gray-500">Stage conversion</p>
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            @foreach ($stageConversion as $pair)
+                <div class="text-sm">
+                    <span class="text-gray-500">{{ $pair['from']->label() }} → {{ $pair['to']->label() }}</span>
+                    <span class="ml-1 font-semibold {{ $pair['rate'] !== null ? 'text-gray-900' : 'text-gray-300' }}">
+                        {{ $pair['rate'] !== null ? $pair['rate'].'%' : 'Not enough data yet' }}
+                    </span>
+                </div>
+            @endforeach
+        </div>
+    </div>
+
     @if ($showAddForm)
         <div class="mb-4 grid grid-cols-1 gap-4 rounded-lg bg-white p-4 shadow-sm md:grid-cols-5">
             <div>
@@ -111,6 +125,12 @@
                             <div class="mt-1 text-xs text-gray-400">
                                 {{ $deal->service?->name ?? 'No service' }} · {{ $deal->owner?->name ?? 'Unassigned' }}
                             </div>
+                            @unless ($stage->isTerminal())
+                                @php $daysInStage = (int) floor($deal->stage_changed_at?->diffInDays(now()) ?? 0); @endphp
+                                <div class="mt-1 text-xs {{ $daysInStage > 10 ? 'font-medium text-red-500' : 'text-gray-400' }}">
+                                    @if ($daysInStage > 10) ⚠ @endif{{ $daysInStage }} {{ Str::plural('day', $daysInStage) }} in stage
+                                </div>
+                            @endunless
                         </div>
                     @empty
                         <p class="py-4 text-center text-xs text-gray-300">Drop deals here</p>
