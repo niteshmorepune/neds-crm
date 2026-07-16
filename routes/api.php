@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\BiometricSyncController;
+use App\Http\Controllers\Api\DrishtiTrendIdeaBriefController;
 use App\Http\Controllers\Api\DrishtiWebhookController;
 use App\Http\Controllers\Api\LeadCaptureController;
 use App\Http\Controllers\Api\MetaLeadsWebhookController;
@@ -46,6 +47,15 @@ Route::post('/webhooks/smdost/content-ready', [SmdostWebhookController::class, '
 Route::post('/webhooks/drishti/event', [DrishtiWebhookController::class, 'handle'])
     ->middleware(['throttle:120,1', VerifyDrishtiWebhookSignature::class])
     ->name('api.webhooks.drishti.event');
+
+// nedsdrishti.in → CRM bridge. Called when staff click "Send to SMDost" on an
+// approved AI trend idea. The CRM is the only place that knows both a
+// client's drishti_client_id and smdost_client_id, so it looks up the
+// matching customer and forwards a brief-creation call to SMDost's existing
+// /api/briefs endpoint (same one CreateMonthlyBriefs already calls).
+Route::post('/webhooks/drishti/trend-idea-brief', [DrishtiTrendIdeaBriefController::class, 'store'])
+    ->middleware(['throttle:60,1', VerifyDrishtiWebhookSignature::class])
+    ->name('api.webhooks.drishti.trend-idea-brief');
 
 // Meta (Facebook/Instagram) Lead Ads webhook. Meta calls GET once to verify
 // the subscription (hub.verify_token, no signature involved — the token
