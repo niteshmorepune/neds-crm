@@ -1,8 +1,12 @@
 @php
     $recurring  = $client->recurringInvoices->sortBy(fn ($r) => $r->service?->name);
     $projects   = $client->projects->sortBy(fn ($p) => $p->service?->name);
-    $activeCount = $recurring->where('is_active', true)->count();
-    $onHoldCount = $recurring->where('is_active', false)->count();
+    // Derived from the same dashboardStatus() the row badges use below, so
+    // the summary counts can never drift out of sync with what's displayed
+    // per row (the exact bug that made "On hold" over-count Ended templates).
+    $statusCounts = $recurring->map(fn ($r) => $r->dashboardStatus($canViewInvoices))->countBy();
+    $activeCount = $statusCounts['active'] ?? 0;
+    $onHoldCount = $statusCounts['on_hold'] ?? 0;
 
     $nextBill = $recurring->where('is_active', true)
         ->min('next_run_on');
@@ -53,11 +57,22 @@
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100 bg-white">
+                @php
+                    $statusStyles = [
+                        'upcoming' => ['label' => 'Upcoming', 'classes' => 'bg-indigo-50 text-indigo-700'],
+                        'active' => ['label' => 'Active', 'classes' => 'bg-emerald-50 text-emerald-700'],
+                        'on_hold' => ['label' => 'On Hold', 'classes' => 'bg-amber-50 text-amber-700'],
+                        'payment_received' => ['label' => 'Payment Received', 'classes' => 'bg-emerald-50 text-emerald-700'],
+                        'payment_pending' => ['label' => 'Payment Pending', 'classes' => 'bg-amber-50 text-amber-700'],
+                        'ended' => ['label' => 'Ended', 'classes' => 'bg-gray-100 text-gray-600'],
+                    ];
+                @endphp
                 @foreach ($recurring as $r)
                     @php
                         $cycleAmount = $r->items->sum(
                             fn ($item) => (int) round((float) $item->quantity * (int) $item->rate)
                         );
+                        $status = $statusStyles[$r->dashboardStatus($canViewInvoices)];
                     @endphp
                     <tr class="hover:bg-gray-50">
                         <td class="px-4 py-3 font-medium text-gray-900">
@@ -70,13 +85,7 @@
                             {{ $r->end_date?->format('d M Y') ?? 'Ongoing' }}
                         </td>
                         <td class="px-4 py-3">
-                            @if ($r->is_active)
-                                <span class="inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">Active</span>
-                            @elseif ($r->hasEnded())
-                                <span class="inline-flex rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">Ended</span>
-                            @else
-                                <span class="inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">On Hold</span>
-                            @endif
+                            <span class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium {{ $status['classes'] }}">{{ $status['label'] }}</span>
                         </td>
                         <td class="px-4 py-3 text-gray-600">{{ $r->frequency->label() }}</td>
                         @if ($canViewInvoices)

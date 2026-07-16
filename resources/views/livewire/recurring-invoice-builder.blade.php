@@ -42,7 +42,7 @@
         </div>
         <div class="flex items-end pb-2">
             <label class="inline-flex items-center gap-2 text-sm text-gray-700">
-                <input type="checkbox" wire:model="is_gst_exempt" class="rounded border-gray-300 text-indigo-600 shadow-sm">
+                <input type="checkbox" wire:model.live="is_gst_exempt" class="rounded border-gray-300 text-indigo-600 shadow-sm">
                 Non-GST client (don't charge GST on generated invoices)
             </label>
         </div>
@@ -54,6 +54,9 @@
             <button wire:click="addItem" type="button" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">+ Add item</button>
         </div>
         @error('items') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+        @if ($is_gst_exempt)
+            <p class="mt-2 text-xs text-amber-700">Non-GST client is checked — the GST% below is ignored, generated invoices will show ₹0 tax regardless of these values.</p>
+        @endif
 
         <div class="mt-4 space-y-3">
             @foreach ($items as $i => $item)
@@ -62,7 +65,7 @@
                     <input wire:model="items.{{ $i }}.sac_code" placeholder="SAC" class="col-span-4 md:col-span-2 rounded-md border-gray-300 text-sm shadow-sm" />
                     <input wire:model="items.{{ $i }}.quantity" type="number" step="0.01" placeholder="Qty" class="col-span-2 md:col-span-1 rounded-md border-gray-300 text-sm shadow-sm" />
                     <input wire:model="items.{{ $i }}.rate" type="number" step="0.01" placeholder="Rate ₹" class="col-span-3 md:col-span-2 rounded-md border-gray-300 text-sm shadow-sm" />
-                    <input wire:model="items.{{ $i }}.gst_rate" type="number" step="0.01" placeholder="GST%" class="col-span-2 md:col-span-1 rounded-md border-gray-300 text-sm shadow-sm" />
+                    <input wire:model="items.{{ $i }}.gst_rate" type="number" step="0.01" placeholder="GST%" @disabled($is_gst_exempt) @class(['col-span-2 md:col-span-1 rounded-md text-sm shadow-sm', 'border-gray-300' => ! $is_gst_exempt, 'border-gray-200 bg-gray-100 text-gray-400' => $is_gst_exempt]) />
                     <button wire:click="removeItem({{ $i }})" type="button" class="col-span-1 text-red-600 hover:text-red-500">&times;</button>
                 </div>
             @endforeach

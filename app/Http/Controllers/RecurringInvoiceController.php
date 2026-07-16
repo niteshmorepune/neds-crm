@@ -8,22 +8,27 @@ use App\Models\Invoice;
 use App\Models\RecurringInvoice;
 use App\Services\InvoiceNumberGenerator;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
 
 class RecurringInvoiceController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
         $this->authorize('viewAny', Invoice::class);
 
+        $showEnded = $request->boolean('show_ended');
+
         $recurring = RecurringInvoice::with(['customer', 'service'])
+            ->when(! $showEnded, fn ($q) => $q->notEnded())
             ->orderByDesc('is_active')
             ->latest()
-            ->paginate(15);
+            ->paginate(15)
+            ->withQueryString();
 
-        return view('recurring-invoices.index', ['recurring' => $recurring]);
+        return view('recurring-invoices.index', ['recurring' => $recurring, 'showEnded' => $showEnded]);
     }
 
     public function show(RecurringInvoice $recurring): View

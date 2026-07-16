@@ -111,6 +111,31 @@ it('renders the services tab with recurring services and projects', function () 
         ->assertSee('SEO Launch');
 });
 
+it('excludes Ended templates from the "On hold" summary count', function () {
+    $service = Service::factory()->create(['name' => 'Social Media']);
+    $client = Customer::factory()->create(['company_name' => 'Mixed Status Co']);
+
+    // 2 naturally-ended (should NOT count as "On hold").
+    RecurringInvoice::factory()->count(2)->create([
+        'customer_id' => $client->id, 'service_id' => $service->id,
+        'is_active' => false, 'start_date' => now()->subMonths(2), 'end_date' => now()->subMonth(),
+    ]);
+    // 1 genuinely paused (SHOULD count as "On hold").
+    RecurringInvoice::factory()->create([
+        'customer_id' => $client->id, 'service_id' => $service->id,
+        'is_active' => false, 'end_date' => null,
+    ]);
+    // 1 active.
+    RecurringInvoice::factory()->create([
+        'customer_id' => $client->id, 'service_id' => $service->id, 'is_active' => true,
+    ]);
+
+    $html = $this->actingAs($this->admin)->get(route('clients.show', $client))->assertOk()->getContent();
+    preg_match('/On hold<\/dt>\s*<dd[^>]*>\s*(\d+)/', $html, $matches);
+
+    expect($matches[1] ?? null)->toBe('1');
+});
+
 it('labels a naturally-finished one-cycle recurring invoice "Ended", not "On Hold"', function () {
     $service = Service::factory()->create(['name' => 'GMB']);
     $client = Customer::factory()->create(['company_name' => 'Finished Cycle Co']);

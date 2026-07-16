@@ -8,7 +8,13 @@
 
         <div class="flex items-center justify-between">
             <a href="{{ route('invoices.index') }}" class="text-sm text-gray-500 hover:text-gray-700">← Invoices</a>
-            <a href="{{ route('recurring-invoices.create') }}" class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">New Recurring</a>
+            <div class="flex items-center gap-4">
+                <a href="{{ route('recurring-invoices.index', ['show_ended' => $showEnded ? null : 1]) }}"
+                   class="text-sm text-gray-500 hover:text-gray-700">
+                    {{ $showEnded ? 'Hide ended templates' : 'Show ended templates' }}
+                </a>
+                <a href="{{ route('recurring-invoices.create') }}" class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">New Recurring</a>
+            </div>
         </div>
 
         <div class="overflow-hidden overflow-x-auto rounded-lg bg-white shadow-sm">

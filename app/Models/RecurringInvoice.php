@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\InvoiceStatus;
 use App\Enums\RecurringFrequency;
 use App\Models\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Builder;
@@ -61,6 +62,16 @@ class RecurringInvoice extends Model
         return $query->where('is_active', true)->whereDate('next_run_on', '<=', $date);
     }
 
+    /** Excludes templates that have naturally ended (see hasEnded()) — the main Recurring Invoices list defaults to this to avoid piling up with finished one-cycle templates. */
+    public function scopeNotEnded(Builder $query): Builder
+    {
+        return $query->where(function (Builder $q) {
+            $q->where('is_active', true)
+                ->orWhereNull('end_date')
+                ->orWhereDate('end_date', '>=', now()->toDateString());
+        });
+    }
+
     /**
      * Distinguishes an inactive template that ran its course (end_date already
      * passed — nothing wrong, no action needed) from one a human paused via
@@ -70,5 +81,41 @@ class RecurringInvoice extends Model
     public function hasEnded(): bool
     {
         return ! $this->is_active && $this->end_date !== null && $this->end_date->isPast();
+    }
+
+    /**
+     * Client-facing "where are things with this service" status for the
+     * Services tab — time + payment based, distinct from is_active (which
+     * only governs whether the system keeps auto-billing). One of:
+     * 'upcoming' | 'active' | 'on_hold' | 'payment_received' |
+     * 'payment_pending' | 'ended'.
+     *
+     * $revealPaymentStatus should be false for a viewer without invoice
+     * access (e.g. Support) — a period that's over falls back to 'ended'
+     * instead of exposing whether the invoice was actually paid.
+     */
+    public function dashboardStatus(bool $revealPaymentStatus = true): string
+    {
+        if ($this->start_date->isFuture()) {
+            return 'upcoming';
+        }
+
+        $periodOver = $this->end_date !== null && $this->end_date->isPast();
+
+        if (! $periodOver) {
+            return $this->is_active ? 'active' : 'on_hold';
+        }
+
+        if (! $revealPaymentStatus) {
+            return 'ended';
+        }
+
+        $latestInvoice = $this->invoices->sortByDesc('issue_date')->first();
+
+        if (! $latestInvoice) {
+            return 'ended';
+        }
+
+        return $latestInvoice->status === InvoiceStatus::Paid ? 'payment_received' : 'payment_pending';
     }
 }

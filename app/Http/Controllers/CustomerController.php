@@ -95,6 +95,7 @@ class CustomerController extends Controller
 
         if ($this->user()->can('viewAny', Invoice::class)) {
             $client->load('invoices');
+            $client->load('recurringInvoices.invoices');
         }
 
         return view('clients.show', [

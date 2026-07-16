@@ -137,6 +137,18 @@ it('defaults the RecurringInvoiceBuilder GST-exempt toggle from the selected cli
     expect(RecurringInvoice::first()->is_gst_exempt)->toBeTrue();
 });
 
+it('shows a note and disables the per-item GST% field when Non-GST is checked', function () {
+    $admin = User::factory()->role(UserRole::Admin)->create();
+    $client = Customer::factory()->create(['state_code' => '27']);
+
+    Livewire::actingAs($admin)
+        ->test(RecurringInvoiceBuilder::class)
+        ->set('customer_id', $client->id)
+        ->set('is_gst_exempt', true)
+        ->assertSee('the GST% below is ignored')
+        ->assertSeeHtml('disabled');
+});
+
 it('deactivates a template once it passes its end date', function () {
     Mail::fake();
     $template = recurringWithLine([
@@ -159,4 +171,79 @@ it('hasEnded is true only when inactive with a past end date, not a manual pause
         ->and($pausedNoEndDate->hasEnded())->toBeFalse()
         ->and($pausedFutureEndDate->hasEnded())->toBeFalse()
         ->and($activePastEndDate->hasEnded())->toBeFalse();
+});
+
+it('dashboardStatus: upcoming when start_date is in the future', function () {
+    $r = recurringWithLine(['start_date' => now()->addWeek()->toDateString(), 'end_date' => now()->addMonth()->toDateString()]);
+
+    expect($r->dashboardStatus())->toBe('upcoming');
+});
+
+it('dashboardStatus: active when within its period and is_active', function () {
+    $r = recurringWithLine(['start_date' => now()->subDays(5)->toDateString(), 'end_date' => now()->addDays(5)->toDateString(), 'is_active' => true]);
+
+    expect($r->dashboardStatus())->toBe('active');
+});
+
+it('dashboardStatus: on_hold when within its period but paused', function () {
+    $r = recurringWithLine(['start_date' => now()->subDays(5)->toDateString(), 'end_date' => now()->addDays(5)->toDateString(), 'is_active' => false]);
+
+    expect($r->dashboardStatus())->toBe('on_hold');
+});
+
+it('dashboardStatus: payment_received when the period is over and its invoice is paid', function () {
+    $r = recurringWithLine(['start_date' => now()->subMonth()->toDateString(), 'end_date' => now()->subDay()->toDateString(), 'is_active' => false]);
+    Invoice::factory()->status(\App\Enums\InvoiceStatus::Paid)->create(['recurring_invoice_id' => $r->id, 'customer_id' => $r->customer_id]);
+    $r->load('invoices');
+
+    expect($r->dashboardStatus())->toBe('payment_received');
+});
+
+it('dashboardStatus: payment_pending when the period is over and its invoice is unpaid', function () {
+    $r = recurringWithLine(['start_date' => now()->subMonth()->toDateString(), 'end_date' => now()->subDay()->toDateString(), 'is_active' => false]);
+    Invoice::factory()->status(\App\Enums\InvoiceStatus::Sent)->create(['recurring_invoice_id' => $r->id, 'customer_id' => $r->customer_id]);
+    $r->load('invoices');
+
+    expect($r->dashboardStatus())->toBe('payment_pending');
+});
+
+it('dashboardStatus: ended when the period is over and no invoice was ever generated', function () {
+    $r = recurringWithLine(['start_date' => now()->subMonth()->toDateString(), 'end_date' => now()->subDay()->toDateString(), 'is_active' => false]);
+
+    expect($r->dashboardStatus())->toBe('ended');
+});
+
+it('dashboardStatus: falls back to ended (not payment detail) when the viewer lacks invoice access', function () {
+    $r = recurringWithLine(['start_date' => now()->subMonth()->toDateString(), 'end_date' => now()->subDay()->toDateString(), 'is_active' => false]);
+    Invoice::factory()->status(\App\Enums\InvoiceStatus::Paid)->create(['recurring_invoice_id' => $r->id, 'customer_id' => $r->customer_id]);
+    $r->load('invoices');
+
+    expect($r->dashboardStatus(revealPaymentStatus: false))->toBe('ended');
+});
+
+it('hides Ended templates from the Recurring Invoices list by default', function () {
+    $this->seed(\Database\Seeders\MenuItemsSeeder::class);
+    $accounts = User::factory()->role(UserRole::Accounts)->create();
+    $ended = recurringWithLine(['is_active' => false, 'end_date' => now()->subDay()->toDateString()]);
+    $paused = recurringWithLine(['is_active' => false, 'end_date' => null]);
+    $active = recurringWithLine(['is_active' => true]);
+
+    $response = $this->actingAs($accounts)->get(route('recurring-invoices.index'));
+
+    $response->assertOk()
+        ->assertSee($paused->customer->company_name)
+        ->assertSee($active->customer->company_name)
+        ->assertDontSee($ended->customer->company_name);
+});
+
+it('shows Ended templates on the Recurring Invoices list when show_ended=1', function () {
+    $this->seed(\Database\Seeders\MenuItemsSeeder::class);
+    $accounts = User::factory()->role(UserRole::Accounts)->create();
+    $ended = recurringWithLine(['is_active' => false, 'end_date' => now()->subDay()->toDateString()]);
+
+    $this->actingAs($accounts)
+        ->get(route('recurring-invoices.index', ['show_ended' => 1]))
+        ->assertOk()
+        ->assertSee($ended->customer->company_name)
+        ->assertSee('Ended');
 });
