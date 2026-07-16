@@ -106,7 +106,9 @@ every invoice generated from that template (auto or via Generate & Send Now)
 skips GST. You can still tick or untick it yourself for a one-off exception;
 once saved, the template keeps whatever you set even if the client's own
 Non-GST setting changes later, so update the template directly if that ever
-needs to change.
+needs to change. The **Est. / cycle** figure on the client's Services tab
+reflects this too — it only shows the "+GST" hint when the template will
+actually charge GST.
 
 **Deleting a recurring template:** if a retainer has ended, open the template and
 click **Delete** (or use the Delete button on the Recurring Invoices list). This
