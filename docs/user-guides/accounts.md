@@ -113,17 +113,28 @@ the invoice each cycle** (every morning the scheduler checks for due templates)
 and emails it to the client automatically. You can pause/resume a template
 anytime.
 
-**"Ended" vs. "On Hold" / "Paused":** this describes the *template's own
-schedule*, not whether its invoice got paid — the invoice's own Paid/Sent/
-Overdue status (visible on the invoice itself) is separate and unaffected.
+**"Ended" vs. "On Hold" / "Paused" (Invoices → Recurring Invoices list):** this
+describes the *template's own schedule*, not whether its invoice got paid.
 **Ended** means the template had an end date, that date has passed, and it
 won't bill again — nothing to do, it ran its course. **On Hold** / **Paused**
 means someone clicked Pause, or the template simply has no end date set yet
-still isn't active — check whether it should be resumed. If you set up one
-template per one-month period, expect to see it flip to Ended right after its
-single invoice generates; if you want an ongoing retainer to keep billing
-every month automatically, leave **End date** blank instead of re-creating a
-new template each month.
+still isn't active — check whether it should be resumed. Ended templates are
+hidden from this list by default (they'd otherwise pile up forever) — click
+**Show ended templates** to see them again. If you set up one template per
+one-month period, expect it to flip to Ended right after its single invoice
+generates; if you want an ongoing retainer to keep billing every month
+automatically, leave **End date** blank instead of re-creating a new template
+each month.
+
+**Status on the client's Services tab is different — it tracks the period,
+not the schedule:** the same recurring template shows one of **Upcoming**
+(hasn't started yet), **Active** (today falls within its period and it's
+still on), **On Hold** (today falls within its period but it's paused),
+**Payment Received** / **Payment Pending** (the period is over — based on
+whether its generated invoice is actually paid), or **Ended** (the period is
+over and nothing was ever billed for it). The Payment Received/Pending detail
+only shows to roles with invoice access (e.g. not Support) — everyone else
+sees Ended for a finished period regardless of its payment status.
 
 **Non-GST clients:** when you pick a client marked **Non-GST client** on their
 profile, the template's **Non-GST client** checkbox is ticked automatically —
@@ -131,9 +142,11 @@ every invoice generated from that template (auto or via Generate & Send Now)
 skips GST. You can still tick or untick it yourself for a one-off exception;
 once saved, the template keeps whatever you set even if the client's own
 Non-GST setting changes later, so update the template directly if that ever
-needs to change. The **Est. / cycle** figure on the client's Services tab
-reflects this too — it only shows the "+GST" hint when the template will
-actually charge GST.
+needs to change. When Non-GST is checked, each line item's GST% field is
+grayed out with a note — it's ignored, the invoice will show ₹0 tax
+regardless of what's in that field. The **Est. / cycle** figure on the
+client's Services tab reflects this too — it only shows the "+GST" hint when
+the template will actually charge GST.
 
 **Deleting a recurring template:** if a retainer has ended, open the template and
 click **Delete** (or use the Delete button on the Recurring Invoices list). This
