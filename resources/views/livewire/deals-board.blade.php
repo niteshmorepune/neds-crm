@@ -10,6 +10,26 @@
         @endcan
     </div>
 
+    @php
+        $kpiCards = [
+            ['label' => 'Open pipeline', 'value' => \App\Support\Money::format($kpis['open_pipeline_value'])],
+            ['label' => 'Weighted forecast', 'value' => \App\Support\Money::format($kpis['weighted_forecast'])],
+            ['label' => 'Won this month', 'value' => \App\Support\Money::format($kpis['won_this_month_value'])],
+            ['label' => 'Won this FY', 'value' => \App\Support\Money::format($kpis['won_this_fy_value'])],
+            ['label' => 'Win rate', 'value' => $kpis['win_rate'] !== null ? $kpis['win_rate'].'%' : '—'],
+            ['label' => 'Avg deal size', 'value' => \App\Support\Money::format($kpis['avg_deal_size'])],
+            ['label' => 'Avg sales cycle', 'value' => $kpis['avg_sales_cycle_days'] !== null ? $kpis['avg_sales_cycle_days'].' days' : '—'],
+        ];
+    @endphp
+    <div class="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7">
+        @foreach ($kpiCards as $card)
+            <div class="rounded-lg bg-white p-4 shadow-sm">
+                <p class="text-xs text-gray-500">{{ $card['label'] }}</p>
+                <p class="mt-1 text-lg font-semibold text-gray-900">{{ $card['value'] }}</p>
+            </div>
+        @endforeach
+    </div>
+
     @if ($showAddForm)
         <div class="mb-4 grid grid-cols-1 gap-4 rounded-lg bg-white p-4 shadow-sm md:grid-cols-5">
             <div>
@@ -37,8 +57,9 @@
                 </select>
             </div>
             <div>
-                <x-input-label value="Value (₹)" />
+                <x-input-label value="Value (₹) *" />
                 <x-text-input wire:model="value" type="number" step="0.01" min="0" class="mt-1 block w-full" />
+                @error('value') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
             </div>
             <div>
                 <x-input-label value="Owner" />

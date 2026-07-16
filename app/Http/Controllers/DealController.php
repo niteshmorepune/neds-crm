@@ -49,7 +49,7 @@ class DealController extends Controller
             'service_id' => $data['service_id'] ?? null,
             'owner_id' => $data['owner_id'] ?? null,
             'partner_id' => $data['partner_id'] ?? null,
-            'value' => Money::toPaise($data['value'] ?? null) ?? 0,
+            'value' => Money::toPaise($data['value']),
             'next_follow_up_at' => $data['next_follow_up_at'] ?? null,
         ]);
 

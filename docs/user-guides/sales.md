@@ -104,6 +104,23 @@ The **Sales Department** board shows your deals in columns by stage:
   directly, open the deal and set the **Referred by** dropdown to that agency.
   Leave it as "Direct (no agency)" for clients who came to NEDS on their own.
   This lets management see which deals were agency-sourced vs direct.
+- **Value (₹) is required** when adding or editing a deal — enter your best
+  estimate even early on (New/Contacted) and correct it as the deal firms up.
+  It drives every figure in the KPI strip below, so a missing or 0 value
+  understates your own numbers.
+
+**KPI strip** — above the board, seven figures scoped to your own deals
+(Admin/Manager see the whole company's pipeline instead):
+- **Open pipeline** — total value of everything still open (not yet Won/Lost).
+- **Weighted forecast** — open pipeline value adjusted by a rough
+  likelihood-to-close per stage (New 10%, Contacted 25%, Proposal 50%,
+  Negotiation 75%) — a more realistic number than raw pipeline value, since
+  not everything in New will actually close.
+- **Won this month** / **Won this FY** — value of deals you've won, this
+  calendar month and this financial year (Apr–Mar) to date.
+- **Win rate** — Won ÷ (Won + Lost), all-time.
+- **Avg deal size** — average value of your Won deals.
+- **Avg sales cycle** — average days from a deal's creation to it being won.
 
 ## 3. Quotations
 1. **Quotations → Create** — or open a **Deal** and click **+ New Quotation**

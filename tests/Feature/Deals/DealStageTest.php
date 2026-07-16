@@ -65,6 +65,7 @@ it('blocks a stage change on a terminal deal via the controller', function () {
         ->put(route('deals.update', $deal), [
             'title' => $deal->title,
             'stage' => DealStage::Negotiation->value,
+            'value' => 1000,
         ])
         ->assertSessionHasErrors('stage');
 
