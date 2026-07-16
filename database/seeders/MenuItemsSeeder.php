@@ -28,6 +28,7 @@ class MenuItemsSeeder extends Seeder
             ['key' => 'leave-requests',   'label' => 'Leave Requests',   'route' => 'leave-requests.index', 'icon' => 'calendar', 'roles' => $all],
             ['key' => 'lead-generation',  'label' => 'Lead Generation',  'route' => 'leads.index',      'icon' => 'funnel',     'roles' => [UserRole::Manager, UserRole::Sales]],
             ['key' => 'sales-department', 'label' => 'Sales Department',  'route' => 'deals.index',      'icon' => 'trending',   'roles' => [UserRole::Manager, UserRole::Sales]],
+            ['key' => 'sales-dashboard',  'label' => 'Sales Dashboard',  'route' => 'sales-dashboard.index', 'icon' => 'chart-bar', 'roles' => [UserRole::Manager, UserRole::Sales]],
             ['key' => 'account',          'label' => 'Account',          'route' => 'reports.receivables', 'icon' => 'wallet',  'roles' => [UserRole::Manager, UserRole::Accounts]],
             ['key' => 'collections',      'label' => 'Collections',      'route' => 'reports.collections', 'icon' => 'banknotes', 'roles' => [UserRole::Manager, UserRole::Accounts]],
             ['key' => 'project-updates',  'label' => 'Project Updates',  'route' => 'projects.index',   'icon' => 'briefcase',  'roles' => [UserRole::Manager, UserRole::Sales, UserRole::Support, UserRole::Intern]],

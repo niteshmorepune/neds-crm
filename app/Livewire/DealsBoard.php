@@ -5,11 +5,10 @@ namespace App\Livewire;
 use App\Enums\DealStage;
 use App\Models\Customer;
 use App\Models\Deal;
-use App\Models\DealStageTransition;
 use App\Models\Service;
 use App\Models\User;
+use App\Services\SalesPipelineMetrics;
 use App\Support\Money;
-use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -83,122 +82,16 @@ class DealsBoard extends Component
             ->get()
             ->groupBy(fn (Deal $deal) => $deal->stage->value);
 
+        $metrics = app(SalesPipelineMetrics::class);
+
         return view('livewire.deals-board', [
             'columns' => DealStage::columns(),
             'dealsByStage' => $deals,
-            'kpis' => $this->kpis(auth()->user()),
-            'stageConversion' => $this->stageConversion(auth()->user()),
+            'kpis' => $metrics->kpis(auth()->user()),
+            'stageConversion' => $metrics->stageConversion(auth()->user()),
             'customers' => Customer::query()->visibleTo(auth()->user())->orderBy('company_name')->get(['id', 'company_name']),
             'services' => Service::active()->orderBy('sort_order')->get(),
             'owners' => User::query()->orderBy('name')->get(['id', 'name']),
         ]);
-    }
-
-    /**
-     * KPI strip figures for the Sales Pipeline header. Scoped by the same
-     * visibleTo() rule as the board itself, so Sales reps see their own
-     * numbers and Admin/Manager see the whole pipeline — unlike the
-     * company-wide, date-ranged win rate/avg deal size/avg cycle in
-     * BusinessOverviewMetrics::pipelineFunnel() (Reports > Pipeline &
-     * Funnel), which can't be reused here for that reason. Whole-number
-     * rounding matches that report so the same-named figures don't imply
-     * different precision.
-     */
-    private function kpis(User $user): array
-    {
-        $openByStage = Deal::query()
-            ->visibleTo($user)
-            ->whereNotIn('stage', [DealStage::Won->value, DealStage::Lost->value])
-            ->selectRaw('stage, COALESCE(SUM(value), 0) as value')
-            ->groupBy('stage')
-            ->pluck('value', 'stage');
-
-        $weightedForecast = 0;
-        foreach ($openByStage as $stageValue => $sum) {
-            $weightedForecast += (int) round($sum * DealStage::from($stageValue)->probability() / 100);
-        }
-
-        $closedCounts = Deal::query()
-            ->visibleTo($user)
-            ->whereIn('stage', [DealStage::Won->value, DealStage::Lost->value])
-            ->selectRaw('stage, COUNT(*) as total')
-            ->groupBy('stage')
-            ->pluck('total', 'stage');
-        $wonCount = (int) ($closedCounts[DealStage::Won->value] ?? 0);
-        $lostCount = (int) ($closedCounts[DealStage::Lost->value] ?? 0);
-
-        $wonValues = Deal::query()->visibleTo($user)->where('stage', DealStage::Won->value)->pluck('value');
-
-        $wonWithCycle = Deal::query()
-            ->visibleTo($user)
-            ->where('stage', DealStage::Won->value)
-            ->whereNotNull('won_at')
-            ->get(['created_at', 'won_at']);
-
-        $now = now();
-        $fyStartYear = $now->month >= 4 ? $now->year : $now->year - 1;
-        $fyStart = Carbon::create($fyStartYear, 4, 1)->startOfDay();
-
-        return [
-            'open_pipeline_value' => (int) $openByStage->sum(),
-            'weighted_forecast' => $weightedForecast,
-            'won_this_month_value' => (int) Deal::query()
-                ->visibleTo($user)
-                ->where('stage', DealStage::Won->value)
-                ->whereNotNull('won_at')
-                ->where('won_at', '>=', $now->copy()->startOfMonth())
-                ->sum('value'),
-            'won_this_fy_value' => (int) Deal::query()
-                ->visibleTo($user)
-                ->where('stage', DealStage::Won->value)
-                ->whereNotNull('won_at')
-                ->where('won_at', '>=', $fyStart)
-                ->sum('value'),
-            'win_rate' => ($wonCount + $lostCount) > 0 ? (int) round($wonCount / ($wonCount + $lostCount) * 100) : null,
-            'avg_deal_size' => $wonValues->isNotEmpty() ? (int) round($wonValues->avg()) : null,
-            'avg_sales_cycle_days' => $wonWithCycle->isNotEmpty()
-                ? (int) round($wonWithCycle->avg(fn (Deal $deal) => $deal->created_at->diffInDays($deal->won_at)))
-                : null,
-        ];
-    }
-
-    /**
-     * Stage-to-stage advance rate for each adjacent pair in the pipeline
-     * sequence, e.g. what % of deals that ever reached "Contacted" went on
-     * to reach "Proposal". Built from deal_stage_transitions, which only
-     * starts accumulating the day this feature shipped (see that migration's
-     * docblock) — so each pair reports null (rendered as "Not enough data
-     * yet") until at least self::MIN_CONVERSION_SAMPLE deals have entered
-     * the "from" stage. Scoped by the same visibleTo() rule as the rest of
-     * the board via whereHas('deal', ...).
-     */
-    private const MIN_CONVERSION_SAMPLE = 5;
-
-    private function stageConversion(User $user): array
-    {
-        $sequence = [DealStage::New, DealStage::Contacted, DealStage::Proposal, DealStage::Negotiation, DealStage::Won];
-
-        $transitions = DealStageTransition::query()
-            ->whereHas('deal', fn ($q) => $q->visibleTo($user))
-            ->get(['deal_id', 'from_stage', 'to_stage']);
-
-        $pairs = [];
-        for ($i = 0; $i < count($sequence) - 1; $i++) {
-            $from = $sequence[$i];
-            $to = $sequence[$i + 1];
-
-            $entered = $transitions->where('to_stage', $from)->pluck('deal_id')->unique();
-            $advanced = $transitions->where('from_stage', $from)->where('to_stage', $to)->pluck('deal_id')->unique();
-
-            $pairs[] = [
-                'from' => $from,
-                'to' => $to,
-                'rate' => $entered->count() >= self::MIN_CONVERSION_SAMPLE
-                    ? (int) round($advanced->count() / $entered->count() * 100)
-                    : null,
-            ];
-        }
-
-        return $pairs;
     }
 }

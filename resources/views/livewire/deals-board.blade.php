@@ -2,47 +2,20 @@
      x-on:deal-move-blocked.window="alert('That deal is Won or Lost and can\'t be moved.')">
     <div class="mb-4 flex items-center justify-between">
         <h1 class="text-xl font-semibold text-gray-900">Sales Pipeline</h1>
-        @can('create', \App\Models\Deal::class)
-            <button wire:click="$toggle('showAddForm')"
-                    class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">
-                {{ $showAddForm ? 'Close' : 'Add deal' }}
-            </button>
-        @endcan
-    </div>
-
-    @php
-        $kpiCards = [
-            ['label' => 'Open pipeline', 'value' => \App\Support\Money::format($kpis['open_pipeline_value'])],
-            ['label' => 'Weighted forecast', 'value' => \App\Support\Money::format($kpis['weighted_forecast'])],
-            ['label' => 'Won this month', 'value' => \App\Support\Money::format($kpis['won_this_month_value'])],
-            ['label' => 'Won this FY', 'value' => \App\Support\Money::format($kpis['won_this_fy_value'])],
-            ['label' => 'Win rate', 'value' => $kpis['win_rate'] !== null ? $kpis['win_rate'].'%' : '—'],
-            ['label' => 'Avg deal size', 'value' => \App\Support\Money::format($kpis['avg_deal_size'])],
-            ['label' => 'Avg sales cycle', 'value' => $kpis['avg_sales_cycle_days'] !== null ? $kpis['avg_sales_cycle_days'].' days' : '—'],
-        ];
-    @endphp
-    <div class="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7">
-        @foreach ($kpiCards as $card)
-            <div class="rounded-lg bg-white p-4 shadow-sm">
-                <p class="text-xs text-gray-500">{{ $card['label'] }}</p>
-                <p class="mt-1 text-lg font-semibold text-gray-900">{{ $card['value'] }}</p>
-            </div>
-        @endforeach
-    </div>
-
-    <div class="mb-4 rounded-lg bg-white p-4 shadow-sm">
-        <p class="mb-2 text-xs font-medium text-gray-500">Stage conversion</p>
-        <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            @foreach ($stageConversion as $pair)
-                <div class="text-sm">
-                    <span class="text-gray-500">{{ $pair['from']->label() }} → {{ $pair['to']->label() }}</span>
-                    <span class="ml-1 font-semibold {{ $pair['rate'] !== null ? 'text-gray-900' : 'text-gray-300' }}">
-                        {{ $pair['rate'] !== null ? $pair['rate'].'%' : 'Not enough data yet' }}
-                    </span>
-                </div>
-            @endforeach
+        <div class="flex items-center gap-4">
+            <a href="{{ route('sales-dashboard.index') }}" class="text-sm font-medium text-indigo-600 hover:underline">Sales Dashboard →</a>
+            @can('create', \App\Models\Deal::class)
+                <button wire:click="$toggle('showAddForm')"
+                        class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">
+                    {{ $showAddForm ? 'Close' : 'Add deal' }}
+                </button>
+            @endcan
         </div>
     </div>
+
+    <x-kpi-strip :kpis="$kpis" class="mb-4" />
+
+    <x-stage-conversion :stage-conversion="$stageConversion" class="mb-4" />
 
     @if ($showAddForm)
         <div class="mb-4 grid grid-cols-1 gap-4 rounded-lg bg-white p-4 shadow-sm md:grid-cols-5">

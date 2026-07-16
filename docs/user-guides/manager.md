@@ -80,6 +80,21 @@ next milestone is marked **Ready to invoice**. Filter by **All clients**,
 **Direct clients**, or one specific partner. Open any partner's page (below)
 to see the same view already scoped to them.
 
+## Sales Dashboard
+A company-wide view (Sidebar → **Sales Dashboard**, under Sales Department) —
+same KPI strip/stage-conversion/trend/needs-attention sections described in
+the sales guide, but unscoped (everyone's deals). Two sections are
+Admin/Manager only:
+
+- **Rep leaderboard** — per Sales rep: pipeline value, won this month, target
+  this month, % to target, win rate, avg deal size.
+- **Save targets** — set the company's monthly and financial-year revenue
+  target, and each rep's individual monthly target, right from the
+  leaderboard row. Leave a field blank to leave that target unchanged — it
+  will never zero out an existing target you don't touch. Targets are
+  optional; nothing breaks if none are set, the progress bars just read "No
+  target set".
+
 ## Bell notifications
 As a manager, you receive bell notifications for:
 

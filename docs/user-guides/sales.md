@@ -122,6 +122,37 @@ The **Sales Department** board shows your deals in columns by stage:
 - **Avg deal size** — average value of your Won deals.
 - **Avg sales cycle** — average days from a deal's creation to it being won.
 
+**Stage conversion** — below the KPI strip, what % of deals that ever reached
+one stage went on to reach the next (New→Contacted, Contacted→Proposal,
+Proposal→Negotiation, Negotiation→Won). This is built from deal moves going
+forward only, so each pair shows "Not enough data yet" until at least 5 deals
+have passed through it — it doesn't reconstruct history from before this
+feature shipped.
+
+**Stale-deal badge** — each card shows how many days it's been sitting in its
+current stage, turning red past 10 days. A red badge is a nudge to follow up
+or move the deal, not an automatic penalty.
+
+## 2a. Sales Dashboard
+A dedicated page (Sidebar → **Sales Dashboard**) for a fuller view than the
+board's KPI strip — same numbers, scoped the same way (your own deals; Admin/
+Manager see everyone):
+- **Target vs actual** — a progress bar against your monthly (and FY, if set)
+  revenue target, if Admin/Manager has set one for you. "No target set" is
+  normal if they haven't.
+- **Won value — last 12 months** — a trend chart, so you can see whether
+  this month is actually better or worse than recent months, not just in
+  isolation.
+- **Service-line breakdown** — your pipeline and win rate per service (SEO,
+  Website Dev, etc.), so you can see which services are actually converting.
+- **Needs attention** — a plain list of deals that need a look: stale >10
+  days, an overdue follow-up date, no owner, or a ₹0 value that was never
+  corrected. Each links straight to the deal.
+
+Admin/Manager additionally see a **rep leaderboard** (pipeline, won this
+month, target %, win rate, avg deal size per Sales rep) and a **Save targets**
+form to set the company's monthly/FY target and each rep's monthly target.
+
 ## 3. Quotations
 1. **Quotations → Create** — or open a **Deal** and click **+ New Quotation**
    directly on the deal page (the client and deal are pre-filled for you) — or

@@ -11,6 +11,8 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DailyReportController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DealController;
+use App\Http\Controllers\SalesDashboardController;
+use App\Http\Controllers\SalesTargetController;
 use App\Http\Controllers\FestivalController;
 use App\Http\Controllers\HelpController;
 use App\Http\Controllers\InvoiceController;
@@ -117,6 +119,17 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
         Route::get('deals/{deal}', [DealController::class, 'show'])->name('deals.show');
         Route::put('deals/{deal}', [DealController::class, 'update'])->name('deals.update');
         Route::delete('deals/{deal}', [DealController::class, 'destroy'])->name('deals.destroy');
+    });
+
+    /*
+     * Sales Dashboard — owner/rep KPI view built on top of SalesPipelineMetrics
+     * (shared with the Kanban board above). Gated by menu.access:sales-dashboard;
+     * the rep-leaderboard section and target form inside are additionally
+     * restricted to Admin/Manager in the controller.
+     */
+    Route::middleware('menu.access:sales-dashboard')->group(function () {
+        Route::get('sales-dashboard', [SalesDashboardController::class, 'index'])->name('sales-dashboard.index');
+        Route::post('sales-dashboard/targets', [SalesTargetController::class, 'store'])->name('sales-dashboard.targets.store');
     });
 
     /*
