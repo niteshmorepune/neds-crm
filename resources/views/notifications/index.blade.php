@@ -35,6 +35,7 @@
                                 'new_invoice'                 => '🧾',
                                 'payment_recorded'            => '💰',
                                 'recurring_invoice_due_soon'  => '⚠️',
+                                'payment_promise_broken'      => '🚩',
                                 'smdost_brief_approved'       => '✅',
                                 'leave_request_submitted', 'leave_request_reviewed' => '🌴',
                                 'festival_greeting_drafted'   => '🎉',

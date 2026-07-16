@@ -93,6 +93,12 @@ invoice, and on the **Collections** report below) — a clear signal to call
 again. Use the notes box on the same page to log what was actually said each
 time you follow up.
 
+**Bell notification — payment promise broken:** you no longer have to
+remember to check. The morning after a promised date passes with the invoice
+still unpaid, a 🚩 bell notification goes out to accounts staff, admin, and
+managers. It fires once per promise — if the client gives you a new date and
+that one breaks too, you'll get a fresh notification for it.
+
 ## 3. Recurring invoices
 For monthly retainers (SEO, GMB, social, ads, AMC), set up a **recurring invoice
 template** (under Invoices → Recurring Invoices). The system **auto-generates

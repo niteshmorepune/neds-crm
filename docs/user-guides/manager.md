@@ -88,6 +88,10 @@ As a manager, you receive bell notifications for:
 - ⚠️ **Recurring invoice due in 7 days** — every morning at 8 AM, if any
   recurring-linked invoice is due in 7 days and hasn't been paid, you're alerted
   alongside the accounts team so you can follow up if needed.
+- 🚩 **Payment promise broken** — the morning after a client's promised payment
+  date passes with the invoice still unpaid, you're alerted alongside the
+  accounts team. Fires once per promise, and again if a new promised date is
+  set and also breaks.
 - **SMDost brief approved** — ✅ when a brief is approved in SMDost, a draft
   invoice appears in the CRM for accounts to price.
 - 🌴 **Leave request submitted / reviewed** — whenever anyone requests leave,

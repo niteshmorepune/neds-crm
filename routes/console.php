@@ -47,6 +47,7 @@ Schedule::command('app:generate-recurring-invoices')->dailyAt('06:00')->timezone
 Schedule::command('app:mark-overdue-invoices')->dailyAt('07:00')->timezone('Asia/Kolkata');
 Schedule::command('app:send-payment-reminders')->dailyAt('07:30')->timezone('Asia/Kolkata');
 Schedule::command('app:send-recurring-invoice-due-warnings')->dailyAt('08:00')->timezone('Asia/Kolkata');
+Schedule::command('app:send-payment-promise-reminders')->dailyAt('08:15')->timezone('Asia/Kolkata');
 Schedule::command('app:send-recurring-invoice-reminders')->dailyAt('09:00')->timezone('Asia/Kolkata');
 
 // Call follow-up reminders — check every 5 minutes so notifications fire close to the scheduled time.
