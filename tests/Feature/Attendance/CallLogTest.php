@@ -70,6 +70,14 @@ it('renders the call create and index pages', function () {
     $this->actingAs($this->sales)->get(route('calls.create'))->assertOk()->assertSee('Log a Call');
 });
 
+it('offers browser dictation on the call notes field', function () {
+    $this->actingAs($this->sales)->get(route('calls.create'))
+        ->assertOk()
+        ->assertSee('Dictate')
+        ->assertSee('toggleDictation', false)
+        ->assertSee('SpeechRecognition', false);
+});
+
 it('does not let support log a call against a lead', function () {
     $support = User::factory()->role(UserRole::Support)->create();
     $lead = Lead::factory()->create();

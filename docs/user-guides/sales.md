@@ -63,6 +63,10 @@ sequence stops (the CRM assumes you've taken it from here).
 - Open the lead to add **notes**, see the timeline, and log activity.
 - **Log a call** (top bar or the lead page) after you phone them — record the
   outcome (connected, no answer, follow-up needed).
+- On the Notes field, click **Dictate** and speak instead of typing — your
+  browser transcribes it live into the box, and you can still edit before
+  saving. (Chrome/Edge only; the button doesn't appear in browsers that
+  don't support it.)
 - When logging a call, click **Add follow-up reminder** to expand the reminder
   section. **Set the date and time manually** to the exact day you want to be
   reminded — the field starts blank so you pick the right date (not just

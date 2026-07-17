@@ -135,7 +135,8 @@ a service is set on the project. On-hold or completed projects do not get tasks.
 Use **☎ Log a call** (top bar) or **Calling** to record calls you make to
 clients about their tickets or projects. Support doesn't have access to
 **Leads**, so the call form only lets you log against a **Client** — there's
-no Lead option to pick from.
+no Lead option to pick from. On the Notes field, click **Dictate** and speak
+instead of typing (Chrome/Edge only).
 
 ## 5. Notifications
 The bell (🔔) in the top bar is how the CRM reaches you **without email**.
