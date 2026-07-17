@@ -113,6 +113,16 @@ return [
         // Lead score at/above this triggers an immediate HotLeadNotification
         // to the owner, instead of waiting for the 9am morning digest.
         'hot_lead_threshold' => env('AI_HOT_LEAD_THRESHOLD', 70),
+        // Rough USD cost per MILLION tokens, for the AI Usage report's cost
+        // estimate only (app\Services\AiUsageMetrics) — never used for any
+        // real financial/GST figure. An unrecognised model falls back to
+        // 'default'. Update these if Anthropic's published pricing changes.
+        'pricing' => [
+            'claude-haiku-4-5-20251001' => ['input' => 1.00, 'output' => 5.00],
+            'default' => ['input' => 1.00, 'output' => 5.00],
+        ],
+        // Rough USD->INR rate for converting the estimate above to ₹.
+        'usd_to_inr' => (float) env('AI_USD_TO_INR', 87),
     ],
 
 ];

@@ -85,6 +85,13 @@ panel) — a near-term cash view, blending:
   pipeline. **Avg AI score** shows if one channel tends to bring in
   higher-quality enquiries. Export CSV.
 
+**AI Usage Report** — for a chosen month, which of the CRM's AI features are
+actually being used: calls per feature (lead scoring, draft replies, monthly
+wins notes, and the rest), tokens processed, and a rough estimated cost per
+feature and in total. The cost is an estimate from a configured rate, not a
+bill — useful for spotting which features are worth the spend and which
+nobody's touching. Export CSV.
+
 **Outstanding Receivables** — what clients still owe (shared with accounts).
 
 **Collections** — a client-by-client follow-up worklist (shared with accounts):
