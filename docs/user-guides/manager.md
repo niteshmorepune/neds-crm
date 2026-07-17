@@ -167,10 +167,12 @@ Useful for managers who also run their own service accounts.
   from the biometric machine within about a minute and shows a status line
   once done. See `admin.md` Section 1a for the full biometric setup/troubleshooting.
 - **Leave Requests → Review pending** — any admin or manager can approve or
-  reject a leave request (you can't approve your own). Approving a request
-  automatically marks the employee's attendance as **Leave** for each office
-  day in the range (Sundays are skipped); rejecting lets you add a short note
-  explaining why.
+  reject a leave request (you can't approve your own). The queue shows each
+  request's **Type** (Full Day or Half Day) — approving a Full Day request
+  marks the employee's attendance as **Leave** for each office day in the
+  range (Sundays are skipped), while a Half Day request only marks that one
+  day as **Half Day**, not a full day off. Rejecting lets you add a short
+  note explaining why.
 
 ## Email alerts
 **Morning digest (9 AM daily)** — your own personalised summary: overdue tasks,
