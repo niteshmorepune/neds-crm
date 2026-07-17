@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\UserRole;
 use App\Models\Partner;
+use App\Services\AiUsageMetrics;
 use App\Services\BusinessOverviewMetrics;
 use App\Services\CollectionsMetrics;
 use App\Services\ReportMetrics;
@@ -21,6 +22,7 @@ class ReportController extends Controller
         private readonly BusinessOverviewMetrics $overview,
         private readonly CollectionsMetrics $collectionsMetrics,
         private readonly SalesPipelineMetrics $pipelineMetrics,
+        private readonly AiUsageMetrics $aiUsageMetrics,
     ) {}
 
     public function employeePerformance(Request $request): View
@@ -86,6 +88,34 @@ class ReportController extends Controller
             foreach ($data['by_client'] as $c) {
                 fputcsv($out, [$c['name'], Money::toRupees($c['total'])]);
             }
+        });
+    }
+
+    public function aiUsage(Request $request): View
+    {
+        $this->authorizePerformance($request);
+        [$from, $to] = $this->monthRange($request);
+
+        return view('reports.ai-usage', [
+            'data' => $this->aiUsageMetrics->monthly($from, $to),
+            'from' => $from,
+            'to' => $to,
+        ]);
+    }
+
+    public function exportAiUsage(Request $request): StreamedResponse
+    {
+        $this->authorizePerformance($request);
+        [$from, $to] = $this->monthRange($request);
+        $data = $this->aiUsageMetrics->monthly($from, $to);
+
+        return $this->csv("ai-usage-{$from->format('Y-m-d')}_to_{$to->format('Y-m-d')}.csv", function ($out) use ($data) {
+            fputcsv($out, ['Feature', 'Calls', 'Input tokens', 'Output tokens', 'Estimated cost (₹)']);
+            foreach ($data['by_feature'] as $r) {
+                fputcsv($out, [$r['label'], $r['calls'], $r['input_tokens'], $r['output_tokens'], Money::toRupees($r['estimated_cost_paise'])]);
+            }
+            fputcsv($out, []);
+            fputcsv($out, ['Total', $data['total_calls'], $data['total_input_tokens'], $data['total_output_tokens'], Money::toRupees($data['estimated_cost_paise'])]);
         });
     }
 
