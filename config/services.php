@@ -123,6 +123,11 @@ return [
         ],
         // Rough USD->INR rate for converting the estimate above to ₹.
         'usd_to_inr' => (float) env('AI_USD_TO_INR', 87),
+        // Max questions a single portal contact can ask the client-facing
+        // portal assistant per rolling 24h — this is the only AI feature a
+        // client (not staff) can trigger themselves, so it's rate-limited
+        // where nothing else in the app has needed to be.
+        'portal_assistant_daily_limit' => (int) env('AI_PORTAL_ASSISTANT_DAILY_LIMIT', 15),
     ],
 
 ];

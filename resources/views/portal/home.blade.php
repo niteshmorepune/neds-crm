@@ -120,6 +120,8 @@
         @endif
     </div>
 
+    @livewire('portal-assistant')
+
     {{-- SSO links to Drishti / SMDost (shown only when the account is connected) --}}
     @if($customer->drishti_client_id || $customer->smdost_client_id)
     <div class="rounded-xl bg-white px-6 py-5 shadow-sm ring-1 ring-gray-100 mb-6">

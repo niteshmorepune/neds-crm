@@ -31,6 +31,13 @@ When you log in you'll see a personalised greeting and three stat cards showing
 your open invoices, active projects, and open tickets. Click any card to go
 straight to that section.
 
+**Ask about your account** — type a question like "When's my next payment
+due?" or "What's the status of my SEO project?" and get an instant answer
+based on your own account details. It only knows what's already in your
+portal (invoices, tickets, projects) — for anything else, it'll point you to
+raise a ticket or contact your account manager. There's a daily limit on how
+many questions you can ask; if you hit it, use **Raise a ticket** instead.
+
 ## Services
 Open **Services** to see every service NEDS is running for your account in one
 place:

@@ -418,6 +418,14 @@ about, so it's a starting point for a conversation, not a rating you share.
 next action based on that client's specific signals. Generated on demand per
 client, not in a batch — so it costs nothing unless someone clicks it.
 
+**Portal assistant ("Ask about your account")** — the one AI feature clients
+trigger themselves rather than staff, on their portal Dashboard. It only ever
+sees that client's own invoices, ticket statuses, and project statuses — never
+internal notes or another client's data — and is capped at
+`AI_PORTAL_ASSISTANT_DAILY_LIMIT` questions per contact per day (default 15,
+`.env`) so it can't be run up. See the **AI Usage Report** (Reports panel) to
+track how much any of this is actually costing.
+
 **Monthly wins note drafts** — on the 1st of each month, for every active client
 with an assigned owner who had at least one task completed, ticket resolved,
 payment received, or (for clients Drishti manages) a post published, audit

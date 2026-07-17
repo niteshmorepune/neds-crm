@@ -151,6 +151,17 @@ it('drafts a monthly wins note including Drishti marketing-delivery numbers', fu
     expect($draft)->toContain('posts');
 });
 
+it('answers a portal question and records usage under its own feature', function () {
+    aiOn();
+    fakeAiText('You have no overdue invoices right now.');
+    $customer = Customer::factory()->create(['company_name' => 'Acme Corp']);
+
+    $answer = app(AiAssistant::class)->answerPortalQuestion($customer, 'Do I owe anything?');
+
+    expect($answer)->toBe('You have no overdue invoices right now.');
+    expect(AiUsage::where('feature', 'portal_assistant_answer')->exists())->toBeTrue();
+});
+
 it('returns null (not an exception) when the API fails', function () {
     aiOn();
     Http::fake(['api.anthropic.com/*' => Http::response('boom', 500)]);
