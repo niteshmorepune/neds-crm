@@ -58,6 +58,21 @@ it('stamps won_at when deal moves to Won and clears it if stage reverts', functi
     expect($deal->fresh()->won_at)->toBeNull();
 });
 
+it('allows updating the value of a Won deal as long as stage is resubmitted unchanged', function () {
+    $deal = Deal::factory()->stage(DealStage::Won)->create(['value' => 100000]);
+
+    $this->actingAs($this->admin)
+        ->put(route('deals.update', $deal), [
+            'title' => $deal->title,
+            'stage' => DealStage::Won->value,
+            'value' => 5000,
+        ])
+        ->assertRedirect(route('deals.show', $deal));
+
+    expect($deal->fresh()->stage)->toBe(DealStage::Won)
+        ->and($deal->fresh()->value)->toBe(500000);
+});
+
 it('blocks a stage change on a terminal deal via the controller', function () {
     $deal = Deal::factory()->stage(DealStage::Won)->create();
 

@@ -101,7 +101,18 @@
                         @forelse ($client->deals as $deal)
                             <li class="flex items-center justify-between py-2">
                                 <a href="{{ route('deals.show', $deal) }}" class="font-medium text-indigo-600 hover:underline">{{ $deal->title }}</a>
-                                <span class="text-gray-500">{{ $deal->stage->label() }} · {{ $deal->owner?->name ?? 'Unassigned' }}</span>
+                                <div class="flex items-center gap-3">
+                                    <span class="text-gray-500">{{ $deal->stage->label() }} · {{ $deal->owner?->name ?? 'Unassigned' }}</span>
+                                    @can('update', $deal)
+                                        <a href="{{ route('deals.show', $deal) }}" class="text-xs font-medium text-indigo-600 hover:underline">Edit</a>
+                                    @endcan
+                                    @can('delete', $deal)
+                                        <form method="POST" action="{{ route('deals.destroy', $deal) }}" onsubmit="return confirm('Delete this deal? This cannot be undone.')">
+                                            @csrf @method('DELETE')
+                                            <button type="submit" class="text-xs font-medium text-red-500 hover:text-red-600">Delete</button>
+                                        </form>
+                                    @endcan
+                                </div>
                             </li>
                         @empty
                             <li class="py-2 text-gray-400">No deals yet.</li>

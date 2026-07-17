@@ -17,7 +17,7 @@
                         {{ $invoice->customer?->company_name ?? 'Client removed' }} ·
                         <span class="font-medium">{{ $invoice->status->label() }}</span> ·
                         Issued {{ $invoice->issue_date->format('d M Y') }}
-                        @if ($invoice->due_date) · Due {{ $invoice->due_date->format('d M Y') }} @endif
+                        @if ($invoice->due_date && $invoice->status !== \App\Enums\InvoiceStatus::Paid) · Due {{ $invoice->due_date->format('d M Y') }} @endif
                     </p>
                     @if ($invoice->deal || $invoice->project)
                         <p class="mt-1 text-sm text-gray-400">

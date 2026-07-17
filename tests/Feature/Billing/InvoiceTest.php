@@ -117,6 +117,23 @@ it('renders invoice index, show and the receivables report', function () {
     $this->actingAs($this->accounts)->get(route('reports.receivables'))->assertOk()->assertSee('Outstanding');
 });
 
+it('shows the due date on an unpaid invoice but hides it once the invoice is Paid', function () {
+    $invoice = invoiceWithLine(['due_date' => now()->addDays(10)->toDateString()]);
+    $dueDateFormatted = $invoice->due_date->format('d M Y');
+
+    $indexHtml = $this->actingAs($this->accounts)->get(route('invoices.index'))->assertOk()->getContent();
+    expect($indexHtml)->toContain($dueDateFormatted);
+    $this->actingAs($this->accounts)->get(route('invoices.show', $invoice))->assertOk()->assertSee($dueDateFormatted);
+
+    $invoice->payments()->create(['paid_on' => now(), 'mode' => 'cash', 'amount' => $invoice->total, 'recorded_by' => $this->accounts->id]);
+    $invoice->refreshPaymentStatus();
+    expect($invoice->fresh()->status)->toBe(InvoiceStatus::Paid);
+
+    $indexHtml = $this->actingAs($this->accounts)->get(route('invoices.index'))->assertOk()->getContent();
+    expect($indexHtml)->not->toContain($dueDateFormatted);
+    $this->actingAs($this->accounts)->get(route('invoices.show', $invoice))->assertOk()->assertDontSee($dueDateFormatted);
+});
+
 it('restricts invoices to the accounts team plus sales (read-only), blocking other roles', function () {
     expect(User::factory()->role(UserRole::Sales)->create()->can('viewAny', Invoice::class))->toBeTrue()
         ->and(User::factory()->role(UserRole::Support)->create()->can('viewAny', Invoice::class))->toBeFalse()

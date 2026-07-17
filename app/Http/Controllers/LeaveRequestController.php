@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\AttendanceStatus;
 use App\Enums\LeaveRequestStatus;
+use App\Enums\LeaveRequestType;
 use App\Enums\UserRole;
 use App\Http\Requests\StoreLeaveRequestRequest;
 use App\Models\Attendance;
@@ -37,6 +38,7 @@ class LeaveRequestController extends Controller
     {
         $leaveRequest = LeaveRequest::create([
             'user_id' => $request->user()->id,
+            'type' => $request->input('type'),
             'start_date' => $request->date('start_date'),
             'end_date' => $request->date('end_date'),
             'reason' => $request->string('reason'),
@@ -92,7 +94,9 @@ class LeaveRequestController extends Controller
                     'date' => $date,
                 ]);
 
-            $attendance->status = AttendanceStatus::Leave;
+            $attendance->status = $leaveRequest->type === LeaveRequestType::HalfDay
+                ? AttendanceStatus::HalfDay
+                : AttendanceStatus::Leave;
             $attendance->save();
         }
 

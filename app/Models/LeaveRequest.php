@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\LeaveRequestStatus;
+use App\Enums\LeaveRequestType;
 use App\Models\Concerns\LogsActivity;
 use Carbon\CarbonPeriod;
 use Illuminate\Database\Eloquent\Builder;
@@ -15,7 +16,7 @@ class LeaveRequest extends Model
     use HasFactory, LogsActivity;
 
     protected $fillable = [
-        'user_id', 'start_date', 'end_date', 'reason',
+        'user_id', 'type', 'start_date', 'end_date', 'reason',
         'status', 'reviewed_by', 'reviewed_at', 'review_notes',
     ];
 
@@ -26,6 +27,7 @@ class LeaveRequest extends Model
             'end_date' => 'date',
             'reviewed_at' => 'datetime',
             'status' => LeaveRequestStatus::class,
+            'type' => LeaveRequestType::class,
         ];
     }
 
@@ -57,5 +59,14 @@ class LeaveRequest extends Model
             ->map(fn ($date) => $date->toDateString())
             ->values()
             ->all();
+    }
+
+    /**
+     * Number of leave days this request accounts for — a Half Day request
+     * is always a single day counted as 0.5, regardless of business-day count.
+     */
+    public function dayCount(): float
+    {
+        return $this->type === LeaveRequestType::HalfDay ? 0.5 : (float) count($this->businessDays());
     }
 }

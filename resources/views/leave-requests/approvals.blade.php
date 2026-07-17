@@ -13,6 +13,7 @@
                 <thead class="bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
                     <tr>
                         <th class="px-4 py-3">Employee</th>
+                        <th class="px-4 py-3">Type</th>
                         <th class="px-4 py-3">Dates</th>
                         <th class="px-4 py-3">Days</th>
                         <th class="px-4 py-3">Reason</th>
@@ -23,8 +24,9 @@
                     @forelse ($requests as $r)
                         <tr>
                             <td class="px-4 py-2 text-gray-700">{{ $r->user?->name }}</td>
+                            <td class="px-4 py-2 text-gray-600">{{ $r->type->label() }}</td>
                             <td class="px-4 py-2 text-gray-600">{{ $r->start_date->format('d M Y') }} – {{ $r->end_date->format('d M Y') }}</td>
-                            <td class="px-4 py-2 text-gray-600">{{ count($r->businessDays()) }}</td>
+                            <td class="px-4 py-2 text-gray-600">{{ rtrim(rtrim(number_format($r->dayCount(), 1), '0'), '.') }}</td>
                             <td class="px-4 py-2 text-gray-600">{{ $r->reason }}</td>
                             <td class="px-4 py-2">
                                 <div class="flex items-center gap-2">
@@ -43,7 +45,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="5" class="px-4 py-6 text-center text-gray-400">No pending leave requests.</td></tr>
+                        <tr><td colspan="6" class="px-4 py-6 text-center text-gray-400">No pending leave requests.</td></tr>
                     @endforelse
                 </tbody>
             </table>

@@ -2,6 +2,7 @@
 
 use App\Enums\AttendanceStatus;
 use App\Enums\LeaveRequestStatus;
+use App\Enums\LeaveRequestType;
 use App\Enums\UserRole;
 use App\Models\Attendance;
 use App\Models\LeaveRequest;
@@ -25,15 +26,39 @@ it('lets an employee submit a leave request and notifies admin/manager', functio
     $end = $start->copy()->addDay(); // Tuesday
 
     $this->actingAs($this->employee)->post(route('leave-requests.store'), [
+        'type' => LeaveRequestType::FullDay->value,
         'start_date' => $start->toDateString(),
         'end_date' => $end->toDateString(),
         'reason' => 'Family function',
     ])->assertRedirect();
 
     $leaveRequest = LeaveRequest::where('user_id', $this->employee->id)->firstOrFail();
-    expect($leaveRequest->status)->toBe(LeaveRequestStatus::Pending);
+    expect($leaveRequest->status)->toBe(LeaveRequestStatus::Pending)
+        ->and($leaveRequest->type)->toBe(LeaveRequestType::FullDay);
 
     Notification::assertSentTo($this->manager, LeaveRequestSubmitted::class);
+});
+
+it('lets an employee submit a half day leave request, and rejects it for a multi-day range', function () {
+    $start = now()->addWeek()->startOfWeek();
+
+    $this->actingAs($this->employee)->post(route('leave-requests.store'), [
+        'type' => LeaveRequestType::HalfDay->value,
+        'start_date' => $start->toDateString(),
+        'end_date' => $start->toDateString(),
+        'reason' => 'Doctor appointment',
+    ])->assertRedirect();
+
+    $leaveRequest = LeaveRequest::where('user_id', $this->employee->id)->firstOrFail();
+    expect($leaveRequest->type)->toBe(LeaveRequestType::HalfDay)
+        ->and($leaveRequest->dayCount())->toBe(0.5);
+
+    $this->actingAs($this->employee)->post(route('leave-requests.store'), [
+        'type' => LeaveRequestType::HalfDay->value,
+        'start_date' => $start->copy()->addDays(3)->toDateString(),
+        'end_date' => $start->copy()->addDays(4)->toDateString(),
+        'reason' => 'Doctor appointment',
+    ])->assertSessionHasErrors('end_date');
 });
 
 it('rejects an overlapping pending request via validation', function () {
@@ -105,6 +130,31 @@ it('approves a request, marks attendance as Leave for business days only, and no
     expect(Attendance::where('user_id', $this->employee->id)->whereDate('date', $sunday)->exists())->toBeFalse();
 
     Notification::assertSentTo($this->employee, LeaveRequestReviewed::class);
+});
+
+it('approves a half day request and marks attendance as Half Day, not Leave', function () {
+    Notification::fake();
+
+    $monday = now()->addWeek()->startOfWeek();
+    $leaveRequest = LeaveRequest::factory()->create([
+        'user_id' => $this->employee->id,
+        'type' => LeaveRequestType::HalfDay,
+        'start_date' => $monday->toDateString(),
+        'end_date' => $monday->toDateString(),
+    ]);
+
+    $this->actingAs($this->manager)->post(route('leave-requests.approve', $leaveRequest))->assertRedirect();
+
+    $attendance = Attendance::where('user_id', $this->employee->id)->whereDate('date', $monday->toDateString())->first();
+    expect($attendance)->not->toBeNull()
+        ->and($attendance->status)->toBe(AttendanceStatus::HalfDay);
+});
+
+it('shows the reviewer name on a decided leave request', function () {
+    $leaveRequest = LeaveRequest::factory()->create(['user_id' => $this->employee->id]);
+    $this->actingAs($this->manager)->post(route('leave-requests.approve', $leaveRequest))->assertRedirect();
+
+    $this->actingAs($this->employee)->get(route('leave-requests.index'))->assertOk()->assertSee($this->manager->name);
 });
 
 it('rejects a request with notes and leaves attendance untouched', function () {

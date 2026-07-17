@@ -114,6 +114,7 @@ it('leave request submitted: notifies a secondary admin/manager', function () {
 
     $start = now()->addWeek()->startOfWeek();
     $this->actingAs($employee)->post(route('leave-requests.store'), [
+        'type' => \App\Enums\LeaveRequestType::FullDay->value,
         'start_date' => $start->toDateString(),
         'end_date' => $start->copy()->addDay()->toDateString(),
         'reason' => 'Family function',

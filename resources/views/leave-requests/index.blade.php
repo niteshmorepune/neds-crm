@@ -28,8 +28,16 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('leave-requests.store') }}" class="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
+            <form method="POST" action="{{ route('leave-requests.store') }}" class="grid grid-cols-1 sm:grid-cols-5 gap-3 items-end">
                 @csrf
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Leave type</label>
+                    <select name="type" required class="w-full rounded-md border-gray-300 text-sm shadow-sm">
+                        @foreach (\App\Enums\LeaveRequestType::cases() as $type)
+                            <option value="{{ $type->value }}" @selected(old('type') === $type->value)>{{ $type->label() }}</option>
+                        @endforeach
+                    </select>
+                </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1">Start date</label>
                     <input type="date" name="start_date" value="{{ old('start_date') }}" required class="w-full rounded-md border-gray-300 text-sm shadow-sm" />
@@ -42,7 +50,7 @@
                     <label class="block text-xs font-medium text-gray-600 mb-1">Reason</label>
                     <input type="text" name="reason" value="{{ old('reason') }}" required maxlength="500" class="w-full rounded-md border-gray-300 text-sm shadow-sm" />
                 </div>
-                <div class="sm:col-span-4">
+                <div class="sm:col-span-5">
                     <button class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500">Submit Request</button>
                 </div>
             </form>
@@ -52,9 +60,11 @@
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
                     <tr>
+                        <th class="px-4 py-3">Type</th>
                         <th class="px-4 py-3">Dates</th>
                         <th class="px-4 py-3">Reason</th>
                         <th class="px-4 py-3">Status</th>
+                        <th class="px-4 py-3">Reviewed by</th>
                         <th class="px-4 py-3">Reviewer notes</th>
                         <th></th>
                     </tr>
@@ -62,6 +72,7 @@
                 <tbody class="divide-y divide-gray-100">
                     @forelse ($requests as $r)
                         <tr>
+                            <td class="px-4 py-2 text-gray-600">{{ $r->type->label() }}</td>
                             <td class="px-4 py-2 text-gray-700">{{ $r->start_date->format('d M Y') }} – {{ $r->end_date->format('d M Y') }}</td>
                             <td class="px-4 py-2 text-gray-600">{{ $r->reason }}</td>
                             <td class="px-4 py-2">
@@ -72,6 +83,7 @@
                                 })
                                 <span class="inline-block rounded-full border px-2 py-0.5 text-xs font-medium {{ $color }}">{{ $r->status->label() }}</span>
                             </td>
+                            <td class="px-4 py-2 text-gray-500 text-xs">{{ $r->reviewer?->name ?? '—' }}</td>
                             <td class="px-4 py-2 text-gray-500 text-xs">{{ $r->review_notes }}</td>
                             <td class="px-4 py-2">
                                 @if ($r->status->value === 'pending')
@@ -83,7 +95,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="5" class="px-4 py-6 text-center text-gray-400">No leave requests yet.</td></tr>
+                        <tr><td colspan="7" class="px-4 py-6 text-center text-gray-400">No leave requests yet.</td></tr>
                     @endforelse
                 </tbody>
             </table>
