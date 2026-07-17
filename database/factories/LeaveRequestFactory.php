@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Enums\LeaveRequestStatus;
+use App\Enums\LeaveRequestType;
 use App\Models\LeaveRequest;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -20,6 +21,7 @@ class LeaveRequestFactory extends Factory
 
         return [
             'user_id' => User::factory(),
+            'type' => LeaveRequestType::FullDay,
             'start_date' => $start->toDateString(),
             'end_date' => $start->copy()->addDay()->toDateString(),
             'reason' => $this->faker->sentence(),

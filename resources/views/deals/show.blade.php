@@ -117,6 +117,7 @@
                                 @endforeach
                             </select>
                             @if ($deal->stage->isTerminal())
+                                <input type="hidden" name="stage" value="{{ $deal->stage->value }}">
                                 <p class="mt-1 text-xs text-gray-400">{{ $deal->stage->label() }} is final and cannot be changed.</p>
                             @endif
                             <x-input-error :messages="$errors->get('stage')" class="mt-1" />

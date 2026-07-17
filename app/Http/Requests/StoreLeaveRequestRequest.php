@@ -3,8 +3,10 @@
 namespace App\Http\Requests;
 
 use App\Enums\LeaveRequestStatus;
+use App\Enums\LeaveRequestType;
 use App\Models\LeaveRequest;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 class StoreLeaveRequestRequest extends FormRequest
@@ -17,6 +19,7 @@ class StoreLeaveRequestRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'type' => ['required', Rule::enum(LeaveRequestType::class)],
             'start_date' => ['required', 'date', 'after_or_equal:today'],
             'end_date' => ['required', 'date', 'after_or_equal:start_date'],
             'reason' => ['required', 'string', 'max:500'],
@@ -26,6 +29,12 @@ class StoreLeaveRequestRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator) {
+            if ($this->input('type') === LeaveRequestType::HalfDay->value
+                && $this->filled('start_date') && $this->filled('end_date')
+                && $this->input('start_date') !== $this->input('end_date')) {
+                $validator->errors()->add('end_date', 'A half day leave request must be for a single date.');
+            }
+
             if (! $this->filled('start_date') || ! $this->filled('end_date')) {
                 return;
             }

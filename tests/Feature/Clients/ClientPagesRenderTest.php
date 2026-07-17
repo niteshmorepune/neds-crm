@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\DealStage;
 use App\Enums\RecurringFrequency;
 use App\Enums\UserRole;
 use App\Models\Contact;
@@ -70,6 +71,25 @@ it('shows a client feedback summary on the tickets tab when a rating exists', fu
         ->assertOk()
         ->assertSee('avg 5')
         ->assertSee('Great support');
+});
+
+it('offers edit and delete on a Won deal from the client deals tab', function () {
+    $client = Customer::factory()->create();
+    $deal = Deal::factory()->stage(DealStage::Won)->create(['customer_id' => $client->id, 'title' => 'Won Deal']);
+
+    $html = $this->actingAs($this->admin)->get(route('clients.show', $client))->assertOk()->getContent();
+
+    expect($html)->toContain('Won Deal')
+        ->toContain(route('deals.destroy', $deal));
+});
+
+it('deletes a Won deal from the client deals tab', function () {
+    $client = Customer::factory()->create();
+    $deal = Deal::factory()->stage(DealStage::Won)->create(['customer_id' => $client->id]);
+
+    $this->actingAs($this->admin)->delete(route('deals.destroy', $deal))->assertRedirect();
+
+    expect(Deal::find($deal->id))->toBeNull();
 });
 
 it('hides invoice data on the client tab from a role without invoice access', function () {

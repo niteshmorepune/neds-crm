@@ -53,7 +53,7 @@
                             <td class="px-4 py-3 text-gray-600">{{ $invoice->status->label() }}</td>
                             <td class="px-4 py-3 text-right text-gray-600">{{ \App\Support\Money::format($invoice->total) }}</td>
                             <td class="px-4 py-3 text-right text-gray-600">{{ \App\Support\Money::format($invoice->balance()) }}</td>
-                            <td class="px-4 py-3 text-gray-600">{{ $invoice->due_date?->format('d M Y') ?? '—' }}</td>
+                            <td class="px-4 py-3 text-gray-600">{{ $invoice->status === \App\Enums\InvoiceStatus::Paid ? '—' : ($invoice->due_date?->format('d M Y') ?? '—') }}</td>
                             <td class="px-4 py-3 text-right">
                                 <a href="{{ route('invoices.show', $invoice) }}" class="text-gray-500 hover:text-gray-700">View</a>
                             </td>
