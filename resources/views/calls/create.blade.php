@@ -7,6 +7,38 @@
               x-data="{
                   outcome: '{{ old('outcome', '') }}',
                   showFollowUp: {{ old('follow_up_at') ? 'true' : 'false' }},
+                  dictating: false,
+                  dictationSupported: 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window,
+                  recognition: null,
+                  toggleDictation() {
+                      if (! this.dictationSupported) return;
+                      if (this.dictating) {
+                          this.recognition?.stop();
+                          return;
+                      }
+                      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                      this.recognition = new SpeechRecognition();
+                      this.recognition.lang = 'en-IN';
+                      this.recognition.continuous = true;
+                      this.recognition.interimResults = false;
+                      this.recognition.onresult = (event) => {
+                          let transcript = '';
+                          for (let i = event.resultIndex; i < event.results.length; i++) {
+                              if (event.results[i].isFinal) {
+                                  transcript += event.results[i][0].transcript;
+                              }
+                          }
+                          transcript = transcript.trim();
+                          if (transcript) {
+                              const notes = document.getElementById('notes');
+                              notes.value = (notes.value.trim() ? notes.value.trim() + ' ' : '') + transcript;
+                          }
+                      };
+                      this.recognition.onerror = () => { this.dictating = false; };
+                      this.recognition.onend = () => { this.dictating = false; };
+                      this.recognition.start();
+                      this.dictating = true;
+                  },
               }"
               x-init="$watch('outcome', val => {
                   if (['no_answer','busy','follow_up_needed'].includes(val)) showFollowUp = true;
@@ -55,8 +87,21 @@
                 <x-input-error :messages="$errors->get('called_at')" class="mt-1" />
             </div>
             <div class="md:col-span-2">
-                <x-input-label for="notes" value="Notes" />
+                <div class="flex items-center justify-between">
+                    <x-input-label for="notes" value="Notes" />
+                    <button type="button" x-show="dictationSupported" x-cloak @click="toggleDictation()"
+                            class="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium transition-colors"
+                            :class="dictating ? 'bg-red-50 text-red-600' : 'text-indigo-600 hover:bg-indigo-50'">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 15a3 3 0 003-3V6a3 3 0 10-6 0v6a3 3 0 003 3z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-14 0M12 18v3" />
+                        </svg>
+                        <span x-show="!dictating">Dictate</span>
+                        <span x-show="dictating">Listening… (click to stop)</span>
+                    </button>
+                </div>
                 <textarea id="notes" name="notes" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">{{ old('notes') }}</textarea>
+                <p x-show="dictationSupported" x-cloak class="mt-1 text-xs text-gray-400">Speak your notes instead of typing — review and edit before saving.</p>
             </div>
 
             {{-- Follow-up reminder --}}
