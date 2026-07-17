@@ -73,12 +73,15 @@ there's no conflict and nothing to undo if both are recorded.
 Your manager can see attendance, and it feeds the performance reports.
 
 ## 5a. Requesting leave
-Open **Leave Requests** in the sidebar to apply: pick a start date, end date,
-and a short reason, then submit. Any admin or manager can approve or reject
-it — you'll get a bell notification either way. Once approved, your
-attendance for those days is automatically marked **Leave** (Sundays are
-skipped since they're not office days). You can cancel a request yourself as
-long as it's still pending.
+Open **Leave Requests** in the sidebar to apply: pick a **leave type** (Full
+Day or Half Day), a start date, end date, and a short reason, then submit. A
+Half Day request must be for a single date — start and end date must match.
+Any admin or manager can approve or reject it — you'll get a bell
+notification either way, and once decided, your own Leave Requests list
+shows who reviewed it. Once approved, your attendance for those days is
+automatically marked **Leave** (or **Half Day** for a half-day request) —
+Sundays are skipped since they're not office days. You can cancel a request
+yourself as long as it's still pending.
 
 ## 6. Daily report — end of day
 At the end of the day, open **Daily Reports** and submit a short "what I did

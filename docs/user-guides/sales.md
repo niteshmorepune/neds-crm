@@ -98,8 +98,14 @@ The **Sales Department** board shows your deals in columns by stage:
 
 - **Drag a deal** to the next column as it progresses (or open it and change the
   stage).
-- Won and Lost are final — once set, a deal stays there.
+- Won and Lost are final — once set, a deal's **stage** can't change again.
+  Its **Value** can still be corrected afterwards, though (e.g. if the final
+  amount was entered wrong) — every report, dashboard, and revenue figure
+  picks up the corrected number automatically.
 - A **won** deal can become a **Project** for the delivery team.
+- On a **Client's** page, the **Deals** tab has Edit/Delete links for every
+  deal, including Won ones — handy for fixing a value or removing a
+  duplicate without leaving the client's profile.
 - **Referred by** — if a deal came to NEDS through a partner agency rather than
   directly, open the deal and set the **Referred by** dropdown to that agency.
   Leave it as "Direct (no agency)" for clients who came to NEDS on their own.
