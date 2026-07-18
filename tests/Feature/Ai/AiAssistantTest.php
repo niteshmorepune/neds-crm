@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\CrmQueryType;
 use App\Enums\TicketPriority;
 use App\Models\AiUsage;
 use App\Models\Customer;
@@ -222,6 +223,46 @@ it('returns null for ticket triage when the model reply has no usable priority',
     fakeAiText('{"priority": "critical", "service": "SEO", "reason": "Bad enum value."}');
 
     expect(app(AiAssistant::class)->suggestTicketTriage($customer, 'A ticket', 'Description'))->toBeNull();
+});
+
+it('classifies a CRM question into one of the known query types', function () {
+    aiOn();
+    fakeAiText('{"query_type": "client_radar"}');
+
+    expect(app(AiAssistant::class)->classifyCrmQuestion('Which clients are at risk this month?'))
+        ->toBe(CrmQueryType::ClientRadar);
+});
+
+it('returns null when the CRM question is unsupported or unclassifiable', function () {
+    aiOn();
+    fakeAiText('{"query_type": "unsupported"}');
+
+    expect(app(AiAssistant::class)->classifyCrmQuestion('What is the meaning of life?'))->toBeNull();
+});
+
+it('returns null when the CRM classifier replies with a made-up query type', function () {
+    aiOn();
+    fakeAiText('{"query_type": "employee_salaries"}');
+
+    expect(app(AiAssistant::class)->classifyCrmQuestion('How much do we pay staff?'))->toBeNull();
+});
+
+it('narrates a CRM answer grounded only in the given figures', function () {
+    aiOn();
+    fakeAiText('Two clients need a check-in: Acme (overdue invoice) and Beta (no contact).');
+
+    $answer = app(AiAssistant::class)->narrateCrmAnswer(
+        'Which clients are at risk?',
+        CrmQueryType::ClientRadar,
+        [
+            ['label' => 'Clients flagged', 'value' => '2'],
+            ['label' => 'Acme', 'value' => 'Overdue Invoice'],
+            ['label' => 'Beta', 'value' => 'No Contact'],
+        ]
+    );
+
+    expect($answer)->toContain('Acme')->toContain('Beta');
+    expect(AiUsage::where('feature', 'crm_query_answer')->exists())->toBeTrue();
 });
 
 it('returns null (not an exception) when the API fails', function () {

@@ -119,6 +119,13 @@ class ReportController extends Controller
         });
     }
 
+    public function askTheCrm(Request $request): View
+    {
+        $this->authorizePerformance($request);
+
+        return view('reports.ask');
+    }
+
     public function leadSources(Request $request): View
     {
         $this->authorizePerformance($request);

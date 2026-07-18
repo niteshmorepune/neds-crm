@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\CrmQueryType;
 use App\Enums\InvoiceStatus;
 use App\Enums\TicketPriority;
 use App\Models\Customer;
@@ -651,6 +652,87 @@ class AiAssistant
             prompt: $prompt,
             system: $system,
             maxTokens: 400,
+        ));
+    }
+
+    /**
+     * "Ask the CRM" step 1 of 2 — maps a free-text business question to one
+     * of the bounded CrmQueryType cases (or null if none fit), so the
+     * caller knows which REAL metrics-service method to call next. This
+     * call never sees any business data — only the question text and the
+     * catalog's own descriptions — and never produces the final answer
+     * itself; that's narrateCrmAnswer()'s job, once real numbers exist.
+     */
+    public function classifyCrmQuestion(string $question): ?CrmQueryType
+    {
+        if (! Ai::enabled()) {
+            return null;
+        }
+
+        $catalog = collect(CrmQueryType::cases())
+            ->map(fn (CrmQueryType $t) => "- {$t->value}: {$t->description()}")
+            ->implode("\n");
+
+        $system = <<<PROMPT
+        You classify a business question asked inside a CRM into ONE of the
+        following report types, based only on what it's actually asking:
+
+        {$catalog}
+
+        If the question doesn't clearly match any of these — including
+        anything about a specific individual client's private details
+        rather than an aggregate report, or anything unrelated to this
+        business — respond with "unsupported".
+
+        Respond with ONLY a JSON object, no markdown, no prose:
+        {"query_type": "<one exact key from the list above, or \"unsupported\">"}
+        PROMPT;
+
+        $result = $this->client->message(feature: 'crm_query_classify', prompt: $question, system: $system, maxTokens: 100);
+
+        if ($result === null || ! preg_match('/\{.*\}/s', $result->text, $match)) {
+            return null;
+        }
+
+        $decoded = json_decode($match[0], true);
+        $value = is_array($decoded) && is_string($decoded['query_type'] ?? null) ? trim($decoded['query_type']) : null;
+
+        return $value !== null ? CrmQueryType::tryFrom($value) : null;
+    }
+
+    /**
+     * "Ask the CRM" step 2 of 2 — answers the original question using ONLY
+     * the pre-formatted {label, value} rows CrmQueryCatalog computed from
+     * real data (the exact same rows shown in the UI's figures table, so
+     * the narration can never drift from what the person can see on
+     * screen). No business data is assembled here; it only narrates.
+     *
+     * @param  list<array{label: string, value: string}>  $figures
+     */
+    public function narrateCrmAnswer(string $question, CrmQueryType $type, array $figures): ?string
+    {
+        if (! Ai::enabled()) {
+            return null;
+        }
+
+        $lines = array_map(fn ($f) => "{$f['label']}: {$f['value']}", $figures);
+
+        $system = <<<'PROMPT'
+        You answer a staff member's business question inside a CRM for a
+        digital-solutions agency in India, using ONLY the figures given
+        below — never invent a number, name, or trend not evidenced by
+        them. If the figures don't fully answer the question, say what
+        they do show rather than guessing at the rest. Keep the answer to
+        2-3 sentences. Output only the answer.
+        PROMPT;
+
+        $prompt = "Report: {$type->label()}\n\nFigures:\n".implode("\n", $lines)."\n\nQuestion: {$question}";
+
+        return $this->trimmed($this->client->message(
+            feature: 'crm_query_answer',
+            prompt: $prompt,
+            system: $system,
+            maxTokens: 300,
         ));
     }
 
