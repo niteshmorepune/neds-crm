@@ -119,6 +119,13 @@
                         <x-text-input id="company_monthly_target" name="company_monthly_target" type="number" step="0.01" min="0"
                                       class="mt-1 block w-48"
                                       :value="isset($targetProgress['monthly']['target']) ? \App\Support\Money::toRupees($targetProgress['monthly']['target']) : null" />
+                        @if (! isset($targetProgress['monthly']['target']) && ($suggestedTargets['company'] ?? null) !== null)
+                            <button type="button"
+                                    onclick="document.getElementById('company_monthly_target').value = {{ \App\Support\Money::toRupees($suggestedTargets['company']) }}"
+                                    class="mt-1 text-xs text-indigo-600 hover:underline">
+                                Suggested: {{ \App\Support\Money::format($suggestedTargets['company']) }} (last 3 months avg. +10%)
+                            </button>
+                        @endif
                     </div>
                     <div>
                         <x-input-label for="company_fy_target" value="Company target — this FY (₹)" />
@@ -150,8 +157,17 @@
                                 <td class="px-4 py-2 text-gray-700">{{ \App\Support\Money::format($row['won_this_month_value']) }}</td>
                                 <td class="px-4 py-2">
                                     <x-text-input type="number" step="0.01" min="0" class="block w-32"
+                                                  id="rep_target_{{ $row['user']->id }}"
                                                   name="rep_targets[{{ $row['user']->id }}]"
                                                   :value="$row['target_value'] ? \App\Support\Money::toRupees($row['target_value']) : null" />
+                                    @php $suggested = $row['target_value'] ? null : ($suggestedTargets['reps'][$row['user']->id] ?? null); @endphp
+                                    @if ($suggested !== null)
+                                        <button type="button"
+                                                onclick="document.getElementById('rep_target_{{ $row['user']->id }}').value = {{ \App\Support\Money::toRupees($suggested) }}"
+                                                class="mt-0.5 block text-xs text-indigo-600 hover:underline">
+                                            Suggested: {{ \App\Support\Money::format($suggested) }}
+                                        </button>
+                                    @endif
                                 </td>
                                 <td class="px-4 py-2 text-gray-700">{{ $row['target_pct'] !== null ? $row['target_pct'].'%' : '—' }}</td>
                                 <td class="px-4 py-2 text-gray-700">{{ $row['win_rate'] !== null ? $row['win_rate'].'%' : '—' }}</td>

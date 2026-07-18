@@ -35,6 +35,13 @@ class SalesPipelineMetrics
      */
     private const MIN_DWELL_SAMPLE = 3;
 
+    /** Trailing window + stretch for suggestedTargets() — see its docblock. */
+    private const SUGGESTION_TRAILING_MONTHS = 3;
+
+    private const SUGGESTION_MIN_MONTHS_WITH_DATA = 2;
+
+    private const SUGGESTION_STRETCH_PCT = 10;
+
     /**
      * KPI strip figures. Scoped by the same visibleTo() rule as the board
      * itself, so Sales reps see their own numbers and Admin/Manager see the
@@ -355,6 +362,67 @@ class SalesPipelineMetrics
                 'avg_deal_size' => $won->isNotEmpty() ? (int) round($won->avg('value')) : null,
             ];
         })->all();
+    }
+
+    /**
+     * Data-suggested monthly targets — trailing 3 full calendar months'
+     * average won value (the current, still-in-progress month is
+     * deliberately excluded so a partial month never drags the average
+     * down), plus a 10% stretch, so the target form isn't just a blank box.
+     * Confirmed formula with the owner via AskUserQuestion rather than
+     * picking one unasked, since this number sits right in front of a rep.
+     * Company and each active rep get their own figure from the same
+     * underlying won-deals query (company = every rep's deals, a rep's own
+     * = just theirs) so the two can never disagree on the input data.
+     *
+     * Deliberately monthly-only — no FY suggestion. A financial-year figure
+     * needs a materially longer history to mean anything, and this method's
+     * 3-month window is already the app's youngest realistic baseline.
+     *
+     * @return array{company: int|null, reps: array<int, int|null>}
+     */
+    public function suggestedTargets(): array
+    {
+        $start = now()->startOfMonth()->subMonths(self::SUGGESTION_TRAILING_MONTHS);
+        $end = now()->startOfMonth();
+
+        $wonDeals = Deal::query()
+            ->where('stage', DealStage::Won->value)
+            ->whereNotNull('won_at')
+            ->whereBetween('won_at', [$start, $end])
+            ->get(['owner_id', 'value', 'won_at']);
+
+        $reps = User::query()->where('is_active', true)->withAnyRole(UserRole::Sales)->get(['id']);
+
+        return [
+            'company' => $this->suggestFromWonDeals($wonDeals),
+            'reps' => $reps->mapWithKeys(
+                fn (User $rep) => [$rep->id => $this->suggestFromWonDeals($wonDeals->where('owner_id', $rep->id))]
+            )->all(),
+        ];
+    }
+
+    /**
+     * A month with zero won deals still counts as a $0 month in the
+     * average (the denominator is always SUGGESTION_TRAILING_MONTHS) — that
+     * IS the trailing average. The gate below only blocks a suggestion when
+     * so little of the window has any activity at all that even that
+     * average would be misleading (e.g. one lucky month out of three).
+     */
+    private function suggestFromWonDeals(Collection $wonDeals): ?int
+    {
+        $monthsWithData = $wonDeals
+            ->groupBy(fn (Deal $deal) => $deal->won_at->format('Y-m'))
+            ->filter(fn (Collection $month) => $month->sum('value') > 0)
+            ->count();
+
+        if ($monthsWithData < self::SUGGESTION_MIN_MONTHS_WITH_DATA) {
+            return null;
+        }
+
+        $average = $wonDeals->sum('value') / self::SUGGESTION_TRAILING_MONTHS;
+
+        return (int) round($average * (1 + self::SUGGESTION_STRETCH_PCT / 100));
     }
 
     /**
