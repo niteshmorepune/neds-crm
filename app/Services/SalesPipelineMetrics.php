@@ -25,6 +25,17 @@ class SalesPipelineMetrics
     private const STALE_STAGE_DAYS = 10;
 
     /**
+     * Coaching-note specifics need fewer completed dwell periods to be
+     * meaningful than a hard KPI does — MIN_CONVERSION_SAMPLE counts DEALS
+     * entering a stage (a much more common event); this counts completed
+     * dwell periods (a deal entering AND later leaving a stage), which
+     * accumulate slower. Kept as its own constant rather than reusing
+     * MIN_CONVERSION_SAMPLE since the two measure different things and may
+     * want to diverge later.
+     */
+    private const MIN_DWELL_SAMPLE = 3;
+
+    /**
      * KPI strip figures. Scoped by the same visibleTo() rule as the board
      * itself, so Sales reps see their own numbers and Admin/Manager see the
      * whole pipeline — unlike the company-wide, date-ranged win rate/avg
@@ -126,6 +137,87 @@ class SalesPipelineMetrics
         }
 
         return $pairs;
+    }
+
+    /**
+     * Per-rep average days spent in each non-terminal stage before moving
+     * on, alongside the team-wide average for the same stage — gives the
+     * Team Performance Summary AI narration a concrete specific ("stalls
+     * longest in Negotiation, 18 days vs the team's 9") instead of vague
+     * "might need support" language. A dwell period is the time between a
+     * deal entering a stage and the NEXT transition on that same deal —
+     * built from deal_stage_transitions, which only accumulates forward
+     * from when that feature shipped (2026-07-16), same caveat as
+     * stageConversion(). Deliberately unscoped (Admin/Manager-only caller,
+     * same as repLeaderboard()) — a coaching summary needs every rep's
+     * numbers, not just the viewer's own.
+     *
+     * @return array<int, array<string, array{rep_avg_days: float, rep_sample: int, team_avg_days: float, team_sample: int}>>
+     *                                                                                                                        keyed by rep user id, then DealStage value — a stage is only
+     *                                                                                                                        present for a rep once both that rep's AND the team's sample
+     *                                                                                                                        reach MIN_DWELL_SAMPLE, so a young dataset simply omits
+     *                                                                                                                        everyone rather than showing a shaky number.
+     */
+    public function repStageDwellTimes(): array
+    {
+        $nonTerminal = collect(DealStage::cases())->reject(fn (DealStage $s) => $s->isTerminal())->map(fn (DealStage $s) => $s->value);
+
+        $transitions = DealStageTransition::query()
+            ->with('deal:id,owner_id')
+            ->orderBy('deal_id')
+            ->orderBy('created_at')
+            ->get(['deal_id', 'to_stage', 'created_at']);
+
+        // teamDwells[stage] = list<float days>; repDwells[owner_id][stage] = list<float days>
+        $teamDwells = [];
+        $repDwells = [];
+
+        foreach ($transitions->groupBy('deal_id') as $dealTransitions) {
+            $ownerId = $dealTransitions->first()->deal?->owner_id;
+            $ordered = $dealTransitions->values();
+
+            for ($i = 0; $i < $ordered->count() - 1; $i++) {
+                $current = $ordered[$i];
+                $next = $ordered[$i + 1];
+
+                if (! $nonTerminal->contains($current->to_stage->value)) {
+                    continue;
+                }
+
+                $days = $current->created_at->diffInHours($next->created_at) / 24;
+
+                $teamDwells[$current->to_stage->value][] = $days;
+
+                if ($ownerId !== null) {
+                    $repDwells[$ownerId][$current->to_stage->value][] = $days;
+                }
+            }
+        }
+
+        $teamAverages = [];
+        foreach ($teamDwells as $stage => $days) {
+            if (count($days) >= self::MIN_DWELL_SAMPLE) {
+                $teamAverages[$stage] = ['avg' => array_sum($days) / count($days), 'sample' => count($days)];
+            }
+        }
+
+        $result = [];
+        foreach ($repDwells as $ownerId => $stages) {
+            foreach ($stages as $stage => $days) {
+                if (count($days) < self::MIN_DWELL_SAMPLE || ! isset($teamAverages[$stage])) {
+                    continue;
+                }
+
+                $result[$ownerId][$stage] = [
+                    'rep_avg_days' => round(array_sum($days) / count($days), 1),
+                    'rep_sample' => count($days),
+                    'team_avg_days' => round($teamAverages[$stage]['avg'], 1),
+                    'team_sample' => $teamAverages[$stage]['sample'],
+                ];
+            }
+        }
+
+        return $result;
     }
 
     /**

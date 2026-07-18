@@ -409,7 +409,13 @@ generated only from that person's own tasks/follow-ups.
 
 **Team performance summary (✨ Generate AI Summary)** — a button on the
 **Employee Performance Report** (Reports panel) that turns the existing
-tasks/calls/attendance numbers into a narrative of trends and standouts.
+tasks/calls/attendance numbers into a narrative of trends and standouts. For
+a Sales rep, once there's enough pipeline history it also names specific
+stages where that rep's deals move slower than the team average (e.g.
+"averages 18 days in Negotiation before moving a deal on, against the
+team's 9 days") — a concrete coaching point instead of a vague "needs
+support" line. This only appears once a rep has at least 3 completed stage
+transitions to measure, so it may not show for a while on a newer pipeline.
 **Visible to Admin/Manager only** — it is never shown to the employee it's
 about, so it's a starting point for a conversation, not a rating you share.
 

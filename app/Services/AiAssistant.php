@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\CrmQueryType;
+use App\Enums\DealStage;
 use App\Enums\InvoiceStatus;
 use App\Enums\TicketPriority;
 use App\Models\Customer;
@@ -352,8 +353,11 @@ class AiAssistant
      * to the employee it's about.
      *
      * @param  Collection<int, array<string, mixed>>  $rows  Same shape as ReportMetrics::employeePerformance().
+     * @param  array<int, array<string, array{rep_avg_days: float, rep_sample: int, team_avg_days: float, team_sample: int}>>  $dwellTimes
+     *                                                                                                                                      SalesPipelineMetrics::repStageDwellTimes() — keyed by user_id, only present for reps/stages with
+     *                                                                                                                                      enough data. Turns a vague "might need support" line into a specific, actionable one for Sales reps.
      */
-    public function summarizeTeamPerformance(Collection $rows, Carbon $from, Carbon $to): ?string
+    public function summarizeTeamPerformance(Collection $rows, Carbon $from, Carbon $to, array $dwellTimes = []): ?string
     {
         if (! Ai::enabled()) {
             return null;
@@ -361,7 +365,7 @@ class AiAssistant
 
         $lines = [];
         foreach ($rows as $row) {
-            $lines[] = sprintf(
+            $line = sprintf(
                 '- %s (%s): %d tasks completed, on-time %s%%, %d calls, %d leads converted, attendance %s%%, %d daily reports',
                 $row['user'],
                 $row['role'],
@@ -372,6 +376,17 @@ class AiAssistant
                 $row['attendance_pct'] ?? 'n/a',
                 $row['daily_reports'],
             );
+
+            foreach ($dwellTimes[$row['user_id']] ?? [] as $stage => $stat) {
+                $line .= sprintf(
+                    '; averages %s days in the %s stage before moving a deal on (team average %s days)',
+                    $stat['rep_avg_days'],
+                    DealStage::from($stage)->label(),
+                    $stat['team_avg_days'],
+                );
+            }
+
+            $lines[] = $line;
         }
 
         $system = <<<'PROMPT'
@@ -380,8 +395,12 @@ class AiAssistant
         ONLY on the numbers given — never invent a cause, reason, or context not
         evidenced by the data. Give 4-6 bullet points covering: notable trends,
         standout performers (positive), and anyone whose numbers suggest they may
-        need support or follow-up (frame this as an observation, not a
-        judgement). Output only the bullet points.
+        need support or follow-up. When a Sales rep's line includes a stage-dwell
+        figure that is meaningfully higher than that stage's team average, name
+        the specific stage and both numbers as a concrete coaching point instead
+        of a vague "needs support" comment — that is exactly the kind of specific,
+        actionable observation to prioritise. Frame every observation neutrally,
+        not as a judgement. Output only the bullet points.
         PROMPT;
 
         $prompt = "Period: {$from->format('d M Y')} - {$to->format('d M Y')}\n\n".implode("\n", $lines);

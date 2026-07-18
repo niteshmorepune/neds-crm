@@ -66,6 +66,7 @@ class ReportMetrics
             }, 0.0);
 
             return [
+                'user_id' => $user->id,
                 'user' => $user->name,
                 'role' => $user->role->label(),
                 'tasks_completed' => $completedCount,
