@@ -14,7 +14,7 @@
 
         <p class="text-sm text-gray-500">{{ $from->format('M Y') }} — which AI features the team is actually using, and a rough sense of what it costs.</p>
 
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-4">
             <div class="rounded-lg bg-white p-5 shadow-sm">
                 <p class="text-sm text-gray-500">AI calls this month</p>
                 <p class="mt-2 text-2xl font-semibold text-gray-900">{{ $data['total_calls'] }}</p>
@@ -30,6 +30,18 @@
                 <p class="mt-2 text-2xl font-semibold text-gray-900">{{ number_format($data['total_input_tokens'] + $data['total_output_tokens']) }}</p>
                 <p class="text-xs text-gray-400">{{ number_format($data['total_input_tokens']) }} in / {{ number_format($data['total_output_tokens']) }} out</p>
             </div>
+            <div class="rounded-lg bg-white p-5 shadow-sm">
+                <p class="text-sm text-gray-500">Feedback given</p>
+                @if ($data['total_feedback_up'] + $data['total_feedback_down'] > 0)
+                    <p class="mt-2 text-2xl font-semibold text-gray-900">
+                        <span class="text-green-600">{{ $data['total_feedback_up'] }}</span> / <span class="text-red-500">{{ $data['total_feedback_down'] }}</span>
+                    </p>
+                    <p class="text-xs text-gray-400">helpful / not helpful clicks</p>
+                @else
+                    <p class="mt-2 text-2xl font-semibold text-gray-300">—</p>
+                    <p class="text-xs text-gray-400">no one's rated a draft yet</p>
+                @endif
+            </div>
         </div>
 
         <div class="rounded-lg bg-white p-6 shadow-sm">
@@ -42,6 +54,7 @@
                         <th class="py-2 text-right">Input tokens</th>
                         <th class="py-2 text-right">Output tokens</th>
                         <th class="py-2 text-right">Est. cost</th>
+                        <th class="py-2 text-right">Feedback</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -52,9 +65,16 @@
                             <td class="py-2 text-right text-gray-600">{{ number_format($r['input_tokens']) }}</td>
                             <td class="py-2 text-right text-gray-600">{{ number_format($r['output_tokens']) }}</td>
                             <td class="py-2 text-right font-medium text-gray-900">{{ \App\Support\Money::format($r['estimated_cost_paise']) }}</td>
+                            <td class="py-2 text-right text-gray-600">
+                                @if ($r['feedback_up'] + $r['feedback_down'] > 0)
+                                    <span class="text-green-600">{{ $r['feedback_up'] }}</span> / <span class="text-red-500">{{ $r['feedback_down'] }}</span>
+                                @else
+                                    —
+                                @endif
+                            </td>
                         </tr>
                     @empty
-                        <tr><td colspan="5" class="py-6 text-center text-gray-400">No AI calls recorded in this period.</td></tr>
+                        <tr><td colspan="6" class="py-6 text-center text-gray-400">No AI calls recorded in this period.</td></tr>
                     @endforelse
                 </tbody>
                 @if (! empty($data['by_feature']))
@@ -65,12 +85,19 @@
                             <td class="py-2 text-right">{{ number_format($data['total_input_tokens']) }}</td>
                             <td class="py-2 text-right">{{ number_format($data['total_output_tokens']) }}</td>
                             <td class="py-2 text-right">{{ \App\Support\Money::format($data['estimated_cost_paise']) }}</td>
+                            <td class="py-2 text-right">
+                                @if ($data['total_feedback_up'] + $data['total_feedback_down'] > 0)
+                                    <span class="text-green-600">{{ $data['total_feedback_up'] }}</span> / <span class="text-red-500">{{ $data['total_feedback_down'] }}</span>
+                                @else
+                                    —
+                                @endif
+                            </td>
                         </tr>
                     </tfoot>
                 @endif
             </table>
         </div>
 
-        <p class="text-xs text-gray-400">Cost is a rough estimate from a configured ₹-per-token rate, not a bill from Anthropic — useful for spotting trends and unused features, not for accounting.</p>
+        <p class="text-xs text-gray-400">Cost is a rough estimate from a configured ₹-per-token rate, not a bill from Anthropic — useful for spotting trends and unused features, not for accounting. Feedback is an optional "Helpful / Not helpful" click a person can leave after actually looking at what a feature produced — most calls will have none, that's normal.</p>
     </div>
 </x-app-layout>

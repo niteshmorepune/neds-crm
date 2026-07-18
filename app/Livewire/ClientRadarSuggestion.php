@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Enums\UserRole;
+use App\Livewire\Concerns\RatesAiDrafts;
 use App\Models\Customer;
 use App\Models\Ticket;
 use App\Services\AiAssistant;
@@ -11,6 +12,8 @@ use Livewire\Component;
 
 class ClientRadarSuggestion extends Component
 {
+    use RatesAiDrafts;
+
     public int $customerId;
 
     /** @var array<string, array{label: string, detail: string, ticket_id?: int}> */
@@ -26,6 +29,14 @@ class ClientRadarSuggestion extends Component
 
     /** Ephemeral CSAT recovery message draft (never persisted). */
     public ?string $recoveryDraft = null;
+
+    public ?int $suggestionUsageId = null;
+
+    public ?string $suggestionFeedback = null;
+
+    public ?int $recoveryUsageId = null;
+
+    public ?string $recoveryFeedback = null;
 
     /**
      * @param  array<string, array{label: string, detail: string, ticket_id?: int}>  $flags
@@ -48,13 +59,23 @@ class ClientRadarSuggestion extends Component
 
         $customer = Customer::findOrFail($this->customerId);
 
+        $this->suggestionFeedback = null;
         $this->suggestion = $ai->suggestClientAction($customer, $this->flags)
             ?? 'Could not generate a suggestion right now. Please try again.';
+        $this->suggestionUsageId = $ai->lastUsageId;
+    }
+
+    public function rateSuggestion(string $direction): void
+    {
+        $this->recordAiFeedback($this->suggestionUsageId, $direction);
+        $this->suggestionFeedback = $direction;
     }
 
     public function dismiss(): void
     {
         $this->suggestion = null;
+        $this->suggestionUsageId = null;
+        $this->suggestionFeedback = null;
     }
 
     public function draftRecovery(AiAssistant $ai): void
@@ -66,13 +87,23 @@ class ClientRadarSuggestion extends Component
 
         $ticket = Ticket::with('customer')->findOrFail($this->lowSatisfactionTicketId);
 
+        $this->recoveryFeedback = null;
         $this->recoveryDraft = $ai->draftCsatRecoveryMessage($ticket)
             ?? 'Could not draft a recovery message right now. Please try again.';
+        $this->recoveryUsageId = $ai->lastUsageId;
+    }
+
+    public function rateRecovery(string $direction): void
+    {
+        $this->recordAiFeedback($this->recoveryUsageId, $direction);
+        $this->recoveryFeedback = $direction;
     }
 
     public function dismissRecovery(): void
     {
         $this->recoveryDraft = null;
+        $this->recoveryUsageId = null;
+        $this->recoveryFeedback = null;
     }
 
     public function render()

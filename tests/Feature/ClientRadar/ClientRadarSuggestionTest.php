@@ -2,6 +2,7 @@
 
 use App\Enums\UserRole;
 use App\Livewire\ClientRadarSuggestion;
+use App\Models\AiUsage;
 use App\Models\Customer;
 use App\Models\Ticket;
 use App\Models\User;
@@ -26,8 +27,13 @@ it('lets an admin generate and dismiss a client radar suggestion', function () {
         ])
         ->call('generate')
         ->assertSet('suggestion', 'Call them this week to check in.')
+        ->call('rateSuggestion', 'up')
+        ->assertSet('suggestionFeedback', 'up')
         ->call('dismiss')
-        ->assertSet('suggestion', null);
+        ->assertSet('suggestion', null)
+        ->assertSet('suggestionUsageId', null);
+
+    expect(AiUsage::where('feature', 'client_radar_suggestion')->value('feedback'))->toBe('up');
 });
 
 it('forbids a non-manager from generating a client radar suggestion', function () {
@@ -64,8 +70,13 @@ it('lets an admin draft and dismiss a CSAT recovery message for the flagged tick
         ->assertSee('Draft recovery message')
         ->call('draftRecovery')
         ->assertSet('recoveryDraft', "I'm sorry to hear that — let's talk this week.")
+        ->call('rateRecovery', 'down')
+        ->assertSet('recoveryFeedback', 'down')
         ->call('dismissRecovery')
-        ->assertSet('recoveryDraft', null);
+        ->assertSet('recoveryDraft', null)
+        ->assertSet('recoveryUsageId', null);
+
+    expect(AiUsage::where('feature', 'csat_recovery_message')->value('feedback'))->toBe('down');
 });
 
 it('does not offer a recovery draft when there is no low satisfaction flag', function () {

@@ -5,6 +5,9 @@
                       placeholder="Add a note… use @name to mention a teammate"
                       class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
             @error('body') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
+            @if ($draftUsageId)
+                <x-ai-feedback method="rateDraft" :value="$draftFeedback" />
+            @endif
             <div class="mt-2 flex items-center justify-between gap-2">
                 <div class="flex items-center gap-2">
                     @if ($showPortalToggle)

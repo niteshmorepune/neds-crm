@@ -18,7 +18,9 @@ class AiUsageMetrics
      *     total_input_tokens: int,
      *     total_output_tokens: int,
      *     estimated_cost_paise: int,
-     *     by_feature: list<array{feature: string, label: string, calls: int, input_tokens: int, output_tokens: int, estimated_cost_paise: int}>,
+     *     total_feedback_up: int,
+     *     total_feedback_down: int,
+     *     by_feature: list<array{feature: string, label: string, calls: int, input_tokens: int, output_tokens: int, estimated_cost_paise: int, feedback_up: int, feedback_down: int}>,
      * }
      */
     public function monthly(Carbon $from, Carbon $to): array
@@ -44,6 +46,8 @@ class AiUsageMetrics
                     'input_tokens' => 0,
                     'output_tokens' => 0,
                     'estimated_cost_paise' => 0,
+                    'feedback_up' => 0,
+                    'feedback_down' => 0,
                 ];
             }
 
@@ -53,6 +57,28 @@ class AiUsageMetrics
             $byFeature[$row->feature]['estimated_cost_paise'] += $costPaise;
         }
 
+        // One optional click after someone's actually looked at a draft/answer
+        // (RatesAiDrafts) — a real quality signal per feature, not just a call
+        // count. Most calls will have no feedback at all; that's expected.
+        $feedbackCounts = AiUsage::query()
+            ->whereBetween('created_at', [$from, $to])
+            ->whereNotNull('feedback')
+            ->selectRaw('feature, feedback, count(*) as total')
+            ->groupBy('feature', 'feedback')
+            ->get();
+
+        foreach ($feedbackCounts as $row) {
+            if (! isset($byFeature[$row->feature])) {
+                continue;
+            }
+
+            if ($row->feedback === 'up') {
+                $byFeature[$row->feature]['feedback_up'] += (int) $row->total;
+            } elseif ($row->feedback === 'down') {
+                $byFeature[$row->feature]['feedback_down'] += (int) $row->total;
+            }
+        }
+
         $byFeature = collect($byFeature)->sortByDesc('calls')->values()->all();
 
         return [
@@ -60,6 +86,8 @@ class AiUsageMetrics
             'total_input_tokens' => array_sum(array_column($byFeature, 'input_tokens')),
             'total_output_tokens' => array_sum(array_column($byFeature, 'output_tokens')),
             'estimated_cost_paise' => array_sum(array_column($byFeature, 'estimated_cost_paise')),
+            'total_feedback_up' => array_sum(array_column($byFeature, 'feedback_up')),
+            'total_feedback_down' => array_sum(array_column($byFeature, 'feedback_down')),
             'by_feature' => $byFeature,
         ];
     }
@@ -95,6 +123,11 @@ class AiUsageMetrics
             'team_performance_summary' => 'Team Performance Summary',
             'client_radar_suggestion' => 'Client Radar Suggestion',
             'monthly_wins_note' => 'Monthly Wins Note',
+            'portal_assistant_answer' => 'Portal Assistant Answer',
+            'csat_recovery_message' => 'CSAT Recovery Message',
+            'ticket_triage_suggestion' => 'Ticket Triage Suggestion',
+            'crm_query_classify' => 'Ask the CRM (classify)',
+            'crm_query_answer' => 'Ask the CRM (answer)',
             default => ucwords(str_replace('_', ' ', $feature)),
         };
     }

@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Livewire\Concerns\RatesAiDrafts;
 use App\Services\AiAssistant;
 use App\Support\Ai;
 use Illuminate\Support\Facades\RateLimiter;
@@ -20,6 +21,8 @@ use Livewire\Component;
  */
 class PortalAssistant extends Component
 {
+    use RatesAiDrafts;
+
     #[Validate('required|string|max:300')]
     public string $question = '';
 
@@ -28,6 +31,10 @@ class PortalAssistant extends Component
     public bool $rateLimited = false;
 
     public bool $aiEnabled = false;
+
+    public ?int $answerUsageId = null;
+
+    public ?string $answerFeedback = null;
 
     public function mount(): void
     {
@@ -54,16 +61,26 @@ class PortalAssistant extends Component
 
         RateLimiter::hit($key, 86400);
 
+        $this->answerFeedback = null;
         $this->answer = $ai->answerPortalQuestion($contact->customer, $this->question)
             ?? "Sorry, I couldn't work that out from your account details. Please raise a ticket or contact your account manager.";
+        $this->answerUsageId = $ai->lastUsageId;
 
         $this->question = '';
+    }
+
+    public function rateAnswer(string $direction): void
+    {
+        $this->recordAiFeedback($this->answerUsageId, $direction);
+        $this->answerFeedback = $direction;
     }
 
     public function dismiss(): void
     {
         $this->answer = null;
         $this->rateLimited = false;
+        $this->answerUsageId = null;
+        $this->answerFeedback = null;
     }
 
     public function render()

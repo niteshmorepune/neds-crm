@@ -4,6 +4,7 @@ use App\Enums\DealStage;
 use App\Enums\InvoiceStatus;
 use App\Enums\UserRole;
 use App\Livewire\AskTheCrm;
+use App\Models\AiUsage;
 use App\Models\Customer;
 use App\Models\Deal;
 use App\Models\Invoice;
@@ -43,6 +44,26 @@ it('classifies, fetches real figures, and narrates an answer with a link to the 
         ->assertSet('reportLabel', 'Sales Dashboard');
 
     Http::assertSentCount(2);
+});
+
+it('lets an admin rate the narrated answer, tied to the narration call not the classify call', function () {
+    Deal::factory()->stage(DealStage::Won)->create(['value' => 500000, 'won_at' => now()]);
+
+    fakeAnthropicSequence([
+        '{"query_type": "sales_pipeline_kpis"}',
+        'You have won ₹5,000.00 so far this month.',
+    ]);
+
+    Livewire::actingAs($this->admin)
+        ->test(AskTheCrm::class)
+        ->set('question', "What's our pipeline looking like?")
+        ->call('ask')
+        ->call('rateAnswer', 'up')
+        ->assertSet('answerFeedback', 'up');
+
+    // Two ai_usages rows exist (classify + narrate) — only the narration one was rated.
+    expect(AiUsage::where('feature', 'crm_query_classify')->value('feedback'))->toBeNull();
+    expect(AiUsage::where('feature', 'crm_query_answer')->value('feedback'))->toBe('up');
 });
 
 it('shows the example-topics list when the question does not match any known report', function () {

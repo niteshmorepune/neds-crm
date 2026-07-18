@@ -1,6 +1,7 @@
 <?php
 
 use App\Livewire\PortalAssistant;
+use App\Models\AiUsage;
 use App\Models\Contact;
 use App\Models\Customer;
 use App\Models\Invoice;
@@ -41,6 +42,19 @@ it('answers a question grounded only in the asking contact\'s own account data',
         // JSON-encoded body escapes "/" as "\/", so match the unambiguous suffix instead.
         return str_contains($body, 'Alpha Corp') && str_contains($body, 'ALPHA');
     });
+});
+
+it('lets a client rate the assistant\'s answer', function () {
+    fakePortalAiText('Here you go.');
+
+    Livewire::actingAs($this->contact, 'portal')
+        ->test(PortalAssistant::class)
+        ->set('question', 'Anything?')
+        ->call('ask')
+        ->call('rateAnswer', 'up')
+        ->assertSet('answerFeedback', 'up');
+
+    expect(AiUsage::where('feature', 'portal_assistant_answer')->value('feedback'))->toBe('up');
 });
 
 it('never includes another customer\'s data in the prompt', function () {

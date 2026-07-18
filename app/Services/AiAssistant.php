@@ -29,6 +29,21 @@ class AiAssistant
     /** Cap history items fed to the model to keep token usage bounded. */
     private const MAX_ITEMS = 30;
 
+    /**
+     * The ai_usages row id the most recent call on this instance wrote — set
+     * by trimmed() (so every text-returning method gets this for free) and
+     * explicitly in suggestTicketTriage() (the one method that doesn't route
+     * through trimmed()). Callers capture this right after the call whose
+     * output they're about to show, so a later thumbs up/down can be
+     * recorded against the exact call that produced it. AiAssistant is
+     * resolved fresh per Livewire action (method injection), so this never
+     * leaks across unrelated requests — but a caller that makes more than
+     * one AI call in a single action (e.g. AskTheCrm's classify-then-
+     * narrate) must read this immediately after the call that matters, not
+     * at the end of the method.
+     */
+    public ?int $lastUsageId = null;
+
     public function __construct(private readonly AnthropicClient $client) {}
 
     public function draftTicketReply(Ticket $ticket): ?string
@@ -513,6 +528,8 @@ class AiAssistant
             return null;
         }
 
+        $this->lastUsageId = $result->usageId;
+
         $decoded = json_decode($match[0], true);
 
         if (! is_array($decoded)) {
@@ -749,6 +766,8 @@ class AiAssistant
 
     private function trimmed(?AiResult $result): ?string
     {
+        $this->lastUsageId = $result?->usageId;
+
         $text = trim((string) ($result?->text ?? ''));
 
         return $text === '' ? null : $text;

@@ -1,0 +1,31 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::table('ai_usages', function (Blueprint $table) {
+            // 'up' | 'down' | null (no feedback given). One optional click
+            // after a person has actually looked at what the call produced —
+            // set later via a separate update, never at creation time.
+            $table->string('feedback')->nullable()->after('output_tokens');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('ai_usages', function (Blueprint $table) {
+            $table->dropColumn('feedback');
+        });
+    }
+};

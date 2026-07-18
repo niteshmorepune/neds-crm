@@ -25,6 +25,7 @@
                     <button type="button" wire:click="dismiss" class="text-xs text-indigo-500 hover:text-indigo-700">Dismiss</button>
                 </div>
                 <p class="mt-1 whitespace-pre-line text-sm text-gray-700">{{ $suggestion }}</p>
+                <x-ai-feedback method="rateSuggestion" :value="$suggestionFeedback" />
             </div>
         @endif
 
@@ -36,6 +37,7 @@
                 </div>
                 <p class="mt-1 whitespace-pre-line text-sm text-gray-700">{{ $recoveryDraft }}</p>
                 <p class="mt-1 text-xs text-gray-400">Review and personalize before sending — nothing is sent automatically.</p>
+                <x-ai-feedback method="rateRecovery" :value="$recoveryFeedback" />
             </div>
         @endif
     @endif

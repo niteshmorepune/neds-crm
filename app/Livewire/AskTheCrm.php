@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Enums\CrmQueryType;
 use App\Enums\UserRole;
+use App\Livewire\Concerns\RatesAiDrafts;
 use App\Services\AiAssistant;
 use App\Services\CrmQueryCatalog;
 use App\Support\Ai;
@@ -23,6 +24,8 @@ use Livewire\Component;
  */
 class AskTheCrm extends Component
 {
+    use RatesAiDrafts;
+
     #[Validate('required|string|max:300')]
     public string $question = '';
 
@@ -39,6 +42,10 @@ class AskTheCrm extends Component
 
     public bool $aiEnabled = false;
 
+    public ?int $answerUsageId = null;
+
+    public ?string $answerFeedback = null;
+
     public function mount(): void
     {
         $this->aiEnabled = Ai::enabled();
@@ -49,7 +56,7 @@ class AskTheCrm extends Component
         abort_unless(Ai::enabled() && auth()->user()?->hasRole(UserRole::Admin, UserRole::Manager), 403);
 
         $this->validate();
-        $this->reset(['answer', 'figures', 'reportRouteName', 'reportLabel', 'unsupported']);
+        $this->reset(['answer', 'figures', 'reportRouteName', 'reportLabel', 'unsupported', 'answerUsageId', 'answerFeedback']);
 
         $type = $ai->classifyCrmQuestion($this->question);
 
@@ -66,11 +73,18 @@ class AskTheCrm extends Component
 
         $this->answer = $ai->narrateCrmAnswer($this->question, $type, $this->figures)
             ?? 'Could not put that into words right now — the figures above are still accurate.';
+        $this->answerUsageId = $ai->lastUsageId;
+    }
+
+    public function rateAnswer(string $direction): void
+    {
+        $this->recordAiFeedback($this->answerUsageId, $direction);
+        $this->answerFeedback = $direction;
     }
 
     public function dismiss(): void
     {
-        $this->reset(['answer', 'figures', 'reportRouteName', 'reportLabel', 'unsupported', 'question']);
+        $this->reset(['answer', 'figures', 'reportRouteName', 'reportLabel', 'unsupported', 'question', 'answerUsageId', 'answerFeedback']);
     }
 
     /**

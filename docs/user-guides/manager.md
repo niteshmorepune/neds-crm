@@ -95,7 +95,11 @@ actually being used: calls per feature (lead scoring, draft replies, monthly
 wins notes, and the rest), tokens processed, and a rough estimated cost per
 feature and in total. The cost is an estimate from a configured rate, not a
 bill — useful for spotting which features are worth the spend and which
-nobody's touching. Export CSV.
+nobody's touching. A **Feedback** column shows Helpful/Not helpful counts
+from anyone who's clicked the rating prompt after a draft — a quality
+signal alongside the raw call count, since a feature getting used a lot but
+rated poorly is worth a different conversation than one nobody's touched
+at all. Export CSV.
 
 **Ask the CRM** — type a business question in plain English ("Which
 clients are at risk this month?", "What's our win rate on SEO deals?")

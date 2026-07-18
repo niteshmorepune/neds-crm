@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Livewire\Concerns\RatesAiDrafts;
 use App\Models\Customer;
 use App\Models\Ticket;
 use App\Services\AiAssistant;
@@ -18,6 +19,8 @@ use Livewire\Component;
  */
 class TicketTriageSuggestion extends Component
 {
+    use RatesAiDrafts;
+
     public bool $aiEnabled = false;
 
     public ?string $reason = null;
@@ -30,6 +33,10 @@ class TicketTriageSuggestion extends Component
 
     public ?string $error = null;
 
+    public ?int $suggestionUsageId = null;
+
+    public ?string $suggestionFeedback = null;
+
     public function mount(): void
     {
         $this->aiEnabled = Ai::enabled();
@@ -39,7 +46,7 @@ class TicketTriageSuggestion extends Component
     {
         abort_unless(Ai::enabled() && auth()->user()?->can('create', Ticket::class), 403);
 
-        $this->reset(['reason', 'priorityLabel', 'serviceName', 'assigneeName', 'error']);
+        $this->reset(['reason', 'priorityLabel', 'serviceName', 'assigneeName', 'error', 'suggestionUsageId', 'suggestionFeedback']);
 
         if (trim($subject) === '' || trim($description) === '') {
             $this->error = 'Fill in the subject and description first.';
@@ -82,6 +89,7 @@ class TicketTriageSuggestion extends Component
         $this->priorityLabel = $suggestion['priority']->label();
         $this->serviceName = $suggestion['service_name'];
         $this->assigneeName = $assigneeName;
+        $this->suggestionUsageId = $ai->lastUsageId;
 
         $this->dispatch(
             'triage-suggested',
@@ -89,6 +97,12 @@ class TicketTriageSuggestion extends Component
             serviceId: $suggestion['service_id'],
             assigneeId: $assigneeId,
         );
+    }
+
+    public function rateSuggestion(string $direction): void
+    {
+        $this->recordAiFeedback($this->suggestionUsageId, $direction);
+        $this->suggestionFeedback = $direction;
     }
 
     public function render()

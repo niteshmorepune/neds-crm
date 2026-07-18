@@ -54,6 +54,8 @@
                     @if ($reportRouteName)
                         <a href="{{ route($reportRouteName) }}" class="mt-2 inline-block text-xs font-medium text-indigo-600 hover:underline">Open {{ $reportLabel }} →</a>
                     @endif
+
+                    <x-ai-feedback method="rateAnswer" :value="$answerFeedback" />
                 </div>
             @endif
         </div>

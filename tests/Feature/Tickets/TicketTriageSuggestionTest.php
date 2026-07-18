@@ -2,6 +2,7 @@
 
 use App\Enums\UserRole;
 use App\Livewire\TicketTriageSuggestion;
+use App\Models\AiUsage;
 use App\Models\Customer;
 use App\Models\Project;
 use App\Models\Service;
@@ -42,7 +43,11 @@ it('suggests a priority, service, and assignee and dispatches the result to the 
         ->assertSet('serviceName', 'SEO')
         ->assertSet('assigneeName', 'Priya')
         ->assertSet('error', null)
-        ->assertDispatched('triage-suggested', priority: 'urgent', serviceId: $service->id, assigneeId: $lead->id);
+        ->assertDispatched('triage-suggested', priority: 'urgent', serviceId: $service->id, assigneeId: $lead->id)
+        ->call('rateSuggestion', 'up')
+        ->assertSet('suggestionFeedback', 'up');
+
+    expect(AiUsage::where('feature', 'ticket_triage_suggestion')->value('feedback'))->toBe('up');
 });
 
 it('shows a friendly message instead of calling AI when subject or description is blank', function () {

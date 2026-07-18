@@ -110,12 +110,12 @@ class ReportController extends Controller
         $data = $this->aiUsageMetrics->monthly($from, $to);
 
         return $this->csv("ai-usage-{$from->format('Y-m-d')}_to_{$to->format('Y-m-d')}.csv", function ($out) use ($data) {
-            fputcsv($out, ['Feature', 'Calls', 'Input tokens', 'Output tokens', 'Estimated cost (₹)']);
+            fputcsv($out, ['Feature', 'Calls', 'Input tokens', 'Output tokens', 'Estimated cost (₹)', 'Helpful', 'Not helpful']);
             foreach ($data['by_feature'] as $r) {
-                fputcsv($out, [$r['label'], $r['calls'], $r['input_tokens'], $r['output_tokens'], Money::toRupees($r['estimated_cost_paise'])]);
+                fputcsv($out, [$r['label'], $r['calls'], $r['input_tokens'], $r['output_tokens'], Money::toRupees($r['estimated_cost_paise']), $r['feedback_up'], $r['feedback_down']]);
             }
             fputcsv($out, []);
-            fputcsv($out, ['Total', $data['total_calls'], $data['total_input_tokens'], $data['total_output_tokens'], Money::toRupees($data['estimated_cost_paise'])]);
+            fputcsv($out, ['Total', $data['total_calls'], $data['total_input_tokens'], $data['total_output_tokens'], Money::toRupees($data['estimated_cost_paise']), $data['total_feedback_up'], $data['total_feedback_down']]);
         });
     }
 
