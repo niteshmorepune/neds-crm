@@ -9,13 +9,14 @@ use App\Models\Partner;
 use App\Models\Quotation;
 use App\Models\Service;
 use App\Models\User;
+use App\Services\SimilarDealFinder;
 use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
 class DealController extends Controller
 {
-    public function show(Deal $deal): View
+    public function show(Deal $deal, SimilarDealFinder $similarDeals): View
     {
         $this->authorize('view', $deal);
 
@@ -29,6 +30,7 @@ class DealController extends Controller
             'services' => Service::active()->orderBy('sort_order')->get(),
             'owners' => User::query()->orderBy('name')->get(['id', 'name']),
             'partners' => Partner::orderBy('name')->get(['id', 'name']),
+            'similarDeals' => $similarDeals->find($deal),
         ]);
     }
 
