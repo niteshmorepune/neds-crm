@@ -18,6 +18,13 @@ Schedule::command('app:send-followup-reminders')
     ->dailyAt('09:00')
     ->timezone('Asia/Kolkata');
 
+// Weekly owner digest — AI synthesis of pipeline, cash position, and
+// at-risk clients for Admin/Manager, Monday 09:00 IST. Skips entirely when
+// AI is disabled (see the command's own docblock for why).
+Schedule::command('app:send-weekly-owner-digest')
+    ->weeklyOn(1, '09:00')
+    ->timezone('Asia/Kolkata');
+
 // Leadership digest at 09:15 IST: yesterday's AI-drafted client updates
 // (approved vs still pending), any drafts sitting unapproved 2+ days, and
 // active projects with no completed task or note in 5+ days. Recomputes live

@@ -220,6 +220,12 @@ sent), any drafts still awaiting review after 2+ days, and any active project
 with no completed task or note in 5+ days. Only sent when there's something
 to report. See the Admin guide's AI section for the full breakdown.
 
+**Weekly owner digest (9 AM Monday, if AI is enabled)** — a leadership-only
+paragraph synthesizing the week ahead: pipeline, MRR, cash expected, overdue
+receivables, and how many clients Client Radar has flagged. Also shows as a
+Monday dashboard banner. Only sent when AI is on — see the Admin guide's AI
+section for the full figure list.
+
 **Stagnation alerts (10 AM daily)** — if any lead owned by a team member has had
 no activity for 7 days, or a deal for 10 days, the owner is emailed automatically.
 You don't need to chase people — the system does it.

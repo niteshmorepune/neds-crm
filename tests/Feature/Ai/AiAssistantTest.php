@@ -146,6 +146,21 @@ it('enriches a rep\'s line with stage-dwell figures when given, keyed by user_id
     });
 });
 
+it('summarizes a weekly owner digest from pre-formatted figure lines', function () {
+    aiOn();
+    fakeAiText('Pipeline is healthy this week, but 2 clients are flagged for low satisfaction and deserve a check-in.');
+    $lines = [
+        'Open pipeline: 5 deals worth ₹5,00,000.00',
+        'Clients flagged by Client Radar: 2',
+        'Clients with a low-satisfaction flag: 2',
+    ];
+
+    $summary = app(AiAssistant::class)->summarizeWeeklyOwnerDigest($lines);
+
+    expect($summary)->toContain('low satisfaction');
+    expect(AiUsage::where('feature', 'weekly_owner_digest')->exists())->toBeTrue();
+});
+
 it('suggests a next action for a flagged client', function () {
     aiOn();
     fakeAiText('Give them a quick check-in call this week and mention the SEO add-on.');

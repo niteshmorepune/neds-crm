@@ -11,6 +11,14 @@
             </div>
         @endif
 
+        @if (auth()->user()->hasRole(\App\Enums\UserRole::Admin, \App\Enums\UserRole::Manager)
+                && auth()->user()->ai_weekly_digest && auth()->user()->ai_weekly_digest_date?->isToday())
+            <div class="rounded-lg border border-indigo-200 bg-indigo-50 p-4">
+                <p class="mb-1 text-xs font-semibold uppercase tracking-wide text-indigo-500">Your week ahead</p>
+                <p class="text-sm font-medium text-indigo-800">🤖 {{ auth()->user()->ai_weekly_digest }}</p>
+            </div>
+        @endif
+
         @php($overdueTaskCount = \App\Models\Task::where('assignee_id', auth()->id())
             ->where('status', '!=', \App\Enums\TaskStatus::Done->value)
             ->whereNotNull('due_date')
