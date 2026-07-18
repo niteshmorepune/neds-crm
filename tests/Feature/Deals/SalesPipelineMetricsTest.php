@@ -120,3 +120,58 @@ it('excludes deals with no owner from the rep breakdown but still counts them to
         ->and($result[$this->repA->id]['contacted']['team_sample'])->toBe(4)
         ->and($result[$this->repA->id]['contacted']['rep_avg_days'])->toBe(3.0);
 });
+
+it('suggests a monthly target as the trailing 3-month average plus 10%, counting a zero month in the average', function () {
+    $monthAgo1 = now()->copy()->subMonthsNoOverflow(1)->startOfMonth()->addDays(10);
+    $monthAgo3 = now()->copy()->subMonthsNoOverflow(3)->startOfMonth()->addDays(10);
+    // Month -2 deliberately has no won deals at all.
+
+    Deal::factory()->stage(DealStage::Won)->ownedBy($this->repA->id)->create(['value' => 15000000, 'won_at' => $monthAgo3]);
+    Deal::factory()->stage(DealStage::Won)->ownedBy($this->repA->id)->create(['value' => 9000000, 'won_at' => $monthAgo1]);
+
+    $result = $this->metrics->suggestedTargets();
+
+    // (15,000,000 + 0 + 9,000,000) / 3 = 8,000,000; +10% = 8,800,000.
+    expect($result['reps'][$this->repA->id])->toBe(8800000)
+        ->and($result['company'])->toBe(8800000);
+});
+
+it('omits the suggestion when fewer than 2 of the trailing 3 months have any won deals', function () {
+    $monthAgo1 = now()->copy()->subMonthsNoOverflow(1)->startOfMonth()->addDays(10);
+
+    Deal::factory()->stage(DealStage::Won)->ownedBy($this->repA->id)->create(['value' => 9000000, 'won_at' => $monthAgo1]);
+
+    $result = $this->metrics->suggestedTargets();
+
+    expect($result['reps'][$this->repA->id])->toBeNull()
+        ->and($result['company'])->toBeNull();
+});
+
+it('excludes the current, still-in-progress month from the trailing window', function () {
+    Deal::factory()->stage(DealStage::Won)->ownedBy($this->repA->id)->create(['value' => 50000000, 'won_at' => now()]);
+
+    $result = $this->metrics->suggestedTargets();
+
+    expect($result['reps'][$this->repA->id])->toBeNull()
+        ->and($result['company'])->toBeNull();
+});
+
+it('scopes each rep\'s suggestion to their own deals while the company suggestion aggregates everyone', function () {
+    $monthAgo1 = now()->copy()->subMonthsNoOverflow(1)->startOfMonth()->addDays(10);
+    $monthAgo2 = now()->copy()->subMonthsNoOverflow(2)->startOfMonth()->addDays(10);
+
+    Deal::factory()->stage(DealStage::Won)->ownedBy($this->repA->id)->create(['value' => 6000000, 'won_at' => $monthAgo1]);
+    Deal::factory()->stage(DealStage::Won)->ownedBy($this->repA->id)->create(['value' => 6000000, 'won_at' => $monthAgo2]);
+
+    Deal::factory()->stage(DealStage::Won)->ownedBy($this->repB->id)->create(['value' => 3000000, 'won_at' => $monthAgo1]);
+    Deal::factory()->stage(DealStage::Won)->ownedBy($this->repB->id)->create(['value' => 3000000, 'won_at' => $monthAgo2]);
+
+    $result = $this->metrics->suggestedTargets();
+
+    // Rep A: (6,000,000+6,000,000+0)/3 = 4,000,000; +10% = 4,400,000.
+    expect($result['reps'][$this->repA->id])->toBe(4400000)
+        // Rep B: (3,000,000+3,000,000+0)/3 = 2,000,000; +10% = 2,200,000.
+        ->and($result['reps'][$this->repB->id])->toBe(2200000)
+        // Company: (18,000,000+0)/3 = 6,000,000; +10% = 6,600,000.
+        ->and($result['company'])->toBe(6600000);
+});

@@ -135,7 +135,12 @@ Admin/Manager only:
   leaderboard row. Leave a field blank to leave that target unchanged — it
   will never zero out an existing target you don't touch. Targets are
   optional; nothing breaks if none are set, the progress bars just read "No
-  target set".
+  target set". A blank monthly field (company or a rep's own) shows a
+  **Suggested: ₹…** hint underneath — the trailing 3 months' average won
+  value plus 10%, click it to fill the field, or ignore it and type your
+  own number. It only appears once there's enough recent history to base it
+  on, so it may not show yet for a newer pipeline; there's no suggestion for
+  the financial-year target.
 
 ## Bell notifications
 As a manager, you receive bell notifications for:
