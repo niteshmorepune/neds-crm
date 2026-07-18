@@ -15,6 +15,7 @@
                     <button type="button" wire:click="dismissSummary" class="text-xs text-indigo-500 hover:text-indigo-700">Dismiss</button>
                 </div>
                 <div class="mt-2 whitespace-pre-line text-sm text-gray-700">{{ $summary }}</div>
+                <x-ai-feedback method="rateSummary" :value="$summaryFeedback" />
             </div>
         @endif
     @endif

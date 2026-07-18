@@ -81,14 +81,14 @@ class AnthropicClient
             $inputTokens = (int) data_get($data, 'usage.input_tokens', 0);
             $outputTokens = (int) data_get($data, 'usage.output_tokens', 0);
 
-            AiUsage::create([
+            $usage = AiUsage::create([
                 'feature' => $feature,
                 'model' => $this->model,
                 'input_tokens' => $inputTokens,
                 'output_tokens' => $outputTokens,
             ]);
 
-            return new AiResult($text, $inputTokens, $outputTokens);
+            return new AiResult($text, $inputTokens, $outputTokens, $usage->id);
         } catch (Throwable $e) {
             // Message only — Guzzle exception messages do not include our body.
             Log::warning('Anthropic API call threw an exception.', [

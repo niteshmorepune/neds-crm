@@ -34,9 +34,12 @@
             @endif
 
             @if ($answer)
-                <div class="mt-3 rounded-lg bg-indigo-50 border border-indigo-100 px-4 py-3 text-sm text-indigo-900 flex items-start justify-between gap-3">
-                    <p>{{ $answer }}</p>
-                    <button type="button" wire:click="dismiss" class="shrink-0 text-indigo-400 hover:text-indigo-600" aria-label="Dismiss">&times;</button>
+                <div class="mt-3 rounded-lg bg-indigo-50 border border-indigo-100 px-4 py-3 text-sm text-indigo-900">
+                    <div class="flex items-start justify-between gap-3">
+                        <p>{{ $answer }}</p>
+                        <button type="button" wire:click="dismiss" class="shrink-0 text-indigo-400 hover:text-indigo-600" aria-label="Dismiss">&times;</button>
+                    </div>
+                    <x-ai-feedback method="rateAnswer" :value="$answerFeedback" />
                 </div>
             @endif
         </div>

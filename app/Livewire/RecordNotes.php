@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Livewire\Concerns\RatesAiDrafts;
 use App\Models\Lead;
 use App\Models\Note;
 use App\Services\AiAssistant;
@@ -16,6 +17,8 @@ use Livewire\Component;
  */
 class RecordNotes extends Component
 {
+    use RatesAiDrafts;
+
     public Model $record;
 
     public bool $canManage = false;
@@ -36,6 +39,10 @@ class RecordNotes extends Component
     public string $editBody = '';
 
     public bool $editVisibleToClient = false;
+
+    public ?int $draftUsageId = null;
+
+    public ?string $draftFeedback = null;
 
     public function mount(Model $record, bool $canManage = false, bool $canAddNotes = false, bool $showPortalToggle = false): void
     {
@@ -59,11 +66,20 @@ class RecordNotes extends Component
     {
         abort_unless($this->canDraft() && auth()->user()?->can('update', $this->record), 403);
 
+        $this->draftFeedback = null;
+
         if ($draft = $assistant->draftLeadFollowUp($this->record)) {
             $this->body = $draft;
+            $this->draftUsageId = $assistant->lastUsageId;
         } else {
             $this->addError('body', 'Could not draft a follow-up right now. Please try again.');
         }
+    }
+
+    public function rateDraft(string $direction): void
+    {
+        $this->recordAiFeedback($this->draftUsageId, $direction);
+        $this->draftFeedback = $direction;
     }
 
     public function addNote(): void
@@ -78,7 +94,7 @@ class RecordNotes extends Component
             'visible_to_client' => $this->showPortalToggle && $this->visibleToClient,
         ]);
 
-        $this->reset('body');
+        $this->reset(['body', 'draftUsageId', 'draftFeedback']);
         $this->visibleToClient = $this->showPortalToggle;
     }
 

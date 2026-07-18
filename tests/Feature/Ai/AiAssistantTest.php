@@ -38,6 +38,20 @@ it('returns null and makes no call when AI is disabled', function () {
     Http::assertNothingSent();
 });
 
+it('exposes the ai_usages row id of the call it just made, for later feedback', function () {
+    aiOn();
+    fakeAiText('Hi, we have reset your access. Please try again.');
+    $ticket = Ticket::factory()->create();
+
+    $assistant = app(AiAssistant::class);
+    expect($assistant->lastUsageId)->toBeNull();
+
+    $assistant->draftTicketReply($ticket->load('replies'));
+
+    $usage = AiUsage::where('feature', 'draft_ticket_reply')->firstOrFail();
+    expect($assistant->lastUsageId)->toBe($usage->id);
+});
+
 it('drafts a ticket reply and records usage under its feature', function () {
     aiOn();
     fakeAiText('Hi, we have reset your access. Please try again.');
@@ -185,13 +199,17 @@ it('suggests ticket triage matched to one of the client\'s real active services'
     Project::factory()->create(['customer_id' => $customer->id, 'service_id' => $seo->id]);
     fakeAiText('{"priority": "high", "service": "SEO", "reason": "Rankings dropped, time-sensitive."}');
 
-    $suggestion = app(AiAssistant::class)->suggestTicketTriage($customer, 'Rankings dropped', 'Our keywords fell off page 1 overnight.');
+    $assistant = app(AiAssistant::class);
+    $suggestion = $assistant->suggestTicketTriage($customer, 'Rankings dropped', 'Our keywords fell off page 1 overnight.');
 
     expect($suggestion)->not->toBeNull()
         ->and($suggestion['priority'])->toBe(TicketPriority::High)
         ->and($suggestion['service_id'])->toBe($seo->id)
         ->and($suggestion['service_name'])->toBe('SEO')
         ->and($suggestion['reason'])->toContain('Rankings');
+
+    $usage = AiUsage::where('feature', 'ticket_triage_suggestion')->firstOrFail();
+    expect($assistant->lastUsageId)->toBe($usage->id);
 });
 
 it('ignores a hallucinated service name that is not in the client\'s actual active services', function () {

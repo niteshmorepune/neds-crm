@@ -67,6 +67,38 @@ it('falls back to the default rate for an unrecognised model', function () {
     expect($data['estimated_cost_paise'])->toBe(8700);
 });
 
+it('tallies helpful/not-helpful feedback per feature and in total', function () {
+    AiUsage::factory()->create(['feature' => 'lead_scoring', 'feedback' => 'up', 'created_at' => now()]);
+    AiUsage::factory()->create(['feature' => 'lead_scoring', 'feedback' => 'up', 'created_at' => now()]);
+    AiUsage::factory()->create(['feature' => 'lead_scoring', 'feedback' => 'down', 'created_at' => now()]);
+    AiUsage::factory()->create(['feature' => 'lead_scoring', 'feedback' => null, 'created_at' => now()]);
+    AiUsage::factory()->create(['feature' => 'draft_ticket_reply', 'feedback' => 'down', 'created_at' => now()]);
+
+    $data = $this->metrics->monthly(now()->startOfMonth(), now()->endOfMonth());
+
+    $leadScoring = collect($data['by_feature'])->firstWhere('feature', 'lead_scoring');
+    expect($leadScoring['feedback_up'])->toBe(2)
+        ->and($leadScoring['feedback_down'])->toBe(1);
+
+    $reply = collect($data['by_feature'])->firstWhere('feature', 'draft_ticket_reply');
+    expect($reply['feedback_up'])->toBe(0)
+        ->and($reply['feedback_down'])->toBe(1);
+
+    expect($data['total_feedback_up'])->toBe(2)
+        ->and($data['total_feedback_down'])->toBe(2);
+});
+
+it('reports zero feedback for a feature nobody has rated', function () {
+    AiUsage::factory()->create(['feature' => 'lead_scoring', 'created_at' => now()]);
+
+    $data = $this->metrics->monthly(now()->startOfMonth(), now()->endOfMonth());
+
+    expect($data['by_feature'][0]['feedback_up'])->toBe(0)
+        ->and($data['by_feature'][0]['feedback_down'])->toBe(0)
+        ->and($data['total_feedback_up'])->toBe(0)
+        ->and($data['total_feedback_down'])->toBe(0);
+});
+
 it('excludes usage rows outside the requested period', function () {
     AiUsage::factory()->create(['feature' => 'lead_scoring', 'created_at' => now()->subMonths(2)]);
 
@@ -97,12 +129,24 @@ it('lets admin and manager view the report but forbids a sales rep', function ()
     $this->actingAs($sales)->get(route('reports.ai-usage'))->assertForbidden();
 });
 
-it('exports the report as CSV', function () {
+it('exports the report as CSV, including the feedback tally', function () {
     $manager = User::factory()->role(UserRole::Manager)->create();
-    AiUsage::factory()->create(['feature' => 'lead_scoring', 'created_at' => now()]);
+    AiUsage::factory()->create(['feature' => 'lead_scoring', 'feedback' => 'up', 'created_at' => now()]);
 
     $response = $this->actingAs($manager)->get(route('reports.ai-usage.export'));
 
     $response->assertOk();
-    expect($response->headers->get('content-type'))->toContain('text/csv');
+    expect($response->headers->get('content-type'))->toContain('text/csv')
+        ->and($response->streamedContent())->toContain('Helpful')->toContain('Not helpful');
+});
+
+it('shows the feedback tally on the report page once a draft has been rated', function () {
+    $manager = User::factory()->role(UserRole::Manager)->create();
+    AiUsage::factory()->create(['feature' => 'lead_scoring', 'feedback' => 'up', 'created_at' => now()]);
+
+    $this->actingAs($manager)
+        ->get(route('reports.ai-usage'))
+        ->assertOk()
+        ->assertSee('Feedback given')
+        ->assertSee('helpful / not helpful clicks');
 });

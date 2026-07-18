@@ -23,6 +23,7 @@
             <div class="mt-2 rounded-md border border-indigo-200 bg-indigo-50 p-3 text-sm text-gray-700">
                 <p><span class="font-medium text-indigo-700">{{ $priorityLabel }} priority</span>@if ($serviceName) &middot; {{ $serviceName }}@endif@if ($assigneeName) &middot; suggested {{ $assigneeName }}@endif</p>
                 <p class="mt-1 text-xs text-gray-500">{{ $reason }}</p>
+                <x-ai-feedback method="rateSuggestion" :value="$suggestionFeedback" />
             </div>
         @endif
     @endif

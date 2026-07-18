@@ -4,6 +4,7 @@ use App\Enums\UserRole;
 use App\Livewire\ClientNotes;
 use App\Livewire\RecordNotes;
 use App\Livewire\TicketReplies;
+use App\Models\AiUsage;
 use App\Models\Customer;
 use App\Models\Deal;
 use App\Models\Lead;
@@ -45,6 +46,35 @@ it('ticket: AI draft drops into the reply box without sending', function () {
     expect($ticket->replies()->count())->toBe(0);
 });
 
+it('ticket: a drafted reply can be rated, and the rating persists on ai_usages', function () {
+    $support = User::factory()->role(UserRole::Support)->create();
+    $ticket = withAi(fn () => Ticket::factory()->create());
+    fakeReply('Thanks for reaching out — your account is now active.');
+
+    Livewire::actingAs($support)
+        ->test(TicketReplies::class, ['ticket' => $ticket, 'canManage' => true])
+        ->call('draftReply')
+        ->assertSet('draftFeedback', null)
+        ->call('rateDraft', 'up')
+        ->assertSet('draftFeedback', 'up')
+        ->assertSee('Thanks for the feedback');
+
+    expect(AiUsage::where('feature', 'draft_ticket_reply')->value('feedback'))->toBe('up');
+});
+
+it('ticket: sending the reply clears the draft rating state', function () {
+    $support = User::factory()->role(UserRole::Support)->create();
+    $ticket = withAi(fn () => Ticket::factory()->create());
+    fakeReply('Thanks for reaching out.');
+
+    Livewire::actingAs($support)
+        ->test(TicketReplies::class, ['ticket' => $ticket, 'canManage' => true])
+        ->call('draftReply')
+        ->call('addReply')
+        ->assertSet('draftUsageId', null)
+        ->assertSet('draftFeedback', null);
+});
+
 it('ticket: summarize fills the panel and can be dismissed', function () {
     $support = User::factory()->role(UserRole::Support)->create();
     $ticket = withAi(fn () => Ticket::factory()->create());
@@ -56,7 +86,10 @@ it('ticket: summarize fills the panel and can be dismissed', function () {
         ->assertSet('summary', '- Client reported a login issue. - Resolved by reset.')
         ->assertSee('AI summary');
 
-    $component->call('dismissSummary')->assertSet('summary', null);
+    $component->call('rateSummary', 'down')->assertSet('summaryFeedback', 'down');
+    expect(AiUsage::where('feature', 'summarize_ticket')->value('feedback'))->toBe('down');
+
+    $component->call('dismissSummary')->assertSet('summary', null)->assertSet('summaryFeedback', null);
 });
 
 it('ticket: AI buttons are hidden when the flag is off', function () {
@@ -80,7 +113,11 @@ it('customer: summarize fills the panel', function () {
         ->test(ClientNotes::class, ['customer' => $customer, 'canManage' => true])
         ->call('summarize')
         ->assertSet('summary', '- Long-standing retainer client. - No open issues.')
-        ->assertSee('AI summary');
+        ->assertSee('AI summary')
+        ->call('rateSummary', 'up')
+        ->assertSet('summaryFeedback', 'up');
+
+    expect(AiUsage::where('feature', 'summarize_customer')->value('feedback'))->toBe('up');
 });
 
 it('lead: AI follow-up draft drops into the note box', function () {
@@ -93,7 +130,11 @@ it('lead: AI follow-up draft drops into the note box', function () {
         ->assertSet('record.id', $lead->id)
         ->call('draftFollowUp')
         ->assertHasNoErrors()
-        ->assertSet('body', 'Hi Meera, following up on your website enquiry — when suits a quick call?');
+        ->assertSet('body', 'Hi Meera, following up on your website enquiry — when suits a quick call?')
+        ->call('rateDraft', 'down')
+        ->assertSet('draftFeedback', 'down');
+
+    expect(AiUsage::where('feature', 'draft_lead_followup')->value('feedback'))->toBe('down');
 });
 
 it('record-notes: drafting is offered for leads but not deals', function () {

@@ -15,6 +15,7 @@
                     <button type="button" wire:click="dismissSummary" class="text-xs text-indigo-500 hover:text-indigo-700">Dismiss</button>
                 </div>
                 <div class="mt-2 whitespace-pre-line text-sm text-gray-700">{{ $summary }}</div>
+                <x-ai-feedback method="rateSummary" :value="$summaryFeedback" />
             </div>
         @endif
     @endif
@@ -41,6 +42,9 @@
             <textarea wire:model="body" rows="3" placeholder="Write a reply…"
                       class="block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
             @error('body') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
+            @if ($draftUsageId)
+                <x-ai-feedback method="rateDraft" :value="$draftFeedback" />
+            @endif
             <div class="mt-2 flex flex-wrap items-center justify-between gap-2">
                 <label class="flex items-center gap-2 text-sm text-gray-600">
                     <input type="checkbox" wire:model="is_internal" class="rounded border-gray-300 text-indigo-600" />

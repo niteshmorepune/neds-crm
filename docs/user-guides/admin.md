@@ -450,6 +450,13 @@ nothing shown can drift from what the report itself says. A question
 outside that fixed list gets a list of what it can currently answer, not
 a guess.
 
+**Rating a draft (Helpful / Not helpful)** — after Claude drafts or answers
+something (a reply, a summary, a suggestion, a Client Radar or Ask the CRM
+answer), a small "Was this useful?" prompt appears once you've had a look.
+It's entirely optional — nothing requires it — but the AI Usage Report
+below rolls it up per feature, so over time it's a real read on which
+features are actually worth the AI spend versus which ones nobody trusts.
+
 **Monthly wins note drafts** — on the 1st of each month, for every active client
 with an assigned owner who had at least one task completed, ticket resolved,
 payment received, or (for clients Drishti manages) a post published, audit

@@ -21,6 +21,7 @@ class AiUsage extends Model
         'model',
         'input_tokens',
         'output_tokens',
+        'feedback',
     ];
 
     protected function casts(): array

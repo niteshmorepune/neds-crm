@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Livewire\Concerns\RatesAiDrafts;
 use App\Models\Customer;
 use App\Services\AiAssistant;
 use App\Support\Ai;
@@ -10,6 +11,8 @@ use Livewire\Component;
 
 class ClientNotes extends Component
 {
+    use RatesAiDrafts;
+
     public Customer $customer;
 
     public bool $canManage = false;
@@ -22,6 +25,10 @@ class ClientNotes extends Component
     /** Ephemeral AI summary shown in a dismissible panel (never persisted). */
     public ?string $summary = null;
 
+    public ?int $summaryUsageId = null;
+
+    public ?string $summaryFeedback = null;
+
     public function mount(Customer $customer, bool $canManage = false): void
     {
         $this->customer = $customer;
@@ -33,13 +40,23 @@ class ClientNotes extends Component
     {
         abort_unless(Ai::enabled() && auth()->user()?->can('view', $this->customer), 403);
 
+        $this->summaryFeedback = null;
         $this->summary = $assistant->summarizeCustomer($this->customer)
             ?? 'Could not generate a summary right now. Please try again.';
+        $this->summaryUsageId = $assistant->lastUsageId;
+    }
+
+    public function rateSummary(string $direction): void
+    {
+        $this->recordAiFeedback($this->summaryUsageId, $direction);
+        $this->summaryFeedback = $direction;
     }
 
     public function dismissSummary(): void
     {
         $this->summary = null;
+        $this->summaryUsageId = null;
+        $this->summaryFeedback = null;
     }
 
     public function addNote(): void
