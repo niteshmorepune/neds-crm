@@ -438,6 +438,18 @@ internal notes or another client's data — and is capped at
 `.env`) so it can't be run up. See the **AI Usage Report** (Reports panel) to
 track how much any of this is actually costing.
 
+**Ask the CRM** (Reports panel, Admin/Manager only) — a free-text business
+question box covering pipeline KPIs, Client Radar, revenue, service
+breakdown, lead sources, cash forecast, MRR, AR aging, the rep leaderboard,
+needs-attention deals, and AI usage. Answering a question is always two AI
+calls, not one: the first only picks which of those report types the
+question is about — it never touches real data. The second narrates an
+answer using the exact real figures that report already computes, shown
+right there in the answer's table alongside a link to the full report, so
+nothing shown can drift from what the report itself says. A question
+outside that fixed list gets a list of what it can currently answer, not
+a guess.
+
 **Monthly wins note drafts** — on the 1st of each month, for every active client
 with an assigned owner who had at least one task completed, ticket resolved,
 payment received, or (for clients Drishti manages) a post published, audit

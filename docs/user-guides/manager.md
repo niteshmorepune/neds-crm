@@ -97,6 +97,14 @@ feature and in total. The cost is an estimate from a configured rate, not a
 bill — useful for spotting which features are worth the spend and which
 nobody's touching. Export CSV.
 
+**Ask the CRM** — type a business question in plain English ("Which
+clients are at risk this month?", "What's our win rate on SEO deals?")
+and get an answer grounded in real figures from the reports above —
+never invented. If it doesn't recognise the question, it lists what it
+can currently answer instead of guessing. Every answer links to the full
+report behind it, and shows the exact figures it was grounded in, so you
+can double-check the numbers yourself.
+
 **Outstanding Receivables** — what clients still owe (shared with accounts).
 
 **Collections** — a client-by-client follow-up worklist (shared with accounts):
