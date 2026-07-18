@@ -4,6 +4,7 @@ use App\Enums\CrmQueryType;
 use App\Enums\TicketPriority;
 use App\Models\AiUsage;
 use App\Models\Customer;
+use App\Models\Deal;
 use App\Models\Festival;
 use App\Models\Lead;
 use App\Models\Project;
@@ -159,6 +160,55 @@ it('summarizes a weekly owner digest from pre-formatted figure lines', function 
 
     expect($summary)->toContain('low satisfaction');
     expect(AiUsage::where('feature', 'weekly_owner_digest')->exists())->toBeTrue();
+});
+
+it('suggests onboarding tasks grounded in deal notes and quotation line items', function () {
+    aiOn();
+    fakeAiText('[{"title": "Set up Hindi translation workflow", "description": "Client requested a Hindi version of the site.", "due_in_days": 10}]');
+    $deal = Deal::factory()->create();
+    $deal->notes()->create(['user_id' => User::factory()->create()->id, 'body' => 'Client wants a Hindi translation of the whole site.']);
+    $project = Project::factory()->create(['deal_id' => $deal->id]);
+
+    $result = app(AiAssistant::class)->suggestOnboardingTasks($project);
+
+    expect($result)->toHaveCount(1)
+        ->and($result[0]['title'])->toBe('Set up Hindi translation workflow')
+        ->and($result[0]['due_in_days'])->toBe(10);
+    expect(AiUsage::where('feature', 'onboarding_task_suggestion')->exists())->toBeTrue();
+});
+
+it('skips the AI call entirely and returns an empty array when there is nothing deal-specific to work from', function () {
+    aiOn();
+    Http::fake();
+    $project = Project::factory()->create(['deal_id' => null]);
+
+    $result = app(AiAssistant::class)->suggestOnboardingTasks($project);
+
+    expect($result)->toBe([]);
+    Http::assertNothingSent();
+});
+
+it('clamps an out-of-range due_in_days and drops a suggestion with no title', function () {
+    aiOn();
+    fakeAiText('[{"title": "Valid task", "description": "x", "due_in_days": 999}, {"description": "no title here"}]');
+    $deal = Deal::factory()->create();
+    $deal->notes()->create(['user_id' => User::factory()->create()->id, 'body' => 'Some specific requirement.']);
+    $project = Project::factory()->create(['deal_id' => $deal->id]);
+
+    $result = app(AiAssistant::class)->suggestOnboardingTasks($project);
+
+    expect($result)->toHaveCount(1)
+        ->and($result[0]['title'])->toBe('Valid task')
+        ->and($result[0]['due_in_days'])->toBe(60);
+});
+
+it('returns null for onboarding task suggestions when AI is disabled', function () {
+    config(['services.anthropic.enabled' => false]);
+    Http::fake();
+    $project = Project::factory()->create();
+
+    expect(app(AiAssistant::class)->suggestOnboardingTasks($project))->toBeNull();
+    Http::assertNothingSent();
 });
 
 it('suggests a next action for a flagged client', function () {

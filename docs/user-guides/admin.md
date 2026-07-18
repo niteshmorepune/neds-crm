@@ -246,6 +246,18 @@ gets "Technical SEO setup", "On-page SEO setup", "Off-page SEO setup", and
 the project lead (or the project manager if no lead is set yet). This only
 fires once per project, not on a schedule.
 
+**✨ Suggest onboarding tasks (opt-in only)** — a button on a project's page
+(next to its Tasks list, for whoever can manage that project) that has Claude
+suggest EXTRA onboarding tasks beyond the standard checklist above, based
+only on the originating deal's notes and quotation line items — e.g. a note
+mentioning "client wants a Hindi translation" surfaces a task for that
+specifically. It never repeats a task already on the project, and if nothing
+in the notes/line items calls for anything extra it says so rather than
+padding the list. Nothing is ever created automatically: every suggestion
+shows as a ticked checkbox you can untick, and a Task is only created once
+you click **Add selected tasks** — same "never floods the task list"
+discipline as everywhere else AI touches tasks in this CRM.
+
 **How staff see these:** on the Daily Reports page, **My Tasks** groups tasks
 by project and collapses these auto-created tasks under a "🔄 routine
 maintenance" line (tasks a person assigned directly stay expanded above it).

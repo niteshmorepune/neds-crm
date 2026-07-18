@@ -60,6 +60,11 @@
                     <li class="py-2 text-gray-400">No tasks yet.</li>
                 @endforelse
             </ul>
+            @can('update', $project)
+                <div class="mt-4 border-t border-gray-100 pt-4">
+                    @livewire('onboarding-task-suggestions', ['project' => $project])
+                </div>
+            @endcan
         </div>
 
         {{-- Content Pieces --}}
