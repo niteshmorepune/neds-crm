@@ -118,6 +118,12 @@ The **Sales Department** board shows your deals in columns by stage:
   estimate even early on (New/Contacted) and correct it as the deal firms up.
   It drives every figure in the KPI strip below, so a missing or 0 value
   understates your own numbers.
+- **Deals like this one** — on a deal's page, a panel shows up to 3 other
+  closed deals (Won or Lost) for the same service, ranked by how close their
+  value is to this one — useful context on how deals with this profile tend
+  to actually go. It needs a service set on the deal to show anything, and
+  won't appear until this service has at least one other closed deal to
+  compare against.
 
 **KPI strip** — above the board, seven figures scoped to your own deals
 (Admin/Manager see the whole company's pipeline instead):

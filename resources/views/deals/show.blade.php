@@ -93,6 +93,35 @@
                 </div>
 
                 <div class="mt-6 border-t border-gray-100 pt-6">
+                    <h2 class="mb-4 text-base font-semibold text-gray-900">Deals like this one</h2>
+                    @if ($similarDeals->isNotEmpty())
+                        <div class="space-y-2">
+                            @foreach ($similarDeals as $similar)
+                                <a href="{{ route('deals.show', $similar) }}"
+                                   class="flex items-center justify-between rounded-md border border-gray-100 px-3 py-2 text-sm hover:bg-gray-50">
+                                    <span class="text-gray-700">
+                                        {{ $similar->customer?->company_name ?? 'Client removed' }}
+                                        @if ($similar->source_matches)
+                                            <span class="ml-1 text-xs text-gray-400">· same source</span>
+                                        @endif
+                                    </span>
+                                    <span class="flex items-center gap-2 shrink-0">
+                                        <span class="text-gray-600">{{ \App\Support\Money::format($similar->value) }}</span>
+                                        <span @class([
+                                            'inline-flex rounded-full px-2 py-0.5 text-xs font-medium',
+                                            'bg-green-100 text-green-800' => $similar->stage === \App\Enums\DealStage::Won,
+                                            'bg-red-100 text-red-700' => $similar->stage === \App\Enums\DealStage::Lost,
+                                        ])>{{ $similar->stage->label() }}</span>
+                                    </span>
+                                </a>
+                            @endforeach
+                        </div>
+                    @else
+                        <p class="text-sm text-gray-400">No similar closed deals yet for this service.</p>
+                    @endif
+                </div>
+
+                <div class="mt-6 border-t border-gray-100 pt-6">
                     <h2 class="mb-4 text-base font-semibold text-gray-900">Notes</h2>
                     <livewire:record-notes :record="$deal" :can-manage="$canManage" />
                 </div>

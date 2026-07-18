@@ -5,6 +5,7 @@ use App\Enums\UserRole;
 use App\Livewire\DealsBoard;
 use App\Models\Customer;
 use App\Models\Deal;
+use App\Models\Service;
 use App\Models\User;
 use Database\Seeders\MenuItemsSeeder;
 use Livewire\Livewire;
@@ -66,4 +67,24 @@ it('renders the deal detail page', function () {
     $this->seed(MenuItemsSeeder::class);
 
     $this->actingAs($this->admin)->get(route('deals.show', $deal))->assertOk()->assertSee($deal->title);
+});
+
+it('shows similar closed deals on the deal detail page, or an empty-state message', function () {
+    $this->seed(MenuItemsSeeder::class);
+    $service = Service::factory()->create();
+
+    $deal = Deal::factory()->stage(DealStage::Contacted)->create(['service_id' => $service->id, 'value' => 150000]);
+
+    $this->actingAs($this->admin)->get(route('deals.show', $deal))->assertOk()
+        ->assertSee('Deals like this one')
+        ->assertSee('No similar closed deals yet for this service.');
+
+    $similarCustomer = Customer::factory()->create(['company_name' => 'Similar Client Co']);
+    Deal::factory()->stage(DealStage::Won)->create([
+        'service_id' => $service->id, 'value' => 140000, 'customer_id' => $similarCustomer->id,
+    ]);
+
+    $this->actingAs($this->admin)->get(route('deals.show', $deal))->assertOk()
+        ->assertSee('Similar Client Co')
+        ->assertDontSee('No similar closed deals yet for this service.');
 });
