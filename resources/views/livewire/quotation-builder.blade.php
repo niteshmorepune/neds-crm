@@ -29,11 +29,33 @@
             </div>
 
             <div class="rounded-lg bg-white p-6 shadow-sm">
-                <div class="flex items-center justify-between">
+                <div class="flex items-center justify-between gap-2">
                     <h2 class="text-base font-semibold text-gray-900">Line items</h2>
-                    <button wire:click="addItem" type="button" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">+ Add item</button>
+                    <div class="flex items-center gap-3">
+                        @if ($aiEnabled && $deal_id)
+                            <button wire:click="suggestItems" type="button" wire:loading.attr="disabled" wire:target="suggestItems"
+                                    class="inline-flex items-center gap-1 rounded-md border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700 hover:bg-indigo-100 disabled:opacity-50">
+                                <span wire:loading.remove wire:target="suggestItems">✨ Suggest line items</span>
+                                <span wire:loading wire:target="suggestItems">Thinking…</span>
+                            </button>
+                        @endif
+                        <button wire:click="addItem" type="button" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">+ Add item</button>
+                    </div>
                 </div>
                 @error('items') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+
+                @if ($suggestionError)
+                    <p class="mt-1.5 text-xs text-amber-600">{{ $suggestionError }}</p>
+                @elseif ($suggestedOnce && $lastSuggestedCount === 0)
+                    <p class="mt-1.5 text-xs text-gray-400">Nothing specific to suggest yet — add a deal note first, or fill in items yourself.</p>
+                @elseif ($lastSuggestedCount > 0)
+                    <div class="mt-1.5 flex items-center gap-2">
+                        <p class="text-xs text-indigo-600">
+                            {{ $lastSuggestedCount }} suggested — review the description/quantity/SAC below, then fill in the rate and GST % yourself.
+                        </p>
+                        <x-ai-feedback method="rateSuggestion" :value="$suggestionFeedback" />
+                    </div>
+                @endif
 
                 {{-- Column labels — only visible in single-row mode (2xl+) --}}
                 <div class="hidden 2xl:flex flex-nowrap items-center gap-2 mt-4 mb-1 text-xs font-medium uppercase tracking-wide text-gray-400">

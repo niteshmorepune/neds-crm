@@ -3,11 +3,15 @@
 namespace App\Livewire;
 
 use App\Enums\QuotationStatus;
+use App\Livewire\Concerns\RatesAiDrafts;
 use App\Models\Customer;
+use App\Models\Deal;
 use App\Models\Quotation;
 use App\Models\Service;
+use App\Services\AiAssistant;
 use App\Services\GstCalculator;
 use App\Services\InvoiceNumberGenerator;
+use App\Support\Ai;
 use App\Support\Money;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Carbon;
@@ -19,7 +23,7 @@ use Livewire\Component;
 #[Layout('layouts.app')]
 class QuotationBuilder extends Component
 {
-    use AuthorizesRequests;
+    use AuthorizesRequests, RatesAiDrafts;
 
     public ?int $quotationId = null;
 
@@ -38,8 +42,22 @@ class QuotationBuilder extends Component
     /** @var array<int, array{description:string, sac_code:?string, quantity:string, rate:string, gst_rate:string}> */
     public array $items = [];
 
+    public bool $aiEnabled = false;
+
+    public ?string $suggestionError = null;
+
+    public bool $suggestedOnce = false;
+
+    public int $lastSuggestedCount = 0;
+
+    public ?int $suggestionUsageId = null;
+
+    public ?string $suggestionFeedback = null;
+
     public function mount(?Quotation $quotation = null, ?int $customer_id = null, ?int $deal_id = null): void
     {
+        $this->aiEnabled = Ai::enabled();
+
         if ($quotation && $quotation->exists) {
             $this->authorize('update', $quotation);
 
@@ -91,6 +109,70 @@ class QuotationBuilder extends Component
         if ($this->items === []) {
             $this->addItem();
         }
+    }
+
+    /**
+     * "Suggest line items" — appends AI-drafted line items grounded in the
+     * linked deal's notes. Never touches rate or gst_rate: every appended
+     * row leaves those blank, so the existing 'items.*.rate' => 'required'
+     * validation (same rule that already blocks a manually-left-blank
+     * rate) is what actually stops a suggested item from being saved
+     * without a real, human-entered price — not a promise this method has
+     * to keep on its own.
+     */
+    public function suggestItems(AiAssistant $ai): void
+    {
+        abort_unless(Ai::enabled(), 403);
+
+        $this->suggestionError = null;
+        $this->suggestedOnce = true;
+        $this->lastSuggestedCount = 0;
+        $this->suggestionUsageId = null;
+        $this->suggestionFeedback = null;
+
+        $deal = $this->deal_id ? Deal::find($this->deal_id) : null;
+
+        if ($deal === null) {
+            return;
+        }
+
+        $existingDescriptions = collect($this->items)->pluck('description')->filter()->values()->all();
+
+        $result = $ai->suggestQuotationLineItems($deal, $existingDescriptions);
+
+        if ($result === null) {
+            $this->suggestionError = 'Could not suggest line items right now. Please try again.';
+
+            return;
+        }
+
+        if ($result === []) {
+            return;
+        }
+
+        // Drop the single still-blank placeholder row addItem() seeds by
+        // default, so suggestions don't leave an awkward empty row above
+        // them — never touches a row the user has actually started typing.
+        $this->items = array_values(array_filter($this->items, fn ($item) => trim($item['description']) !== ''));
+
+        foreach ($result as $suggestion) {
+            $this->items[] = [
+                'description' => $suggestion['description'],
+                'sac_code' => $suggestion['sac_code'] ?? '',
+                'quantity' => (string) $suggestion['quantity'],
+                'rate' => '',
+                'gst_rate' => '',
+            ];
+        }
+
+        $this->lastSuggestedCount = count($result);
+        $this->suggestionUsageId = $ai->lastUsageId;
+    }
+
+    public function rateSuggestion(string $direction): void
+    {
+        $this->recordAiFeedback($this->suggestionUsageId, $direction);
+        $this->suggestionFeedback = $direction;
     }
 
     /**

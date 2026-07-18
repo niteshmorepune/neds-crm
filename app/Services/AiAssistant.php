@@ -7,10 +7,12 @@ use App\Enums\DealStage;
 use App\Enums\InvoiceStatus;
 use App\Enums\TicketPriority;
 use App\Models\Customer;
+use App\Models\Deal;
 use App\Models\Festival;
 use App\Models\Lead;
 use App\Models\Project;
 use App\Models\Quotation;
+use App\Models\QuotationItem;
 use App\Models\Task;
 use App\Models\Ticket;
 use App\Models\User;
@@ -415,6 +417,116 @@ class AiAssistant
                 'description' => mb_substr(trim((string) ($item['description'] ?? '')), 0, 1000),
                 'due_in_days' => max(1, min(60, (int) ($item['due_in_days'] ?? 7))),
             ])
+            ->take(5)
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Suggests first-draft quotation line items (description + quantity +
+     * SAC code only) from a deal's notes — NEVER a rate or GST rate. This
+     * is the one AI Roadmap item flagged as needing real care before any
+     * code, since it sits right next to pricing; the guardrail was
+     * confirmed with the owner via AskUserQuestion before building, and
+     * it isn't just "the prompt says don't" — App\Livewire\
+     * QuotationBuilder::suggestItems() always writes the suggested
+     * rate/gst_rate fields as an empty string, which the SAME
+     * `'items.*.rate' => 'required'` validation rule that already blocks
+     * a manually-left-blank rate blocks from ever being saved. No new
+     * validation had to be trusted to hold this line — this method's
+     * return shape doesn't even carry a rate field to begin with.
+     *
+     * SAC codes are matched EXACTLY against codes this team has actually
+     * used before (real values already in quotation_items, not the
+     * model's general knowledge of India's GST code schedule, which could
+     * be wrong) — same exact-match-or-discard discipline as
+     * suggestTicketTriage's service matching. A suggested code outside
+     * that list is discarded, never trusted.
+     *
+     * Returns an empty array (not null) when the deal has no notes to
+     * work from — also confirmed with the owner: skip entirely rather
+     * than fall back to a generic per-service scaffold, so every
+     * suggestion stays grounded in this specific client's actual stated
+     * requirements, never generic filler.
+     *
+     * @param  list<string>  $existingDescriptions  Descriptions already on this quotation draft, so the model doesn't repeat them.
+     * @return list<array{description: string, quantity: float, sac_code: ?string}>|null
+     */
+    public function suggestQuotationLineItems(Deal $deal, array $existingDescriptions = []): ?array
+    {
+        if (! Ai::enabled()) {
+            return null;
+        }
+
+        $notes = $deal->notes()->latest()->take(10)->pluck('body');
+
+        if ($notes->isEmpty()) {
+            return [];
+        }
+
+        $knownSacCodes = QuotationItem::query()
+            ->whereNotNull('sac_code')
+            ->where('sac_code', '!=', '')
+            ->distinct()
+            ->pluck('sac_code');
+
+        $contextParts = [
+            'Service: '.($deal->service?->name ?? 'Unspecified'),
+            "Deal notes:\n".$notes->implode("\n"),
+        ];
+        if ($existingDescriptions !== []) {
+            $contextParts[] = 'Line items already on this quotation draft (do NOT repeat these): '.implode(', ', $existingDescriptions);
+        }
+        if ($knownSacCodes->isNotEmpty()) {
+            $contextParts[] = 'SAC codes this team has used before (ONLY use one of these if it clearly fits, exactly as written, otherwise leave sac_code null): '.$knownSacCodes->implode(', ');
+        }
+
+        $system = <<<'PROMPT'
+        You draft FIRST-DRAFT quotation line items for a digital-solutions
+        agency in India, based ONLY on the deal notes given — never invent
+        a requirement not mentioned there, and never repeat a line item
+        already on the draft. NEVER include a price, rate, or GST
+        percentage — this is a scope draft only, not a pricing decision,
+        and any "rate" or "gst_rate" field in your output will be
+        discarded even if you include one. Only use a SAC code from the
+        exact list given, if any is provided and clearly fits — otherwise
+        leave sac_code null. Suggest at most 5 line items.
+
+        Respond with ONLY a JSON array, no markdown, no prose:
+        [{"description": "<short line item>", "quantity": <number>, "sac_code": "<exact code from the list, or null>"}]
+        PROMPT;
+
+        $result = $this->client->message(
+            feature: 'quotation_line_item_suggestion',
+            prompt: implode("\n\n", $contextParts),
+            system: $system,
+            maxTokens: 600,
+        );
+
+        if ($result === null || ! preg_match('/\[.*\]/s', $result->text, $match)) {
+            return null;
+        }
+
+        $decoded = json_decode($match[0], true);
+
+        if (! is_array($decoded)) {
+            return null;
+        }
+
+        $this->lastUsageId = $result->usageId;
+
+        return collect($decoded)
+            ->filter(fn ($item) => is_array($item) && filled($item['description'] ?? null))
+            ->map(function ($item) use ($knownSacCodes) {
+                $sac = is_string($item['sac_code'] ?? null) ? trim($item['sac_code']) : null;
+                $matchedSac = $sac !== null && $knownSacCodes->contains($sac) ? $sac : null;
+
+                return [
+                    'description' => mb_substr(trim((string) $item['description']), 0, 255),
+                    'quantity' => max(0.01, (float) ($item['quantity'] ?? 1)),
+                    'sac_code' => $matchedSac,
+                ];
+            })
             ->take(5)
             ->values()
             ->all();
