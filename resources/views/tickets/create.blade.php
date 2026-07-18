@@ -2,7 +2,13 @@
     <x-slot name="header">New Ticket</x-slot>
 
     <div class="max-w-3xl mx-auto">
-        <form method="POST" action="{{ route('tickets.store') }}" class="rounded-lg bg-white p-6 shadow-sm">
+        <form method="POST" action="{{ route('tickets.store') }}" class="rounded-lg bg-white p-6 shadow-sm"
+              x-data="{}"
+              x-on:triage-suggested.window="
+                  if ($event.detail.priority) document.getElementById('priority').value = $event.detail.priority;
+                  if ($event.detail.serviceId) document.getElementById('service_id').value = $event.detail.serviceId;
+                  if ($event.detail.assigneeId) document.getElementById('assignee_id').value = $event.detail.assigneeId;
+              ">
             @csrf
             <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div class="md:col-span-2">
@@ -50,6 +56,9 @@
                     <x-input-label for="description" value="Description *" />
                     <textarea id="description" name="description" rows="4" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>{{ old('description') }}</textarea>
                     <x-input-error :messages="$errors->get('description')" class="mt-1" />
+                </div>
+                <div class="md:col-span-2">
+                    @livewire('ticket-triage-suggestion')
                 </div>
             </div>
             <div class="mt-6 flex items-center justify-end gap-3">

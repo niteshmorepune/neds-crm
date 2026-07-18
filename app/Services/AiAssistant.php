@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\InvoiceStatus;
+use App\Enums\TicketPriority;
 use App\Models\Customer;
 use App\Models\Festival;
 use App\Models\Lead;
@@ -411,6 +412,129 @@ class AiAssistant
             prompt: implode("\n", $lines),
             system: $system,
         ));
+    }
+
+    /**
+     * A client-facing recovery message draft for the specific ticket behind
+     * a Client Radar "Low Satisfaction" flag — grounded in that ticket's own
+     * subject/description/rating, not the generic flag text. Distinct from
+     * suggestClientAction() (internal advice, not a sendable message) and
+     * from draftTicketReply() (a normal reply, not framed as recovering
+     * from a poor rating). On demand only, same as the rest of Client Radar.
+     */
+    public function draftCsatRecoveryMessage(Ticket $ticket): ?string
+    {
+        if (! Ai::enabled()) {
+            return null;
+        }
+
+        $ticket->loadMissing('satisfactionRating');
+        $rating = $ticket->satisfactionRating;
+
+        $lines = [
+            'Client: '.$ticket->customer->company_name,
+            'Ticket subject: '.$ticket->subject,
+            'Ticket description: '.$ticket->description,
+            'Satisfaction rating: '.($rating?->rating ?? '?').'/5',
+        ];
+
+        if (filled($rating?->comment)) {
+            $lines[] = 'Client\'s comment on the rating: '.$rating->comment;
+        }
+
+        $system = <<<'PROMPT'
+        You draft a short, warm recovery message an account manager at a
+        digital-solutions agency in India can personalize and send to a
+        client who rated a support ticket poorly. Acknowledge their
+        frustration without being defensive, reference the specific issue
+        from the ticket given, and offer one concrete next step (e.g. a
+        call to make it right). Do not invent facts, discounts, or
+        commitments not evidenced by the ticket. Keep it to 3-4 sentences.
+        Output only the message body.
+        PROMPT;
+
+        return $this->trimmed($this->client->message(
+            feature: 'csat_recovery_message',
+            prompt: implode("\n", $lines),
+            system: $system,
+        ));
+    }
+
+    /**
+     * Suggests a priority and, if the client has a matching active project,
+     * a likely service for a new ticket — shown on the ticket create form
+     * for a human to confirm before submitting, never auto-applied. Unlike
+     * every other AiAssistant method, this returns structured data (not
+     * free text), so the model is constrained to a strict JSON reply and
+     * the service must be an EXACT match against the client's own active
+     * services — never a hallucinated one — the same discipline ScoreLead
+     * uses for its budget_band/urgency fields.
+     *
+     * @return array{priority: TicketPriority, service_id: ?int, service_name: ?string, reason: string}|null
+     */
+    public function suggestTicketTriage(Customer $customer, string $subject, string $description): ?array
+    {
+        if (! Ai::enabled()) {
+            return null;
+        }
+
+        $activeServices = $customer->projects()->with('service')->get()
+            ->pluck('service')->filter()->unique('id')->values();
+
+        if ($activeServices->isEmpty()) {
+            return null;
+        }
+
+        $serviceList = $activeServices->pluck('name')->implode(', ');
+
+        $system = <<<PROMPT
+        You triage a new support ticket for a digital-solutions agency in
+        India. Based on the subject and description, suggest:
+        1. A priority: urgent, high, normal, or low.
+        2. Which ONE of this client's active services the ticket most
+           likely relates to — reply with the EXACT name of one service
+           from this list, or null if none clearly fit: {$serviceList}.
+
+        Respond with ONLY a JSON object, no markdown, no prose:
+        {"priority": "<urgent|high|normal|low>", "service": "<exact name from the list, or null>", "reason": "<one short sentence, max 140 chars>"}
+        PROMPT;
+
+        $prompt = "Subject: {$subject}\n\nDescription: {$description}";
+
+        $result = $this->client->message(
+            feature: 'ticket_triage_suggestion',
+            prompt: $prompt,
+            system: $system,
+            maxTokens: 300,
+        );
+
+        if ($result === null || ! preg_match('/\{.*\}/s', $result->text, $match)) {
+            return null;
+        }
+
+        $decoded = json_decode($match[0], true);
+
+        if (! is_array($decoded)) {
+            return null;
+        }
+
+        $priority = TicketPriority::tryFrom(strtolower(trim((string) ($decoded['priority'] ?? ''))));
+
+        if ($priority === null) {
+            return null;
+        }
+
+        $serviceName = is_string($decoded['service'] ?? null) ? trim($decoded['service']) : null;
+        $matchedService = $serviceName !== null && $serviceName !== ''
+            ? $activeServices->first(fn ($s) => strcasecmp($s->name, $serviceName) === 0)
+            : null;
+
+        return [
+            'priority' => $priority,
+            'service_id' => $matchedService?->id,
+            'service_name' => $matchedService?->name,
+            'reason' => is_string($decoded['reason'] ?? null) ? mb_substr(trim($decoded['reason']), 0, 255) : '',
+        ];
     }
 
     /**

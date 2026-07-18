@@ -33,6 +33,11 @@ Everything is computed live from existing data, nothing is stored. Click
 step from that client's flags — generated on demand, per client, so it's
 never run automatically as a batch.
 
+On a **Low Satisfaction** flag specifically, a second button — **✨ Draft
+recovery message** — writes a client-facing apology grounded in the actual
+ticket that was rated poorly (not just the generic flag). Review and
+personalize it before sending; nothing goes out automatically.
+
 ## Reports
 From the **Reports** panel on the dashboard:
 

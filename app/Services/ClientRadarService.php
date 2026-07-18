@@ -26,7 +26,7 @@ class ClientRadarService
     private const LOW_SATISFACTION_WINDOW_DAYS = 60;
 
     /**
-     * @return Collection<int, array{customer: Customer, flags: array<string, array{label: string, detail: string}>}>
+     * @return Collection<int, array{customer: Customer, flags: array<string, array{label: string, detail: string, ticket_id?: int}>}>
      */
     public function flaggedClients(): Collection
     {
@@ -45,7 +45,7 @@ class ClientRadarService
     }
 
     /**
-     * @return array<string, array{label: string, detail: string}>
+     * @return array<string, array{label: string, detail: string, ticket_id?: int}>
      */
     private function flagsFor(Customer $customer, int $activeServiceCount): array
     {
@@ -94,17 +94,25 @@ class ClientRadarService
             ];
         }
 
-        $recentLowRatings = $customer->tickets
-            ->pluck('satisfactionRating')
-            ->filter()
-            ->filter(fn ($rating) => $rating->created_at->gt(now()->subDays(self::LOW_SATISFACTION_WINDOW_DAYS)))
-            ->filter(fn ($rating) => $rating->rating <= self::LOW_SATISFACTION_THRESHOLD);
+        $lowRatedTickets = $customer->tickets->filter(function ($ticket) {
+            $rating = $ticket->satisfactionRating;
 
-        if ($recentLowRatings->isNotEmpty()) {
-            $count = $recentLowRatings->count();
+            return $rating
+                && $rating->rating <= self::LOW_SATISFACTION_THRESHOLD
+                && $rating->created_at->gt(now()->subDays(self::LOW_SATISFACTION_WINDOW_DAYS));
+        });
+
+        if ($lowRatedTickets->isNotEmpty()) {
+            $count = $lowRatedTickets->count();
+            $mostRecent = $lowRatedTickets->sortByDesc(fn ($t) => $t->satisfactionRating->created_at)->first();
+            $minRating = $lowRatedTickets->min(fn ($t) => $t->satisfactionRating->rating);
+
             $flags['low_satisfaction'] = [
                 'label' => 'Low Satisfaction',
-                'detail' => 'Rated '.$recentLowRatings->min('rating')."/5 on a recent ticket".($count > 1 ? " ({$count} low ratings)" : ''),
+                'detail' => "Rated {$minRating}/5 on a recent ticket".($count > 1 ? " ({$count} low ratings)" : ''),
+                // Used by ClientRadarSuggestion to ground an AI recovery-message
+                // draft in the specific ticket that triggered this flag.
+                'ticket_id' => $mostRecent->id,
             ];
         }
 

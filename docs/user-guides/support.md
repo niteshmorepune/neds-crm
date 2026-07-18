@@ -10,6 +10,13 @@ You handle **tickets** (client issues) and **projects & tasks** (delivery work).
 ## 1. Tickets
 Tickets come from clients (via their portal) or are raised by staff.
 
+**Raising a ticket yourself:** after filling in the client, subject, and
+description, click **✨ Suggest priority & assignee** to have Claude propose a
+priority and — if it can match the description to one of the client's active
+services — who's likely the right person, based on that service's project
+lead. It only fills the fields above; nothing submits until you click
+**Create Ticket**, so double-check before sending.
+
 **Open a ticket** to see the conversation. Each ticket has a **priority** and an
 **SLA due time** (when it should be resolved by) — urgent ones are due soonest.
 
