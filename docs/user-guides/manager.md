@@ -69,11 +69,15 @@ panel) — a near-term cash view, blending:
   and daily reports submitted.
 - Pick the month, then **Export CSV** for records or appraisals.
 - Click **✨ Generate AI Summary** for a narrative read of the table — trends,
-  standouts, and anyone whose numbers suggest they may need support. It's
-  generated only from the numbers already on the page (never invents a
-  reason behind them) and is **visible to Admin/Manager only** — it's never
-  shown to the employee it's about, so use it as a starting point for a
-  conversation, not as a rating you show them.
+  standouts, and anyone whose numbers suggest they may need support. For a
+  Sales rep, once there's enough pipeline history it names specific stages
+  where their deals move slower than the team average (e.g. "averages 18
+  days in Negotiation before moving a deal on, against the team's 9 days")
+  instead of a vague "needs support" line — this may not appear yet on a
+  newer pipeline. It's generated only from the numbers already on the page
+  (never invents a reason behind them) and is **visible to Admin/Manager
+  only** — it's never shown to the employee it's about, so use it as a
+  starting point for a conversation, not as a rating you show them.
 
 **Revenue Report** — for a chosen financial year:
 - income **by month**, **by service**, and **by client**, split **recurring vs

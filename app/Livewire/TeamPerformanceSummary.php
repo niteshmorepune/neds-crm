@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Enums\UserRole;
 use App\Services\AiAssistant;
 use App\Services\ReportMetrics;
+use App\Services\SalesPipelineMetrics;
 use App\Support\Ai;
 use Illuminate\Support\Carbon;
 use Livewire\Component;
@@ -31,15 +32,16 @@ class TeamPerformanceSummary extends Component
      * Admin/Manager only — mirrors ReportController::authorizePerformance().
      * This commentary is never shown to the employees it's about.
      */
-    public function generate(ReportMetrics $metrics, AiAssistant $ai): void
+    public function generate(ReportMetrics $metrics, SalesPipelineMetrics $pipeline, AiAssistant $ai): void
     {
         abort_unless(Ai::enabled() && auth()->user()?->hasRole(UserRole::Admin, UserRole::Manager), 403);
 
         $from = Carbon::parse($this->fromDate)->startOfDay();
         $to = Carbon::parse($this->toDate)->endOfDay();
         $rows = $metrics->employeePerformance($from, $to);
+        $dwellTimes = $pipeline->repStageDwellTimes();
 
-        $this->summary = $ai->summarizeTeamPerformance($rows, $from, $to)
+        $this->summary = $ai->summarizeTeamPerformance($rows, $from, $to, $dwellTimes)
             ?? 'Could not generate a summary right now. Please try again.';
     }
 

@@ -114,13 +114,36 @@ it('summarizes team performance from report rows', function () {
     aiOn();
     fakeAiText('- Mohit completed the most tasks this month. - Attendance is strong across the team.');
     $rows = new Collection([
-        ['user' => 'Mohit', 'role' => 'Sales', 'tasks_completed' => 12, 'on_time_pct' => 90, 'calls_made' => 30, 'leads_converted' => 3, 'attendance_pct' => 95, 'daily_reports' => 20],
+        ['user_id' => 1, 'user' => 'Mohit', 'role' => 'Sales', 'tasks_completed' => 12, 'on_time_pct' => 90, 'calls_made' => 30, 'leads_converted' => 3, 'attendance_pct' => 95, 'daily_reports' => 20],
     ]);
 
     $summary = app(AiAssistant::class)->summarizeTeamPerformance($rows, now()->startOfMonth(), now()->endOfMonth());
 
     expect($summary)->toContain('Mohit');
     expect(AiUsage::where('feature', 'team_performance_summary')->exists())->toBeTrue();
+});
+
+it('enriches a rep\'s line with stage-dwell figures when given, keyed by user_id', function () {
+    aiOn();
+    fakeAiText('- Priya stalls longest in Negotiation, averaging 18 days against the team\'s 9.');
+    $rows = new Collection([
+        ['user_id' => 42, 'user' => 'Priya', 'role' => 'Sales', 'tasks_completed' => 5, 'on_time_pct' => 80, 'calls_made' => 10, 'leads_converted' => 1, 'attendance_pct' => 90, 'daily_reports' => 15],
+        ['user_id' => 43, 'user' => 'Rahul', 'role' => 'Sales', 'tasks_completed' => 8, 'on_time_pct' => 85, 'calls_made' => 12, 'leads_converted' => 2, 'attendance_pct' => 92, 'daily_reports' => 18],
+    ]);
+    $dwellTimes = [
+        42 => ['negotiation' => ['rep_avg_days' => 18.0, 'rep_sample' => 4, 'team_avg_days' => 9.0, 'team_sample' => 10]],
+    ];
+
+    app(AiAssistant::class)->summarizeTeamPerformance($rows, now()->startOfMonth(), now()->endOfMonth(), $dwellTimes);
+
+    Http::assertSent(function ($request) {
+        $body = $request->body();
+
+        // Priya's line carries the dwell figures; Rahul's (no entry in $dwellTimes) does not.
+        return str_contains($body, 'Negotiation stage')
+            && str_contains($body, '18')
+            && str_contains($body, 'team average 9');
+    });
 });
 
 it('suggests a next action for a flagged client', function () {
