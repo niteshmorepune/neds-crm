@@ -418,6 +418,18 @@ about, so it's a starting point for a conversation, not a rating you share.
 next action based on that client's specific signals. Generated on demand per
 client, not in a batch — so it costs nothing unless someone clicks it.
 
+**CSAT recovery drafts (✨ Draft recovery message)** — a second button that
+appears only on a **Low Satisfaction** flag, grounded in the actual ticket
+that was rated poorly (subject, description, rating, and the client's own
+comment if they left one) rather than just the flag's summary text.
+
+**Ticket triage suggestion (✨ Suggest priority & assignee)** — on the New
+Ticket form, suggests a priority and, if it can match the description to one
+of the client's active services, the project lead for that service as a
+likely assignee. The service match is always an exact name from that
+client's real active services — never a hallucinated one — so if nothing
+fits it says so instead of guessing.
+
 **Portal assistant ("Ask about your account")** — the one AI feature clients
 trigger themselves rather than staff, on their portal Dashboard. It only ever
 sees that client's own invoices, ticket statuses, and project statuses — never

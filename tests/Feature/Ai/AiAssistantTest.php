@@ -1,10 +1,12 @@
 <?php
 
+use App\Enums\TicketPriority;
 use App\Models\AiUsage;
 use App\Models\Customer;
 use App\Models\Festival;
 use App\Models\Lead;
 use App\Models\Project;
+use App\Models\Service;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Services\AiAssistant;
@@ -160,6 +162,66 @@ it('answers a portal question and records usage under its own feature', function
 
     expect($answer)->toBe('You have no overdue invoices right now.');
     expect(AiUsage::where('feature', 'portal_assistant_answer')->exists())->toBeTrue();
+});
+
+it('drafts a CSAT recovery message grounded in the specific ticket', function () {
+    aiOn();
+    fakeAiText('I\'m sorry the SEO delay frustrated you — let\'s hop on a call this week to make it right.');
+    $customer = Customer::factory()->create(['company_name' => 'Acme Corp']);
+    $ticket = Ticket::factory()->for($customer)->create(['subject' => 'SEO report late']);
+    $ticket->satisfactionRating()->create(['rating' => 1, 'comment' => 'Report was a week late']);
+
+    $draft = app(AiAssistant::class)->draftCsatRecoveryMessage($ticket->load('satisfactionRating'));
+
+    expect($draft)->toContain('call');
+    expect(AiUsage::where('feature', 'csat_recovery_message')->exists())->toBeTrue();
+});
+
+it('suggests ticket triage matched to one of the client\'s real active services', function () {
+    aiOn();
+    $seo = Service::factory()->create(['name' => 'SEO']);
+    $customer = Customer::factory()->create();
+    Project::factory()->create(['customer_id' => $customer->id, 'service_id' => $seo->id]);
+    fakeAiText('{"priority": "high", "service": "SEO", "reason": "Rankings dropped, time-sensitive."}');
+
+    $suggestion = app(AiAssistant::class)->suggestTicketTriage($customer, 'Rankings dropped', 'Our keywords fell off page 1 overnight.');
+
+    expect($suggestion)->not->toBeNull()
+        ->and($suggestion['priority'])->toBe(TicketPriority::High)
+        ->and($suggestion['service_id'])->toBe($seo->id)
+        ->and($suggestion['service_name'])->toBe('SEO')
+        ->and($suggestion['reason'])->toContain('Rankings');
+});
+
+it('ignores a hallucinated service name that is not in the client\'s actual active services', function () {
+    aiOn();
+    $seo = Service::factory()->create(['name' => 'SEO']);
+    $customer = Customer::factory()->create();
+    Project::factory()->create(['customer_id' => $customer->id, 'service_id' => $seo->id]);
+    fakeAiText('{"priority": "normal", "service": "Software Development", "reason": "Unclear."}');
+
+    $suggestion = app(AiAssistant::class)->suggestTicketTriage($customer, 'A ticket', 'Something unrelated.');
+
+    expect($suggestion['service_id'])->toBeNull()
+        ->and($suggestion['service_name'])->toBeNull();
+});
+
+it('returns null for ticket triage when the client has no active projects to route to', function () {
+    aiOn();
+    $customer = Customer::factory()->create();
+
+    expect(app(AiAssistant::class)->suggestTicketTriage($customer, 'A ticket', 'Description'))->toBeNull();
+    Http::assertNothingSent();
+});
+
+it('returns null for ticket triage when the model reply has no usable priority', function () {
+    aiOn();
+    $seo = Service::factory()->create(['name' => 'SEO']);
+    $customer = Customer::factory()->create();
+    Project::factory()->create(['customer_id' => $customer->id, 'service_id' => $seo->id]);
+    fakeAiText('{"priority": "critical", "service": "SEO", "reason": "Bad enum value."}');
+
+    expect(app(AiAssistant::class)->suggestTicketTriage($customer, 'A ticket', 'Description'))->toBeNull();
 });
 
 it('returns null (not an exception) when the API fails', function () {

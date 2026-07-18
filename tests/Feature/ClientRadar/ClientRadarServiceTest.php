@@ -108,7 +108,7 @@ it('flags declining activity when recent touches are well below the prior period
     expect($rows->first()['flags'])->not->toHaveKey('no_contact');
 });
 
-it('flags a client with a recent low satisfaction rating', function () {
+it('flags a client with a recent low satisfaction rating and carries the ticket id', function () {
     $customer = Customer::factory()->create();
     $customer->notes()->create(['body' => 'Recent touch']);
     $ticket = Ticket::factory()->for($customer)->create();
@@ -117,7 +117,25 @@ it('flags a client with a recent low satisfaction rating', function () {
     $rows = app(ClientRadarService::class)->flaggedClients();
 
     expect($rows->first()['flags'])->toHaveKey('low_satisfaction')
-        ->and($rows->first()['flags']['low_satisfaction']['detail'])->toContain('2/5');
+        ->and($rows->first()['flags']['low_satisfaction']['detail'])->toContain('2/5')
+        ->and($rows->first()['flags']['low_satisfaction']['ticket_id'])->toBe($ticket->id);
+});
+
+it('carries the most recently rated ticket id when a client has multiple low ratings', function () {
+    $customer = Customer::factory()->create();
+    $customer->notes()->create(['body' => 'Recent touch']);
+
+    $older = Ticket::factory()->for($customer)->create();
+    backdate($older->satisfactionRating()->create(['rating' => 1]), now()->subDays(10));
+
+    $newer = Ticket::factory()->for($customer)->create();
+    $newer->satisfactionRating()->create(['rating' => 2]);
+
+    $rows = app(ClientRadarService::class)->flaggedClients();
+
+    expect($rows->first()['flags']['low_satisfaction']['ticket_id'])->toBe($newer->id)
+        ->and($rows->first()['flags']['low_satisfaction']['detail'])->toContain('1/5')
+        ->and($rows->first()['flags']['low_satisfaction']['detail'])->toContain('2 low ratings');
 });
 
 it('does not flag a client whose ratings are all above the threshold', function () {
