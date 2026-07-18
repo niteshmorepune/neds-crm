@@ -8,6 +8,7 @@ use App\Models\Deal;
 use App\Models\Festival;
 use App\Models\Lead;
 use App\Models\Project;
+use App\Models\Quotation;
 use App\Models\Service;
 use App\Models\Ticket;
 use App\Models\User;
@@ -208,6 +209,57 @@ it('returns null for onboarding task suggestions when AI is disabled', function 
     $project = Project::factory()->create();
 
     expect(app(AiAssistant::class)->suggestOnboardingTasks($project))->toBeNull();
+    Http::assertNothingSent();
+});
+
+it('suggests quotation line items grounded in deal notes, matching a known SAC code exactly', function () {
+    aiOn();
+    Quotation::factory()->create()->items()->create([
+        'description' => 'Existing item', 'sac_code' => '998361', 'quantity' => 1, 'rate' => 100000, 'gst_rate' => 18, 'amount' => 100000,
+    ]);
+    fakeAiText('[{"description": "Hindi translation setup", "quantity": 1, "sac_code": "998361"}]');
+    $deal = Deal::factory()->create();
+    $deal->notes()->create(['user_id' => User::factory()->create()->id, 'body' => 'Client wants a Hindi translation of the whole site.']);
+
+    $result = app(AiAssistant::class)->suggestQuotationLineItems($deal);
+
+    expect($result)->toHaveCount(1)
+        ->and($result[0]['description'])->toBe('Hindi translation setup')
+        ->and($result[0]['sac_code'])->toBe('998361')
+        ->and($result[0])->not->toHaveKey('rate')
+        ->and($result[0])->not->toHaveKey('gst_rate');
+    expect(AiUsage::where('feature', 'quotation_line_item_suggestion')->exists())->toBeTrue();
+});
+
+it('discards a SAC code the team has never actually used, even if the model returns one', function () {
+    aiOn();
+    // No QuotationItem with any sac_code exists at all — the whitelist is empty.
+    fakeAiText('[{"description": "Hindi translation setup", "quantity": 1, "sac_code": "998399"}]');
+    $deal = Deal::factory()->create();
+    $deal->notes()->create(['user_id' => User::factory()->create()->id, 'body' => 'Client wants a Hindi translation.']);
+
+    $result = app(AiAssistant::class)->suggestQuotationLineItems($deal);
+
+    expect($result[0]['sac_code'])->toBeNull();
+});
+
+it('skips the AI call entirely and returns an empty array when the deal has no notes', function () {
+    aiOn();
+    Http::fake();
+    $deal = Deal::factory()->create();
+
+    $result = app(AiAssistant::class)->suggestQuotationLineItems($deal);
+
+    expect($result)->toBe([]);
+    Http::assertNothingSent();
+});
+
+it('returns null for quotation line item suggestions when AI is disabled', function () {
+    config(['services.anthropic.enabled' => false]);
+    Http::fake();
+    $deal = Deal::factory()->create();
+
+    expect(app(AiAssistant::class)->suggestQuotationLineItems($deal))->toBeNull();
     Http::assertNothingSent();
 });
 

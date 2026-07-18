@@ -4,10 +4,12 @@ use App\Enums\QuotationStatus;
 use App\Enums\UserRole;
 use App\Livewire\QuotationBuilder;
 use App\Models\Customer;
+use App\Models\Deal;
 use App\Models\Invoice;
 use App\Models\Quotation;
 use App\Models\User;
 use Database\Seeders\MenuItemsSeeder;
+use Illuminate\Support\Facades\Http;
 use Livewire\Livewire;
 
 beforeEach(function () {
@@ -78,6 +80,65 @@ it('defaults the QuotationBuilder GST-exempt toggle from the selected client, an
     expect($quotation->is_gst_exempt)->toBeTrue()
         ->and($quotation->cgst_total)->toBe(0)
         ->and($quotation->total)->toBe(100000);
+});
+
+it('suggests line items grounded in the deal notes, leaving rate and GST % blank', function () {
+    config(['services.anthropic.enabled' => true, 'services.anthropic.key' => 'sk-test']);
+    Http::fake([
+        'api.anthropic.com/*' => Http::response([
+            'content' => [['type' => 'text', 'text' => '[{"description": "Hindi translation setup", "quantity": 1, "sac_code": null}]']],
+            'usage' => ['input_tokens' => 30, 'output_tokens' => 15],
+        ]),
+    ]);
+    $deal = Deal::factory()->create();
+    $deal->notes()->create(['user_id' => $this->admin->id, 'body' => 'Client wants a Hindi translation of the whole site.']);
+    $customer = Customer::factory()->create(['state_code' => '27']);
+
+    $component = Livewire::actingAs($this->admin)
+        ->test(QuotationBuilder::class, ['deal_id' => $deal->id])
+        ->set('customer_id', $customer->id)
+        ->call('suggestItems')
+        ->assertSet('lastSuggestedCount', 1)
+        ->assertSet('items.0.description', 'Hindi translation setup')
+        ->assertSet('items.0.rate', '')
+        ->assertSet('items.0.gst_rate', '');
+
+    // The same validation that already blocks a manually-blank rate blocks
+    // a suggested one too — the guardrail is enforced by an existing rule,
+    // not a new promise this feature has to keep on its own.
+    $component->call('save')->assertHasErrors(['items.0.rate']);
+    expect(Quotation::count())->toBe(0);
+});
+
+it('shows a friendly message and suggests nothing when the deal has no notes', function () {
+    config(['services.anthropic.enabled' => true, 'services.anthropic.key' => 'sk-test']);
+    Http::fake();
+    $deal = Deal::factory()->create();
+
+    Livewire::actingAs($this->admin)
+        ->test(QuotationBuilder::class, ['deal_id' => $deal->id])
+        ->call('suggestItems')
+        ->assertSet('lastSuggestedCount', 0)
+        ->assertSee('Nothing specific to suggest yet');
+
+    Http::assertNothingSent();
+});
+
+it('hides the suggest-items button when the quotation has no linked deal', function () {
+    config(['services.anthropic.enabled' => true, 'services.anthropic.key' => 'sk-test']);
+
+    Livewire::actingAs($this->admin)
+        ->test(QuotationBuilder::class)
+        ->assertDontSee('Suggest line items');
+});
+
+it('hides the suggest-items button entirely when AI is disabled', function () {
+    config(['services.anthropic.enabled' => false]);
+    $deal = Deal::factory()->create();
+
+    Livewire::actingAs($this->admin)
+        ->test(QuotationBuilder::class, ['deal_id' => $deal->id])
+        ->assertDontSee('Suggest line items');
 });
 
 it('allows valid status transitions and blocks invalid ones', function () {

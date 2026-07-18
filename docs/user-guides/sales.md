@@ -176,6 +176,14 @@ form to set the company's monthly/FY target and each rep's monthly target.
    pre-fills the builder for you automatically).
 2. Add **line items** (description, HSN/SAC, quantity, rate). GST is calculated
    per line (CGST+SGST for Maharashtra clients, IGST otherwise).
+   - **✨ Suggest line items** — when the quotation is linked to a deal that
+     has notes, this button drafts a first pass at the description/quantity/
+     SAC for each line, grounded only in what's actually in those notes
+     (e.g. a note mentioning "client wants a Hindi translation" becomes its
+     own line item). **It never fills in a rate or GST %** — those stay
+     blank on every suggested line, exactly like a manually-added one, so
+     you still price and save it yourself. If the deal has no notes yet,
+     it says so rather than guessing.
 3. For milestone/project work, add **milestones** (e.g. advance on signing,
    balance on delivery). Once work starts, whoever runs the project marks each
    milestone **Pending / In Progress / Done** on the quotation page — that's
