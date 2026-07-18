@@ -41,6 +41,33 @@ it('hides a stale AI daily digest from a previous day', function () {
     $this->actingAs($sales)->get(route('dashboard'))->assertOk()->assertDontSee('stale summary');
 });
 
+it('shows the AI weekly owner digest banner to a manager when cached for today', function () {
+    $manager = User::factory()->role(UserRole::Manager)->create([
+        'ai_weekly_digest' => 'Pipeline is healthy; two clients need a check-in this week.',
+        'ai_weekly_digest_date' => now()->toDateString(),
+    ]);
+
+    $this->actingAs($manager)->get(route('dashboard'))->assertOk()->assertSee('two clients need a check-in');
+});
+
+it('hides the weekly owner digest banner from a Sales rep even when somehow cached', function () {
+    $sales = User::factory()->role(UserRole::Sales)->create([
+        'ai_weekly_digest' => 'A weekly digest that should never reach a rep.',
+        'ai_weekly_digest_date' => now()->toDateString(),
+    ]);
+
+    $this->actingAs($sales)->get(route('dashboard'))->assertOk()->assertDontSee('should never reach a rep');
+});
+
+it('hides a stale AI weekly digest from a previous week', function () {
+    $manager = User::factory()->role(UserRole::Manager)->create([
+        'ai_weekly_digest' => 'Last week\'s stale synthesis.',
+        'ai_weekly_digest_date' => now()->subWeek()->toDateString(),
+    ]);
+
+    $this->actingAs($manager)->get(route('dashboard'))->assertOk()->assertDontSee('stale synthesis');
+});
+
 it('shows the company dashboard to an admin', function () {
     $admin = User::factory()->role(UserRole::Admin)->create();
 

@@ -243,6 +243,43 @@ class AiAssistant
     }
 
     /**
+     * A Monday-morning "here's the week ahead" business briefing for
+     * Admin/Manager, synthesizing pipeline, cash position, and at-risk
+     * clients (SendWeeklyOwnerDigest assembles $lines from
+     * BusinessOverviewMetrics + ClientRadarService — nothing new computed
+     * here, same "reuse existing metrics services" rule as CrmQueryCatalog).
+     * Unlike the daily digest, this feature has no non-AI value of its own
+     * (the owner can already see each underlying report directly) — the
+     * whole point is turning three separate reports into one paragraph — so
+     * the caller skips sending anything at all when this returns null.
+     *
+     * @param  list<string>  $lines  Pre-formatted "Label: value" figures.
+     */
+    public function summarizeWeeklyOwnerDigest(array $lines): ?string
+    {
+        if (! Ai::enabled()) {
+            return null;
+        }
+
+        $system = <<<'PROMPT'
+        You write a short Monday-morning business briefing for the owner of a
+        digital-solutions agency in India, based only on the figures given.
+        Synthesize pipeline, cash position, and at-risk clients into ONE
+        tight paragraph (4-6 sentences, about 100 words) that reads as a
+        single narrative, not a list — lead with whatever most needs
+        attention this week. Do not invent client names, deal names, or any
+        number not given. Refer to clients only by count, never by name.
+        Output only the paragraph.
+        PROMPT;
+
+        return $this->trimmed($this->client->message(
+            feature: 'weekly_owner_digest',
+            prompt: implode("\n", $lines),
+            system: $system,
+        ));
+    }
+
+    /**
      * A short, warm client-facing "here's today's progress" note for one
      * project, based only on the task titles completed that day. Stored as a
      * draft note the project owner reviews/edits before it's shared with the

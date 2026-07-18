@@ -407,6 +407,17 @@ short AI-written "here's your day" line at the top of their 9 AM morning digest
 email, which also appears as a dashboard banner for the rest of that day. It's
 generated only from that person's own tasks/follow-ups.
 
+**AI weekly owner digest** — every Monday at 9 AM, Admin/Manager get a short
+AI-written paragraph synthesizing the week ahead: open pipeline, MRR,
+cash expected this month and over the next 3 months, receivables
+outstanding (including the 90+ days overdue figure), and how many clients
+Client Radar has flagged (and why). It's a synthesis of the existing
+Business Overview, Cash Forecast, and Client Radar reports — the email
+links to all three — and also appears as a dashboard banner for the rest
+of that Monday. Unlike the daily digest, this one is skipped entirely
+(no email sent) if AI is turned off, since there's nothing to show beyond
+what those three reports already show on their own.
+
 **Team performance summary (✨ Generate AI Summary)** — a button on the
 **Employee Performance Report** (Reports panel) that turns the existing
 tasks/calls/attendance numbers into a narrative of trends and standouts. For
