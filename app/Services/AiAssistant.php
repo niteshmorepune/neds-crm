@@ -10,6 +10,7 @@ use App\Models\Customer;
 use App\Models\Festival;
 use App\Models\Lead;
 use App\Models\Project;
+use App\Models\Quotation;
 use App\Models\Task;
 use App\Models\Ticket;
 use App\Models\User;
@@ -321,6 +322,102 @@ class AiAssistant
             prompt: implode("\n", $lines),
             system: $system,
         ));
+    }
+
+    /**
+     * Suggests project-specific onboarding tasks BEYOND the standard
+     * per-service checklist CreateOnboardingTasks already created —
+     * grounded only in this deal's notes and quotation line items, never
+     * invents a requirement that isn't present in that text. Opt-in only,
+     * per the standing "no task flood" rule (CLAUDE.md's 2026-07-06
+     * decision log): this method only ever returns a list for a human to
+     * review — App\Livewire\OnboardingTaskSuggestions is the only caller,
+     * and it never creates a Task until the user explicitly selects one
+     * and clicks Add.
+     *
+     * Returns an empty array (not null) when there's simply nothing
+     * deal-specific to work from — distinct from null, which means AI is
+     * disabled or the call failed. Deliberately skips the AI call entirely
+     * in that case rather than spend tokens asking Claude to find
+     * something in empty input.
+     *
+     * @return list<array{title: string, description: string, due_in_days: int}>|null
+     */
+    public function suggestOnboardingTasks(Project $project): ?array
+    {
+        if (! Ai::enabled()) {
+            return null;
+        }
+
+        $deal = $project->deal;
+
+        $notes = $deal ? $deal->notes()->latest()->take(10)->pluck('body') : new Collection;
+        $notes = $notes->merge($project->notes()->latest()->take(5)->pluck('body'));
+
+        $lineItems = $deal
+            ? $deal->quotations->flatMap(fn (Quotation $q) => $q->items->pluck('description'))
+            : new Collection;
+
+        if ($notes->isEmpty() && $lineItems->isEmpty()) {
+            return [];
+        }
+
+        $existingTitles = $project->tasks->pluck('title')->implode(', ') ?: 'none yet';
+
+        $contextParts = [
+            'Service: '.($project->service?->name ?? 'Unspecified'),
+            'Tasks already on this project (do NOT repeat these): '.$existingTitles,
+        ];
+        if ($notes->isNotEmpty()) {
+            $contextParts[] = "Deal/project notes:\n".$notes->implode("\n");
+        }
+        if ($lineItems->isNotEmpty()) {
+            $contextParts[] = "Quotation line items:\n".$lineItems->implode("\n");
+        }
+
+        $system = <<<'PROMPT'
+        You suggest ADDITIONAL onboarding tasks for a new project at a
+        digital-solutions agency in India, on top of a standard per-service
+        checklist that already exists (listed as tasks already on this
+        project). Base every suggestion ONLY on something specific
+        mentioned in the notes or quotation line items given — never
+        invent a requirement that isn't there, and never repeat a task
+        already on the project. If nothing in the given text calls for an
+        extra task, return an empty array. Suggest at most 5 tasks.
+
+        Respond with ONLY a JSON array, no markdown, no prose:
+        [{"title": "<short title>", "description": "<one sentence, what and why>", "due_in_days": <int, 1-60>}]
+        PROMPT;
+
+        $result = $this->client->message(
+            feature: 'onboarding_task_suggestion',
+            prompt: implode("\n\n", $contextParts),
+            system: $system,
+            maxTokens: 600,
+        );
+
+        if ($result === null || ! preg_match('/\[.*\]/s', $result->text, $match)) {
+            return null;
+        }
+
+        $decoded = json_decode($match[0], true);
+
+        if (! is_array($decoded)) {
+            return null;
+        }
+
+        $this->lastUsageId = $result->usageId;
+
+        return collect($decoded)
+            ->filter(fn ($item) => is_array($item) && filled($item['title'] ?? null))
+            ->map(fn ($item) => [
+                'title' => mb_substr(trim((string) $item['title']), 0, 255),
+                'description' => mb_substr(trim((string) ($item['description'] ?? '')), 0, 1000),
+                'due_in_days' => max(1, min(60, (int) ($item['due_in_days'] ?? 7))),
+            ])
+            ->take(5)
+            ->values()
+            ->all();
     }
 
     public function summarizeTicket(Ticket $ticket): ?string

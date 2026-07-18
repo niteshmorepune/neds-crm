@@ -127,6 +127,7 @@ class AiUsageMetrics
             'portal_assistant_answer' => 'Portal Assistant Answer',
             'csat_recovery_message' => 'CSAT Recovery Message',
             'ticket_triage_suggestion' => 'Ticket Triage Suggestion',
+            'onboarding_task_suggestion' => 'Onboarding Task Suggestion',
             'crm_query_classify' => 'Ask the CRM (classify)',
             'crm_query_answer' => 'Ask the CRM (answer)',
             default => ucwords(str_replace('_', ' ', $feature)),
