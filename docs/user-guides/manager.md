@@ -85,7 +85,7 @@ panel) — a near-term cash view, blending:
 
 **Lead Source Performance** — for a chosen month:
 - leads captured, converted, and conversion rate **by source** (Website,
-  WhatsApp, Referral, Cold Call, Other).
+  WhatsApp, Referral, Cold Call, Phone Enquiry, Other).
 - for website leads with UTM tracking parameters, a second table breaks the
   same numbers down **by campaign** (e.g. "google / cpc / seo-pune-2026") —
   this is what tells you which ad or link is actually worth the spend.

@@ -9,6 +9,7 @@ enum LeadSource: string
     case MetaAds = 'meta_ads';
     case Referral = 'referral';
     case ColdCall = 'cold_call';
+    case PhoneEnquiry = 'phone_enquiry';
     case Other = 'other';
 
     public function label(): string
@@ -19,6 +20,7 @@ enum LeadSource: string
             self::MetaAds => 'Meta Ads',
             self::Referral => 'Referral',
             self::ColdCall => 'Cold Call',
+            self::PhoneEnquiry => 'Phone Enquiry',
             self::Other => 'Other',
         };
     }
