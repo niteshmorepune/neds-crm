@@ -26,10 +26,11 @@ use Illuminate\Support\Facades\Log;
  *
  * utm_source/medium are set to a fixed 'meta'/'paid_social' label since Meta's
  * webhook payload doesn't distinguish Facebook vs Instagram placement.
- * utm_campaign stores the raw ad_id (falling back to form_id) — Meta's basic
- * leadgen response doesn't include human-readable campaign/ad names; mapping
- * those would need an extra Graph API call this job deliberately doesn't make
- * until the mapping's been verified against a real payload.
+ * utm_campaign stores the ad's human-readable name (falling back to the lead
+ * form's name, then the raw ad_id/form_id if both name lookups fail) via one
+ * extra best-effort Graph API call — see fetchCampaignLabel(). That call is
+ * never allowed to block lead creation: any failure just falls back to the
+ * raw id, same as before this was added.
  *
  * Custom form questions beyond the standard fields are opportunistically
  * mapped too, so Meta leads score as well as manually-entered ones: an
@@ -95,6 +96,9 @@ class ImportMetaLead implements ShouldQueue
         [$serviceId, $extra] = $this->matchServiceId($extra);
         [$estimatedValue, $extra] = $this->matchBudget($extra);
 
+        $adId = $response->json('ad_id');
+        $formId = $response->json('form_id');
+
         $lead = Lead::create([
             'name' => $fields['name'] ?: 'Facebook Lead',
             'company' => $fields['company'],
@@ -108,13 +112,50 @@ class ImportMetaLead implements ShouldQueue
             'meta_leadgen_id' => $this->leadgenId,
             'utm_source' => 'meta',
             'utm_medium' => 'paid_social',
-            'utm_campaign' => $response->json('ad_id') ?? $response->json('form_id'),
+            'utm_campaign' => $this->fetchCampaignLabel($version, $accessToken, $adId, $formId) ?? $adId ?? $formId,
         ]);
 
         if ($extra !== []) {
             $body = collect($extra)->map(fn ($v, $k) => "{$k}: {$v}")->implode("\n");
             $lead->notes()->create(['user_id' => null, 'body' => "Additional form answers:\n{$body}"]);
         }
+    }
+
+    /**
+     * Best-effort lookup of a human-readable label for the Lead Source
+     * Performance report's campaign breakdown — tries the ad's own name
+     * first (what the advertiser actually named it in Ads Manager, e.g.
+     * "SEO - Pune - July V2"), then the lead form's name if there's no ad_id
+     * (organic/non-ad form submissions), and returns null on any failure so
+     * the caller falls back to the raw id. Never throws — a broken or rate
+     * limited call here must not stop the lead itself from being created.
+     */
+    private function fetchCampaignLabel(string $version, string $accessToken, ?string $adId, ?string $formId): ?string
+    {
+        $nodeId = $adId ?? $formId;
+
+        if ($nodeId === null) {
+            return null;
+        }
+
+        try {
+            $response = Http::timeout(10)->get("https://graph.facebook.com/{$version}/{$nodeId}", [
+                'fields' => 'name',
+                'access_token' => $accessToken,
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('Meta campaign name fetch exception', ['node_id' => $nodeId, 'error' => $e->getMessage()]);
+
+            return null;
+        }
+
+        if (! $response->successful()) {
+            return null;
+        }
+
+        $name = $response->json('name');
+
+        return is_string($name) && $name !== '' ? $name : null;
     }
 
     /**

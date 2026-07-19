@@ -280,13 +280,24 @@ event never creates a second lead.
 
 **Field mapping:** Meta's standard field names (`full_name` or
 `first_name`+`last_name`, `email`/`work_email`, `phone_number`/
-`work_phone_number`, `company_name`) map to the lead's core fields. Any other
-form question (custom questions the advertiser added) is preserved as a note
-on the lead rather than dropped. `utm_source`/`utm_medium` are set to a fixed
-`meta`/`paid_social`; `utm_campaign` stores the raw `ad_id` (or `form_id` if
-no ad_id) — Meta's basic leadgen response doesn't include human-readable
-campaign/ad names, so the Lead Source Performance report will show IDs, not
-names, for this channel until that's enriched with an extra Graph API call.
+`work_phone_number`, `company_name`) map to the lead's core fields. Two
+custom questions are opportunistically mapped too, so a Meta lead scores as
+well as a manually-entered one: an answer that exactly matches an active
+**Service** name (case-insensitive) sets the lead's service, and an answer
+to a question whose text contains the word **"budget"** — with a parseable
+number or range (e.g. "₹10,000–25,000") — sets the estimated value. Any
+other custom question is preserved as a note on the lead instead. See
+[Admin guide → Setting up Meta Lead Ads](admin.md#8-lead-capture-channels)
+for how to word the ad form's questions to hit these.
+
+`utm_source`/`utm_medium` are set to a fixed `meta`/`paid_social`;
+`utm_campaign` stores the **ad's real name** as set in Ads Manager (fetched
+via one extra Graph API call, `GET /{ad_id}?fields=name`), falling back to
+the lead form's name if there's no ad_id, and finally to the raw
+`ad_id`/`form_id` if both name lookups fail — so the Lead Source Performance
+report's campaign breakdown reads like "SEO - Pune - July V2", not a numeric
+ID. That extra lookup is best-effort and never blocks lead creation: a
+failed or rate-limited call just falls back one step, silently.
 
 **What the team sees:** no extra step once configured — the lead appears in
 **Lead Generation** with source **Meta Ads**, auto-assigned and AI-scored

@@ -314,9 +314,10 @@ needed for any of them:
 - **WhatsApp** — a message from a number that isn't an existing client's
   creates a lead (source WhatsApp) instead of a ticket — see Section 5.
 - **Meta Lead Ads** (Facebook/Instagram) — a lead form submission on a Meta
-  ad creates a lead (source Meta Ads) via a webhook. Requires a Facebook
-  Developer App, a registered webhook subscription, and a Page access
-  token — **not configured yet**; see below to set it up.
+  ad creates a lead (source Meta Ads) via a webhook. **Live and configured**
+  — see below for how to design a new ad's Instant Form so its leads score
+  and report well, and for the webhook setup steps below if this ever
+  needs re-registering (new app, new Page, token rotated).
 
 **All new leads auto-assign** to whichever active Sales user currently has
 the fewest open leads, so nothing sits unowned waiting for someone to notice
@@ -324,8 +325,35 @@ it (this runs regardless of whether AI is enabled — see the AI features
 section for the AI-specific parts: scoring, hot-lead alerts, nurture
 follow-ups).
 
-**Setting up Meta Lead Ads** (once you have a Facebook Developer App and Page
-for the ad account):
+**Designing a Meta Instant Form so its leads work well in the CRM:** the
+CRM only auto-scores a lead as well as a manually-entered one if the form's
+questions give it the same information a rep would ask for. Use Meta's
+standard prefill fields for **Full Name, Phone Number, Email, Company
+Name** (high completion rate, autofilled from the person's Facebook
+profile), then add two custom questions worded specifically so the CRM can
+map them automatically:
+- **Service** — a multiple-choice question whose options are the **exact
+  active Service names** (case-insensitive match, but must be the same
+  words) — e.g. "SEO", "GMB", "Website Design & Development", "Performance
+  Marketing". A paraphrased option like "Website help" won't match and the
+  lead loses its service tag (still lands as a lead, just unscored on
+  service fit).
+- **Budget** — the question's own wording must contain the word **"budget"**
+  (e.g. "What's your approximate monthly budget?"). Multiple-choice ranges
+  work fine — "₹10,000–25,000" is parsed and averaged.
+  Anything that doesn't match either pattern is preserved as a note on the
+  lead rather than dropped, so it's never lost — it just won't feed the
+  score automatically.
+- Use the **"Higher intent"** form type (adds a review screen before
+  submit) over "More volume" — meaningfully fewer fat-finger/junk
+  submissions for a small increase in cost per lead.
+- The ad's own name in Ads Manager becomes the lead's **Campaign** value in
+  the CRM (e.g. "SEO - Pune - July V2") — name your ads something you'd
+  recognise in the Lead Source Performance report, not the Ads Manager
+  default.
+
+**Setting up Meta Lead Ads** (only needed if re-registering — a new
+Facebook Developer App, a new Page, or a rotated token):
 1. In the Meta App Dashboard, add the **Webhooks** product, subscribe to the
    **Page** object's `leadgen` field.
 2. Callback URL: `https://crm.niranjanenterprises.co.in/api/webhooks/meta-leads`.

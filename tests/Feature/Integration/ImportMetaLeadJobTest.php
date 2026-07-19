@@ -76,6 +76,63 @@ it('falls back to form_id for utm_campaign when ad_id is absent', function () {
     expect(Lead::where('meta_leadgen_id', 'lg-1')->first()->utm_campaign)->toBe('form-7');
 });
 
+it('uses the ad name for utm_campaign when the Graph API returns one', function () {
+    Http::fake([
+        'graph.facebook.com/*/lg-1*' => Http::response([
+            'id' => 'lg-1', 'ad_id' => 'ad-42', 'form_id' => 'form-7',
+            'field_data' => [['name' => 'full_name', 'values' => ['Priya Shah']]],
+        ]),
+        'graph.facebook.com/*/ad-42*' => Http::response(['name' => 'SEO - Pune - July V2']),
+    ]);
+
+    ImportMetaLead::dispatchSync('lg-1');
+
+    expect(Lead::where('meta_leadgen_id', 'lg-1')->first()->utm_campaign)->toBe('SEO - Pune - July V2');
+});
+
+it('falls back to the form name when there is no ad_id', function () {
+    Http::fake([
+        'graph.facebook.com/*/lg-1*' => Http::response([
+            'id' => 'lg-1', 'ad_id' => null, 'form_id' => 'form-7', 'field_data' => [],
+        ]),
+        'graph.facebook.com/*/form-7*' => Http::response(['name' => 'Organic Lead Form']),
+    ]);
+
+    ImportMetaLead::dispatchSync('lg-1');
+
+    expect(Lead::where('meta_leadgen_id', 'lg-1')->first()->utm_campaign)->toBe('Organic Lead Form');
+});
+
+it('falls back to the raw ad_id when the campaign name lookup fails', function () {
+    Http::fake([
+        'graph.facebook.com/*/lg-1*' => Http::response([
+            'id' => 'lg-1', 'ad_id' => 'ad-42', 'form_id' => 'form-7', 'field_data' => [],
+        ]),
+        'graph.facebook.com/*/ad-42*' => Http::response('rate limited', 429),
+    ]);
+
+    ImportMetaLead::dispatchSync('lg-1');
+
+    $lead = Lead::where('meta_leadgen_id', 'lg-1')->first();
+    expect($lead)->not->toBeNull()
+        ->and($lead->utm_campaign)->toBe('ad-42');
+});
+
+it('falls back to the raw ad_id when the campaign name lookup throws', function () {
+    Http::fake([
+        'graph.facebook.com/*/lg-1*' => Http::response([
+            'id' => 'lg-1', 'ad_id' => 'ad-42', 'form_id' => 'form-7', 'field_data' => [],
+        ]),
+        'graph.facebook.com/*/ad-42*' => fn () => throw new ConnectionException('timed out'),
+    ]);
+
+    ImportMetaLead::dispatchSync('lg-1');
+
+    $lead = Lead::where('meta_leadgen_id', 'lg-1')->first();
+    expect($lead)->not->toBeNull()
+        ->and($lead->utm_campaign)->toBe('ad-42');
+});
+
 it('preserves unmapped custom question answers as a note', function () {
     fakeMetaGraphResponse([
         ['name' => 'full_name', 'values' => ['Priya Shah']],
