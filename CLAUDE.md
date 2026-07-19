@@ -283,3 +283,39 @@ Record every "we chose X because Y" here — this is the project's memory.
   friction (manual per-user Menu Controller overrides for every additional
   role grant), which is exactly the trigger condition the original
   deferred-item note called for.
+- **2026-07-19 — Added `docs/developer-guide.md`; replaced the stock
+  Laravel `README.md`/`composer.json` identity.** The repo had never had
+  real developer-facing documentation — `README.md` was still the
+  untouched Laravel skeleton boilerplate, and `composer.json` still said
+  `"name": "laravel/laravel"` and `"license": "MIT"`, six weeks into a
+  proprietary internal build. Added `docs/developer-guide.md` (local
+  setup, testing, architecture, the Policies-vs-Menu-Controller
+  distinction, scheduled jobs, the AI integration pattern, GST/money/date
+  conventions, why Hostinger shapes every dependency choice) and rewrote
+  `README.md` as a real front door pointing to it, this file, and the rest
+  of `docs/`. Renamed the composer package to
+  `niranjanenterprises/neds-crm`, license `proprietary`. **Caught two real
+  documentation bugs while writing it, not assumed**: `MenuResolver`'s
+  cache flush is already wired into the normal Users/Menu Controller UI
+  flows (`MenuResolver::flush()`), not something a developer needs to
+  remember to call — corrected a first draft that implied otherwise; and
+  the scheduler lives in `routes/console.php`, not `bootstrap/app.php` —
+  confirmed by reading the actual file rather than guessing from Laravel
+  version conventions. Also reproduced and documented the `php artisan
+  test` vs `vendor/bin/pest` memory-limit gotcha with the exact working
+  command (`php -d memory_limit=512M vendor/bin/pest`) rather than a vague
+  pointer, after hitting the fatal firsthand.
+- **2026-07-19 — Bumped `guzzlehttp/guzzle` (7.11.1→7.15.1) and
+  `guzzlehttp/psr7` (2.11.0→2.13.0), patching 3 medium-severity CVEs.**
+  Surfaced by `composer audit` while re-locking `composer.json` for the
+  identity fix above (unrelated to it) — dot-only cookie domains matching
+  all hosts and a silent HTTPS-proxy-downgrade issue in guzzle
+  (CVE-2026-55767, CVE-2026-55568), plus CRLF injection in psr7's
+  HTTP start-line serialization (CVE-2026-55766). Same category of issue
+  as the Laravel 11→12 CVE that drove the very first entry in this log,
+  though lower severity. Both are transitive dependencies (pulled in by
+  Laravel's own HTTP client, which `AnthropicClient` and the outbound
+  Drishti/SMDost/wadesk webhook calls all use) — not pinned in
+  `composer.json`, so only `composer.lock` changed. `composer audit`
+  reports zero advisories after the bump; full test suite (1039 tests)
+  re-verified passing.
