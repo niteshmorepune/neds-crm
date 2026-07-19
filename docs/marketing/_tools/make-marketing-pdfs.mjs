@@ -1,8 +1,8 @@
-// Generate the branded sales/marketing pitch deck PDF.
-// Injects the NEDS logo as base64 into pitch-deck.html, then renders to PDF
-// via headless Chrome (same approach as docs/user-guides/_tools/make-handouts.mjs).
+// Generate all branded marketing PDFs (pitch deck + explainer guide + vertical
+// one-pagers). Injects the NEDS logo as base64 into each HTML doc, then renders
+// to PDF via headless Chrome (same approach as docs/user-guides/_tools/make-handouts.mjs).
 //
-// Usage: node docs/marketing/_tools/make-pitch-deck.mjs
+// Usage: node docs/marketing/_tools/make-marketing-pdfs.mjs
 //   Override the browser with CHROME_BIN=/path/to/chrome (or msedge).
 import { execFileSync } from 'child_process';
 import { mkdirSync, rmSync, existsSync, readFileSync, writeFileSync } from 'fs';
@@ -38,18 +38,27 @@ const toDataUri = (path) => {
 const logoUri = toDataUri(resolve(projectRoot, 'public/images/neds-logo.png'));
 const logoMarkUri = toDataUri(resolve(projectRoot, 'public/images/neds-logo-square.png'));
 
-let html = readFileSync(resolve(marketingDir, 'pitch-deck.html'), 'utf8');
-html = html.replaceAll('{{LOGO_URI}}', logoUri).replaceAll('{{LOGO_MARK_URI}}', logoMarkUri);
+const docs = [
+  { html: 'pitch-deck.html', pdf: 'neds-crm-pitch-deck.pdf' },
+  { html: 'explainer-guide.html', pdf: 'neds-crm-explainer-guide.pdf' },
+  { html: 'travel-vertical-pitch.html', pdf: 'neds-tours-travel-ai-solution.pdf' },
+];
 
-const tmpHtml = resolve(tmpDir, 'pitch-deck.html');
-writeFileSync(tmpHtml, html, 'utf8');
+for (const { html: htmlName, pdf: pdfName } of docs) {
+  let html = readFileSync(resolve(marketingDir, htmlName), 'utf8');
+  html = html.replaceAll('{{LOGO_URI}}', logoUri).replaceAll('{{LOGO_MARK_URI}}', logoMarkUri);
 
-const pdf = resolve(outDir, 'neds-crm-pitch-deck.pdf');
-execFileSync(browser, [
-  '--headless=new', '--disable-gpu', '--no-sandbox', '--no-pdf-header-footer',
-  `--print-to-pdf=${pdf}`,
-  pathToFileURL(tmpHtml).href,
-], { stdio: 'inherit' });
+  const tmpHtml = resolve(tmpDir, htmlName);
+  writeFileSync(tmpHtml, html, 'utf8');
+
+  const pdf = resolve(outDir, pdfName);
+  execFileSync(browser, [
+    '--headless=new', '--disable-gpu', '--no-sandbox', '--no-pdf-header-footer',
+    `--print-to-pdf=${pdf}`,
+    pathToFileURL(tmpHtml).href,
+  ], { stdio: 'inherit' });
+  console.log(`PDF -> docs/marketing/pdf/${pdfName}`);
+}
 
 rmSync(tmpDir, { recursive: true, force: true });
-console.log(`\nDone. Pitch deck -> docs/marketing/pdf/neds-crm-pitch-deck.pdf`);
+console.log('\nDone. Marketing PDFs are in docs/marketing/pdf/');

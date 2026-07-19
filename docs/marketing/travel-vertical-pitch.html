@@ -1,0 +1,253 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>NEDS — AI Solution for Tour &amp; Travel Businesses</title>
+<style>
+  @page { size: A4 landscape; margin: 0; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    color: #1f2937;
+    background: #fff;
+  }
+  .slide {
+    width: 297mm;
+    height: 210mm;
+    padding: 14mm 16mm;
+    position: relative;
+    page-break-after: always;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .slide:last-child { page-break-after: auto; }
+
+  .kicker {
+    font-size: 11px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: #0d9488;
+    font-weight: 700;
+    margin: 0 0 6px;
+  }
+  h1.title { font-size: 30px; color: #111827; margin: 0 0 4px; line-height: 1.15; }
+  h2.subtitle { font-size: 15px; color: #4b5563; font-weight: 400; margin: 0 0 18px; line-height: 1.5; }
+
+  .logo-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: auto; }
+  .logo-row img { height: 32px; }
+  .pagenum { font-size: 10px; color: #9ca3af; }
+
+  .footer { display:flex; align-items:center; justify-content:space-between; margin-top: 10px; padding-top: 8px; border-top: 1px solid #e5e7eb; font-size: 9.5px; color: #9ca3af; }
+
+  /* COVER */
+  .cover { background: linear-gradient(135deg, #082f2c 0%, #0f766e 55%, #14b8a6 100%); color: #fff; justify-content: center; align-items: flex-start; }
+  .cover img.logo { height: 46px; margin-bottom: 30px; filter: brightness(0) invert(1); }
+  .cover h1 { font-size: 42px; color: #fff; margin: 0 0 14px; line-height: 1.15; max-width: 750px; }
+  .cover .accent { color: #99f6e4; }
+  .cover p.tag { font-size: 17px; color: #ccfbf1; max-width: 640px; line-height: 1.55; margin: 0 0 34px; }
+  .cover .pills { display: flex; gap: 10px; flex-wrap: wrap; }
+  .pill { background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.25); color: #f0fdfa; padding: 7px 14px; border-radius: 999px; font-size: 12px; }
+  .cover .foot { position: absolute; bottom: 14mm; left: 16mm; right: 16mm; display:flex; justify-content: space-between; font-size: 11px; color: #99f6e4; }
+
+  .grid { display: grid; gap: 12px; }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+  .grid-2 { grid-template-columns: repeat(2, 1fr); }
+
+  .card { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px 16px; }
+  .card .icon { font-size: 20px; margin-bottom: 6px; display: block; }
+  .card h4 { font-size: 13px; color: #111827; margin: 0 0 5px; }
+  .card p { font-size: 10.5px; color: #4b5563; margin: 0; line-height: 1.5; }
+  .card.accent-teal { border-top: 3px solid #0d9488; }
+  .card.accent-amber { border-top: 3px solid #f59e0b; }
+  .card.accent-indigo { border-top: 3px solid #4f46e5; }
+
+  table.deck-table { border-collapse: collapse; width: 100%; font-size: 11px; }
+  table.deck-table th { background: #111827; color: #fff; text-align: left; padding: 8px 10px; font-weight: 600; }
+  table.deck-table td { border: 1px solid #e5e7eb; padding: 7px 10px; vertical-align: top; }
+  table.deck-table tbody tr:nth-child(even) { background: #f9fafb; }
+
+  .split { display: flex; gap: 18px; flex: 1; }
+  .split > div { flex: 1; }
+
+  .panel { border-radius: 10px; padding: 16px 18px; height: 100%; }
+  .panel.dark { background: #111827; color: #f3f4f6; }
+  .panel.dark h4 { color: #5eead4; }
+  .panel.tint { background: #f0fdfa; border: 1px solid #99f6e4; }
+  .panel h4 { font-size: 14px; margin: 0 0 10px; color: #111827; }
+  .panel ul { margin: 0; padding-left: 18px; }
+  .panel li { font-size: 11px; margin: 5px 0; line-height: 1.5; }
+
+  ul.bullets { margin: 0; padding-left: 20px; }
+  ul.bullets li { font-size: 11.5px; margin: 6px 0; line-height: 1.55; color: #374151; }
+  ul.bullets li strong { color: #111827; }
+
+  .checklist { list-style: none; margin: 0; padding: 0; }
+  .checklist li { font-size: 11.5px; margin: 7px 0; padding-left: 24px; position: relative; color: #374151; }
+  .checklist li:before { content: "✓"; position: absolute; left: 0; color: #0d9488; font-weight: 700; }
+
+  .flow { display: flex; align-items: center; gap: 6px; margin: 12px 0; }
+  .flow .node { flex: 1; background: #fff; border: 2px solid #0d9488; border-radius: 10px; padding: 10px; text-align: center; }
+  .flow .node h5 { margin: 0 0 3px; font-size: 11px; color: #111827; }
+  .flow .node p { margin: 0; font-size: 9px; color: #6b7280; }
+  .flow .arrow { font-size: 16px; color: #9ca3af; }
+
+  .quote { font-size: 15px; font-style: italic; color: #374151; line-height: 1.6; border-left: 3px solid #0d9488; padding-left: 16px; margin: 10px 0; }
+</style>
+</head>
+<body>
+
+<!-- SLIDE 1 — COVER -->
+<div class="slide cover">
+  <img class="logo" src="{{LOGO_URI}}" alt="NEDS">
+  <div class="kicker" style="color:#99f6e4;">A worked example, not a generic pitch</div>
+  <h1>What an AI-powered CRM for a<br><span class="accent">Tours &amp; Travel business</span> would look like.</h1>
+  <p class="tag">Built on the same proven foundation as the CRM we run our own agency on — GST
+  invoicing, quotations, client portal, AI — reworked for how a travel business actually sells:
+  by itinerary, not by generic "deal."</p>
+  <div class="pills">
+    <span class="pill">Same proven engine, new workflow</span>
+    <span class="pill">GST for tour operators, done correctly</span>
+    <span class="pill">Package quoting with real margins</span>
+    <span class="pill">AI-drafted itinerary replies</span>
+  </div>
+  <div class="foot">
+    <span>Niranjan Enterprises Digital Solutions</span>
+    <span>crm.niranjanenterprises.co.in</span>
+  </div>
+</div>
+
+<!-- SLIDE 2 — WHY GENERIC DOESN'T FIT -->
+<div class="slide">
+  <div class="logo-row"><img src="{{LOGO_MARK_URI}}" alt=""><span class="pagenum">02</span></div>
+  <div class="kicker">Why a generic CRM (or a generic build) falls short here</div>
+  <h1 class="title">Travel doesn't sell in a straight pipeline.</h1>
+  <h2 class="subtitle">A generic "Lead → Deal → Won" CRM assumes one product, one price, one
+  invoice. A travel enquiry is none of those.</h2>
+  <div class="grid grid-3">
+    <div class="card accent-teal"><span class="icon">🗺️</span><h4>Itinerary-based selling</h4><p>One enquiry can turn into 3–4 competing itinerary options before a client picks one — a "deal" needs to hold multiple quoted versions, not just one price.</p></div>
+    <div class="card accent-teal"><span class="icon">🧮</span><h4>Cost vs. sell price</h4><p>Every package has a vendor cost (hotel, transport, guide) hidden behind the client-facing price — margin visibility per package, not just total invoice value.</p></div>
+    <div class="card accent-teal"><span class="icon">👥</span><h4>Group vs. solo travel</h4><p>A single booking can be one traveler or a group of 20, each needing their own documents but one consolidated invoice and payment schedule.</p></div>
+    <div class="card accent-amber"><span class="icon">📅</span><h4>Payment tied to travel date</h4><p>Advance on booking, balance before departure — reminders need to run off the <em>travel</em> date, not the invoice date like a typical CRM assumes.</p></div>
+    <div class="card accent-amber"><span class="icon">🧾</span><h4>Tour-operator GST</h4><p>Package/tour invoicing has its own valuation and documentation treatment, different from a straightforward service invoice — a generic invoice template gets this wrong.</p></div>
+    <div class="card accent-amber"><span class="icon">📲</span><h4>WhatsApp-first enquiries</h4><p>Most travel enquiries start as a WhatsApp message, not a form fill — the intake needs to meet clients there, the way this CRM already does for support tickets.</p></div>
+  </div>
+  <div class="footer"><span>NEDS — Tours &amp; Travel AI Solution</span><span>niranjan.enterprisespune@gmail.com</span></div>
+</div>
+
+<!-- SLIDE 3 — WHAT WE'D BUILD -->
+<div class="slide">
+  <div class="logo-row"><img src="{{LOGO_MARK_URI}}" alt=""><span class="pagenum">03</span></div>
+  <div class="kicker">The workflow, end to end</div>
+  <h1 class="title">Enquiry to traveler documents, in one system.</h1>
+  <div class="flow">
+    <div class="node"><h5>Enquiry</h5><p>Website / WhatsApp / call, AI-scored by trip value &amp; urgency</p></div>
+    <div class="arrow">→</div>
+    <div class="node"><h5>Package Quotation</h5><p>Itinerary line items, vendor cost vs. client price, multiple options</p></div>
+    <div class="arrow">→</div>
+    <div class="node"><h5>Booking + GST Invoice</h5><p>Correct tour-operator tax treatment, per-traveler breakdown</p></div>
+    <div class="arrow">→</div>
+    <div class="node"><h5>Payment Schedule</h5><p>Advance/balance reminders tied to the travel date</p></div>
+    <div class="arrow">→</div>
+    <div class="node"><h5>Traveler Portal</h5><p>Itinerary, vouchers, document upload, trip status</p></div>
+  </div>
+  <div class="grid grid-2" style="margin-top:6px;">
+    <div class="panel tint">
+      <h4>AI, in the same disciplined way</h4>
+      <ul class="bullets">
+        <li>Score enquiries by likely trip value and booking urgency — same pattern as lead scoring today</li>
+        <li>Draft an itinerary reply from an enquiry's stated dates/budget/interests — human edits and sends</li>
+        <li>Summarize a long back-and-forth with a client before a follow-up call</li>
+      </ul>
+    </div>
+    <div class="panel tint">
+      <h4>Operational features a travel business specifically needs</h4>
+      <ul class="bullets">
+        <li>Vendor/supplier ledger — track what's owed to hotels, transporters, guides per trip</li>
+        <li>Seasonal demand view — which months/destinations are trending in enquiries</li>
+        <li>Group booking roll-up — one invoice, many traveler records and documents</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer"><span>NEDS — Tours &amp; Travel AI Solution</span><span>niranjan.enterprisespune@gmail.com</span></div>
+</div>
+
+<!-- SLIDE 4 — SAME FOUNDATION, HONEST ABOUT WHAT'S NEW -->
+<div class="slide">
+  <div class="logo-row"><img src="{{LOGO_MARK_URI}}" alt=""><span class="pagenum">04</span></div>
+  <div class="kicker">What's proven vs. what's new work</div>
+  <h1 class="title">Not a rebuild from zero — but not a copy-paste either.</h1>
+  <h2 class="subtitle">Here's exactly what carries over from the system we already run our
+  agency on, and what would be built fresh for travel.</h2>
+  <div class="split">
+    <div class="panel dark">
+      <h4>Reused as-is (already battle-tested)</h4>
+      <ul>
+        <li>GST invoicing engine — CGST/SGST/IGST auto-split, sequential legal numbering, GSTIN validation</li>
+        <li>Partial/milestone payment tracking against an invoice</li>
+        <li>Client portal architecture, role-based access, 2FA, audit logging, automated backups</li>
+        <li>AI discipline: opt-in, wrapped in try/catch, never auto-sends</li>
+        <li>Runs on the same low-cost shared hosting — no infra overhead</li>
+      </ul>
+    </div>
+    <div class="panel tint">
+      <h4>Built new for this vertical</h4>
+      <ul class="checklist">
+        <li>Itinerary/package data model (multiple options per enquiry, line-item vendor cost)</li>
+        <li>Tour-operator-specific GST valuation and invoice format</li>
+        <li>Traveler/group records distinct from the paying client</li>
+        <li>Payment-schedule logic anchored to travel date, not invoice date</li>
+        <li>Vendor/supplier ledger and seasonal demand reporting</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer"><span>NEDS — Tours &amp; Travel AI Solution</span><span>niranjan.enterprisespune@gmail.com</span></div>
+</div>
+
+<!-- SLIDE 5 — WHY US -->
+<div class="slide">
+  <div class="logo-row"><img src="{{LOGO_MARK_URI}}" alt=""><span class="pagenum">05</span></div>
+  <div class="kicker">Why build this with us specifically</div>
+  <h1 class="title">You're not our first attempt at getting GST invoicing right.</h1>
+  <div class="quote">"We built the GST engine this proposal reuses for our own agency's invoices first —
+  62 real GST invoices and 43 quotations have gone through it. That's the proof, not a claim."</div>
+  <div class="grid grid-3" style="margin-top:8px;">
+    <div class="card accent-indigo"><span class="icon">🏗️</span><h4>Proven engineering, not a prototype</h4><p>The billing/tax/portal core is live, tested (400+ automated tests) and running real client money today — that's the foundation your build starts from.</p></div>
+    <div class="card accent-indigo"><span class="icon">💸</span><h4>Cost-conscious by design</h4><p>Shared hosting, plain MySQL, no Kubernetes or DevOps hire — a deliberate choice that keeps a travel business's running cost predictable.</p></div>
+    <div class="card accent-indigo"><span class="icon">🤝</span><h4>We scope it honestly</h4><p>Discovery first, a clear list of what's reused vs. newly built (see previous slide), and a milestone quote — like any other NEDS Software Development engagement.</p></div>
+  </div>
+  <div class="footer"><span>NEDS — Tours &amp; Travel AI Solution</span><span>niranjan.enterprisespune@gmail.com</span></div>
+</div>
+
+<!-- SLIDE 6 — CTA -->
+<div class="slide cover" style="justify-content:center; align-items:flex-start;">
+  <img class="logo" src="{{LOGO_URI}}" alt="NEDS">
+  <div class="kicker" style="color:#99f6e4;">Next step</div>
+  <h1>Let's map your actual booking workflow.</h1>
+  <p class="tag">A short discovery conversation — how enquiries come in today, how packages are
+  priced, how payments are collected — is enough to turn this one-pager into a real scoped
+  proposal with milestones and a quote.</p>
+  <div class="split" style="width:100%; max-width:820px;">
+    <div class="panel" style="background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.2);">
+      <h4 style="color:#fff;">Come prepared to discuss</h4>
+      <ul style="color:#e0e7ff;">
+        <li>How enquiries arrive today (WhatsApp, website, phone, agents)</li>
+        <li>Solo/FIT vs. group trip mix, and typical package value</li>
+        <li>How payments and supplier costs are currently tracked</li>
+      </ul>
+    </div>
+    <div class="panel" style="background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.2);">
+      <h4 style="color:#fff;">Contact</h4>
+      <ul style="color:#e0e7ff;">
+        <li>Niranjan Enterprises Digital Solutions</li>
+        <li>niranjan.enterprisespune@gmail.com</li>
+        <li>Live reference system: crm.niranjanenterprises.co.in</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
