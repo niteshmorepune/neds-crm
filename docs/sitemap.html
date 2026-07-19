@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NEDS CRM — Site Map</title>
+<style>
+  :root {
+    --paper: #f5f6f8;
+    --paper-raised: #ffffff;
+    --ink: #12151c;
+    --ink-soft: #4b5566;
+    --ink-faint: #818993;
+    --rule: #dee2e8;
+    --rule-strong: #c3c9d3;
+    --blue: #1d4ed8;
+    --blue-soft: #e7eefc;
+    --blue-ink: #1638a8;
+    --orange: #c85e00;
+    --orange-soft: #fceadb;
+    --orange-ink: #9a4700;
+    --chip-bg: #eceff3;
+    --chip-ink: #4b5566;
+    --shadow: 0 1px 2px rgba(18,21,28,.04), 0 8px 24px rgba(18,21,28,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #0e1116;
+      --paper-raised: #161a22;
+      --ink: #edeff3;
+      --ink-soft: #a1a9b8;
+      --ink-faint: #6b7280;
+      --rule: #262b35;
+      --rule-strong: #333a47;
+      --blue: #7ea0ff;
+      --blue-soft: #1b2436;
+      --blue-ink: #aec0ff;
+      --orange: #f2a65a;
+      --orange-soft: #2e2115;
+      --orange-ink: #f6bd85;
+      --chip-bg: #1d222c;
+      --chip-ink: #a1a9b8;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #0e1116; --paper-raised: #161a22; --ink: #edeff3; --ink-soft: #a1a9b8;
+    --ink-faint: #6b7280; --rule: #262b35; --rule-strong: #333a47; --blue: #7ea0ff;
+    --blue-soft: #1b2436; --blue-ink: #aec0ff; --orange: #f2a65a; --orange-soft: #2e2115;
+    --orange-ink: #f6bd85; --chip-bg: #1d222c; --chip-ink: #a1a9b8;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+  }
+  :root[data-theme="light"] {
+    --paper: #f5f6f8; --paper-raised: #ffffff; --ink: #12151c; --ink-soft: #4b5566;
+    --ink-faint: #818993; --rule: #dee2e8; --rule-strong: #c3c9d3; --blue: #1d4ed8;
+    --blue-soft: #e7eefc; --blue-ink: #1638a8; --orange: #c85e00; --orange-soft: #fceadb;
+    --orange-ink: #9a4700; --chip-bg: #eceff3; --chip-ink: #4b5566;
+    --shadow: 0 1px 2px rgba(18,21,28,.04), 0 8px 24px rgba(18,21,28,.05);
+  }
+
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; background: var(--paper); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  ::selection { background: var(--blue-soft); }
+
+  .mono {
+    font-family: ui-monospace, "Cascadia Mono", "JetBrains Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  }
+
+  .wrap { max-width: 980px; margin: 0 auto; padding: 48px 24px 96px; }
+
+  /* ---------- Header ---------- */
+  header.page {
+    display: flex; flex-direction: column; gap: 14px;
+    padding-bottom: 28px; margin-bottom: 8px; border-bottom: 1px solid var(--rule);
+  }
+  .eyebrow {
+    font-family: ui-monospace, "Cascadia Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--blue);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--blue); display: inline-block; }
+  h1 {
+    font-size: clamp(28px, 4vw, 38px); line-height: 1.12; margin: 0; letter-spacing: -0.01em;
+    text-wrap: balance; font-weight: 700;
+  }
+  h1 .path { color: var(--ink-soft); font-weight: 500; }
+  p.lede {
+    font-size: 15.5px; line-height: 1.6; color: var(--ink-soft); max-width: 62ch; margin: 0;
+  }
+  .statline {
+    display: flex; gap: 28px; flex-wrap: wrap; margin-top: 6px;
+  }
+  .stat { display: flex; flex-direction: column; gap: 2px; }
+  .stat b {
+    font-family: ui-monospace, "Cascadia Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    font-size: 20px; font-variant-numeric: tabular-nums; color: var(--ink);
+  }
+  .stat span { font-size: 11.5px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: .06em; }
+
+  /* ---------- Jump nav ---------- */
+  nav.jump {
+    display: flex; flex-wrap: wrap; gap: 6px 8px;
+    margin: 22px 0 40px; padding: 10px 12px;
+    background: var(--paper-raised); border: 1px solid var(--rule); border-radius: 10px;
+    box-shadow: var(--shadow);
+  }
+  nav.jump a {
+    font-size: 12.5px; color: var(--ink-soft); text-decoration: none; padding: 4px 9px;
+    border-radius: 999px; border: 1px solid transparent; white-space: nowrap;
+  }
+  nav.jump a:hover, nav.jump a:focus-visible { background: var(--blue-soft); color: var(--blue-ink); border-color: var(--blue-soft); }
+  nav.jump a:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
+
+  /* ---------- Zones ---------- */
+  section.zone { margin-bottom: 44px; scroll-margin-top: 20px; }
+  .zone-head {
+    display: flex; align-items: baseline; gap: 12px; margin-bottom: 4px;
+  }
+  .zone-letter {
+    font-family: ui-monospace, "Cascadia Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    font-size: 13px; font-weight: 700; color: var(--blue);
+    background: var(--blue-soft); border-radius: 6px; padding: 2px 7px;
+    flex: none;
+  }
+  section.zone.admin .zone-letter, section.zone.public .zone-letter {
+    color: var(--orange); background: var(--orange-soft);
+  }
+  .zone-head h2 { font-size: 18px; margin: 0; font-weight: 700; letter-spacing: -.005em; }
+  .zone-sub { font-size: 12.5px; color: var(--ink-faint); margin: 3px 0 16px 36px; }
+
+  .rows {
+    border-left: 2px solid var(--blue-soft);
+    margin-left: 11px;
+  }
+  section.zone.admin .rows, section.zone.public .rows { border-left-color: var(--orange-soft); }
+  section.zone.public .rows { border-left-style: dashed; }
+
+  .row {
+    position: relative;
+    padding: 12px 0 12px 25px;
+    border-bottom: 1px solid var(--rule);
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 4px 16px;
+    align-items: start;
+  }
+  .rows .row:last-child { border-bottom: none; }
+  .row::before {
+    content: ""; position: absolute; left: -5px; top: 19px;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--paper); border: 2px solid var(--blue);
+  }
+  section.zone.admin .row::before, section.zone.public .row::before { border-color: var(--orange); }
+
+  .row .label { font-size: 14.5px; font-weight: 600; color: var(--ink); }
+  .row .path {
+    display: block; margin-top: 2px; font-size: 12px; color: var(--ink-faint);
+  }
+  .row .desc { grid-column: 1 / -1; font-size: 13px; color: var(--ink-soft); line-height: 1.5; max-width: 62ch; margin-top: 2px; }
+  .row .chips { display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end; align-self: start; }
+  .chip {
+    font-size: 10.5px; letter-spacing: .02em; padding: 2.5px 8px; border-radius: 999px;
+    background: var(--chip-bg); color: var(--chip-ink); white-space: nowrap; font-weight: 600;
+  }
+  .chip.admin { background: var(--orange-soft); color: var(--orange-ink); }
+  .chip.all { background: var(--blue-soft); color: var(--blue-ink); }
+  .chip.guest { background: var(--chip-bg); color: var(--ink-faint); font-style: italic; font-weight: 500; }
+
+  @media (max-width: 620px) {
+    .row { grid-template-columns: 1fr; }
+    .row .chips { justify-content: flex-start; margin-top: 4px; }
+  }
+
+  footer.page {
+    margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--rule);
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+    font-size: 12px; color: var(--ink-faint);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    section.zone { animation: rise .5s ease backwards; }
+    section.zone:nth-of-type(1) { animation-delay: .02s; }
+    section.zone:nth-of-type(2) { animation-delay: .06s; }
+    section.zone:nth-of-type(3) { animation-delay: .1s; }
+    section.zone:nth-of-type(4) { animation-delay: .14s; }
+    @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="page">
+    <div class="eyebrow"><span class="dot"></span>crm.niranjanenterprises.co.in</div>
+    <h1>Every screen in the NEDS CRM,<br><span class="path">mapped by who can walk in.</span></h1>
+    <p class="lede">Not a folder of pages — a floor plan. Each zone below is a real access
+      boundary in the system: a role gate, a separate login, or a public link with no
+      login at all. That's the CRM's actual shape, not just its menu.</p>
+    <div class="statline">
+      <div class="stat"><b>21</b><span>Sidebar modules</span></div>
+      <div class="stat"><b>7</b><span>Reports off the dashboard</span></div>
+      <div class="stat"><b>6</b><span>Staff roles</span></div>
+      <div class="stat"><b>11</b><span>Client Portal pages</span></div>
+      <div class="stat"><b>1</b><span>No-login link (partner upload)</span></div>
+    </div>
+  </header>
+
+  <nav class="jump" aria-label="Jump to zone">
+    <a href="#personal">Personal</a>
+    <a href="#sales">Sales &amp; Pipeline</a>
+    <a href="#delivery">Clients &amp; Delivery</a>
+    <a href="#billing">Billing &amp; Collections</a>
+    <a href="#reports">Reports</a>
+    <a href="#admin">Admin-only</a>
+    <a href="#portal">Client Portal</a>
+    <a href="#public">No login required</a>
+  </nav>
+
+  <!-- ZONE A — PERSONAL -->
+  <section class="zone" id="personal">
+    <div class="zone-head"><span class="zone-letter">A</span><h2>Personal &amp; everyone</h2></div>
+    <p class="zone-sub">Same for all 6 roles — admin, manager, sales, support, accounts, intern.</p>
+    <div class="rows">
+      <div class="row">
+        <div><div class="label">Dashboard</div><span class="path mono">/dashboard</span></div>
+        <div class="chips"><span class="chip all">All staff</span></div>
+        <div class="desc">Role-specific panel on login — today's follow-ups, overdue tasks, or the accounts/manager view, depending who's looking.</div>
+      </div>
+      <div class="row">
+        <div><div class="label">My Day</div><span class="path mono">/my-day</span></div>
+        <div class="chips"><span class="chip all">All staff</span></div>
+        <div class="desc">One personal worklist — tasks, follow-ups, calls due, and SLA-breaching tickets, always scoped to you.</div>
+      </div>
+      <div class="row">
+        <div><div class="label">Attendance</div><span class="path mono">/attendance</span></div>
+        <div class="chips"><span class="chip all">All staff</span></div>
+        <div class="desc">Self check-in/out, biometric device sync; admin/manager get correction and import tools.</div>
+      </div>
+      <div class="row">
+        <div><div class="label">Leave Requests</div><span class="path mono">/leave-requests</span></div>
+        <div class="chips"><span class="chip all">All staff</span></div>
+        <div class="desc">Self-service leave requests; admin/manager see an approval queue.</div>
+      </div>
+      <div class="row">
+        <div><div class="label">Notifications</div><span class="path mono">/notifications</span></div>
+        <div class="chips"><span class="chip all">All staff</span></div>
+        <div class="desc">Bell-icon feed — new leads, hot-lead alerts, overdue items, approvals.</div>
+      </div>
+      <div class="row">
+        <div><div class="label">Profile &amp; Security</div><span class="path mono">/profile</span></div>
+        <div class="chips"><span class="chip all">All staff</span></div>
+        <div class="desc">Password, two-factor enrolment and recovery codes.</div>
+      </div>
+      <div class="row">
+        <div><div class="label">Global Search</div><span class="path mono">/search</span></div>
+        <div class="chips"><span class="chip all">All staff</span></div>
+        <div class="desc">Searches clients, leads, deals, invoices and tickets — scoped to what you're allowed to see.</div>
+      </div>
+      <div class="row">
+        <div><div class="label">Help Center</div><span class="path mono">/help</span></div>
+        <div class="chips"><span class="chip all">All staff</span></div>
+        <div class="desc">In-app role-relevant user guides, rendered live from the same docs that produce the PDF handouts.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ZONE B — SALES & PIPELINE -->
+  <section class="zone" id="sales">
+    <div class="zone-head"><span class="zone-letter">B</span><h2>Sales &amp; pipeline</h2></div>
+    <p class="zone-sub">Where a lead becomes a priced deal.</p>
+    <div class="rows">
+      <div class="row">
+        <div><div class="label">Lead Generation</div><span class="path mono">/leads</span></div>
+        <div class="chips"><span class="chip">Manager</span><span class="chip">Sales</span></div>
+        <div class="desc">Capture, AI-score (0–100), and convert leads to a client + deal.</div>
+      </div>
+      <div class="row">
+        <div><div class="label">Sales Department — Deals board</div><span class="path mono">/deals</span></div>
+        <div class="chips"><span class="chip">Manager</span><span class="chip">Sales</span></div>
+        <div class="desc">Kanban pipeline: New → Contacted → Proposal → Negotiation → Won/Lost, with stage-conversion badges.</div>
+      </div>
+      <div class="row">
+        <div><div class="label">Sales Dashboard</div><span class="path mono">/sales-dashboard</span></div>
+        <div class="chips"><span class="chip">Manager</span><span class="chip">Sales</span></div>
+        <div class="desc">Won-value trend, target-vs-actual, service-line breakdown; rep leaderboard for admin/manager.</div>
+      </div>
+      <div class="row">
+        <div><div class="label">Calling</div><span class="path mono">/calls</span></div>
+        <div class="chips"><span class="chip">Manager</span><span class="chip">Sales</span><span class="chip">Support</span></div>
+        <div class="desc">Logged client calls — outcome, duration — feeding the performance report.</div>
+      </div>
+      <div class="row">
+        <div><div class="label">Quotations</div><span class="path mono">/quotations</span></div>
+        <div class="chips"><span class="chip">Manager</span><span class="chip">Sales</span><span class="chip">Accounts</span></div>
+        <div class="desc">Line-item builder with per-item GST, AI-suggested first-draft line items, one-click convert to invoice.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ZONE C — CLIENTS & DELIVERY -->
+  <section class="zone" id="delivery">
+    <div class="zone-head"><span class="zone-letter">C</span><h2>Clients &amp; delivery</h2></div>
+    <p class="zone-sub">Once a deal is won — the ongoing relationship.</p>
+    <div class="rows">
+      <div class="row">
+        <div><div class="label">Clients</div><span class="path mono">/clients</span></div>
+        <div class="chips"><span class="chip">Manager</span><span class="chip">Sales</span><span class="chip">Support</span><span class="chip">Accounts</span><span class="chip">Intern</span></div>
+        <div class="desc">Company records with contacts, GSTIN, and a single view across deals, invoices, projects and tickets. CSV import included.</div>
+      </div>
+      <div class="row">
+        <div><div class="label">Project Updates</div><span class="path mono">/projects</span></div>
+        <div class="chips"><span class="chip">Manager</span><span class="chip">Sales</span><span class="chip">Support</span><span class="chip">Intern</span></div>
+        <div class="desc">Won deals become projects — assignees, tasks, and (for content clients) a brief-to-approval content pipeline.</div>
+      </div>
+      <div class="row">
+        <div><div class="label">Tickets</div><span class="path mono">/tickets</span></div>
+        <div class="chips"><span class="chip">Manager</span><span class="chip">Support</span><span class="chip">Sales</span></div>
+        <div class="desc">Support desk with priority, SLA timers, and auto-created tickets from WhatsApp messages.</div>
+      </div>
+      <div class="row">
+        <div><div class="label">Partners</div><span class="path mono">/partners</span></div>
+        <div class="chips"><span class="chip">Manager</span></div>
+        <div class="desc">External content-agency directory; each partner gets a token upload link — no login needed on their side.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ZONE D — BILLING & COLLECTIONS -->
+  <section class="zone" id="billing">
+    <div class="zone-head"><span class="zone-letter">D</span><h2>Billing &amp; collections</h2></div>
+    <p class="zone-sub">GST invoicing, recurring retainers, and getting paid.</p>
+    <div class="rows">
+      <div class="row">
+        <div><div class="label">Invoices</div><span class="path mono">/invoices</span></div>
+        <div class="chips"><span class="chip">Manager</span><span class="chip">Accounts</span><span class="chip">Sales</span></div>
+        <div class="desc">Auto CGST/SGST/IGST split, sequential legal numbering, partial payments, PDF + email send.</div>
+      </div>
+      <div class="row">
+        <div><div class="label">Recurring Invoices</div><span class="path mono">/recurring-invoices</span></div>
+        <div class="chips"><span class="chip">Manager</span><span class="chip">Accounts</span><span class="chip">Sales</span></div>
+        <div class="desc">SEO/GMB/AMC retainer templates that auto-generate on schedule, with renewal reminders.</div>
+      </div>
+      <div class="row">
+        <div><div class="label">Account — Receivables</div><span class="path mono">/account/receivables</span></div>
+        <div class="chips"><span class="chip">Manager</span><span class="chip">Accounts</span></div>
+        <div class="desc">What's outstanding, and payment-promise-broken alerts.</div>
+      </div>
+      <div class="row">
+        <div><div class="label">Collections</div><span class="path mono">/reports/collections</span></div>
+        <div class="chips"><span class="chip">Manager</span><span class="chip">Accounts</span></div>
+        <div class="desc">Partner-wise and direct-client receivables, plus milestone-billing readiness.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ZONE E — REPORTS -->
+  <section class="zone" id="reports">
+    <div class="zone-head"><span class="zone-letter">E</span><h2>Reports</h2></div>
+    <p class="zone-sub">Linked from the dashboard, not the sidebar — role-checked inside each report.</p>
+    <div class="rows">
+      <div class="row">
+        <div><div class="label">Employee Performance</div><span class="path mono">/reports/employee-performance</span></div>
+        <div class="chips"><span class="chip admin">Admin</span><span class="chip">Manager</span></div>
+        <div class="desc">Tasks completed, on-time %, calls made, attendance — per person, per period.</div>
+      </div>
+      <div class="row">
+        <div><div class="label">Revenue</div><span class="path mono">/reports/revenue</span></div>
+        <div class="chips"><span class="chip admin">Admin</span><span class="chip">Manager</span><span class="chip">Accounts</span></div>
+        <div class="desc">By month, service line and client; split recurring vs. one-time.</div>
+      </div>
+      <div class="row">
+        <div><div class="label">Lead Source Performance</div><span class="path mono">/reports/lead-sources</span></div>
+        <div class="chips"><span class="chip admin">Admin</span><span class="chip">Manager</span></div>
+        <div class="desc">Conversion rate by source and, for tracked website leads, by campaign.</div>
+      </div>
+      <div class="row">
+        <div><div class="label">AI Usage</div><span class="path mono">/reports/ai-usage</span></div>
+        <div class="chips"><span class="chip admin">Admin</span><span class="chip">Manager</span></div>
+        <div class="desc">What the AI features are actually costing, by feature and month.</div>
+      </div>
+      <div class="row">
+        <div><div class="label">Ask the CRM</div><span class="path mono">/reports/ask</span></div>
+        <div class="chips"><span class="chip admin">Admin</span><span class="chip">Manager</span></div>
+        <div class="desc">Plain-English question in, AI-generated query and answer out — over your own CRM data.</div>
+      </div>
+      <div class="row">
+        <div><div class="label">Business Overview</div><span class="path mono">/reports/business-overview</span></div>
+        <div class="chips"><span class="chip admin">Admin</span><span class="chip">Manager</span></div>
+        <div class="desc">One-screen health check across sales, delivery and billing.</div>
+      </div>
+      <div class="row">
+        <div><div class="label">Cash Forecast</div><span class="path mono">/reports/cash-forecast</span></div>
+        <div class="chips"><span class="chip admin">Admin</span><span class="chip">Manager</span></div>
+        <div class="desc">Projected inflow from recurring retainers and open milestones.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ZONE F — ADMIN ONLY -->
+  <section class="zone admin" id="admin">
+    <div class="zone-head"><span class="zone-letter">F</span><h2>Admin-only</h2></div>
+    <p class="zone-sub">No role default reaches these — only the admin all-access bypass.</p>
+    <div class="rows">
+      <div class="row">
+        <div><div class="label">Users</div><span class="path mono">/users</span></div>
+        <div class="chips"><span class="chip admin">Admin</span></div>
+        <div class="desc">Staff accounts, roles, active/inactive status — public registration is disabled, so this is the only way in.</div>
+      </div>
+      <div class="row">
+        <div><div class="label">Services</div><span class="path mono">/services</span></div>
+        <div class="chips"><span class="chip admin">Admin</span><span class="chip">Manager</span></div>
+        <div class="desc">The 8 NEDS service lines (SEO, GMB, Website, Social, Performance Marketing, Software Dev, AI Automation, AMC).</div>
+      </div>
+      <div class="row">
+        <div><div class="label">Festivals</div><span class="path mono">/festivals</span></div>
+        <div class="chips"><span class="chip admin">Admin</span><span class="chip">Manager</span></div>
+        <div class="desc">Calendar driving dashboard reminders and AI-drafted client greeting content.</div>
+      </div>
+      <div class="row">
+        <div><div class="label">Client Radar</div><span class="path mono">/client-radar</span></div>
+        <div class="chips"><span class="chip admin">Admin</span><span class="chip">Manager</span></div>
+        <div class="desc">At-risk and upsell signals across the active client base.</div>
+      </div>
+      <div class="row">
+        <div><div class="label">Menu Controller</div><span class="path mono">/menu-controller</span></div>
+        <div class="chips"><span class="chip admin">Admin</span></div>
+        <div class="desc">Per-role and per-user sidebar visibility — cosmetic only, never the real access control.</div>
+      </div>
+      <div class="row">
+        <div><div class="label">Audit Log</div><span class="path mono">/audit-log</span></div>
+        <div class="chips"><span class="chip admin">Admin</span></div>
+        <div class="desc">Who changed what, when — every create/update/delete on core records.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ZONE G — CLIENT PORTAL -->
+  <section class="zone" id="portal">
+    <div class="zone-head"><span class="zone-letter">G</span><h2>Client Portal</h2></div>
+    <p class="zone-sub">A separate login guard — client contacts, not staff. Read access to only their own company's records.</p>
+    <div class="rows">
+      <div class="row">
+        <div><div class="label">Portal Login / Password Setup</div><span class="path mono">/portal/login</span></div>
+        <div class="chips"><span class="chip guest">Contact</span></div>
+        <div class="desc">Invite-based account setup, plus self-service forgot/reset password.</div>
+      </div>
+      <div class="row">
+        <div><div class="label">Home</div><span class="path mono">/portal</span></div>
+        <div class="chips"><span class="chip guest">Contact</span></div>
+        <div class="desc">Client-facing dashboard — an at-a-glance summary of their own account.</div>
+      </div>
+      <div class="row">
+        <div><div class="label">Quotations &amp; Invoices</div><span class="path mono">/portal/quotations · /portal/invoices</span></div>
+        <div class="chips"><span class="chip guest">Contact</span></div>
+        <div class="desc">View and download their own quotations and GST invoices as PDF.</div>
+      </div>
+      <div class="row">
+        <div><div class="label">Services &amp; Projects</div><span class="path mono">/portal/services · /portal/projects</span></div>
+        <div class="chips"><span class="chip guest">Contact</span></div>
+        <div class="desc">Which NEDS services they're on, and live status of their own projects.</div>
+      </div>
+      <div class="row">
+        <div><div class="label">Tickets</div><span class="path mono">/portal/tickets</span></div>
+        <div class="chips"><span class="chip guest">Contact</span></div>
+        <div class="desc">Raise a support ticket, reply, and rate satisfaction on resolution.</div>
+      </div>
+      <div class="row">
+        <div><div class="label">SSO bridge</div><span class="path mono">/portal/sso/{app}</span></div>
+        <div class="chips"><span class="chip guest">Contact</span></div>
+        <div class="desc">One click into Drishti or SMDost with no second password — a signed, short-lived handoff.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ZONE H — NO LOGIN -->
+  <section class="zone public" id="public">
+    <div class="zone-head"><span class="zone-letter">H</span><h2>No login required</h2></div>
+    <p class="zone-sub">The only door left open on purpose — a single-use token, not a password.</p>
+    <div class="rows">
+      <div class="row">
+        <div><div class="label">Partner Upload</div><span class="path mono">/partner/upload/{token}</span></div>
+        <div class="chips"><span class="chip guest">Token link</span></div>
+        <div class="desc">An external content partner uploads a file straight against one content piece — no account, link expires with the task.</div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="page">
+    <span>NEDS CRM — internal reference, generated from routes/web.php</span>
+    <span>Niranjan Enterprises Digital Solutions</span>
+  </footer>
+
+</div>
+</body>
+</html>
