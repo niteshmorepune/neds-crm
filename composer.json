@@ -1,10 +1,10 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/laravel",
+    "name": "niranjanenterprises/neds-crm",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
-    "keywords": ["laravel", "framework"],
-    "license": "MIT",
+    "description": "Custom CRM for Niranjan Enterprises Digital Solutions — leads, GST invoicing, projects, support, client portal, and opt-in AI features.",
+    "keywords": ["laravel", "crm"],
+    "license": "proprietary",
     "require": {
         "php": "^8.2",
         "bacon/bacon-qr-code": "^3.1",
