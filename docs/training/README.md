@@ -59,6 +59,20 @@ boundary (e.g. record Manager's Reports scenes as its own clip) rather than
 force it into one video — two clean videos beat one long one with a lot of
 restarts.
 
+## PDF handouts
+
+For sharing with the team (not everyone wants to read raw Markdown on
+GitHub), each script also has a PDF version in `pdf/`. Regenerate all of
+them after any edit:
+
+```
+npm run training-pdfs
+```
+
+Needs Node + a Chromium-based browser (Chrome or Edge) installed; override
+with `CHROME_BIN=/path/to/chrome` if it isn't auto-detected. Reuses the
+same Markdown→PDF pipeline as the `docs/user-guides` handouts.
+
 ## Keeping these in sync
 
 These scripts mirror `docs/user-guides/*.md` structure closely on purpose —

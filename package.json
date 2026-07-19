@@ -6,7 +6,8 @@
         "build": "vite build",
         "dev": "vite",
         "handouts": "node docs/user-guides/_tools/make-handouts.mjs",
-        "marketing-pdfs": "node docs/marketing/_tools/make-marketing-pdfs.mjs"
+        "marketing-pdfs": "node docs/marketing/_tools/make-marketing-pdfs.mjs",
+        "training-pdfs": "node docs/training/_tools/make-handouts.mjs"
     },
     "devDependencies": {
         "@tailwindcss/forms": "^0.5.2",
