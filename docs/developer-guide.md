@@ -307,6 +307,7 @@ to match.
 | [`docs/user-guides/`](user-guides/) | Internal staff (all roles) | How to actually use the CRM day to day — also rendered live in-app under Help. |
 | [`docs/training/`](training/) | Internal staff | Scene-by-scene recording scripts for onboarding videos (PDF handouts in `training/pdf/`). |
 | [`docs/marketing/`](marketing/) | Sales/prospects | The sales pitch deck, an external-facing explainer, and vertical one-pagers. |
+| [`docs/meta-ads-playbook.md`](meta-ads-playbook.md) | Whoever runs NEDS's own ads | Campaign structure and ad copy for Meta Lead Ads, written to match how the CRM auto-scores an incoming lead. |
 | [`docs/deploy-checklist.md`](deploy-checklist.md) | Whoever deploys | Manual SSH deploy sequence. |
 | [`docs/backup-restore.md`](backup-restore.md) | Whoever deploys | Nightly backup mechanics and how to restore one. |
 | [`docs/troubleshooting.md`](troubleshooting.md) | Anyone debugging | Known issues and how to diagnose common failures. |
