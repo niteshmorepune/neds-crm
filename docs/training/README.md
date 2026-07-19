@@ -39,17 +39,25 @@ section instead of re-editing footage.
 
 | Script | Who watches it | Target length |
 |---|---|---|
-| [`getting-started.md`](getting-started.md) | **Everyone**, first video watched | ~6 min |
-| [`sales.md`](sales.md) | Sales | ~9 min |
-| [`support.md`](support.md) | Support | ~8 min |
-| [`accounts.md`](accounts.md) | Accounts | ~8 min |
-| [`manager.md`](manager.md) | Manager | ~9 min |
-| [`admin.md`](admin.md) | Admin | ~8 min |
+| [`getting-started.md`](getting-started.md) | **Everyone**, first video watched | ~8 min |
+| [`sales.md`](sales.md) | Sales | ~13 min |
+| [`support.md`](support.md) | Support | ~9 min |
+| [`accounts.md`](accounts.md) | Accounts | ~13 min |
+| [`manager.md`](manager.md) | Manager | ~15 min |
+| [`admin.md`](admin.md) | Admin | ~10 min |
 | [`intern.md`](intern.md) | Intern | ~5 min |
 
 Everyone watches `getting-started.md` first, then the one script matching
 their role. Managers/admins may also want to skim the Sales/Support/Accounts
 scripts since they oversee those modules, but it's not required.
+
+**On the longer scripts (Sales, Accounts, Manager, now 13-15 min):** these
+grew a lot in the 2026-07-19 refresh — a lot has shipped since these were
+first written. Still recordable in one sitting, but if 13-15 minutes feels
+like too much to hold in one take, it's fine to split at a natural scene
+boundary (e.g. record Manager's Reports scenes as its own clip) rather than
+force it into one video — two clean videos beat one long one with a lot of
+restarts.
 
 ## Keeping these in sync
 
