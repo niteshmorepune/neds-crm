@@ -58,6 +58,14 @@ Support) SLA-breached tickets. Instead of checking five separate screens each
 morning, check this one page first — each item links straight to the record so
 you can act on it, and the list disappears once you're caught up.
 
+## 4c. Notice Board
+If admin or a manager has posted a company-wide notice — office closures,
+holiday reminders, policy changes — it shows as a 📣 banner at the top of
+your **Dashboard**, above the overdue-tasks alert. Click the **×** to dismiss
+it; dismissing is remembered only on that browser/device, so it may reappear
+if you check the CRM from a different computer or phone. A notice
+disappears on its own once its end date passes.
+
 ## 5. Attendance — check in and out
 On the **Dashboard**, use the attendance widget:
 - **Check in** when you start your day.

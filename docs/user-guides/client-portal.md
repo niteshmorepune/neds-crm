@@ -31,6 +31,10 @@ When you log in you'll see a personalised greeting and three stat cards showing
 your open invoices, active projects, and open tickets. Click any card to go
 straight to that section.
 
+If NEDS has an announcement for you — a holiday notice, a service update — it
+appears as a 📣 banner above the stat cards. Click the **×** to dismiss it;
+it'll disappear on its own once its posted end date passes anyway.
+
 **Ask about your account** — type a question like "When's my next payment
 due?" or "What's the status of my SEO project?" and get an instant answer
 based on your own account details. It only knows what's already in your

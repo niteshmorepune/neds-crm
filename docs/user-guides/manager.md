@@ -16,6 +16,19 @@ Your dashboard shows the whole business at a glance:
 - **Link panels** — quick access to Daily Reports, the Project Dashboard, and the
   Reports below.
 
+## Notice Board
+**Notice Board** in the sidebar (Admin/Manager only) is for posting time-bound
+company notices — office closures, holidays, policy changes, service updates
+— without relying on email or WhatsApp. Each post has a title, message,
+**audience** (Staff only, Clients only, or both), a start time, and an
+optional end time (blank = standing notice, no expiry); check **Pin to top**
+to keep one above newer posts.
+
+A Staff/Both post shows as a dismissible 📣 banner at the top of everyone's
+Dashboard; a Clients/Both post shows the same way on the Client Portal home
+page. Nothing to manually take down — a post stops showing once its end date
+passes, and only shows once its start time arrives.
+
 ## Client Radar
 A **Client Radar** sidebar item (and a dashboard banner when clients are
 flagged) surfaces active clients worth a proactive check-in:

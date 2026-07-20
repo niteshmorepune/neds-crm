@@ -19,6 +19,10 @@
         </p>
     </div>
 
+    <div class="mb-6">
+        <x-announcement-banner :announcements="$announcements" />
+    </div>
+
     {{-- Stat cards --}}
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-3 mb-6">
         {{-- Open Invoices --}}
