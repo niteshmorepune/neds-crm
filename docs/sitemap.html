@@ -200,7 +200,7 @@
       boundary in the system: a role gate, a separate login, or a public link with no
       login at all. That's the CRM's actual shape, not just its menu.</p>
     <div class="statline">
-      <div class="stat"><b>23</b><span>Sidebar modules</span></div>
+      <div class="stat"><b>25</b><span>Sidebar modules</span></div>
       <div class="stat"><b>7</b><span>Reports off the dashboard</span></div>
       <div class="stat"><b>6</b><span>Staff roles</span></div>
       <div class="stat"><b>11</b><span>Client Portal pages</span></div>
@@ -412,7 +412,7 @@
   <!-- ZONE F — ADMIN ONLY -->
   <section class="zone admin" id="admin">
     <div class="zone-head"><span class="zone-letter">F</span><h2>Admin-only</h2></div>
-    <p class="zone-sub">No role default reaches these — only the admin all-access bypass.</p>
+    <p class="zone-sub">Admin-only, or Admin+Manager — no other role reaches these by default.</p>
     <div class="rows">
       <div class="row">
         <div><div class="label">Users</div><span class="path mono">/users</span></div>
@@ -435,9 +435,19 @@
         <div class="desc">At-risk and upsell signals across the active client base.</div>
       </div>
       <div class="row">
+        <div><div class="label">Notice Board</div><span class="path mono">/announcements</span></div>
+        <div class="chips"><span class="chip admin">Admin</span><span class="chip">Manager</span></div>
+        <div class="desc">Post time-bound staff/client notices — shows as a dismissible banner on the Dashboard and/or Client Portal home, per post.</div>
+      </div>
+      <div class="row">
         <div><div class="label">Menu Controller</div><span class="path mono">/menu-controller</span></div>
         <div class="chips"><span class="chip admin">Admin</span></div>
         <div class="desc">Per-role and per-user sidebar visibility — cosmetic only, never the real access control.</div>
+      </div>
+      <div class="row">
+        <div><div class="label">Subscriptions</div><span class="path mono">/subscriptions</span></div>
+        <div class="chips"><span class="chip admin">Admin</span></div>
+        <div class="desc">Internal tool/vendor renewal tracker (Claude, hosting, domains) — emails + bell-notifies before each one renews.</div>
       </div>
       <div class="row">
         <div><div class="label">Audit Log</div><span class="path mono">/audit-log</span></div>
