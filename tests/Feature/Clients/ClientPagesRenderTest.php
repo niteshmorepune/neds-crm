@@ -143,6 +143,32 @@ it('renders the services tab with recurring services and projects', function () 
         ->assertSee('SEO Launch');
 });
 
+it('orders recurring services chronologically within each service, not by creation order', function () {
+    $service = Service::factory()->create(['name' => 'Social Media']);
+    $client = Customer::factory()->create(['company_name' => 'Chrono Co']);
+
+    // Created out of chronological order (May, then July, then June) — the
+    // real bug this reproduces: a same-service block reading
+    // "19 May / 19 Jul / 19 Jun" instead of ascending.
+    RecurringInvoice::factory()->create([
+        'customer_id' => $client->id, 'service_id' => $service->id,
+        'frequency' => RecurringFrequency::Monthly, 'start_date' => '2026-05-19', 'end_date' => '2026-06-18',
+    ]);
+    RecurringInvoice::factory()->create([
+        'customer_id' => $client->id, 'service_id' => $service->id,
+        'frequency' => RecurringFrequency::Monthly, 'start_date' => '2026-07-19', 'end_date' => '2026-08-18',
+    ]);
+    RecurringInvoice::factory()->create([
+        'customer_id' => $client->id, 'service_id' => $service->id,
+        'frequency' => RecurringFrequency::Monthly, 'start_date' => '2026-06-19', 'end_date' => '2026-07-18',
+    ]);
+
+    $this->actingAs($this->admin)
+        ->get(route('clients.show', $client))
+        ->assertOk()
+        ->assertSeeInOrder(['19 May 2026', '19 Jun 2026', '19 Jul 2026']);
+});
+
 it('excludes Ended templates from the "On hold" summary count', function () {
     $service = Service::factory()->create(['name' => 'Social Media']);
     $client = Customer::factory()->create(['company_name' => 'Mixed Status Co']);

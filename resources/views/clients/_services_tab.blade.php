@@ -1,5 +1,10 @@
 @php
-    $recurring  = $client->recurringInvoices->sortBy(fn ($r) => $r->service?->name);
+    // Grouped by service (outer sortBy), then chronological within each
+    // service (inner sortBy) — PHP's sort is stable, so the start_date order
+    // survives the following service-name sort instead of being scrambled.
+    $recurring  = $client->recurringInvoices
+        ->sortBy(fn ($r) => $r->start_date)
+        ->sortBy(fn ($r) => $r->service?->name);
     $projects   = $client->projects->sortBy(fn ($p) => $p->service?->name);
     // Derived from the same dashboardStatus() the row badges use below, so
     // the summary counts can never drift out of sync with what's displayed
