@@ -391,6 +391,22 @@ month-by-month and per-client "Billed — last 6 months" breakdown, plus which
 of their clients are unpaid/overdue and for how long (see [Manager guide →
 Partner client health](manager.md) for the full breakdown).
 
+## 9a. Notice Board — post staff/client announcements
+**Notice Board** in the sidebar (Admin/Manager only) is where you post
+time-bound notices — office closures, holiday reminders, policy changes,
+service updates. Each post has a **title**, a **message**, an **audience**
+(Staff only, Clients only, or both), a **start** time, and an optional
+**end** time — leave the end date blank for a standing notice with no
+expiry. Check **Pin to top** to keep an important notice above newer ones.
+
+A Staff or Both post shows as a dismissible banner at the top of the
+**Dashboard** for every internal role (see [Getting Started → Notice
+Board](getting-started.md)); a Clients or Both post shows the same way on
+the **Client Portal** home page. Only posts within their start/end window
+are shown — there's nothing to manually take down once a notice's end date
+passes. Dismissing is per-browser (not tracked per person), so a notice can
+reappear if someone checks from a different device.
+
 ## 10. Audit Log
 **Audit Log** (admin) shows who created, updated or deleted records, and when.
 Filter by record type or event. Use it to investigate "who changed this?".

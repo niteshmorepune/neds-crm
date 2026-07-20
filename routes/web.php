@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\AuditLogController;
@@ -215,6 +216,15 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
      */
     Route::middleware('menu.access:partners')->group(function () {
         Route::resource('partners', PartnerController::class);
+    });
+
+    /*
+     * Notice Board — time-bound staff/client announcements. Admin/manager
+     * only (menu.access:announcements). Display on the Dashboard/Portal home
+     * is unrestricted (audience-filtered), only authoring is gated here.
+     */
+    Route::middleware('menu.access:announcements')->group(function () {
+        Route::resource('announcements', AnnouncementController::class)->except('show');
     });
 
     /*

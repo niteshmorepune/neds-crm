@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\UserRole;
+use App\Models\Announcement;
 use App\Services\DashboardMetrics;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -12,6 +13,7 @@ class DashboardController extends Controller
     public function index(Request $request, DashboardMetrics $metrics): View
     {
         $user = $request->user();
+        $announcements = Announcement::active()->forStaff()->newestFirst()->get();
 
         // Admin & manager get the full company dashboard; everyone else gets a
         // role-focused panel. Common widgets (attendance, daily report) render
@@ -32,6 +34,6 @@ class DashboardController extends Controller
             default => ['blank', []],
         };
 
-        return view('dashboard', ['panel' => $panel, 'panelData' => $data]);
+        return view('dashboard', ['panel' => $panel, 'panelData' => $data, 'announcements' => $announcements]);
     }
 }
