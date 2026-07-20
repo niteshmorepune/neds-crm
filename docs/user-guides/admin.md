@@ -407,6 +407,32 @@ are shown — there's nothing to manually take down once a notice's end date
 passes. Dismissing is per-browser (not tracked per person), so a notice can
 reappear if someone checks from a different device.
 
+## 9b. Subscriptions — internal renewal reminders
+**Subscriptions** in the sidebar is admin-only (not even managers see this —
+it's internal vendor/billing info, unlike most other admin-ish modules).
+Track the tools NEDS itself pays for — the Claude subscription, Hostinger
+hosting, domain renewals, and anything else — so renewals stop being tribal
+knowledge.
+
+Each entry has a **name**, optional **vendor**, **cost per cycle**, a
+**billing cycle** (Monthly/Quarterly/Yearly), a **next renewal date**, and
+**how many days before** to be reminded. A daily scheduled command
+(`app:send-subscription-renewal-reminders`, 08:45 IST) checks every active
+subscription and, once it falls inside its reminder window, sends **both** an
+email and a bell notification to every active admin — you won't miss it even
+on a day you don't log in.
+
+**Once a renewal date passes, it's treated as auto-renewed**: the date rolls
+forward one billing cycle on its own (handling several missed cycles at once
+if the reminder command didn't run for a while), and the reminder guard
+resets so the next cycle gets its own reminder in turn. If you actually
+cancel something instead of renewing it, uncheck **Active** on that entry —
+otherwise it will keep rolling forward and reminding you indefinitely.
+
+**Tip:** keep the reminder lead time shorter than the billing cycle (e.g. 7
+days for a monthly subscription, not 30) — a lead time close to or longer
+than the cycle length can cause the reminder to fire on back-to-back days.
+
 ## 10. Audit Log
 **Audit Log** (admin) shows who created, updated or deleted records, and when.
 Filter by record type or event. Use it to investigate "who changed this?".

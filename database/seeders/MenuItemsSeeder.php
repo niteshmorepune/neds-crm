@@ -45,6 +45,7 @@ class MenuItemsSeeder extends Seeder
             ['key' => 'daily-reports',    'label' => 'Daily Reports',    'route' => 'daily-reports.index', 'icon' => 'clipboard', 'roles' => $all],
             ['key' => 'partners',         'label' => 'Partners',         'route' => 'partners.index',   'icon' => 'users',      'roles' => [UserRole::Manager]],
             ['key' => 'announcements',    'label' => 'Notice Board',     'route' => 'announcements.index', 'icon' => 'megaphone', 'roles' => [UserRole::Manager]],
+            ['key' => 'subscriptions',    'label' => 'Subscriptions',    'route' => 'subscriptions.index', 'icon' => 'credit-card', 'roles' => []], // admin only
             ['key' => 'users',            'label' => 'Users',            'route' => 'users.index',      'icon' => 'users',      'roles' => []], // admin only
             ['key' => 'menu-controller',  'label' => 'Menu Controller',  'route' => 'menu-controller',  'icon' => 'sliders',    'roles' => []], // admin only
         ];
