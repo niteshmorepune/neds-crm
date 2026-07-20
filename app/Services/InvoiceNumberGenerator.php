@@ -37,28 +37,30 @@ class InvoiceNumberGenerator
                 ->lockForUpdate()
                 ->first();
 
-            // Manually logged / CSV-imported invoices (InvoiceController::store,
-            // update, importStore) assign a number directly without advancing
-            // this counter, so it can drift behind what's actually in use. Float
-            // it up to the real max before handing out the next number, so a
-            // lagging counter self-heals instead of colliding forever (a failed
-            // insert rolls back this whole transaction, including the
-            // increment, so a stuck counter would otherwise retry the same
-            // doomed number on every call).
+            // Manually logged / CSV-imported / back-dated invoices (InvoiceController::
+            // store, update, importStore) can assign an invoice_number string directly
+            // without advancing this counter -- and since financial_year is computed
+            // independently from issue_date, a back-dated entry can carry a
+            // NEDS/{fy}/... number while its own financial_year column reflects an
+            // *earlier* year (e.g. a historical invoice logged with today's default
+            // fy prefix but a last-year issue_date). Matching on the number STRING
+            // itself, not the financial_year column, means this self-heal can't be
+            // fooled by that mismatch -- it always finds the true highest number
+            // already claimed for this fy, however it got there.
             $maxUsed = DB::table('invoices')
-                ->where('financial_year', $fy)
-                ->whereNotNull('invoice_number')
+                ->where('invoice_number', 'like', "NEDS/{$fy}/%")
                 ->pluck('invoice_number')
                 ->map(fn (string $number) => (int) Str::afterLast($number, '/'))
                 ->max() ?? 0;
 
-            if ($maxUsed > $sequence->last_number) {
-                $sequence->last_number = $maxUsed;
-            }
+            // Absolute update (not increment()) -- Eloquent's increment() issues a
+            // DB-relative "column = column + amount", which would silently ignore
+            // the self-heal above and leave the persisted counter lagging behind
+            // reality even when the returned number here is correct.
+            $next = max($sequence->last_number, $maxUsed) + 1;
+            $sequence->update(['last_number' => $next]);
 
-            $sequence->increment('last_number');
-
-            return sprintf('NEDS/%s/%04d', $fy, $sequence->last_number);
+            return sprintf('NEDS/%s/%04d', $fy, $next);
         });
     }
 }

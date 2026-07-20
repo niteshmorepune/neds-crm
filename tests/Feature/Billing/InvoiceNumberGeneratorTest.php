@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Invoice;
+use App\Models\InvoiceNumberSequence;
 use App\Services\InvoiceNumberGenerator;
 use Illuminate\Support\Carbon;
 
@@ -49,4 +50,33 @@ it('self-heals when the counter has drifted behind a manually-assigned invoice n
     $next = $this->gen->generate(Carbon::parse('2026-06-10'));
 
     expect($next)->toBe('NEDS/2026-27/0051');
+});
+
+it('self-heals past a used number even when its financial_year column disagrees with the number itself', function () {
+    // Reproduces a real production incident: a manually-logged, back-dated
+    // invoice (InvoiceController::store) carries a NEDS/2026-27/... number
+    // (typed by staff) but issue_date in an earlier year, so financial_year
+    // is independently computed as 2025-26 — desynced from the number's own
+    // embedded fy. The old self-heal filtered maxUsed by the financial_year
+    // *column*, so it never saw this row and kept re-proposing the same
+    // already-taken number on every call (a permanent 500 until fixed).
+    Invoice::factory()->create(['financial_year' => '2025-26', 'invoice_number' => 'NEDS/2026-27/0050']);
+
+    $next = $this->gen->generate(Carbon::parse('2026-06-10'));
+
+    expect($next)->toBe('NEDS/2026-27/0051');
+});
+
+it('persists the self-healed counter as the real value, not just a relative bump off the stale one', function () {
+    // Eloquent's increment() issues "column = column + amount" at the DB
+    // level, ignoring any in-memory assignment made beforehand — so a naive
+    // "$sequence->last_number = $maxUsed; $sequence->increment(...)" looks
+    // right in the returned string but silently leaves the persisted
+    // last_number lagging behind reality on every call.
+    Invoice::factory()->create(['financial_year' => '2026-27', 'invoice_number' => 'NEDS/2026-27/0050']);
+    InvoiceNumberSequence::updateOrCreate(['financial_year' => '2026-27'], ['last_number' => 3]);
+
+    $this->gen->generate(Carbon::parse('2026-06-10'));
+
+    expect(InvoiceNumberSequence::where('financial_year', '2026-27')->first()->last_number)->toBe(51);
 });
