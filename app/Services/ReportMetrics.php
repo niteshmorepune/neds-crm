@@ -135,8 +135,16 @@ class ReportMetrics
             ->all();
 
         $byClient = $invoices
-            ->groupBy(fn (Invoice $i) => $i->customer?->company_name ?? 'Unknown')
-            ->map(fn (Collection $group, string $name) => ['name' => $name, 'total' => (int) $group->sum('total')])
+            ->groupBy(fn (Invoice $i) => $i->customer_id ?? 0)
+            ->map(function (Collection $group) {
+                $customer = $group->first()->customer;
+
+                return [
+                    'customer_id' => $customer?->id,
+                    'name' => $customer?->company_name ?? 'Unknown',
+                    'total' => (int) $group->sum('total'),
+                ];
+            })
             ->sortByDesc('total')
             ->values()
             ->all();

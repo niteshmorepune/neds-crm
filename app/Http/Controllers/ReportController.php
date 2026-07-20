@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\UserRole;
+use App\Models\Customer;
 use App\Models\Partner;
 use App\Services\AiUsageMetrics;
 use App\Services\BusinessOverviewMetrics;
@@ -163,15 +164,31 @@ class ReportController extends Controller
         [$from, $to] = $this->financialYearRange($request);
         $revenue = $this->metrics->revenue($from, $to);
 
+        $arAging = $this->overview->arAging();
+        $mrr = $this->overview->mrrSnapshot();
+        $concentration = $this->overview->clientConcentration($revenue['by_client'], $revenue['total']);
+
+        // Batch-loaded once (rather than per row in the view) so the customer
+        // name in AR Aging / MRR expiring / Client Concentration can link to
+        // clients.show — CustomerPolicy::view needs the real model, not just
+        // an id, to correctly hide a client from a Sales-restricted viewer.
+        $customerIds = collect($arAging['invoices'])->pluck('customer_id')
+            ->merge(collect($mrr['expiring'])->pluck('customer_id'))
+            ->merge(collect($concentration['clients'])->pluck('customer_id'))
+            ->filter()
+            ->unique();
+        $customersById = Customer::whereIn('id', $customerIds)->get()->keyBy('id');
+
         return view('reports.business-overview', [
             'from' => $from,
             'to' => $to,
             'showFinancialDetail' => $request->user()->hasRole(UserRole::Admin, UserRole::Accounts),
             'partners' => $this->overview->partnerPerformance(),
-            'arAging' => $this->overview->arAging(),
-            'mrr' => $this->overview->mrrSnapshot(),
-            'concentration' => $this->overview->clientConcentration($revenue['by_client'], $revenue['total']),
+            'arAging' => $arAging,
+            'mrr' => $mrr,
+            'concentration' => $concentration,
             'pipeline' => $this->overview->pipelineFunnel($from, $to),
+            'customersById' => $customersById,
         ]);
     }
 

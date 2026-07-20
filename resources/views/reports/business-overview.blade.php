@@ -96,8 +96,15 @@
                             </thead>
                             <tbody class="divide-y divide-gray-100">
                                 @forelse ($arAging['invoices'] as $i)
+                                    @php $customer = $customersById->get($i['customer_id']); @endphp
                                     <tr>
-                                        <td class="py-2 text-gray-700">{{ $i['customer'] }}</td>
+                                        <td class="py-2 text-gray-700">
+                                            @if ($customer && auth()->user()->can('view', $customer))
+                                                <a href="{{ route('clients.show', $customer) }}" class="text-indigo-600 hover:underline">{{ $i['customer'] }}</a>
+                                            @else
+                                                {{ $i['customer'] }}
+                                            @endif
+                                        </td>
                                         <td class="py-2 text-gray-600">{{ $i['invoice_number'] ?? '—' }}</td>
                                         <td class="py-2 text-right text-gray-600">{{ $i['days_overdue'] === null ? '—' : max(0, $i['days_overdue']) }}</td>
                                         <td class="py-2 text-right font-medium text-gray-900">{{ \App\Support\Money::format($i['balance']) }}</td>
@@ -134,8 +141,15 @@
                             </thead>
                             <tbody class="divide-y divide-gray-100">
                                 @forelse ($mrr['expiring'] as $e)
+                                    @php $customer = $customersById->get($e['customer_id']); @endphp
                                     <tr>
-                                        <td class="py-2 text-gray-700">{{ $e['customer'] }}</td>
+                                        <td class="py-2 text-gray-700">
+                                            @if ($customer && auth()->user()->can('view', $customer))
+                                                <a href="{{ route('clients.show', $customer) }}" class="text-indigo-600 hover:underline">{{ $e['customer'] }}</a>
+                                            @else
+                                                {{ $e['customer'] }}
+                                            @endif
+                                        </td>
                                         <td class="py-2 text-gray-600">{{ $e['service'] }}</td>
                                         <td class="py-2 text-gray-600">{{ $e['end_date']->format('d M Y') }}</td>
                                         <td class="py-2 text-right text-gray-900">{{ \App\Support\Money::format($e['monthly_equivalent']) }}</td>
@@ -162,7 +176,17 @@
             @if ($showFinancialDetail)
                 <ul class="mt-4 space-y-2 text-sm">
                     @forelse ($concentration['clients'] as $c)
-                        <li class="flex justify-between"><span class="text-gray-700">{{ $c['name'] }}</span><span class="text-gray-900">{{ \App\Support\Money::format($c['total']) }}</span></li>
+                        @php $customer = $customersById->get($c['customer_id'] ?? null); @endphp
+                        <li class="flex justify-between">
+                            <span class="text-gray-700">
+                                @if ($customer && auth()->user()->can('view', $customer))
+                                    <a href="{{ route('clients.show', $customer) }}" class="text-indigo-600 hover:underline">{{ $c['name'] }}</a>
+                                @else
+                                    {{ $c['name'] }}
+                                @endif
+                            </span>
+                            <span class="text-gray-900">{{ \App\Support\Money::format($c['total']) }}</span>
+                        </li>
                     @empty
                         <li class="text-gray-400">No data.</li>
                     @endforelse

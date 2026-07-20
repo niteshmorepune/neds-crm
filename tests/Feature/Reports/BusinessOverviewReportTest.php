@@ -309,6 +309,30 @@ it('lets accounts see the same financial detail as admin', function () {
         ->assertSee('31–60 days overdue');
 });
 
+it('links a client name in AR Aging, MRR expiring and Client Concentration to its detail page for admin', function () {
+    $admin = User::factory()->role(UserRole::Admin)->create();
+    $client = Customer::factory()->create(['company_name' => 'Linked Co']);
+    Invoice::factory()->create(['customer_id' => $client->id, 'status' => InvoiceStatus::Overdue, 'due_date' => now()->subDays(10), 'total' => 100000, 'amount_paid' => 0]);
+    $service = Service::factory()->create();
+    RecurringInvoice::factory()->create(['customer_id' => $client->id, 'service_id' => $service->id, 'is_active' => true, 'end_date' => now()->addDays(10)]);
+
+    $this->actingAs($admin)->get(route('reports.business-overview'))
+        ->assertOk()
+        ->assertSee(route('clients.show', $client), false);
+});
+
+it('shows a client name as plain text in AR Aging when a secondary-Sales viewer does not own that client', function () {
+    $viewer = User::factory()->role(UserRole::Accounts)->withAdditionalRoles(UserRole::Sales)->create();
+    $owner = User::factory()->role(UserRole::Sales)->create();
+    $client = Customer::factory()->create(['company_name' => 'Not My Client Co', 'owner_id' => $owner->id]);
+    Invoice::factory()->create(['customer_id' => $client->id, 'status' => InvoiceStatus::Overdue, 'due_date' => now()->subDays(10), 'total' => 100000, 'amount_paid' => 0]);
+
+    $this->actingAs($viewer)->get(route('reports.business-overview'))
+        ->assertOk()
+        ->assertSee('Not My Client Co')
+        ->assertDontSee(route('clients.show', $client), false);
+});
+
 it('shows manager the page but hides itemized financial detail', function () {
     $manager = User::factory()->role(UserRole::Manager)->create();
 

@@ -113,6 +113,7 @@ class BusinessOverviewMetrics
 
                 return [
                     'customer' => $invoice->customer?->company_name ?? 'Unknown',
+                    'customer_id' => $invoice->customer?->id,
                     'invoice_number' => $invoice->invoice_number,
                     'due_date' => $invoice->due_date,
                     'days_overdue' => $daysOverdue,
@@ -156,6 +157,7 @@ class BusinessOverviewMetrics
 
                 return [
                     'customer' => $template->customer?->company_name ?? 'Unknown',
+                    'customer_id' => $template->customer?->id,
                     'service' => $template->service?->name ?? 'Unspecified',
                     'frequency' => $template->frequency->label(),
                     'monthly_equivalent' => (int) round($cycleAmount / $cycleMonths),
