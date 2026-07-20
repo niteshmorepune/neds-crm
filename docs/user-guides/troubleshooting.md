@@ -114,6 +114,13 @@ The morning digest only sends if there is something to report (overdue tasks,
 tasks due today, follow-ups, open tickets). An empty digest is skipped. A clean
 slate means no email — that's correct behaviour.
 
+**Check 2b — Is the staff member on approved leave today?**
+The 6 PM daily report reminder skips anyone whose Attendance status for that
+day is **Leave** (set automatically when their leave request is approved) —
+that's correct behaviour, not a bug. If they were marked Leave in error,
+correct the Attendance entry (Attendance page, admin/manager only) and
+they'll be reminded on a subsequent day if it's still unsubmitted.
+
 **Check 3 — Is the cron running?**
 ```
 cd /home/u314035009/neds-crm && php artisan schedule:list

@@ -195,7 +195,8 @@ notified again once that new date comes within 30 days.
   For each client with something outstanding: how much is **recurring not
   paid** (a retainer client hasn't paid at all), **other unpaid** (a one-time/
   milestone invoice with zero payment), and **partial — pending** (some paid,
-  some still owed), plus the oldest overdue days, any payment-promise date
+  some still owed), plus the oldest overdue days (with an approximate month
+  count alongside it), any payment-promise date
   (red if broken), and — for milestone-billed projects — the completion %
   and whether the next milestone is **Ready to invoice**. Use the picker at
   the top to view **All clients**, **Direct clients** (no referring partner),
@@ -209,7 +210,9 @@ notified again once that new date comes within 30 days.
   invoice list, the full MRR breakdown by service plus which recurring
   contracts expire in the next 30 days, and the named top-5/top-10 client
   breakdown behind the concentration percentages. Also shows partner referral
-  performance and the company-wide pipeline/win-rate funnel. Export to CSV.
+  performance (as plain text, not a link — a partner's own page with their
+  billing/collections detail is Admin/Manager only) and the company-wide
+  pipeline/win-rate funnel. Export to CSV.
 
 ## 5. Invoice emails
 Invoice emails sent to clients now have a **professional branded layout**: NEDS

@@ -385,7 +385,11 @@ field — shows up in **Business Overview** (Reports panel; see [Manager guide
 → Reports](manager.md)). As Admin you see the full financial detail there
 (itemized overdue invoices, named client breakdown, itemized upcoming
 renewals) — Manager sees the same report with those three itemized sections
-trimmed to summary numbers only.
+trimmed to summary numbers only. Click a partner's name there (or on the
+Partners list) to open their page for actual invoiced amounts — a
+month-by-month and per-client "Billed — last 6 months" breakdown, plus which
+of their clients are unpaid/overdue and for how long (see [Manager guide →
+Partner client health](manager.md) for the full breakdown).
 
 ## 10. Audit Log
 **Audit Log** (admin) shows who created, updated or deleted records, and when.

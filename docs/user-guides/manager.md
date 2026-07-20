@@ -43,7 +43,10 @@ From the **Reports** panel on the dashboard:
 
 **Business Overview** — the executive snapshot, for a chosen financial year:
 - **Partner Performance**: which partners referred which clients and how much
-  won/pipeline/lost business is attributed to each.
+  won/pipeline/lost business is attributed to each. Click a partner's name to
+  open their page (see **Partner client health** below) — Accounts sees the
+  name as plain text instead, since Partner records themselves are
+  Admin/Manager only.
 - **AR Aging**, **MRR / Recurring Snapshot**, and **Client Concentration**
   (% of revenue from your top 5/10 clients): as a manager you see the summary
   numbers here (e.g. total outstanding, total MRR, the concentration
@@ -332,12 +335,24 @@ check with an admin — only fixed-date holidays are pre-loaded, so
 lunar/regional festivals (Diwali, Holi, etc.) need to be added each year.
 
 ### Partner client health
-Click a partner's **name** on the Partners list to open their page — alongside
-their contact details, it shows the same collections/delivery table as the
-Collections report (above), already filtered to that partner's referred
-clients: who hasn't paid, who's only partially paid, and how each of their
-active projects is progressing. Useful when a partner asks "how are my
-clients doing with us" or before a check-in call with them.
+Click a partner's **name** on the Partners list (or from Business Overview's
+Partner Performance table) to open their page. Alongside their contact
+details, it shows:
+
+- **Billed — last 6 months**: total invoiced (issued, not just paid) for that
+  partner's clients, as 6 month-by-month tiles plus a per-client breakdown
+  below. Every referred client appears in the by-client table, even one
+  billed nothing in the window — so it can't be mistaken for the (narrower)
+  client health table below it, which only lists clients that actually need
+  attention.
+- **Client health**: the same collections/delivery table as the Collections
+  report (above), already filtered to that partner's referred clients — who
+  hasn't paid, who's only partially paid (with the oldest overdue invoice's
+  age shown in both days and an approximate month count), and how each
+  active project is progressing.
+
+Useful when a partner asks "how are my clients doing with us" or "what have
+we billed through you lately," or before a check-in call with them.
 
 ## Automated integrations
 The CRM runs automated workflows with **Drishti** and **Social Media Dost**.
