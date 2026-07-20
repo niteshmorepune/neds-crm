@@ -1,8 +1,10 @@
 <?php
 
+use App\Enums\AttendanceStatus;
 use App\Enums\TaskStatus;
 use App\Enums\UserRole;
 use App\Mail\DailyReportReminder;
+use App\Models\Attendance;
 use App\Models\CallLog;
 use App\Models\DailyReport;
 use App\Models\Project;
@@ -109,6 +111,25 @@ it('reminds only users who have not submitted today', function () {
 
     Mail::assertSent(DailyReportReminder::class, fn (DailyReportReminder $m) => $m->hasTo($pending->email));
     Mail::assertNotSent(DailyReportReminder::class, fn (DailyReportReminder $m) => $m->hasTo($submitter->email));
+});
+
+it('does not remind users who are on approved leave today', function () {
+    if (now()->isSunday()) {
+        $this->travelTo(now()->addDay());
+    }
+    Mail::fake();
+    $onLeave = User::factory()->role(UserRole::Support)->create();
+    Attendance::factory()->create([
+        'user_id' => $onLeave->id,
+        'date' => now()->toDateString(),
+        'status' => AttendanceStatus::Leave,
+    ]);
+    $pending = User::factory()->role(UserRole::Support)->create();
+
+    $this->artisan('app:send-daily-report-reminders')->assertSuccessful();
+
+    Mail::assertSent(DailyReportReminder::class, fn (DailyReportReminder $m) => $m->hasTo($pending->email));
+    Mail::assertNotSent(DailyReportReminder::class, fn (DailyReportReminder $m) => $m->hasTo($onLeave->email));
 });
 
 it('renders the daily report page', function () {

@@ -2,7 +2,9 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\AttendanceStatus;
 use App\Mail\DailyReportReminder;
+use App\Models\Attendance;
 use App\Models\DailyReport;
 use App\Models\User;
 use Illuminate\Console\Command;
@@ -27,7 +29,14 @@ class SendDailyReportReminders extends Command
 
         $submittedUserIds = DailyReport::whereDate('date', $today)->pluck('user_id');
 
-        $pending = User::query()->whereNotIn('id', $submittedUserIds)->get();
+        $onLeaveUserIds = Attendance::whereDate('date', $today)
+            ->where('status', AttendanceStatus::Leave)
+            ->pluck('user_id');
+
+        $pending = User::query()
+            ->whereNotIn('id', $submittedUserIds)
+            ->whereNotIn('id', $onLeaveUserIds)
+            ->get();
 
         foreach ($pending as $user) {
             Mail::to($user)->send(new DailyReportReminder($user));
