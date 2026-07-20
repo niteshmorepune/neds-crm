@@ -23,8 +23,10 @@ class PartnerController extends Controller
         $this->authorize('view', $partner);
 
         $rows = $collectionsMetrics->clientHealth($partner->id);
+        $billed = $collectionsMetrics->billedByClient($partner->id);
+        $billedByMonth = $collectionsMetrics->billedByMonth($partner->id);
 
-        return view('partners.show', compact('partner', 'rows'));
+        return view('partners.show', compact('partner', 'rows', 'billed', 'billedByMonth'));
     }
 
     public function create()

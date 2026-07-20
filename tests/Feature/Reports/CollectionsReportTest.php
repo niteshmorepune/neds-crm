@@ -99,6 +99,16 @@ it('computes the oldest overdue days across a client\'s open invoices', function
     expect($row['oldest_overdue_days'])->toBe(20);
 });
 
+it('converts oldest overdue days to an approximate month figure alongside it', function () {
+    $customer = Customer::factory()->create();
+    recurringOverdueInvoice($customer, ['due_date' => now()->subDays(45)]);
+
+    $row = $this->metrics->clientHealth()->firstWhere('customer.id', $customer->id);
+
+    expect($row['oldest_overdue_days'])->toBe(45)
+        ->and($row['oldest_overdue_months'])->toBe(1.5);
+});
+
 it('surfaces the soonest open payment promise and flags it broken once past', function () {
     $customer = Customer::factory()->create();
     recurringOverdueInvoice($customer, ['payment_promised_date' => now()->subDays(2)]);
@@ -197,6 +207,95 @@ it('scopes clientHealth to direct clients only', function () {
 
     expect($rows->pluck('customer.id'))->toContain($direct->id)
         ->not->toContain($referred->id);
+});
+
+// --- Billed last 6 months, per client -----------------------------------------
+
+it('sums a client\'s invoiced total within the trailing 6-month window, excluding draft/cancelled', function () {
+    $partner = Partner::factory()->create();
+    $customer = Customer::factory()->create(['referring_partner_id' => $partner->id]);
+    Invoice::factory()->create(['customer_id' => $customer->id, 'status' => InvoiceStatus::Paid, 'issue_date' => now()->subMonths(2), 'total' => 100000]);
+    Invoice::factory()->create(['customer_id' => $customer->id, 'status' => InvoiceStatus::Overdue, 'issue_date' => now()->subMonths(4), 'total' => 50000]);
+    Invoice::factory()->create(['customer_id' => $customer->id, 'status' => InvoiceStatus::Draft, 'issue_date' => now()->subMonth(), 'total' => 25000]);
+    Invoice::factory()->create(['customer_id' => $customer->id, 'status' => InvoiceStatus::Cancelled, 'issue_date' => now()->subMonth(), 'total' => 25000]);
+
+    $row = $this->metrics->billedByClient($partner->id)->firstWhere('customer.id', $customer->id);
+
+    expect($row['invoice_count'])->toBe(2)
+        ->and($row['amount'])->toBe(150000);
+});
+
+it('excludes an invoice issued more than 6 months ago from billedByClient', function () {
+    $partner = Partner::factory()->create();
+    $customer = Customer::factory()->create(['referring_partner_id' => $partner->id]);
+    Invoice::factory()->create(['customer_id' => $customer->id, 'status' => InvoiceStatus::Paid, 'issue_date' => now()->subMonths(7), 'total' => 100000]);
+
+    $row = $this->metrics->billedByClient($partner->id)->firstWhere('customer.id', $customer->id);
+
+    expect($row['invoice_count'])->toBe(0)
+        ->and($row['amount'])->toBe(0);
+});
+
+it('includes a referred client billed nothing in the window, unlike clientHealth which would drop it', function () {
+    $partner = Partner::factory()->create();
+    $customer = Customer::factory()->create(['referring_partner_id' => $partner->id]);
+
+    $rows = $this->metrics->billedByClient($partner->id);
+
+    expect($rows->pluck('customer.id'))->toContain($customer->id);
+    expect($this->metrics->clientHealth($partner->id)->firstWhere('customer.id', $customer->id))->toBeNull();
+});
+
+it('scopes billedByClient to one referring partner only', function () {
+    $partner = Partner::factory()->create();
+    $other = Partner::factory()->create();
+    $theirs = Customer::factory()->create(['referring_partner_id' => $partner->id]);
+    $others = Customer::factory()->create(['referring_partner_id' => $other->id]);
+
+    $rows = $this->metrics->billedByClient($partner->id);
+
+    expect($rows->pluck('customer.id'))->toContain($theirs->id)
+        ->not->toContain($others->id);
+});
+
+// --- Billed last 6 months, per month --------------------------------------
+
+it('buckets billed amounts into their issue month, oldest first, backfilling a month with zero invoices', function () {
+    $partner = Partner::factory()->create();
+    $customer = Customer::factory()->create(['referring_partner_id' => $partner->id]);
+    Invoice::factory()->create(['customer_id' => $customer->id, 'status' => InvoiceStatus::Paid, 'issue_date' => now()->startOfMonth(), 'total' => 100000]);
+    Invoice::factory()->create(['customer_id' => $customer->id, 'status' => InvoiceStatus::Overdue, 'issue_date' => now()->startOfMonth()->subMonths(2), 'total' => 50000]);
+
+    $months = $this->metrics->billedByMonth($partner->id);
+
+    expect($months)->toHaveCount(6)
+        ->and($months[0]['month'])->toBe(now()->startOfMonth()->subMonths(5)->format('Y-m'))
+        ->and($months[5]['month'])->toBe(now()->startOfMonth()->format('Y-m'))
+        ->and($months[5]['amount'])->toBe(100000)
+        ->and($months[3]['amount'])->toBe(50000)
+        ->and($months[4]['amount'])->toBe(0)
+        ->and($months[4]['invoice_count'])->toBe(0);
+});
+
+it('excludes an invoice issued before the trailing 6-month window from billedByMonth', function () {
+    $partner = Partner::factory()->create();
+    $customer = Customer::factory()->create(['referring_partner_id' => $partner->id]);
+    Invoice::factory()->create(['customer_id' => $customer->id, 'status' => InvoiceStatus::Paid, 'issue_date' => now()->startOfMonth()->subMonths(6), 'total' => 100000]);
+
+    $months = $this->metrics->billedByMonth($partner->id);
+
+    expect(collect($months)->sum('amount'))->toBe(0);
+});
+
+it('agrees with billedByClient on the total for the same window', function () {
+    $partner = Partner::factory()->create();
+    $customer = Customer::factory()->create(['referring_partner_id' => $partner->id]);
+    Invoice::factory()->create(['customer_id' => $customer->id, 'status' => InvoiceStatus::Paid, 'issue_date' => now()->subMonths(3), 'total' => 75000]);
+
+    $monthlyTotal = collect($this->metrics->billedByMonth($partner->id))->sum('amount');
+    $clientTotal = $this->metrics->billedByClient($partner->id)->sum('amount');
+
+    expect($monthlyTotal)->toBe($clientTotal)->toBe(75000);
 });
 
 // --- Route access control ----------------------------------------------------

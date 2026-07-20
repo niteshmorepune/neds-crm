@@ -100,6 +100,7 @@ class CollectionsMetrics
                 'partial_count' => $partial->count(),
                 'partial_amount' => (int) $partial->sum(fn (Invoice $invoice) => $invoice->balance()),
                 'oldest_overdue_days' => $oldestOverdueDays,
+                'oldest_overdue_months' => $oldestOverdueDays !== null ? round($oldestOverdueDays / 30, 1) : null,
                 'payment_promised_date' => $nextPromise?->payment_promised_date,
                 'promise_broken' => $invoices->contains(fn (Invoice $invoice) => $invoice->promiseBroken()),
                 'projects' => $projects,
@@ -110,6 +111,85 @@ class CollectionsMetrics
             && $row['projects']->isEmpty()
         )->sortByDesc(fn (array $row) => $row['recurring_overdue_amount'] + $row['other_unpaid_amount'] + $row['partial_amount'])
             ->values();
+    }
+
+    /**
+     * Start of the trailing-6-calendar-month window (current month + 5 prior,
+     * oldest first) used by both billedByClient() and billedByMonth(), so the
+     * two totals always agree. Matches the alignment SalesPipelineMetrics::
+     * wonValueTrend() uses for its own trailing-month windows.
+     */
+    private function sixMonthWindowStart(): Carbon
+    {
+        return Carbon::now()->startOfMonth()->subMonths(5);
+    }
+
+    /**
+     * Invoices issued to one partner's referred clients within the trailing
+     * 6-month window — "billed" means issued, so it includes paid/overdue/
+     * partial invoices and excludes Draft and Cancelled, matching
+     * ReportMetrics::revenue()'s definition of billed/invoiced revenue.
+     */
+    private function billedInvoicesForPartner(int $partnerId): Collection
+    {
+        return Invoice::query()
+            ->whereHas('customer', fn ($q) => $q->where('referring_partner_id', $partnerId))
+            ->where('issue_date', '>=', $this->sixMonthWindowStart())
+            ->whereNotIn('status', [InvoiceStatus::Draft->value, InvoiceStatus::Cancelled->value])
+            ->with('customer')
+            ->get();
+    }
+
+    /**
+     * Per-client invoiced totals for one partner's referred clients over the
+     * trailing 6 months. Every referred client is included, even ones billed
+     * nothing in the window, so this can't be mistaken for the (deliberately
+     * noisier) clientHealth() list, which drops clients with nothing
+     * outstanding.
+     *
+     * @return Collection<int, array{customer: Customer, invoice_count: int, amount: int}>
+     */
+    public function billedByClient(int $partnerId): Collection
+    {
+        $invoices = $this->billedInvoicesForPartner($partnerId)->groupBy('customer_id');
+
+        return Customer::query()
+            ->where('referring_partner_id', $partnerId)
+            ->get()
+            ->map(fn (Customer $customer) => [
+                'customer' => $customer,
+                'invoice_count' => $invoices->get($customer->id, collect())->count(),
+                'amount' => (int) $invoices->get($customer->id, collect())->sum('total'),
+            ])
+            ->sortByDesc('amount')
+            ->values();
+    }
+
+    /**
+     * Total billed per calendar month for one partner's referred clients,
+     * trailing 6 months oldest-first, backfilling any month with zero
+     * invoices rather than omitting it (so the run of 6 bars/rows never
+     * shifts on the page).
+     *
+     * @return list<array{month: string, label: string, invoice_count: int, amount: int}>
+     */
+    public function billedByMonth(int $partnerId): array
+    {
+        $start = $this->sixMonthWindowStart();
+        $byMonth = $this->billedInvoicesForPartner($partnerId)->groupBy(fn (Invoice $i) => $i->issue_date->format('Y-m'));
+
+        return collect(range(0, 5))->map(function (int $i) use ($start, $byMonth) {
+            $month = $start->copy()->addMonths($i);
+            $key = $month->format('Y-m');
+            $group = $byMonth->get($key, collect());
+
+            return [
+                'month' => $key,
+                'label' => $month->format('M Y'),
+                'invoice_count' => $group->count(),
+                'amount' => (int) $group->sum('total'),
+            ];
+        })->all();
     }
 
     /**

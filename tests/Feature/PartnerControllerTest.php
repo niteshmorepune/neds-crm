@@ -101,6 +101,35 @@ it('admin can view a partner\'s client-health page, showing only that partner\'s
         ->assertDontSee('Not Referred Co');
 });
 
+it('shows client-wise billing for the last 6 months on the partner show page', function () {
+    $partner = Partner::factory()->create();
+    $billedClient = Customer::factory()->create(['company_name' => 'Billed Recently Co', 'referring_partner_id' => $partner->id]);
+    $unbilledClient = Customer::factory()->create(['company_name' => 'Never Billed Co', 'referring_partner_id' => $partner->id]);
+    Invoice::factory()->create([
+        'customer_id' => $billedClient->id, 'status' => InvoiceStatus::Paid,
+        'issue_date' => now()->subMonths(2), 'total' => 100000, 'amount_paid' => 100000,
+    ]);
+
+    actingAs(User::factory()->create(['role' => UserRole::Admin]))
+        ->get(route('partners.show', $partner))
+        ->assertOk()
+        ->assertSeeInOrder(['Billed — last 6 months', 'Billed Recently Co', 'Never Billed Co']);
+});
+
+it('shows a month-wise billed breakdown for the last 6 months on the partner show page', function () {
+    $partner = Partner::factory()->create();
+    $customer = Customer::factory()->create(['referring_partner_id' => $partner->id]);
+    Invoice::factory()->create([
+        'customer_id' => $customer->id, 'status' => InvoiceStatus::Paid,
+        'issue_date' => now()->startOfMonth(), 'total' => 100000, 'amount_paid' => 100000,
+    ]);
+
+    actingAs(User::factory()->create(['role' => UserRole::Admin]))
+        ->get(route('partners.show', $partner))
+        ->assertOk()
+        ->assertSee(now()->format('M Y'));
+});
+
 it('sales cannot view a partner show page', function () {
     $partner = Partner::factory()->create();
 

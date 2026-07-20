@@ -49,7 +49,12 @@
                         @endif
                     </td>
                     <td class="py-2 text-right text-gray-600">
-                        {{ $row['oldest_overdue_days'] !== null ? $row['oldest_overdue_days'].' days' : '—' }}
+                        @if ($row['oldest_overdue_days'] !== null)
+                            {{ $row['oldest_overdue_days'] }} days
+                            <span class="text-gray-400">({{ rtrim(rtrim(number_format($row['oldest_overdue_months'], 1), '0'), '.') }} mo)</span>
+                        @else
+                            —
+                        @endif
                     </td>
                     <td class="py-2">
                         @if ($row['payment_promised_date'])
