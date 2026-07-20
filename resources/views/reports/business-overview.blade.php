@@ -57,7 +57,13 @@
                     <tbody class="divide-y divide-gray-100">
                         @forelse ($partners as $p)
                             <tr>
-                                <td class="py-2 text-gray-700">{{ $p['partner'] }}</td>
+                                <td class="py-2 text-gray-700">
+                                    @can('viewAny', \App\Models\Partner::class)
+                                        <a href="{{ route('partners.show', $p['partner_id']) }}" class="text-indigo-600 hover:underline">{{ $p['partner'] }}</a>
+                                    @else
+                                        {{ $p['partner'] }}
+                                    @endcan
+                                </td>
                                 <td class="py-2 text-right text-gray-600">{{ $p['customers_referred'] }}</td>
                                 <td class="py-2 text-right text-gray-600">{{ $p['customers_active'] }}</td>
                                 <td class="py-2 text-right text-gray-600">{{ $p['customers_inactive'] }}</td>

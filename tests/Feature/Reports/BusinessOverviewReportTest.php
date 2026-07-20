@@ -318,6 +318,27 @@ it('shows manager the page but hides itemized financial detail', function () {
         ->assertDontSee('31–60 days overdue');
 });
 
+it('links a partner name to its detail page for admin', function () {
+    $admin = User::factory()->role(UserRole::Admin)->create();
+    $partner = Partner::factory()->create(['name' => 'Brand-Whiz']);
+    Customer::factory()->create(['referring_partner_id' => $partner->id]);
+
+    $this->actingAs($admin)->get(route('reports.business-overview'))
+        ->assertOk()
+        ->assertSee(route('partners.show', $partner), false);
+});
+
+it('shows a partner name as plain text (not a link) for accounts, who cannot view partners', function () {
+    $accounts = User::factory()->role(UserRole::Accounts)->create();
+    $partner = Partner::factory()->create(['name' => 'Brand-Whiz']);
+    Customer::factory()->create(['referring_partner_id' => $partner->id]);
+
+    $this->actingAs($accounts)->get(route('reports.business-overview'))
+        ->assertOk()
+        ->assertSee('Brand-Whiz')
+        ->assertDontSee(route('partners.show', $partner), false);
+});
+
 it('forbids sales, support and intern from the business overview page', function () {
     foreach ([UserRole::Sales, UserRole::Support, UserRole::Intern] as $role) {
         $user = User::factory()->role($role)->create();
