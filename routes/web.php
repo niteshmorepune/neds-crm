@@ -35,6 +35,7 @@ use App\Http\Controllers\SalesDashboardController;
 use App\Http\Controllers\SalesTargetController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\ServiceController;
+use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\TwoFactorSetupController;
@@ -225,6 +226,14 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
      */
     Route::middleware('menu.access:announcements')->group(function () {
         Route::resource('announcements', AnnouncementController::class)->except('show');
+    });
+
+    /*
+     * Subscriptions — internal tool/vendor renewal tracker. Admin-only
+     * (menu.access:subscriptions), narrower than most admin-ish modules.
+     */
+    Route::middleware('menu.access:subscriptions')->group(function () {
+        Route::resource('subscriptions', SubscriptionController::class)->except('show');
     });
 
     /*

@@ -171,7 +171,8 @@ by what they do:
 - **Digests/reminders:** `SendMorningDigest`, `SendWeeklyOwnerDigest`,
   `SendStagnationAlerts`, `SendFollowUpReminders`,
   `SendPaymentPromiseReminders`, `SendContractRenewalReminders`,
-  `SendRecurringInvoiceDueWarnings`, `SendDailyReportReminders`.
+  `SendSubscriptionRenewalReminders`, `SendRecurringInvoiceDueWarnings`,
+  `SendDailyReportReminders`.
 - **Generation:** `GenerateRecurringInvoices`, `DispatchScheduledTasks`
   (the per-service maintenance-task templates), `CreateMonthlyBriefs`.
 - **AI drafting:** `DraftLeadNurtureFollowUps`, `DraftMonthlyWinsNotes`,
