@@ -476,6 +476,49 @@ capture form, and the WhatsApp webhook all trigger the notification. A re-save
 
 ---
 
+## 14. "Generate & Send Now" (recurring invoice) 500s every time
+
+**Symptom:** Clicking **Generate & Send Now** on a recurring invoice fails
+with a server error — for every recurring invoice, not just one.
+
+**Root cause:** the shared invoice-number counter has stalled because a
+manually-logged invoice (via **Log Invoice**, see [Accounts guide →
+Invoices](accounts.md)) was typed in with a `NEDS/...`-style number instead
+of its actual external (Hitech) number — usually alongside a back-dated
+invoice date. That desyncs the invoice's `financial_year` column from the
+financial year embedded in its own number string. Confirmed and fixed
+2026-07-20: `InvoiceNumberGenerator`'s self-heal now matches on the number
+string itself, not the `financial_year` column, so this specific failure
+mode shouldn't recur — but the underlying habit (typing a NEDS-format
+number into "Log Invoice") can still desync data in other ways, so it's
+worth checking for first.
+
+**Check 1 — Confirm the app is on the fix:**
+```
+cd /home/u314035009/neds-crm && grep -n "invoice_number', 'like'" app/Services/InvoiceNumberGenerator.php
+```
+Should show a `where('invoice_number', 'like', "NEDS/{$fy}/%")` line. If
+it's missing, the server hasn't picked up commit `08bdc2e` or later — `git
+pull` and re-deploy.
+
+**Check 2 — Find any invoice whose number's financial year doesn't match its
+`financial_year` column** (the actual data smell to look for):
+```
+cd /home/u314035009/neds-crm && php artisan tinker --no-interaction
+```
+```php
+App\Models\Invoice::withTrashed()->get(['id','invoice_number','financial_year'])
+    ->filter(fn ($i) => preg_match('#^NEDS/(\d{4}-\d{2})/#', $i->invoice_number, $m) && $m[1] !== $i->financial_year)
+    ->each(fn ($i) => print("{$i->id} {$i->invoice_number} fy_column={$i->financial_year}\n"));
+```
+A non-empty list confirms the pattern — those rows came from "Log Invoice"
+with a NEDS-style number typed in by mistake. They're harmless to leave as
+historical records (nothing else in the app queries by the `financial_year`
+column), but flag it to whoever's using that screen so they use the actual
+Hitech number next time instead.
+
+---
+
 ## General: when in doubt, run these four commands
 
 After any deployment, `.env` edit, or unexpected behaviour:

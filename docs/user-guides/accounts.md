@@ -33,6 +33,17 @@ you can send or download the invoice PDF.
 on signing, balance on delivery) — each milestone becomes its own invoice. These
 also start with a pending number; assign it when you're ready to issue the invoice.
 
+**"Log Invoice" (top of the Invoices list) is for recording an invoice already
+issued outside the CRM** — historically in Hitech, the older billing tool —
+so it shows up here for record-keeping, alongside real client history. **Always
+type that invoice's actual Hitech number in the "Hitech Invoice Number" field
+(e.g. `HT-2026-0042`), never a `NEDS/...`-style number.** NEDS-format numbers
+are reserved for the CRM's own auto-generated sequence — typing one in here
+manually, especially alongside a back-dated invoice date, can collide with a
+number the system later tries to hand out automatically. If you're recording
+several old invoices at once, the **CSV import** on the same screen is safer
+than typing them in one at a time.
+
 **Milestone work status:** each milestone on the quotation now has a status —
 **Pending / In Progress / Done** — separate from whether it's been invoiced.
 Whoever is running the project marks a milestone **Done** once that phase of
