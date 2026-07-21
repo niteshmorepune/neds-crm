@@ -108,15 +108,12 @@ class RecurringInvoiceController extends Controller
     {
         $this->authorize('create', Invoice::class);
 
-        // Reactivating a template whose next run has already drifted past
-        // its own end_date would silently schedule a duplicate invoice for
-        // a billing window that's already exhausted (this is exactly how a
-        // one-cycle template that just auto-paused after generateNow() can
-        // get stuck "Active" again). Block it with a clear reason instead.
-        if (! $recurring->is_active && $recurring->end_date && $recurring->next_run_on->gt($recurring->end_date)) {
-            return back()->with('error', 'Can\'t reactivate — this template\'s next scheduled run ('.$recurring->next_run_on->format('d M Y').') is already past its end date ('.$recurring->end_date->format('d M Y').'). Edit the end date first if more billing is needed.');
-        }
-
+        // Reactivating a template whose next run is past its own end_date is
+        // a normal, deliberate action here — e.g. resuming a one-cycle
+        // template to regenerate a corrected invoice for the same month, or
+        // to catch up on a still-unpaid historical billing period. It's
+        // never auto-picked up by the unattended daily cron regardless (see
+        // scopeDue()), so there's no risk in leaving this unblocked.
         $recurring->update(['is_active' => ! $recurring->is_active]);
 
         return back()->with('status', $recurring->is_active ? 'Activated.' : 'Paused.');

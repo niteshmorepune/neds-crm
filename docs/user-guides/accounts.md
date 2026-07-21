@@ -137,6 +137,19 @@ generates; if you want an ongoing retainer to keep billing every month
 automatically, leave **End date** blank instead of re-creating a new template
 each month.
 
+**One recurring template per billing month is the normal way to do
+month-by-month invoicing and payment tracking** — for either a current
+client's ongoing monthly retainer or an older client's still-pending
+historical months. A template auto-pausing right after generating its one
+invoice is expected, not an error. It's fine and safe to click **Activate**
+on it again afterward — e.g. to regenerate a corrected invoice for that
+same month (delete the wrong one first, then Activate + **Generate & Send
+Now**), or simply to keep it available while that month's payment is still
+outstanding. Reactivating never risks a surprise duplicate: the unattended
+daily scheduler only ever auto-generates from a template whose next run is
+still within its own end date, so a reactivated one-cycle template just
+sits there until *you* generate from it again on purpose.
+
 **Status on the client's Services tab is different — it tracks the period,
 not the schedule:** the same recurring template shows one of **Upcoming**
 (hasn't started yet), **Active** (today falls within its period and it's
@@ -145,7 +158,11 @@ still on), **On Hold** (today falls within its period but it's paused),
 whether its generated invoice is actually paid), or **Ended** (the period is
 over and nothing was ever billed for it). The Payment Received/Pending detail
 only shows to roles with invoice access (e.g. not Support) — everyone else
-sees Ended for a finished period regardless of its payment status.
+sees Ended for a finished period regardless of its payment status. One
+template deliberately never shows here at all: if its only invoice was
+generated and then deleted, and it was never reactivated, it's treated as
+abandoned and hidden from the client's view entirely rather than showing a
+misleading On Hold/Ended row for something that was retracted.
 
 **Non-GST clients:** when you pick a client marked **Non-GST client** on their
 profile, the template's **Non-GST client** checkbox is ticked automatically —

@@ -296,7 +296,7 @@ it('self-heals a stale-active template back to paused instead of generating a du
         ->and(Invoice::where('recurring_invoice_id', $stale->id)->exists())->toBeFalse();
 });
 
-it('refuses to reactivate a template whose next_run_on is already past its end_date, with a clear reason', function () {
+it('allows reactivating a template whose next_run_on is past its end_date — e.g. to regenerate a corrected invoice or bill a pending historical month', function () {
     $this->seed(MenuItemsSeeder::class);
     $accounts = User::factory()->role(UserRole::Accounts)->create();
     $stale = recurringWithLine([
@@ -308,8 +308,7 @@ it('refuses to reactivate a template whose next_run_on is already past its end_d
     $response = $this->actingAs($accounts)->put(route('recurring-invoices.toggle', $stale));
 
     $response->assertRedirect();
-    expect(session('error'))->not->toBeNull();
-    expect($stale->fresh()->is_active)->toBeFalse();
+    expect($stale->fresh()->is_active)->toBeTrue();
 });
 
 it('still allows toggling a normal paused template back to active', function () {

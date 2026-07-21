@@ -5,7 +5,10 @@ namespace App\Http\Controllers;
 use App\Enums\UserRole;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
-use League\CommonMark\CommonMarkConverter;
+use League\CommonMark\Environment\Environment;
+use League\CommonMark\Extension\CommonMark\CommonMarkCoreExtension;
+use League\CommonMark\Extension\HeadingPermalink\HeadingPermalinkExtension;
+use League\CommonMark\MarkdownConverter;
 
 /**
  * In-app help. Renders the Markdown user guides from docs/user-guides/ so staff
@@ -66,7 +69,16 @@ class HelpController extends Controller
         $path = base_path("docs/user-guides/{$guide}.md");
         abort_unless(is_file($path), 404);
 
-        $html = (new CommonMarkConverter)->convert(file_get_contents($path))->getContent();
+        // heading_permalink assigns a plain id="slug" to every heading (no
+        // visible icon — symbol is blank, insert stays 'after' since 'none'
+        // suppresses the id too) so cross-guide links like
+        // "accounts.md#3-recurring-invoices" actually scroll to that
+        // section instead of just landing at the top of the guide.
+        $environment = new Environment(['heading_permalink' => ['id_prefix' => '', 'symbol' => '']]);
+        $environment->addExtension(new CommonMarkCoreExtension);
+        $environment->addExtension(new HeadingPermalinkExtension);
+
+        $html = (new MarkdownConverter($environment))->convert(file_get_contents($path))->getContent();
 
         // Rewire cross-guide links (e.g. sales.md) to the in-app help routes.
         $html = preg_replace_callback(
