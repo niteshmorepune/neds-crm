@@ -130,4 +130,14 @@ return [
         'portal_assistant_daily_limit' => (int) env('AI_PORTAL_ASSISTANT_DAILY_LIMIT', 15),
     ],
 
+    /*
+     | Google Cloud Speech-to-Text — used only to transcribe Call Log voice
+     | notes (Hindi/Marathi/English) before Claude translates/cleans the
+     | result into English. Gated by the same AI_ENABLED flag as Anthropic;
+     | this is a plain API-key REST call, no SDK, so it stays Hostinger-safe.
+     */
+    'google_speech' => [
+        'api_key' => env('GOOGLE_SPEECH_API_KEY'),
+    ],
+
 ];

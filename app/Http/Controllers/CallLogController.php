@@ -5,12 +5,15 @@ namespace App\Http\Controllers;
 use App\Enums\CallDirection;
 use App\Enums\CallOutcome;
 use App\Enums\UserRole;
+use App\Enums\VoiceTranscriptStatus;
 use App\Http\Requests\CallLogStoreRequest;
+use App\Jobs\TranscribeCallLogVoiceNote;
 use App\Models\CallLog;
 use App\Models\Customer;
 use App\Models\Lead;
 use App\Models\User;
 use App\Services\MenuResolver;
+use App\Support\Ai;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -59,6 +62,7 @@ class CallLogController extends Controller
             'outcomes' => CallOutcome::cases(),
             'customers' => Customer::orderBy('company_name')->get(['id', 'company_name']),
             'leads' => $canLogLeads ? Lead::orderBy('name')->get(['id', 'name']) : collect(),
+            'aiEnabled' => Ai::voiceTranscriptionEnabled(),
             'selectedCustomer' => $request->integer('customer_id') ?: null,
             'selectedLead' => $request->integer('lead_id') ?: null,
         ]);
@@ -93,6 +97,10 @@ class CallLogController extends Controller
                 : null,
         ]);
 
+        if ($request->hasFile('voice_note') && Ai::voiceTranscriptionEnabled()) {
+            $this->attachVoiceNote($call, $request);
+        }
+
         // Return to the linked record's page when logged from there.
         if ($call->callable_type === Customer::class) {
             return redirect()->route('clients.show', $call->callable_id)->with('status', 'Call logged.');
@@ -102,5 +110,23 @@ class CallLogController extends Controller
         }
 
         return redirect()->route('calls.index')->with('status', 'Call logged.');
+    }
+
+    private function attachVoiceNote(CallLog $call, Request $request): void
+    {
+        $file = $request->file('voice_note');
+
+        $attachment = $call->attachments()->create([
+            'uploaded_by' => $request->user()->id,
+            'disk' => 'local',
+            'path' => $file->store('call-voice-notes', 'local'),
+            'original_name' => $file->getClientOriginalName(),
+            'mime_type' => $file->getClientMimeType(),
+            'size' => $file->getSize(),
+        ]);
+
+        $call->forceFill(['voice_transcript_status' => VoiceTranscriptStatus::Pending])->saveQuietly();
+
+        TranscribeCallLogVoiceNote::dispatch($call->id, $attachment->id);
     }
 }

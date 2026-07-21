@@ -31,6 +31,7 @@ class CallLogStoreRequest extends FormRequest
             'called_at' => ['required', 'date'],
             'next_action' => ['nullable', 'string', 'max:255'],
             'follow_up_at' => ['nullable', 'date'],
+            'voice_note' => ['nullable', 'file', 'max:10240', 'mimetypes:audio/webm,audio/ogg,audio/wav,audio/mp4,audio/mpeg'],
         ];
     }
 
