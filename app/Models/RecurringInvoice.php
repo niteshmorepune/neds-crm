@@ -57,10 +57,35 @@ class RecurringInvoice extends Model
         return $this->hasMany(Invoice::class);
     }
 
-    /** Active templates whose next run is due on or before the given date. */
+    /**
+     * Active templates whose next run is due on or before the given date.
+     * Also excludes anything whose next_run_on has drifted past its own
+     * end_date — this can happen if a template was manually reactivated
+     * (via the Pause/Activate toggle) right after generateNow() correctly
+     * auto-deactivated it for having exhausted its billing window; without
+     * this guard, the next scheduled run would generate a duplicate invoice
+     * for a period the template was never meant to bill again.
+     */
     public function scopeDue(Builder $query, $date): Builder
     {
-        return $query->where('is_active', true)->whereDate('next_run_on', '<=', $date);
+        return $query->where('is_active', true)
+            ->whereDate('next_run_on', '<=', $date)
+            ->where(function (Builder $q) {
+                $q->whereNull('end_date')->orWhereColumn('next_run_on', '<=', 'end_date');
+            });
+    }
+
+    /**
+     * True when this template is active but its next scheduled run has
+     * drifted past its own end_date — the "reactivated after auto-pause"
+     * trap scopeDue() guards against. Used to self-heal stale templates
+     * back to paused so they stop showing as a ticking risk.
+     */
+    public function isStaleActive(): bool
+    {
+        return $this->is_active
+            && $this->end_date !== null
+            && $this->next_run_on->gt($this->end_date);
     }
 
     /** Excludes templates that have naturally ended (see hasEnded()) — the main Recurring Invoices list defaults to this to avoid piling up with finished one-cycle templates. */

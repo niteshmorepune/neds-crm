@@ -250,6 +250,83 @@ it('isOrphaned: false when active, even with a deleted invoice', function () {
     expect($r->isOrphaned())->toBeFalse();
 });
 
+it('scopeDue excludes an active template whose next_run_on has drifted past its own end_date', function () {
+    // Reproduces the reactivated-after-auto-pause trap: is_active=true but
+    // next_run_on is already beyond end_date — should never be "due".
+    $stale = recurringWithLine([
+        'is_active' => true,
+        'end_date' => now()->subDay()->toDateString(),
+        'next_run_on' => now()->toDateString(),
+    ]);
+    $normal = recurringWithLine([
+        'is_active' => true,
+        'end_date' => now()->addMonth()->toDateString(),
+        'next_run_on' => now()->toDateString(),
+    ]);
+
+    $due = RecurringInvoice::due(now())->pluck('id');
+
+    expect($due)->not->toContain($stale->id)
+        ->and($due)->toContain($normal->id);
+});
+
+it('isStaleActive: true only when active with next_run_on past end_date', function () {
+    $stale = recurringWithLine(['is_active' => true, 'end_date' => now()->subDay()->toDateString(), 'next_run_on' => now()->toDateString()]);
+    $normalActive = recurringWithLine(['is_active' => true, 'end_date' => now()->addMonth()->toDateString(), 'next_run_on' => now()->toDateString()]);
+    $pausedPastEnd = recurringWithLine(['is_active' => false, 'end_date' => now()->subDay()->toDateString(), 'next_run_on' => now()->toDateString()]);
+    $noEndDate = recurringWithLine(['is_active' => true, 'end_date' => null, 'next_run_on' => now()->addYear()->toDateString()]);
+
+    expect($stale->isStaleActive())->toBeTrue()
+        ->and($normalActive->isStaleActive())->toBeFalse()
+        ->and($pausedPastEnd->isStaleActive())->toBeFalse()
+        ->and($noEndDate->isStaleActive())->toBeFalse();
+});
+
+it('self-heals a stale-active template back to paused instead of generating a duplicate invoice', function () {
+    Mail::fake();
+    $stale = recurringWithLine([
+        'is_active' => true,
+        'end_date' => now()->subDay()->toDateString(),
+        'next_run_on' => now()->toDateString(),
+    ]);
+
+    $this->artisan('app:generate-recurring-invoices')->assertSuccessful();
+
+    expect($stale->fresh()->is_active)->toBeFalse()
+        ->and(Invoice::where('recurring_invoice_id', $stale->id)->exists())->toBeFalse();
+});
+
+it('refuses to reactivate a template whose next_run_on is already past its end_date, with a clear reason', function () {
+    $this->seed(MenuItemsSeeder::class);
+    $accounts = User::factory()->role(UserRole::Accounts)->create();
+    $stale = recurringWithLine([
+        'is_active' => false,
+        'end_date' => now()->subDay()->toDateString(),
+        'next_run_on' => now()->toDateString(),
+    ]);
+
+    $response = $this->actingAs($accounts)->put(route('recurring-invoices.toggle', $stale));
+
+    $response->assertRedirect();
+    expect(session('error'))->not->toBeNull();
+    expect($stale->fresh()->is_active)->toBeFalse();
+});
+
+it('still allows toggling a normal paused template back to active', function () {
+    $this->seed(MenuItemsSeeder::class);
+    $accounts = User::factory()->role(UserRole::Accounts)->create();
+    $normal = recurringWithLine([
+        'is_active' => false,
+        'end_date' => now()->addMonth()->toDateString(),
+        'next_run_on' => now()->toDateString(),
+    ]);
+
+    $response = $this->actingAs($accounts)->put(route('recurring-invoices.toggle', $normal));
+
+    $response->assertRedirect();
+    expect($normal->fresh()->is_active)->toBeTrue();
+});
+
 it('hides Ended templates from the Recurring Invoices list by default', function () {
     $this->seed(MenuItemsSeeder::class);
     $accounts = User::factory()->role(UserRole::Accounts)->create();
