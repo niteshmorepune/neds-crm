@@ -519,6 +519,34 @@ Hitech number next time instead.
 
 ---
 
+## 15. A recurring template shows "Active" with its next run months past its own end date
+
+**Symptom:** A one-cycle recurring template (e.g. billing exactly one
+month) shows **Active** on the Recurring Invoices list, but its **Next
+run** date is well past its own **End date** — it looks like it's
+scheduled to bill again for a period that's long over.
+
+**Root cause:** clicking **Activate** on a template right after it
+auto-pauses (the normal behavior once its one cycle's invoice has
+generated — see [Accounts guide → Recurring
+invoices](accounts.md#3-recurring-invoices)) leaves its next-run date
+sitting wherever it was, now past end date. This is expected and safe to
+do — it's the normal way to reopen a completed month's template to
+regenerate a corrected invoice or catch up on a still-pending historical
+payment. **It will never auto-generate a surprise duplicate**: fixed
+2026-07-21, the unattended daily scheduler now refuses to pick up any
+template whose next run has drifted past its own end date, active or not,
+and self-heals any it finds back to paused. Billing from a reactivated
+template only ever happens when someone deliberately clicks **Generate &
+Send Now**.
+
+**If you see this and don't recognize why it was reactivated:** check the
+audit trail (Client/Recurring Invoice page → look for who last toggled
+it) before assuming something's wrong — it's very likely someone
+deliberately reopened it to bill a pending month.
+
+---
+
 ## General: when in doubt, run these four commands
 
 After any deployment, `.env` edit, or unexpected behaviour:

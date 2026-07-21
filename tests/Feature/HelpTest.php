@@ -33,6 +33,19 @@ it('rewrites cross-guide links to in-app help routes', function () {
         ->assertDontSee('sales.md');
 });
 
+it('assigns a plain id to headings so cross-guide anchor links actually scroll to their section', function () {
+    $admin = User::factory()->role(UserRole::Admin)->create();
+
+    // troubleshooting.md links to accounts.md#3-recurring-invoices — the
+    // link rewrite alone isn't enough if the target guide's heading has no
+    // matching id, since the browser would just land at the top of the page.
+    $this->actingAs($admin)->get(route('help.show', 'troubleshooting'))->assertOk()
+        ->assertSee(route('help.show', 'accounts').'#3-recurring-invoices', false);
+
+    $this->actingAs($admin)->get(route('help.show', 'accounts'))->assertOk()
+        ->assertSee('id="3-recurring-invoices"', false);
+});
+
 it('404s for an unknown guide (no path traversal)', function () {
     $admin = User::factory()->role(UserRole::Admin)->create();
 
