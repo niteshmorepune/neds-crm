@@ -2,7 +2,12 @@
     // Grouped by service (outer sortBy), then chronological within each
     // service (inner sortBy) — PHP's sort is stable, so the start_date order
     // survives the following service-name sort instead of being scrambled.
+    // Orphaned templates (billing was attempted then the invoice was
+    // deleted, never reactivated) are excluded — they'd otherwise show as a
+    // misleading "On Hold" or "Ended" row for something that was retracted,
+    // not a real ongoing or concluded service. See RecurringInvoice::isOrphaned().
     $recurring  = $client->recurringInvoices
+        ->reject(fn ($r) => $r->isOrphaned())
         ->sortBy(fn ($r) => $r->start_date)
         ->sortBy(fn ($r) => $r->service?->name);
     $projects   = $client->projects->sortBy(fn ($p) => $p->service?->name);

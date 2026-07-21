@@ -6,6 +6,7 @@ use App\Enums\UserRole;
 use App\Models\Contact;
 use App\Models\Customer;
 use App\Models\Deal;
+use App\Models\Invoice;
 use App\Models\Project;
 use App\Models\RecurringInvoice;
 use App\Models\Service;
@@ -230,6 +231,40 @@ it('still labels a manually-paused recurring invoice "On Hold"', function () {
         ->assertOk()
         ->assertSee('On Hold')
         ->assertDontSee('Ended');
+});
+
+it('hides an orphaned recurring invoice (billed then invoice deleted, never reactivated) from the services tab entirely', function () {
+    $service = Service::factory()->create(['name' => 'Social Media']);
+    $client = Customer::factory()->create(['company_name' => 'Orphan Co']);
+
+    // The one-cycle, invoice-deleted "ghost" pattern: paused, no surviving
+    // invoice, but an invoice WAS generated at some point (now soft-deleted).
+    $orphaned = RecurringInvoice::factory()->create([
+        'customer_id' => $client->id,
+        'service_id' => $service->id,
+        'is_active' => false,
+        'start_date' => now()->subMonth(),
+        'end_date' => now()->addMonth(),
+    ]);
+    Invoice::factory()->create(['recurring_invoice_id' => $orphaned->id, 'customer_id' => $client->id])->delete();
+
+    // A genuinely paused-but-still-billed template for the same service —
+    // must stay visible; only the orphaned one should disappear.
+    $onHold = RecurringInvoice::factory()->create([
+        'customer_id' => $client->id,
+        'service_id' => $service->id,
+        'is_active' => false,
+        'start_date' => now()->subMonth(),
+        'end_date' => now()->addMonth(),
+    ]);
+    Invoice::factory()->create(['recurring_invoice_id' => $onHold->id, 'customer_id' => $client->id]);
+
+    $html = $this->actingAs($this->admin)->get(route('clients.show', $client))->assertOk()->getContent();
+    preg_match('/On hold<\/dt>\s*<dd[^>]*>\s*(\d+)/', $html, $matches);
+
+    // Only the surviving-invoice template counts — the orphan is excluded
+    // from both the row list and the summary strip count.
+    expect($matches[1] ?? null)->toBe('1');
 });
 
 it('hides the +GST hint on the services tab for a GST-exempt recurring invoice', function () {
