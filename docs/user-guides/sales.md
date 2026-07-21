@@ -184,13 +184,22 @@ form to set the company's monthly/FY target and each rep's monthly target.
      blank on every suggested line, exactly like a manually-added one, so
      you still price and save it yourself. If the deal has no notes yet,
      it says so rather than guessing.
-3. For milestone/project work, add **milestones** (e.g. advance on signing,
+3. Add a **Scope of Work** — the paragraph explaining what NEDS will deliver
+   under this quotation, shown to the client above the line items.
+   - **✨ Draft scope of work** — same idea as Suggest line items: when the
+     quotation is linked to a deal that has notes, this button drafts the
+     paragraph for you, grounded only in the deal's notes and service line.
+     It never mentions price, rate, or GST — that's what the line items and
+     totals are for — and it never saves on its own; it just fills the box,
+     so review and edit before saving like any other field. If the deal has
+     no notes yet, it says so rather than guessing.
+4. For milestone/project work, add **milestones** (e.g. advance on signing,
    balance on delivery). Once work starts, whoever runs the project marks each
    milestone **Pending / In Progress / Done** on the quotation page — that's
    how accounts knows a phase is finished and it's time to raise the next
    invoice.
-4. Save, then **download the PDF** to send to the client.
-5. When the client agrees, mark the quotation **Accepted**, then **Convert to
+5. Save, then **download the PDF** to send to the client.
+6. When the client agrees, mark the quotation **Accepted**, then **Convert to
    invoice** — accounts takes it from there.
 
 All quotations linked to a deal are listed on the deal's page so you can track
