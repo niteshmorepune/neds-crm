@@ -23,6 +23,20 @@ class GenerateRecurringInvoices extends Command
         $today = Carbon::today();
         $generated = 0;
 
+        // Self-heal: a template can end up active with next_run_on already
+        // past its own end_date if someone reactivates it right after
+        // generateNow() correctly auto-paused it for exhausting its billing
+        // window. scopeDue() already guards against generating for these,
+        // but leaving them "Active" forever misrepresents their real state —
+        // stop them properly instead of just silently skipping them.
+        $healed = RecurringInvoice::where('is_active', true)
+            ->whereNotNull('end_date')
+            ->whereColumn('next_run_on', '>', 'end_date')
+            ->update(['is_active' => false]);
+        if ($healed > 0) {
+            $this->info("Auto-paused {$healed} template(s) whose schedule had drifted past their end date.");
+        }
+
         RecurringInvoice::due($today)->with(['items', 'customer'])->get()->each(function (RecurringInvoice $template) use ($numbers, $today, &$generated) {
             $issueDate = $today->copy();
 
