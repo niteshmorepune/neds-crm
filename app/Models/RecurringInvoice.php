@@ -85,6 +85,24 @@ class RecurringInvoice extends Model
     }
 
     /**
+     * True when billing was attempted for this template (at least one
+     * invoice was ever created — usually a single-cycle template whose date
+     * range spans exactly one billing period, auto-deactivated by
+     * generateNow() once its one cycle is exhausted) but nothing survives
+     * today because that invoice was later deleted, and the template was
+     * never reactivated. Distinct from a template a human paused via the
+     * Pause button *before* ever billing anything — that's a legitimate
+     * on-hold state, not an orphan. Client profile page only; the client
+     * portal already excludes anything with is_active=false.
+     */
+    public function isOrphaned(): bool
+    {
+        return ! $this->is_active
+            && $this->invoices()->withTrashed()->exists()
+            && ! $this->invoices()->exists();
+    }
+
+    /**
      * Client-facing "where are things with this service" status for the
      * Services tab — time + payment based, distinct from is_active (which
      * only governs whether the system keeps auto-billing). One of:
