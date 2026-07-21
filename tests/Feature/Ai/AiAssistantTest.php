@@ -263,6 +263,38 @@ it('returns null for quotation line item suggestions when AI is disabled', funct
     Http::assertNothingSent();
 });
 
+it('drafts a quotation scope of work grounded in deal notes', function () {
+    aiOn();
+    fakeAiText('NEDS will deliver a full redesign of the client website, including a Hindi-language version of every page, within the agreed timeline.');
+    $deal = Deal::factory()->create();
+    $deal->notes()->create(['user_id' => User::factory()->create()->id, 'body' => 'Client wants a full site redesign plus a Hindi translation of every page.']);
+
+    $result = app(AiAssistant::class)->draftQuotationScopeOfWork($deal);
+
+    expect($result)->toBe('NEDS will deliver a full redesign of the client website, including a Hindi-language version of every page, within the agreed timeline.');
+    expect(AiUsage::where('feature', 'quotation_scope_of_work')->exists())->toBeTrue();
+});
+
+it('skips the AI call entirely and returns an empty string when the deal has no notes for scope of work', function () {
+    aiOn();
+    Http::fake();
+    $deal = Deal::factory()->create();
+
+    $result = app(AiAssistant::class)->draftQuotationScopeOfWork($deal);
+
+    expect($result)->toBe('');
+    Http::assertNothingSent();
+});
+
+it('returns null for quotation scope of work when AI is disabled', function () {
+    config(['services.anthropic.enabled' => false]);
+    Http::fake();
+    $deal = Deal::factory()->create();
+
+    expect(app(AiAssistant::class)->draftQuotationScopeOfWork($deal))->toBeNull();
+    Http::assertNothingSent();
+});
+
 it('suggests a next action for a flagged client', function () {
     aiOn();
     fakeAiText('Give them a quick check-in call this week and mention the SEO add-on.');

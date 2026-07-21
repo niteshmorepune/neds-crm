@@ -141,6 +141,59 @@ it('hides the suggest-items button entirely when AI is disabled', function () {
         ->assertDontSee('Suggest line items');
 });
 
+it('drafts a scope of work grounded in deal notes into an editable field, never saving on its own', function () {
+    config(['services.anthropic.enabled' => true, 'services.anthropic.key' => 'sk-test']);
+    Http::fake([
+        'api.anthropic.com/*' => Http::response([
+            'content' => [['type' => 'text', 'text' => 'NEDS will deliver a full redesign of the client website, including a Hindi-language version of every page.']],
+            'usage' => ['input_tokens' => 30, 'output_tokens' => 20],
+        ]),
+    ]);
+    $deal = Deal::factory()->create();
+    $deal->notes()->create(['user_id' => $this->admin->id, 'body' => 'Client wants a full site redesign plus a Hindi translation.']);
+    $customer = Customer::factory()->create(['state_code' => '27']);
+
+    Livewire::actingAs($this->admin)
+        ->test(QuotationBuilder::class, ['deal_id' => $deal->id])
+        ->set('customer_id', $customer->id)
+        ->call('draftScopeOfWork')
+        ->assertSet('scope_of_work', 'NEDS will deliver a full redesign of the client website, including a Hindi-language version of every page.');
+
+    // Drafting alone never persists anything — only an explicit save does.
+    expect(Quotation::count())->toBe(0);
+});
+
+it('shows a friendly message and drafts nothing when the deal has no notes for scope of work', function () {
+    config(['services.anthropic.enabled' => true, 'services.anthropic.key' => 'sk-test']);
+    Http::fake();
+    $deal = Deal::factory()->create();
+
+    Livewire::actingAs($this->admin)
+        ->test(QuotationBuilder::class, ['deal_id' => $deal->id])
+        ->call('draftScopeOfWork')
+        ->assertSet('scope_of_work', '')
+        ->assertSee('Nothing to draft yet');
+
+    Http::assertNothingSent();
+});
+
+it('hides the draft-scope-of-work button when the quotation has no linked deal', function () {
+    config(['services.anthropic.enabled' => true, 'services.anthropic.key' => 'sk-test']);
+
+    Livewire::actingAs($this->admin)
+        ->test(QuotationBuilder::class)
+        ->assertDontSee('Draft scope of work');
+});
+
+it('hides the draft-scope-of-work button entirely when AI is disabled', function () {
+    config(['services.anthropic.enabled' => false]);
+    $deal = Deal::factory()->create();
+
+    Livewire::actingAs($this->admin)
+        ->test(QuotationBuilder::class, ['deal_id' => $deal->id])
+        ->assertDontSee('Draft scope of work');
+});
+
 it('allows valid status transitions and blocks invalid ones', function () {
     $quotation = quotationWithLine();
 

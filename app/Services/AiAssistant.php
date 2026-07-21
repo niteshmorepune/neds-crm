@@ -532,6 +532,52 @@ class AiAssistant
             ->all();
     }
 
+    /**
+     * Drafts the scope-of-work narrative for a quotation — the prose
+     * explaining what's being delivered, not pricing. Returns null when AI
+     * is disabled or the call fails, and '' (distinct from null) when the
+     * deal has no notes to draft from — same two-signal pattern as
+     * suggestQuotationLineItems (null vs []), just for a string return.
+     * Never saved automatically: the caller fills an editable textarea the
+     * user reviews before the quotation itself is saved.
+     */
+    public function draftQuotationScopeOfWork(Deal $deal): ?string
+    {
+        if (! Ai::enabled()) {
+            return null;
+        }
+
+        $notes = $deal->notes()->latest()->take(10)->pluck('body');
+
+        if ($notes->isEmpty()) {
+            return '';
+        }
+
+        $context = implode("\n\n", [
+            'Service: '.($deal->service?->name ?? 'Unspecified'),
+            "Deal notes:\n".$notes->implode("\n"),
+        ]);
+
+        $system = <<<'PROMPT'
+        You draft the "Scope of Work" section of a quotation for a
+        digital-solutions agency in India — a short prose paragraph (3-6
+        sentences) describing what will be delivered, based ONLY on the
+        service line and deal notes given. Never invent a deliverable,
+        timeline, or requirement not mentioned in the notes. Never mention
+        price, rate, GST, or payment terms — those live elsewhere on the
+        quotation. Write in plain, client-facing language, third person
+        ("NEDS will deliver..."), no headings, no bullet points, no
+        markdown — this is inserted directly as a paragraph.
+        PROMPT;
+
+        return $this->trimmed($this->client->message(
+            feature: 'quotation_scope_of_work',
+            prompt: $context,
+            system: $system,
+            maxTokens: 500,
+        ));
+    }
+
     public function summarizeTicket(Ticket $ticket): ?string
     {
         if (! Ai::enabled()) {
