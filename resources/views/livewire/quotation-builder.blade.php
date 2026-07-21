@@ -113,6 +113,30 @@
                 </div>
 
                 <div class="mt-4">
+                    <div class="flex items-center justify-between gap-2">
+                        <x-input-label value="Scope of Work" />
+                        @if ($aiEnabled && $deal_id)
+                            <button wire:click="draftScopeOfWork" type="button" wire:loading.attr="disabled" wire:target="draftScopeOfWork"
+                                    class="inline-flex items-center gap-1 rounded-md border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700 hover:bg-indigo-100 disabled:opacity-50">
+                                <span wire:loading.remove wire:target="draftScopeOfWork">✨ Draft scope of work</span>
+                                <span wire:loading wire:target="draftScopeOfWork">Thinking…</span>
+                            </button>
+                        @endif
+                    </div>
+                    @if ($scopeError)
+                        <p class="mt-1 text-xs text-amber-600">{{ $scopeError }}</p>
+                    @elseif ($scopeDraftedOnce && $scope_of_work === '' && $scopeUsageId === null)
+                        <p class="mt-1 text-xs text-gray-400">Nothing to draft yet — add a deal note first, or write it yourself.</p>
+                    @elseif ($scopeUsageId !== null)
+                        <div class="mt-1 flex items-center gap-2">
+                            <p class="text-xs text-indigo-600">Drafted — review and edit before saving.</p>
+                            <x-ai-feedback method="rateScopeDraft" :value="$scopeFeedback" />
+                        </div>
+                    @endif
+                    <textarea wire:model="scope_of_work" rows="4" class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm" placeholder="What NEDS will deliver under this quotation..."></textarea>
+                </div>
+
+                <div class="mt-4">
                     <x-input-label value="Terms" />
                     <textarea wire:model="terms" rows="2" class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm"></textarea>
                 </div>

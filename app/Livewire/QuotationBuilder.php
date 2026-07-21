@@ -35,6 +35,8 @@ class QuotationBuilder extends Component
 
     public string $terms = '';
 
+    public string $scope_of_work = '';
+
     public string $discount = '0'; // rupees
 
     public bool $is_gst_exempt = false;
@@ -54,6 +56,14 @@ class QuotationBuilder extends Component
 
     public ?string $suggestionFeedback = null;
 
+    public ?string $scopeError = null;
+
+    public bool $scopeDraftedOnce = false;
+
+    public ?int $scopeUsageId = null;
+
+    public ?string $scopeFeedback = null;
+
     public function mount(?Quotation $quotation = null, ?int $customer_id = null, ?int $deal_id = null): void
     {
         $this->aiEnabled = Ai::enabled();
@@ -66,6 +76,7 @@ class QuotationBuilder extends Component
             $this->deal_id = $quotation->deal_id;
             $this->validity_date = $quotation->validity_date?->toDateString();
             $this->terms = (string) $quotation->terms;
+            $this->scope_of_work = (string) $quotation->scope_of_work;
             $this->discount = (string) Money::toRupees($quotation->discount);
             $this->is_gst_exempt = $quotation->is_gst_exempt;
             $this->items = $quotation->items->map(fn ($item) => [
@@ -176,6 +187,49 @@ class QuotationBuilder extends Component
     }
 
     /**
+     * "Draft Scope of Work" — fills the scope_of_work textarea with an
+     * AI-drafted paragraph grounded in the linked deal's notes. Never saves
+     * on its own: it's an editable field like any other, the team reviews
+     * and edits it, and it's only persisted when they click Save Quotation.
+     */
+    public function draftScopeOfWork(AiAssistant $ai): void
+    {
+        abort_unless(Ai::enabled(), 403);
+
+        $this->scopeError = null;
+        $this->scopeDraftedOnce = true;
+        $this->scopeUsageId = null;
+        $this->scopeFeedback = null;
+
+        $deal = $this->deal_id ? Deal::find($this->deal_id) : null;
+
+        if ($deal === null) {
+            return;
+        }
+
+        $draft = $ai->draftQuotationScopeOfWork($deal);
+
+        if ($draft === null) {
+            $this->scopeError = 'Could not draft a scope of work right now. Please try again.';
+
+            return;
+        }
+
+        if ($draft === '') {
+            return;
+        }
+
+        $this->scope_of_work = $draft;
+        $this->scopeUsageId = $ai->lastUsageId;
+    }
+
+    public function rateScopeDraft(string $direction): void
+    {
+        $this->recordAiFeedback($this->scopeUsageId, $direction);
+        $this->scopeFeedback = $direction;
+    }
+
+    /**
      * Live GST preview from the current form state.
      *
      * @return array<string, mixed>
@@ -228,6 +282,7 @@ class QuotationBuilder extends Component
                 'discount' => Money::toPaise($this->discount ?: 0) ?? 0,
                 'is_gst_exempt' => $this->is_gst_exempt,
                 'terms' => $this->terms ?: null,
+                'scope_of_work' => $this->scope_of_work ?: null,
                 'validity_date' => $this->validity_date ?: null,
             ])->save();
 

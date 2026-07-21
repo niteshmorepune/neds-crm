@@ -31,7 +31,7 @@ class Quotation extends Model
     protected $fillable = [
         'number', 'customer_id', 'deal_id', 'status', 'place_of_supply_state_code',
         'is_intra_state', 'is_gst_exempt', 'subtotal', 'discount', 'taxable_total', 'cgst_total',
-        'sgst_total', 'igst_total', 'round_off', 'total', 'terms', 'validity_date',
+        'sgst_total', 'igst_total', 'round_off', 'total', 'terms', 'scope_of_work', 'validity_date',
     ];
 
     protected function casts(): array

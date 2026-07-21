@@ -63,6 +63,13 @@
             </div>
         </div>
 
+        @if ($quotation->scope_of_work)
+            <div class="rounded-lg bg-white p-6 shadow-sm">
+                <h2 class="text-sm font-semibold text-gray-900 mb-1">Scope of Work</h2>
+                <p class="text-sm text-gray-600 whitespace-pre-line">{{ $quotation->scope_of_work }}</p>
+            </div>
+        @endif
+
         <div class="rounded-lg bg-white p-6 shadow-sm">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="text-left text-xs font-medium uppercase tracking-wide text-gray-500">
