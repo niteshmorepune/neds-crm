@@ -4,9 +4,11 @@ namespace App\Models;
 
 use App\Enums\CallDirection;
 use App\Enums\CallOutcome;
+use App\Enums\VoiceTranscriptStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class CallLog extends Model
@@ -17,6 +19,7 @@ class CallLog extends Model
         'user_id', 'callable_type', 'callable_id', 'direction',
         'duration_minutes', 'outcome', 'notes', 'called_at',
         'next_action', 'follow_up_at',
+        'voice_transcript_status', 'voice_transcript', 'voice_transcribed_at',
     ];
 
     protected function casts(): array
@@ -24,10 +27,12 @@ class CallLog extends Model
         return [
             'direction' => CallDirection::class,
             'outcome' => CallOutcome::class,
+            'voice_transcript_status' => VoiceTranscriptStatus::class,
             'duration_minutes' => 'integer',
             'called_at' => 'datetime',
             'follow_up_at' => 'datetime',
             'follow_up_notified_at' => 'datetime',
+            'voice_transcribed_at' => 'datetime',
         ];
     }
 
@@ -49,5 +54,15 @@ class CallLog extends Model
     public function callable(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    public function attachments(): MorphMany
+    {
+        return $this->morphMany(Attachment::class, 'attachable');
+    }
+
+    public function hasVoiceNote(): bool
+    {
+        return $this->voice_transcript_status !== null;
     }
 }

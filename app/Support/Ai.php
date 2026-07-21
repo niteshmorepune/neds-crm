@@ -14,4 +14,14 @@ class Ai
         return (bool) config('services.anthropic.enabled')
             && filled(config('services.anthropic.key'));
     }
+
+    /**
+     * Call Log voice notes need both Claude (translation) and a Google Cloud
+     * Speech-to-Text key (transcription) — gate the feature on both so the
+     * record button never invites a recording that can only ever fail.
+     */
+    public static function voiceTranscriptionEnabled(): bool
+    {
+        return self::enabled() && filled(config('services.google_speech.api_key'));
+    }
 }

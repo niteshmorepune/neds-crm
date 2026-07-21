@@ -68,7 +68,12 @@
                             <td class="px-4 py-2 text-gray-600">{{ $call->direction->label() }}</td>
                             <td class="px-4 py-2 text-gray-600">{{ $call->outcome->label() }}</td>
                             <td class="px-4 py-2 text-gray-600">{{ $call->duration_minutes ?? '—' }}</td>
-                            <td class="px-4 py-2 text-gray-500 max-w-xs">{{ \Illuminate\Support\Str::limit($call->notes, 50) }}</td>
+                            <td class="px-4 py-2 text-gray-500 max-w-xs">
+                                {{ \Illuminate\Support\Str::limit($call->notes, 50) }}
+                                @if ($call->hasVoiceNote())
+                                    @livewire('call-voice-transcript', ['callLogId' => $call->id], key('voice-'.$call->id))
+                                @endif
+                            </td>
                             <td class="px-4 py-2">
                                 @if ($call->follow_up_at)
                                     <span class="{{ $call->followUpIsDue() ? 'text-red-600 font-medium' : 'text-amber-600' }} text-xs block">

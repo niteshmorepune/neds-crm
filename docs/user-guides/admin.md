@@ -606,7 +606,19 @@ Nothing is sent if there's genuinely nothing to report that day — no filler
 email. Both thresholds (`--stale-days`, default 2; `--quiet-days`, default 5)
 are command options if they ever need adjusting.
 
-**To turn on:** add these two lines to the server `.env`, then run
+**Call Log voice notes** — on the **Log a Call** form, staff can record a
+short voice note (Hindi, Marathi, English, or a mix — no need to stick to
+English like the browser Dictate button requires) instead of typing. Google
+Speech-to-Text transcribes it, then Claude translates/cleans the result into
+natural English. The translated note appears as a separate "🎙️ Voice note"
+block under the call's typed notes on the **Calling** page, usually within a
+minute (shown as "🎙️ Transcribing…" until then) — the rep's own typed notes
+are never overwritten. If either step fails (bad audio, no speech detected,
+API outage), the row just shows "Transcription failed" instead of blocking
+anything. This is the only AI feature here that depends on a second vendor
+besides Anthropic — see below.
+
+**To turn on:** add these lines to the server `.env`, then run
 `php artisan config:cache`:
 ```
 AI_ENABLED=true
@@ -615,6 +627,14 @@ ANTHROPIC_API_KEY=sk-ant-...
 If the features are off, the buttons/drafts/digests simply don't appear and
 nothing else changes. Usage is billed by Anthropic per request (very low cost
 for this volume).
+
+Call Log voice notes additionally need a Google Cloud Speech-to-Text API key
+(separate from Anthropic, its own billing):
+```
+GOOGLE_SPEECH_API_KEY=...
+```
+Without this key, the **Record voice note** button doesn't appear even if
+`AI_ENABLED=true` — every other AI feature above works normally either way.
 
 ## Tip
 Adding a new module/menu item or changing a label is a code change that deploys

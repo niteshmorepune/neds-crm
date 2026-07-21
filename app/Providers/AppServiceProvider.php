@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Services\AnthropicClient;
+use App\Services\GoogleSpeechClient;
 use App\Services\MenuResolver;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\URL;
@@ -19,6 +20,10 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(AnthropicClient::class, fn () => new AnthropicClient(
             config('services.anthropic.key'),
             (string) config('services.anthropic.model'),
+        ));
+
+        $this->app->singleton(GoogleSpeechClient::class, fn () => new GoogleSpeechClient(
+            config('services.google_speech.api_key'),
         ));
     }
 

@@ -67,6 +67,16 @@ sequence stops (the CRM assumes you've taken it from here).
   browser transcribes it live into the box, and you can still edit before
   saving. (Chrome/Edge only; the button doesn't appear in browsers that
   don't support it.)
+- If AI features are enabled, you'll also see **Record voice note
+  (Hindi/Marathi/English)** below the Notes field — useful if it's faster to
+  just speak the call recap than to type it. Unlike Dictate, this doesn't need
+  you to speak in English: record in Hindi, Marathi, English, or a mix, and
+  save the call as usual. A background job transcribes and translates it to
+  English within about a minute; the translated note then appears under your
+  typed notes on the **Calling** page (it shows "🎙️ Transcribing…" until
+  it's ready). Your own typed notes always stay untouched — the voice
+  transcript is a separate block, so review it and correct anything the
+  transcription got wrong (names and numbers occasionally get misheard).
 - When logging a call, click **Add follow-up reminder** to expand the reminder
   section. **Set the date and time manually** to the exact day you want to be
   reminded — the field starts blank so you pick the right date (not just
