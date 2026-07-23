@@ -198,12 +198,50 @@ it('shows the AI usage report page even when Drishti is unreachable', function (
         ->assertSee('Unavailable', false);
 });
 
+it('fetches SMDost AI usage totals via the service-key endpoint and converts USD to paise', function () {
+    config([
+        'services.smdost.base_url' => 'https://socialmediadost.com',
+        'services.smdost.service_key' => 'smdost-secret',
+        'services.anthropic.usd_to_inr' => 87.0,
+    ]);
+    Http::fake([
+        'socialmediadost.com/api/ai/usage*' => Http::response([
+            'data' => ['totals' => ['_sum' => ['inputTokens' => 400, 'outputTokens' => 150, 'costUsd' => 1.2], '_count' => 3]],
+        ]),
+    ]);
+
+    $result = app(AiUsageMetrics::class)->smdostUsage(now()->startOfMonth(), now()->endOfMonth());
+
+    expect($result)->toBe([
+        'calls' => 3,
+        'input_tokens' => 400,
+        'output_tokens' => 150,
+        'estimated_cost_paise' => (int) round(1.2 * 87.0 * 100),
+    ]);
+
+    Http::assertSent(fn ($request) => str_contains($request->url(), 'socialmediadost.com/api/ai/usage')
+        && $request->hasHeader('X-Service-Key', 'smdost-secret'));
+});
+
+it('returns null SMDost usage gracefully when unconfigured', function () {
+    config(['services.smdost.base_url' => null, 'services.smdost.service_key' => null]);
+    expect(app(AiUsageMetrics::class)->smdostUsage(now()->startOfMonth(), now()->endOfMonth()))->toBeNull();
+});
+
 it('computes budget percentage from combined CRM + Drishti cost against the configured ceiling', function () {
     AiUsageSetting::current()->update(['monthly_budget_paise' => 10000]);
 
     $status = app(AiUsageMetrics::class)->budgetStatus(4000, 2000);
 
     expect($status)->toBe(['combined_cost_paise' => 6000, 'budget_paise' => 10000, 'pct' => 60]);
+});
+
+it('includes SMDost cost in the combined budget total when provided', function () {
+    AiUsageSetting::current()->update(['monthly_budget_paise' => 10000]);
+
+    $status = app(AiUsageMetrics::class)->budgetStatus(4000, 2000, 1000);
+
+    expect($status)->toBe(['combined_cost_paise' => 7000, 'budget_paise' => 10000, 'pct' => 70]);
 });
 
 it('reports a null percentage when no budget is configured yet', function () {

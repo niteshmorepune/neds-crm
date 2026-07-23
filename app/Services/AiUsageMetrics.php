@@ -112,15 +112,34 @@ class AiUsageMetrics
      * cross-app total on the AI Usage Report. Null — never an exception —
      * when Drishti isn't configured or the call fails, same "degrade to
      * nothing, never block the page" treatment as DraftMonthlyWinsNote's
-     * drishtiWinsFor(). SMDost has no usage tracking of its own yet, so it
-     * has no equivalent method here.
+     * drishtiWinsFor().
      *
      * @return array{calls: int, input_tokens: int, output_tokens: int, estimated_cost_paise: int}|null
      */
     public function drishtiUsage(Carbon $from, Carbon $to): ?array
     {
-        $baseUrl = rtrim((string) config('services.drishti.base_url'), '/');
-        $serviceKey = (string) config('services.drishti.service_key');
+        return $this->fetchAppUsage('Drishti', 'services.drishti.base_url', 'services.drishti.service_key', $from, $to);
+    }
+
+    /**
+     * Same as drishtiUsage(), but for SMDost's own AIUsageLog. Both apps
+     * expose the identical GET /api/ai/usage shape (SMDost's mirrors
+     * Drishti's), so this and drishtiUsage() share fetchAppUsage() below.
+     *
+     * @return array{calls: int, input_tokens: int, output_tokens: int, estimated_cost_paise: int}|null
+     */
+    public function smdostUsage(Carbon $from, Carbon $to): ?array
+    {
+        return $this->fetchAppUsage('SMDost', 'services.smdost.base_url', 'services.smdost.service_key', $from, $to);
+    }
+
+    /**
+     * @return array{calls: int, input_tokens: int, output_tokens: int, estimated_cost_paise: int}|null
+     */
+    private function fetchAppUsage(string $appName, string $baseUrlConfigKey, string $serviceKeyConfigKey, Carbon $from, Carbon $to): ?array
+    {
+        $baseUrl = rtrim((string) config($baseUrlConfigKey), '/');
+        $serviceKey = (string) config($serviceKeyConfigKey);
 
         if (! $baseUrl || ! $serviceKey) {
             return null;
@@ -135,7 +154,7 @@ class AiUsageMetrics
                 ]);
 
             if (! $response->successful()) {
-                Log::warning('Drishti AI usage fetch failed', ['status' => $response->status()]);
+                Log::warning("{$appName} AI usage fetch failed", ['status' => $response->status()]);
 
                 return null;
             }
@@ -150,23 +169,24 @@ class AiUsageMetrics
                 'estimated_cost_paise' => (int) round($costUsd * (float) config('services.anthropic.usd_to_inr') * 100),
             ];
         } catch (\Throwable $e) {
-            Log::warning('Drishti AI usage exception', ['error' => $e->getMessage()]);
+            Log::warning("{$appName} AI usage exception", ['error' => $e->getMessage()]);
 
             return null;
         }
     }
 
     /**
-     * Combined CRM + Drishti estimated spend against the admin-configured
-     * monthly budget ceiling (AiUsageSetting) — a self-tracked stand-in for a
-     * real vendor "credit balance", since Anthropic doesn't expose one via
-     * API. Null budget (0, the default) means no ceiling is set yet.
+     * Combined CRM + Drishti + SMDost estimated spend against the
+     * admin-configured monthly budget ceiling (AiUsageSetting) — a
+     * self-tracked stand-in for a real vendor "credit balance", since
+     * Anthropic doesn't expose one via API. Null budget (0, the default)
+     * means no ceiling is set yet.
      *
      * @return array{combined_cost_paise: int, budget_paise: int, pct: int|null}
      */
-    public function budgetStatus(int $crmCostPaise, ?int $drishtiCostPaise): array
+    public function budgetStatus(int $crmCostPaise, ?int $drishtiCostPaise, ?int $smdostCostPaise = null): array
     {
-        $combined = $crmCostPaise + ($drishtiCostPaise ?? 0);
+        $combined = $crmCostPaise + ($drishtiCostPaise ?? 0) + ($smdostCostPaise ?? 0);
         $budget = AiUsageSetting::current()->monthly_budget_paise;
 
         return [
