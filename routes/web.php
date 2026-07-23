@@ -14,6 +14,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DealController;
 use App\Http\Controllers\FestivalController;
 use App\Http\Controllers\HelpController;
+use App\Http\Controllers\IncentiveController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LeadController;
 use App\Http\Controllers\LeaveRequestController;
@@ -133,6 +134,17 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
     Route::middleware('menu.access:sales-dashboard')->group(function () {
         Route::get('sales-dashboard', [SalesDashboardController::class, 'index'])->name('sales-dashboard.index');
         Route::post('sales-dashboard/targets', [SalesTargetController::class, 'store'])->name('sales-dashboard.targets.store');
+    });
+
+    /*
+     * Sales Incentive — monthly tiered-slab incentive on Won deal value
+     * (IncentiveCalculator) + team-pool bonus tied to the existing
+     * SalesTarget. Gated by menu.access:incentives; the settings form is
+     * additionally restricted to Admin/Manager in the controller.
+     */
+    Route::middleware('menu.access:incentives')->group(function () {
+        Route::get('incentives', [IncentiveController::class, 'index'])->name('incentives.index');
+        Route::post('incentives/settings', [IncentiveController::class, 'updateSettings'])->name('incentives.settings.update');
     });
 
     /*

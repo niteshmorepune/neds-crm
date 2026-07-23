@@ -158,6 +158,25 @@ Admin/Manager only:
   on, so it may not show yet for a newer pipeline; there's no suggestion for
   the financial-year target.
 
+## Incentives
+Sidebar → **Incentives**. Admin/Manager see every active Sales rep's live
+monthly incentive (sales this month, current slab, individual incentive,
+team bonus, total) computed from the same Won-deal figures as the Sales
+Dashboard, plus:
+
+- **Team bonus pool** — the fixed rupee amount, split evenly across active
+  Sales reps, paid out in any month the company-wide monthly target (set on
+  the Sales Dashboard) is met. Edit and save it here; it applies from the
+  current month onward.
+- The company target itself is still set on the **Sales Dashboard** — this
+  page only shows target-vs-actual and links there to change it, so there's
+  one place that writes it.
+
+Numbers shown here for the current month are a live estimate — nothing is
+locked in until the 1st of the following month, when a scheduled job snapshots
+each rep's just-ended month into a permanent record. That means an old deal
+edited after month-end never changes a past month's payout figure.
+
 ## Bell notifications
 As a manager, you receive bell notifications for:
 
