@@ -211,6 +211,7 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
     Route::get('reports/lead-sources/export', [ReportController::class, 'exportLeadSources'])->name('reports.lead-sources.export');
     Route::get('reports/ai-usage', [ReportController::class, 'aiUsage'])->name('reports.ai-usage');
     Route::get('reports/ai-usage/export', [ReportController::class, 'exportAiUsage'])->name('reports.ai-usage.export');
+    Route::post('reports/ai-usage/settings', [ReportController::class, 'updateAiUsageSettings'])->name('reports.ai-usage.settings.update');
     Route::get('reports/ask', [ReportController::class, 'askTheCrm'])->name('reports.ask');
     Route::get('reports/business-overview', [ReportController::class, 'businessOverview'])->name('reports.business-overview');
     Route::get('reports/business-overview/export', [ReportController::class, 'exportBusinessOverview'])->name('reports.business-overview.export');
