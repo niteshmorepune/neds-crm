@@ -19,6 +19,8 @@ class CallVoiceTranscript extends Component
 
     public ?string $transcript = null;
 
+    public ?string $audioUrl = null;
+
     public function mount(int $callLogId): void
     {
         $this->callLogId = $callLogId;
@@ -31,6 +33,12 @@ class CallVoiceTranscript extends Component
 
         $this->status = $call?->voice_transcript_status?->value;
         $this->transcript = $call?->voice_transcript;
+
+        // Shown regardless of transcript status — the raw recording is always
+        // playable even if AI transcription is still pending or failed, so a
+        // voice note is never inaccessible just because translation didn't work.
+        $attachment = $call?->attachments()->latest()->first();
+        $this->audioUrl = $attachment ? route('attachments.download', $attachment) : null;
     }
 
     public function render()

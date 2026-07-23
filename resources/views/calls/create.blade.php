@@ -9,37 +9,61 @@
                   showFollowUp: {{ old('follow_up_at') ? 'true' : 'false' }},
                   dictating: false,
                   dictationSupported: 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window,
+                  dictationLang: localStorage.getItem('dictationLang') || 'en-IN',
                   recognition: null,
                   recordingSupported: !!(navigator.mediaDevices && window.MediaRecorder),
                   recording: false,
+                  recordingError: null,
                   hasVoiceNote: false,
                   audioUrl: null,
                   mediaRecorder: null,
                   audioChunks: [],
+                  setDictationLang(lang) {
+                      this.dictationLang = lang;
+                      localStorage.setItem('dictationLang', lang);
+                  },
                   async toggleRecording() {
                       if (! this.recordingSupported) return;
                       if (this.recording) {
                           this.mediaRecorder.stop();
                           return;
                       }
-                      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                      this.audioChunks = [];
-                      this.mediaRecorder = new MediaRecorder(stream);
-                      this.mediaRecorder.ondataavailable = (e) => this.audioChunks.push(e.data);
-                      this.mediaRecorder.onstop = () => {
-                          const mimeType = this.mediaRecorder.mimeType || 'audio/webm';
-                          const blob = new Blob(this.audioChunks, { type: mimeType });
-                          const ext = mimeType.includes('ogg') ? 'ogg' : 'webm';
-                          const file = new File([blob], `voice-note.${ext}`, { type: mimeType });
-                          const dt = new DataTransfer();
-                          dt.items.add(file);
-                          this.$refs.voiceNoteInput.files = dt.files;
-                          this.audioUrl = URL.createObjectURL(blob);
-                          this.hasVoiceNote = true;
-                          stream.getTracks().forEach((t) => t.stop());
-                      };
-                      this.mediaRecorder.start();
-                      this.recording = true;
+                      this.recordingError = null;
+                      try {
+                          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                          this.audioChunks = [];
+                          this.mediaRecorder = new MediaRecorder(stream);
+                          this.mediaRecorder.ondataavailable = (e) => this.audioChunks.push(e.data);
+                          this.mediaRecorder.onerror = (e) => {
+                              this.recordingError = 'Recording failed — ' + (e.error?.message || 'please try again.');
+                              this.recording = false;
+                              stream.getTracks().forEach((t) => t.stop());
+                          };
+                          this.mediaRecorder.onstop = () => {
+                              const mimeType = this.mediaRecorder.mimeType || 'audio/webm';
+                              const blob = new Blob(this.audioChunks, { type: mimeType });
+                              if (blob.size === 0) {
+                                  this.recordingError = 'No audio was captured — please try recording again.';
+                                  stream.getTracks().forEach((t) => t.stop());
+                                  return;
+                              }
+                              const ext = mimeType.includes('ogg') ? 'ogg' : 'webm';
+                              const file = new File([blob], `voice-note.${ext}`, { type: mimeType });
+                              const dt = new DataTransfer();
+                              dt.items.add(file);
+                              this.$refs.voiceNoteInput.files = dt.files;
+                              this.audioUrl = URL.createObjectURL(blob);
+                              this.hasVoiceNote = true;
+                              stream.getTracks().forEach((t) => t.stop());
+                          };
+                          this.mediaRecorder.start();
+                          this.recording = true;
+                      } catch (err) {
+                          this.recordingError = err.name === 'NotAllowedError'
+                              ? 'Microphone access was blocked — allow it in your browser settings and try again.'
+                              : 'Could not start recording — ' + (err.message || 'please try again.');
+                          this.recording = false;
+                      }
                   },
                   clearVoiceNote() {
                       this.$refs.voiceNoteInput.value = '';
@@ -54,7 +78,7 @@
                       }
                       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
                       this.recognition = new SpeechRecognition();
-                      this.recognition.lang = 'en-IN';
+                      this.recognition.lang = this.dictationLang;
                       this.recognition.continuous = true;
                       this.recognition.interimResults = false;
                       this.recognition.onresult = (event) => {
@@ -125,19 +149,27 @@
             <div class="md:col-span-2">
                 <div class="flex items-center justify-between">
                     <x-input-label for="notes" value="Notes" />
-                    <button type="button" x-show="dictationSupported" x-cloak @click="toggleDictation()"
-                            class="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium transition-colors"
-                            :class="dictating ? 'bg-red-50 text-red-600' : 'text-indigo-600 hover:bg-indigo-50'">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 15a3 3 0 003-3V6a3 3 0 10-6 0v6a3 3 0 003 3z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-14 0M12 18v3" />
-                        </svg>
-                        <span x-show="!dictating">Dictate</span>
-                        <span x-show="dictating">Listening… (click to stop)</span>
-                    </button>
+                    <div x-show="dictationSupported" x-cloak class="flex items-center gap-2">
+                        <select x-model="dictationLang" @change="setDictationLang($event.target.value)"
+                                class="rounded-md border-gray-300 py-1 pl-2 pr-6 text-xs shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <option value="en-IN">English</option>
+                            <option value="hi-IN">Hindi</option>
+                            <option value="mr-IN">Marathi</option>
+                        </select>
+                        <button type="button" @click="toggleDictation()"
+                                class="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium transition-colors"
+                                :class="dictating ? 'bg-red-50 text-red-600' : 'text-indigo-600 hover:bg-indigo-50'">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 15a3 3 0 003-3V6a3 3 0 10-6 0v6a3 3 0 003 3z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-14 0M12 18v3" />
+                            </svg>
+                            <span x-show="!dictating">Dictate</span>
+                            <span x-show="dictating">Listening… (click to stop)</span>
+                        </button>
+                    </div>
                 </div>
                 <textarea id="notes" name="notes" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">{{ old('notes') }}</textarea>
-                <p x-show="dictationSupported" x-cloak class="mt-1 text-xs text-gray-400">Speak your notes instead of typing — review and edit before saving.</p>
+                <p x-show="dictationSupported" x-cloak class="mt-1 text-xs text-gray-400">Speak your notes instead of typing in the language selected above — review and edit before saving.</p>
 
                 @if ($aiEnabled)
                     <input type="file" name="voice_note" x-ref="voiceNoteInput" class="hidden" accept="audio/*">
@@ -155,7 +187,8 @@
                         <audio x-show="hasVoiceNote" x-cloak :src="audioUrl" controls class="h-8"></audio>
                         <button type="button" x-show="hasVoiceNote" x-cloak @click="clearVoiceNote()" class="text-xs text-gray-400 hover:text-gray-600">Remove</button>
                     </div>
-                    <p x-show="recordingSupported" x-cloak class="mt-1 text-xs text-gray-400">We'll transcribe and translate it to English automatically — usually within a minute of saving.</p>
+                    <p x-show="recordingSupported && !recordingError" x-cloak class="mt-1 text-xs text-gray-400">We'll transcribe and translate it to English automatically — usually within a minute of saving.</p>
+                    <p x-show="recordingError" x-cloak x-text="recordingError" class="mt-1 text-xs text-red-500"></p>
                 @endif
             </div>
 

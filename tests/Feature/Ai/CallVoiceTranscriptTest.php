@@ -3,6 +3,7 @@
 use App\Enums\UserRole;
 use App\Enums\VoiceTranscriptStatus;
 use App\Jobs\TranscribeCallLogVoiceNote;
+use App\Livewire\CallVoiceTranscript;
 use App\Models\AiUsage;
 use App\Models\Attachment;
 use App\Models\CallLog;
@@ -15,6 +16,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
+use Livewire\Livewire;
 
 function enableCallVoiceAi(): void
 {
@@ -192,4 +194,36 @@ it('hides the record-voice-note button when Claude is on but no Google Speech ke
     $this->actingAs($this->sales)->get(route('calls.create'))
         ->assertOk()
         ->assertDontSee('Record voice note', false);
+});
+
+it('offers Hindi and Marathi as dictation language options, not just English', function () {
+    $this->actingAs($this->sales)->get(route('calls.create'))
+        ->assertOk()
+        ->assertSee('value="en-IN"', false)
+        ->assertSee('value="hi-IN"', false)
+        ->assertSee('value="mr-IN"', false);
+});
+
+it('exposes a playable link to the raw voice-note recording regardless of transcript status', function () {
+    Storage::fake('local');
+    $call = CallLog::factory()->create(['voice_transcript_status' => VoiceTranscriptStatus::Pending]);
+    $attachment = $call->attachments()->create([
+        'uploaded_by' => $this->sales->id,
+        'disk' => 'local',
+        'path' => 'call-voice-notes/note.webm',
+        'original_name' => 'note.webm',
+        'mime_type' => 'audio/webm',
+        'size' => 1000,
+    ]);
+
+    Livewire::test(CallVoiceTranscript::class, ['callLogId' => $call->id])
+        ->assertSet('audioUrl', route('attachments.download', $attachment))
+        ->assertSee('audio', false);
+});
+
+it('has no playable link when the voice note was never attached', function () {
+    $call = CallLog::factory()->create(['voice_transcript_status' => VoiceTranscriptStatus::Failed]);
+
+    Livewire::test(CallVoiceTranscript::class, ['callLogId' => $call->id])
+        ->assertSet('audioUrl', null);
 });
