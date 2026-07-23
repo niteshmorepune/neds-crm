@@ -90,6 +90,10 @@ Schedule::command('app:create-monthly-briefs')->monthlyOn(1, '07:30')->timezone(
 // personalize and send. Idempotent per client+month.
 Schedule::command('app:draft-monthly-wins-notes')->monthlyOn(1, '07:45')->timezone('Asia/Kolkata');
 
+// Locks each active Sales user's incentive statement for the month that just
+// ended (marginal-slab incentive + team-pool bonus). Idempotent per user+month.
+Schedule::command('app:finalize-incentives')->monthlyOn(1, '07:50')->timezone('Asia/Kolkata');
+
 // Recurring maintenance tasks — creates project-linked tasks and fires in-app
 // bell notifications to project leads. Runs daily; the command decides internally
 // which templates are due today based on frequency (weekly/biweekly/monthly/quarterly).

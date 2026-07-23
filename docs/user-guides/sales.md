@@ -179,6 +179,25 @@ Admin/Manager additionally see a **rep leaderboard** (pipeline, won this
 month, target %, win rate, avg deal size per Sales rep) and a **Save targets**
 form to set the company's monthly/FY target and each rep's monthly target.
 
+## 2b. Incentives
+Sidebar → **Incentives** shows your monthly sales incentive, calculated live
+from the same "won this month" value shown on the Sales Dashboard (so the two
+pages never disagree):
+- **Individual incentive** — a tiered rate on your before-tax sales this
+  month: 6% up to ₹50,000, 10% up to ₹1,00,000, 12.5% up to ₹1,50,000, 15% up
+  to ₹2,50,000, 20% above that. Rates are marginal, like income tax — each
+  slab's rate only applies to the portion of sales *within* that band, so
+  there's never a reason to hold a deal back to avoid crossing a boundary.
+- **Team bonus** — a fixed pool (set by Admin/Manager) split evenly across
+  every active Sales rep, paid only in months the company-wide monthly target
+  (set on the Sales Dashboard) is met.
+- **Slab progress bar** shows where this month's sales sit across the five
+  bands, plus how much more you need to reach the next rate.
+- **Finalized history** — once a month closes, the 1st-of-the-month job locks
+  that month's numbers into a permanent record (so editing an old deal later
+  never changes a past month's incentive). Anything showing for the current,
+  still-open month is a live estimate, not yet finalized.
+
 ## 3. Quotations
 1. **Quotations → Create** — or open a **Deal** and click **+ New Quotation**
    directly on the deal page (the client and deal are pre-filled for you) — or

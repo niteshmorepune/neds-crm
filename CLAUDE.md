@@ -319,3 +319,39 @@ Record every "we chose X because Y" here — this is the project's memory.
   `composer.json`, so only `composer.lock` changed. `composer audit`
   reports zero advisories after the bump; full test suite (1039 tests)
   re-verified passing.
+- **2026-07-23 — Sales Incentive module: incentive basis = Deal.value at Won,
+  not invoice/payment collected.** The owner asked for a tiered monthly
+  incentive (6%/10%/12.5%/15%/20% marginal slabs on before-tax sales) plus a
+  small team-pool bonus. The obvious alternative — computing "sales" from
+  actual payments collected — was rejected after checking the codebase: it
+  would need prorating GST off every partial/milestone payment and
+  attributing it back through invoice→deal→owner, real complexity for a
+  number that already exists. `Deal.value` at the moment a deal is marked
+  Won is already pre-tax (GST is only added downstream at quotation/invoice
+  line-item level) and is already the exact figure `SalesPipelineMetrics`
+  uses for `won_this_month_value`, the rep leaderboard, and `SalesTarget`
+  progress — so the incentive number and the target-progress number the
+  reps already see can never quietly disagree. Confirmed with the owner via
+  AskUserQuestion, along with three other decisions: **eligibility** is the
+  Sales role only (primary or additional, via the existing
+  `hasRole()`/`withAnyRole()` multi-role support — Admin/Manager who
+  occasionally own a deal directly do not earn incentive on it); the
+  **team bonus** is a fixed ₹10,000/month pool (admin-editable, new
+  `incentive_settings` singleton table) split evenly across active Sales
+  users, gated on the existing company-wide monthly `SalesTarget`
+  (`user_id = null`) being met — reused as-is, no new target concept; and
+  **finalization** is live all month (`App\Services\IncentiveCalculator`,
+  nothing stored, recalculated on every `/incentives` view) with a
+  `app:finalize-incentives` command snapshotting each rep's just-ended
+  month into a locked `incentive_statements` row on the 1st (same
+  `monthlyOn(1, ...)` pattern as `app:draft-monthly-wins-notes` /
+  `app:create-monthly-briefs`), so payroll has a stable number even if a
+  Deal is edited after month close. Slab math is marginal/bracket-style
+  (like income tax), not a cliff on the whole amount — deliberately, to
+  avoid a rep holding back a deal near a bracket boundary; verified with a
+  dedicated test asserting ₹50,001 is NOT taxed as 10% of the whole amount.
+  Shipped as its own "Incentives" sidebar item (`menu.access:incentives`)
+  rather than folded into the already-dense Sales Dashboard, so a Sales
+  rep sees only their own numbers and Admin/Manager see everyone's plus
+  the pool-amount form; company-target editing itself stays on the Sales
+  Dashboard (linked from this page) rather than duplicating that form.
