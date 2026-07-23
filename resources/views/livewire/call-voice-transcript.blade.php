@@ -1,4 +1,7 @@
 <div @if (! in_array($status, ['completed', 'failed'], true)) wire:poll.4s="refreshStatus" @endif>
+    @if ($audioUrl)
+        <audio controls preload="none" class="h-7 max-w-[190px] align-middle"><source src="{{ $audioUrl }}"></audio>
+    @endif
     @if ($status === 'pending' || $status === 'processing')
         <span class="inline-flex items-center gap-1 text-xs text-gray-400">
             <svg class="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none">
