@@ -2,9 +2,11 @@
 
 use App\Enums\UserRole;
 use App\Models\AiUsage;
+use App\Models\AiUsageSetting;
 use App\Models\User;
 use App\Services\AiUsageMetrics;
 use Database\Seeders\MenuItemsSeeder;
+use Illuminate\Support\Facades\Http;
 
 beforeEach(function () {
     $this->seed(MenuItemsSeeder::class);
@@ -149,4 +151,82 @@ it('shows the feedback tally on the report page once a draft has been rated', fu
         ->assertOk()
         ->assertSee('Feedback given')
         ->assertSee('helpful / not helpful clicks');
+});
+
+it('fetches Drishti AI usage totals via the service-key endpoint and converts USD to paise', function () {
+    config([
+        'services.drishti.base_url' => 'https://nedsdrishti.in',
+        'services.drishti.service_key' => 'drishti-secret',
+        'services.anthropic.usd_to_inr' => 87.0,
+    ]);
+    Http::fake([
+        'nedsdrishti.in/api/ai/usage*' => Http::response([
+            'data' => ['totals' => ['_sum' => ['inputTokens' => 1000, 'outputTokens' => 500, 'costUsd' => 2.5], '_count' => 7]],
+        ]),
+    ]);
+
+    $result = app(AiUsageMetrics::class)->drishtiUsage(now()->startOfMonth(), now()->endOfMonth());
+
+    expect($result)->toBe([
+        'calls' => 7,
+        'input_tokens' => 1000,
+        'output_tokens' => 500,
+        'estimated_cost_paise' => (int) round(2.5 * 87.0 * 100),
+    ]);
+
+    Http::assertSent(fn ($request) => str_contains($request->url(), 'nedsdrishti.in/api/ai/usage')
+        && $request->hasHeader('X-Service-Key', 'drishti-secret'));
+});
+
+it('returns null Drishti usage gracefully when the call fails, is unconfigured, or throws', function () {
+    config(['services.drishti.base_url' => null, 'services.drishti.service_key' => null]);
+    expect(app(AiUsageMetrics::class)->drishtiUsage(now()->startOfMonth(), now()->endOfMonth()))->toBeNull();
+
+    config(['services.drishti.base_url' => 'https://nedsdrishti.in', 'services.drishti.service_key' => 'drishti-secret']);
+    Http::fake(['nedsdrishti.in/*' => Http::response('boom', 500)]);
+    expect(app(AiUsageMetrics::class)->drishtiUsage(now()->startOfMonth(), now()->endOfMonth()))->toBeNull();
+});
+
+it('shows the AI usage report page even when Drishti is unreachable', function () {
+    $manager = User::factory()->role(UserRole::Manager)->create();
+    config(['services.drishti.base_url' => 'https://nedsdrishti.in', 'services.drishti.service_key' => 'drishti-secret']);
+    Http::fake(['nedsdrishti.in/*' => Http::response('boom', 500)]);
+
+    $this->actingAs($manager)
+        ->get(route('reports.ai-usage'))
+        ->assertOk()
+        ->assertSee('Unavailable', false);
+});
+
+it('computes budget percentage from combined CRM + Drishti cost against the configured ceiling', function () {
+    AiUsageSetting::current()->update(['monthly_budget_paise' => 10000]);
+
+    $status = app(AiUsageMetrics::class)->budgetStatus(4000, 2000);
+
+    expect($status)->toBe(['combined_cost_paise' => 6000, 'budget_paise' => 10000, 'pct' => 60]);
+});
+
+it('reports a null percentage when no budget is configured yet', function () {
+    $status = app(AiUsageMetrics::class)->budgetStatus(4000, null);
+
+    expect($status['pct'])->toBeNull()
+        ->and($status['combined_cost_paise'])->toBe(4000);
+});
+
+it('lets a manager update the monthly AI budget', function () {
+    $manager = User::factory()->role(UserRole::Manager)->create();
+
+    $this->actingAs($manager)
+        ->post(route('reports.ai-usage.settings.update'), ['monthly_budget' => 5000])
+        ->assertRedirect();
+
+    expect(AiUsageSetting::current()->monthly_budget_paise)->toBe(5000 * 100);
+});
+
+it('blocks a sales rep from updating the monthly AI budget', function () {
+    $sales = User::factory()->role(UserRole::Sales)->create();
+
+    $this->actingAs($sales)
+        ->post(route('reports.ai-usage.settings.update'), ['monthly_budget' => 5000])
+        ->assertForbidden();
 });

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Enums\UserRole;
+use App\Http\Requests\AiUsageSettingsRequest;
+use App\Models\AiUsageSetting;
 use App\Models\Customer;
 use App\Models\Partner;
 use App\Services\AiUsageMetrics;
@@ -11,6 +13,7 @@ use App\Services\CollectionsMetrics;
 use App\Services\ReportMetrics;
 use App\Services\SalesPipelineMetrics;
 use App\Support\Money;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\View\View;
@@ -97,11 +100,29 @@ class ReportController extends Controller
         $this->authorizePerformance($request);
         [$from, $to] = $this->monthRange($request);
 
+        $data = $this->aiUsageMetrics->monthly($from, $to);
+        $drishti = $this->aiUsageMetrics->drishtiUsage($from, $to);
+
         return view('reports.ai-usage', [
-            'data' => $this->aiUsageMetrics->monthly($from, $to),
+            'data' => $data,
+            'drishti' => $drishti,
+            'budget' => $this->aiUsageMetrics->budgetStatus($data['estimated_cost_paise'], $drishti['estimated_cost_paise'] ?? null),
             'from' => $from,
             'to' => $to,
         ]);
+    }
+
+    public function updateAiUsageSettings(AiUsageSettingsRequest $request): RedirectResponse
+    {
+        $validated = $request->validated();
+
+        $setting = AiUsageSetting::current();
+        $setting->update([
+            'monthly_budget_paise' => Money::toPaise($validated['monthly_budget']),
+            'updated_by' => $request->user()->id,
+        ]);
+
+        return back()->with('status', 'Monthly AI budget updated.');
     }
 
     public function exportAiUsage(Request $request): StreamedResponse
@@ -109,14 +130,19 @@ class ReportController extends Controller
         $this->authorizePerformance($request);
         [$from, $to] = $this->monthRange($request);
         $data = $this->aiUsageMetrics->monthly($from, $to);
+        $drishti = $this->aiUsageMetrics->drishtiUsage($from, $to);
 
-        return $this->csv("ai-usage-{$from->format('Y-m-d')}_to_{$to->format('Y-m-d')}.csv", function ($out) use ($data) {
+        return $this->csv("ai-usage-{$from->format('Y-m-d')}_to_{$to->format('Y-m-d')}.csv", function ($out) use ($data, $drishti) {
             fputcsv($out, ['Feature', 'Calls', 'Input tokens', 'Output tokens', 'Estimated cost (₹)', 'Helpful', 'Not helpful']);
             foreach ($data['by_feature'] as $r) {
                 fputcsv($out, [$r['label'], $r['calls'], $r['input_tokens'], $r['output_tokens'], Money::toRupees($r['estimated_cost_paise']), $r['feedback_up'], $r['feedback_down']]);
             }
             fputcsv($out, []);
-            fputcsv($out, ['Total', $data['total_calls'], $data['total_input_tokens'], $data['total_output_tokens'], Money::toRupees($data['estimated_cost_paise']), $data['total_feedback_up'], $data['total_feedback_down']]);
+            fputcsv($out, ['Total (CRM)', $data['total_calls'], $data['total_input_tokens'], $data['total_output_tokens'], Money::toRupees($data['estimated_cost_paise']), $data['total_feedback_up'], $data['total_feedback_down']]);
+            fputcsv($out, []);
+            fputcsv($out, ['Cross-app', 'Calls', 'Input tokens', 'Output tokens', 'Estimated cost (₹)']);
+            fputcsv($out, ['Drishti', $drishti['calls'] ?? 'n/a', $drishti['input_tokens'] ?? 'n/a', $drishti['output_tokens'] ?? 'n/a', $drishti ? Money::toRupees($drishti['estimated_cost_paise']) : 'unavailable']);
+            fputcsv($out, ['SMDost', 'n/a', 'n/a', 'n/a', 'not yet tracked']);
         });
     }
 

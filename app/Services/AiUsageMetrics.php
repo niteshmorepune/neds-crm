@@ -3,7 +3,10 @@
 namespace App\Services;
 
 use App\Models\AiUsage;
+use App\Models\AiUsageSetting;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Turns raw ai_usages rows (feature, model, token counts) into a monthly
@@ -101,6 +104,76 @@ class AiUsageMetrics
             + ($outputTokens / 1_000_000) * $rates['output'];
 
         return (int) round($costUsd * $usdToInr * 100);
+    }
+
+    /**
+     * Real AI usage from Drishti's own AIUsageLog (X-Service-Key,
+     * GET /api/ai/usage) for the same period, folded into the combined
+     * cross-app total on the AI Usage Report. Null — never an exception —
+     * when Drishti isn't configured or the call fails, same "degrade to
+     * nothing, never block the page" treatment as DraftMonthlyWinsNote's
+     * drishtiWinsFor(). SMDost has no usage tracking of its own yet, so it
+     * has no equivalent method here.
+     *
+     * @return array{calls: int, input_tokens: int, output_tokens: int, estimated_cost_paise: int}|null
+     */
+    public function drishtiUsage(Carbon $from, Carbon $to): ?array
+    {
+        $baseUrl = rtrim((string) config('services.drishti.base_url'), '/');
+        $serviceKey = (string) config('services.drishti.service_key');
+
+        if (! $baseUrl || ! $serviceKey) {
+            return null;
+        }
+
+        try {
+            $response = Http::withHeaders(['X-Service-Key' => $serviceKey])
+                ->timeout(15)
+                ->get("{$baseUrl}/api/ai/usage", [
+                    'from' => $from->copy()->startOfDay()->toIso8601String(),
+                    'to' => $to->copy()->endOfDay()->toIso8601String(),
+                ]);
+
+            if (! $response->successful()) {
+                Log::warning('Drishti AI usage fetch failed', ['status' => $response->status()]);
+
+                return null;
+            }
+
+            $totals = $response->json('data.totals') ?? [];
+            $costUsd = (float) ($totals['_sum']['costUsd'] ?? 0);
+
+            return [
+                'calls' => (int) ($totals['_count'] ?? 0),
+                'input_tokens' => (int) ($totals['_sum']['inputTokens'] ?? 0),
+                'output_tokens' => (int) ($totals['_sum']['outputTokens'] ?? 0),
+                'estimated_cost_paise' => (int) round($costUsd * (float) config('services.anthropic.usd_to_inr') * 100),
+            ];
+        } catch (\Throwable $e) {
+            Log::warning('Drishti AI usage exception', ['error' => $e->getMessage()]);
+
+            return null;
+        }
+    }
+
+    /**
+     * Combined CRM + Drishti estimated spend against the admin-configured
+     * monthly budget ceiling (AiUsageSetting) — a self-tracked stand-in for a
+     * real vendor "credit balance", since Anthropic doesn't expose one via
+     * API. Null budget (0, the default) means no ceiling is set yet.
+     *
+     * @return array{combined_cost_paise: int, budget_paise: int, pct: int|null}
+     */
+    public function budgetStatus(int $crmCostPaise, ?int $drishtiCostPaise): array
+    {
+        $combined = $crmCostPaise + ($drishtiCostPaise ?? 0);
+        $budget = AiUsageSetting::current()->monthly_budget_paise;
+
+        return [
+            'combined_cost_paise' => $combined,
+            'budget_paise' => $budget,
+            'pct' => $budget > 0 ? (int) round($combined / $budget * 100) : null,
+        ];
     }
 
     /**
