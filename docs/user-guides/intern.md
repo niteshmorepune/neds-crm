@@ -5,10 +5,15 @@ system that are relevant to your day-to-day work — clients, projects you're
 assigned to, tasks, attendance, and daily reports.
 
 ## 1. Your dashboard
-When you log in, you'll see three cards:
+When you log in, you'll see:
 - **Pending tasks** — tasks assigned to you that aren't done yet.
 - **Completed today** — tasks you finished today.
 - **Active projects** — projects you're a member of that are still running.
+- **Your Productivity This Month** — your rank among other Interns this
+  month, an overall score, and your biggest opportunity area. Private to
+  you — nobody else sees your rank, and you don't see anyone else's. If AI
+  is enabled, click **Get tips to improve** for a specific suggestion based
+  on your own numbers.
 
 Click the links on the cards to jump straight to your task list or projects.
 

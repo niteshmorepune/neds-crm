@@ -20,7 +20,11 @@
                     @forelse ($rows as $row)
                         <tr class="hover:bg-gray-50">
                             <td class="px-4 py-3">
-                                <a href="{{ route('clients.show', $row['customer']) }}" class="text-indigo-600 hover:underline">{{ $row['customer']->company_name }}</a>
+                                @if ($row['customer'])
+                                    <a href="{{ route('clients.show', $row['customer']) }}" class="text-indigo-600 hover:underline">{{ $row['customer']->company_name }}</a>
+                                @else
+                                    <span class="text-gray-400">Client removed</span>
+                                @endif
                             </td>
                             <td class="px-4 py-3 text-right text-gray-600">{{ $row['count'] }}</td>
                             <td class="px-4 py-3 text-right font-medium text-gray-900">{{ \App\Support\Money::format($row['outstanding']) }}</td>

@@ -434,3 +434,67 @@ Record every "we chose X because Y" here — this is the project's memory.
   `ai_usages` under feature `summarize_meeting` (added to
   `AiUsageMetrics::label()`), so it appears in the AI Usage Report
   automatically like every other AI feature.
+- **2026-07-24 — Staff Productivity Ranking: rank within primary role only,
+  private to each employee, informational-only for now.** Owner asked
+  whether AI could show who's most productive among staff, framed to help
+  people improve rather than just judge them, plus a full overview for
+  the owner. Confirmed via AskUserQuestion: each employee sees only their
+  own rank (never a public leaderboard — Admin/Manager keep full
+  oversight, matching the existing Employee Performance Report's own
+  access model); scoring reuses `ReportMetrics::employeePerformance()`'s
+  existing 6 metrics as-is (no new data collection); stays informational
+  only for now, deliberately kept separate from the Sales Incentive
+  module (which is Sales-only and tied to `Deal.value`); and it extends
+  the existing Employee Performance Report rather than a new sidebar
+  item. New `ReportMetrics::rankedEmployeePerformance()` groups by
+  primary role (`$user->role`, matching `DashboardController`'s existing
+  primary-role-only convention) — only Sales/Support/Accounts/Intern are
+  ranked; Admin/Manager are evaluators, not participants, same
+  distinction the Incentive module already makes. Within a role group of
+  2+, each metric gets a 0–100 percentile rank (average-rank method, ties
+  share the midpoint), combined into one composite score via a new
+  `ROLE_WEIGHTS` table (plain PHP, adjustable later without a schema
+  change), and the person's single lowest-percentile weighted metric is
+  flagged `weakest_metric` — the concrete gap to close. Groups under 2
+  people get a `ranking_note` ("Not enough peers... yet") instead of a
+  fabricated rank. New `AiAssistant::suggestTeamProductivityGaps()` (one
+  batched JSON call for the whole team, mirrors `suggestOnboardingTasks()`'s
+  JSON-array pattern, matched back to rows by exact `user_id`) powers a
+  new `App\Livewire\ProductivityGapSuggestions` component (sibling to
+  `TeamPerformanceSummary`, same Admin/Manager-only guard) that now owns
+  the entire ranked table (Score/Rank/Focus area columns, grouped by
+  role) on `reports/employee-performance`. New
+  `AiAssistant::suggestProductivityImprovement()` (single-person version)
+  powers `App\Livewire\MyProductivity` — a private "your own rank + tip"
+  widget embedded only on the Sales/Support/Accounts/Intern dashboard
+  partials (never Admin/Manager), which only ever computes/shows the
+  viewer's own row, the same guarantee every other per-role dashboard
+  stat method already relies on (no new Policy needed).
+- **2026-07-24 — Fixed a real production incident: Accounts dashboard's
+  "Outstanding receivables" tile disagreed with the Receivables Report**
+  (₹3,87,864 vs ₹2,31,440), reported by an Accounts user via screenshot.
+  Root-caused via a read-only diagnostic script run directly against
+  production (never guessed) — the two used separately-written queries
+  that silently differed on two things: `DashboardMetrics::accountsStats()`
+  didn't exclude invoices whose customer had been soft-deleted (the
+  Receivables Report already did, via `whereHas('customer')`, a 2026-06-16
+  fix to stop a null-pointer crash), and the two disagreed on whether
+  Draft invoices count as "outstanding." The soft-deleted-customer
+  exclusion was actually the wrong fix from the start — it made real
+  unpaid money (₹1,56,424 across 11 invoices, from clients like Shridha
+  Biotech, Prakash Electrical, and two apparent duplicate-cleanup records)
+  silently invisible on the one report Accounts would actually use to
+  chase it, instead of just showing it gracefully. Every other page
+  (Deals/Projects/Quotations/Tickets/Invoices index+show) already solved
+  this exact problem by showing a soft-deleted customer's records with a
+  "Client removed" label instead of hiding them — confirmed with the owner
+  via AskUserQuestion, then applied the same treatment to the Receivables
+  Report. Extracted `CollectionsMetrics::outstandingInvoicesQuery()` as
+  the single source of truth (Draft/Sent/PartiallyPaid/Overdue, no
+  customer-existence filter) — both `InvoiceController::receivables()` and
+  `DashboardMetrics::accountsStats()` now call it, so the two totals can
+  never silently drift apart again. Separately, also made the Accounts
+  dashboard's "Overdue invoices" count a link to the already-filterable
+  `invoices.index?status=overdue` (a second, smaller gap reported in the
+  same conversation) — the filter already existed, it just wasn't
+  exposed from the dashboard tile.

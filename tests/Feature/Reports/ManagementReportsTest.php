@@ -206,7 +206,8 @@ it('exports the reports as CSV', function () {
 
     $perf = $this->actingAs($manager)->get(route('reports.employee-performance.export'));
     $perf->assertOk();
-    expect($perf->headers->get('content-type'))->toContain('text/csv');
+    expect($perf->headers->get('content-type'))->toContain('text/csv')
+        ->and($perf->streamedContent())->toContain('Score')->toContain('Rank');
 
     $rev = $this->actingAs($manager)->get(route('reports.revenue.export'));
     $rev->assertOk();

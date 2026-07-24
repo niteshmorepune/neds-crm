@@ -18,6 +18,7 @@ use App\Models\Invoice;
 use App\Models\Project;
 use App\Models\User;
 use App\Notifications\PaymentRecordedNotification;
+use App\Services\CollectionsMetrics;
 use App\Services\InvoiceNumberGenerator;
 use App\Support\Money;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -399,16 +400,16 @@ class InvoiceController extends Controller
     /**
      * Outstanding receivables grouped by customer (report stub).
      */
-    public function receivables(): View
+    public function receivables(CollectionsMetrics $collectionsMetrics): View
     {
         $this->authorize('viewAny', Invoice::class);
 
-        $rows = Invoice::query()
-            ->whereIn('status', [
-                InvoiceStatus::Draft->value, InvoiceStatus::Sent->value,
-                InvoiceStatus::PartiallyPaid->value, InvoiceStatus::Overdue->value,
-            ])
-            ->whereHas('customer')
+        // Deliberately does NOT exclude invoices whose customer has been
+        // soft-deleted — the row still shows, labelled "Client removed" in
+        // the view (same fallback invoices/index.blade.php already uses),
+        // rather than silently vanishing from the total (see CLAUDE.md's
+        // decision log for the 2026-07-24 incident this fixed).
+        $rows = $collectionsMetrics->outstandingInvoicesQuery()
             ->with('customer')
             ->get()
             ->groupBy('customer_id')

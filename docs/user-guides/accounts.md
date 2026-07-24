@@ -4,11 +4,21 @@ You handle **invoices**, **payments**, **recurring billing**, and the
 **receivables / revenue** reports.
 
 ## Your dashboard
-- **Outstanding receivables** — total still owed to NEDS.
+- **Outstanding receivables** — total still owed to NEDS. Always matches the
+  **Receivables report** total exactly (same underlying figure) — an invoice
+  whose client record has since been removed still counts here and shows as
+  "Client removed" on the Receivables report, rather than silently
+  disappearing from either number.
 - **Collected this month** — payments received.
-- **Overdue invoices** — count past their due date.
+- **Overdue invoices** — count past their due date. Click **View overdue
+  invoices** below the number to see exactly which ones.
 - **Overdue tasks alert** — if you have any tasks past their due date, a red
   banner appears at the top of the dashboard with a direct link to your task list.
+- **Your Productivity This Month** — your rank among other Accounts staff
+  this month, an overall score, and your biggest opportunity area. Private
+  to you — nobody else sees your rank, and you don't see anyone else's. If
+  AI is enabled, click **Get tips to improve** for a specific suggestion
+  based on your own numbers.
 
 ## 1. Invoices
 **Invoices** lists every invoice. Invoices are **GST-compliant**:

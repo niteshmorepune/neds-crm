@@ -94,6 +94,18 @@ panel) — a near-term cash view, blending:
   (never invents a reason behind them) and is **visible to Admin/Manager
   only** — it's never shown to the employee it's about, so use it as a
   starting point for a conversation, not as a rating you show them.
+- **Score and Rank columns**: each person is ranked only against their own
+  role (Sales vs Sales, Support vs Support, etc. — comparing across roles
+  wouldn't mean anything) using the same numbers already in the table, with
+  a **Focus area** showing their single weakest metric this month. A role
+  with fewer than 2 people shows "Not enough peers in this role yet to
+  compare" instead of a rank — there's nobody to compare against. Admin and
+  Manager rows are never ranked (they're not participants). Click **✨
+  Suggest Improvements for the Team** to fill the Focus area column with a
+  short, specific, encouraging suggestion per person — same "never invents
+  a reason" rule as the AI Summary above, and same visibility (Admin/Manager
+  only; each employee separately sees only their own suggestion, on their
+  own Dashboard — see `getting-started.md`).
 
 **Revenue Report** — for a chosen financial year:
 - income **by month**, **by service**, and **by client**, split **recurring vs

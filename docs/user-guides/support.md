@@ -6,6 +6,11 @@ You handle **tickets** (client issues) and **projects & tasks** (delivery work).
 - **Open tickets** — how many are active.
 - **SLA at risk** — tickets due soon or already overdue.
 - **Open tickets by priority** — urgent / high / normal / low.
+- **Your Productivity This Month** — your rank among other Support staff
+  this month, an overall score, and your biggest opportunity area. Private
+  to you — nobody else sees your rank, and you don't see anyone else's. If
+  AI is enabled, click **Get tips to improve** for a specific suggestion
+  based on your own numbers.
 
 ## 1. Tickets
 Tickets come from clients (via their portal) or are raised by staff.

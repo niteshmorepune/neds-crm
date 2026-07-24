@@ -9,6 +9,7 @@ use App\Models\Project;
 use App\Models\Quotation;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Services\DashboardMetrics;
 use Database\Seeders\MenuItemsSeeder;
 
 /**
@@ -56,12 +57,36 @@ it('renders deals board, projects, quotations, invoices, tickets and receivables
     $this->actingAs($this->admin)->get(route('tickets.show', $ticket))->assertOk()->assertSee('Client removed');
 });
 
-it('excludes an invoice with a deleted customer from the receivables report instead of crashing', function () {
-    $invoice = Invoice::factory()->create(['status' => InvoiceStatus::Sent]);
+it('shows an invoice with a deleted customer on the receivables report as "Client removed", not hidden', function () {
+    // 2026-07-24 incident: an earlier fix excluded these entirely to avoid
+    // the crash below, but that also silently hid real unpaid money from
+    // both this report and the Accounts dashboard tile, and let the two
+    // totals drift out of sync with each other. The correct fix is to show
+    // the row (same "Client removed" fallback invoices/index.blade.php
+    // already uses), not exclude it.
+    $invoice = Invoice::factory()->create(['status' => InvoiceStatus::Sent, 'total' => 500000, 'amount_paid' => 0]);
     Customer::withoutEvents(fn () => $invoice->customer->delete());
 
     $this->actingAs($this->admin)
         ->get(route('reports.receivables'))
         ->assertOk()
-        ->assertDontSee($invoice->invoice_number);
+        ->assertSee('Client removed')
+        ->assertSee('₹5,000.00', false);
+});
+
+it('keeps the Accounts dashboard outstanding tile in sync with the Receivables Report total', function () {
+    // 2026-07-24 incident: these two used separate, subtly different
+    // queries (one excluded invoices from deleted customers, one didn't;
+    // one excluded Draft, one didn't) and silently disagreed in
+    // production. Both must now be built on the same
+    // CollectionsMetrics::outstandingInvoicesQuery().
+    Invoice::factory()->create(['status' => InvoiceStatus::Overdue, 'total' => 300000, 'amount_paid' => 0]);
+    $orphaned = Invoice::factory()->create(['status' => InvoiceStatus::Overdue, 'total' => 500000, 'amount_paid' => 0]);
+    Customer::withoutEvents(fn () => $orphaned->customer->delete());
+
+    $dashboard = app(DashboardMetrics::class)->accountsStats();
+    $receivablesTotal = $this->actingAs($this->admin)->get(route('reports.receivables'))->viewData('total');
+
+    expect($dashboard['outstanding'])->toBe(800000)
+        ->and($receivablesTotal)->toBe(800000);
 });

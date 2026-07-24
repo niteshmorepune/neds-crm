@@ -93,6 +93,13 @@ it('shows the accounts panel to an accounts user', function () {
         ->assertSee('Revenue report');
 });
 
+it('links the overdue invoices count to the filtered invoices list', function () {
+    $accounts = User::factory()->role(UserRole::Accounts)->create();
+
+    $this->actingAs($accounts)->get(route('dashboard'))->assertOk()
+        ->assertSee(route('invoices.index', ['status' => 'overdue']), false);
+});
+
 it('shows the support panel to a support user', function () {
     $support = User::factory()->role(UserRole::Support)->create();
 

@@ -752,6 +752,134 @@ class AiAssistant
     }
 
     /**
+     * Team-wide productivity coaching suggestions, on top of
+     * ReportMetrics::rankedEmployeePerformance()'s per-role scoring — ONE
+     * Claude call for the whole team, grounded ONLY in each person's own
+     * ranked numbers (never invents a cause not evidenced by them, same
+     * discipline as summarizeTeamPerformance). Structured JSON output
+     * matched back to rows by exact user_id — same discipline as
+     * suggestTicketTriage()'s service-name matching: a row Claude didn't
+     * return, or returned with an id that doesn't match, simply gets no
+     * suggestion rather than a guessed one.
+     *
+     * @param  Collection<int, array<string, mixed>>  $rankedRows  Rows from rankedEmployeePerformance() — rows with a null score (unranked, or too few peers) are skipped, since there's nothing to compare against yet.
+     * @return list<array{user_id: int, suggestion: string}>|null
+     */
+    public function suggestTeamProductivityGaps(Collection $rankedRows): ?array
+    {
+        if (! Ai::enabled()) {
+            return null;
+        }
+
+        $rankable = $rankedRows->whereNotNull('score')->values();
+
+        if ($rankable->isEmpty()) {
+            return [];
+        }
+
+        $lines = $rankable->map(function (array $row) {
+            $weakest = $row['weakest_metric']
+                ? str_replace('_', ' ', $row['weakest_metric']).' ('.$row['weakest_percentile'].'th percentile)'
+                : 'no single standout weak area';
+
+            return sprintf(
+                '- id %d: %s (%s), rank %d of %d, score %d/100, weakest area: %s',
+                $row['user_id'], $row['user'], $row['role'], $row['rank'], $row['role_group_size'], $row['score'], $weakest,
+            );
+        })->implode("\n");
+
+        $system = <<<'PROMPT'
+        You coach staff at a digital-solutions agency in India on how to get
+        more out of their role, based ONLY on the performance numbers given
+        for each person. For EACH person listed, write ONE short, specific,
+        encouraging sentence (under 30 words) naming their weakest area and a
+        concrete action that would help — never a generic platitude, never a
+        criticism or judgement, and never a cause or reason not evidenced by
+        the numbers given. If someone has no standout weak area, encourage
+        them to keep up their consistency instead of inventing a gap.
+
+        Respond with ONLY a JSON array, no markdown, no prose:
+        [{"id": <int>, "suggestion": "<sentence>"}]
+        PROMPT;
+
+        $result = $this->client->message(
+            feature: 'team_productivity_gaps',
+            prompt: $lines,
+            system: $system,
+            maxTokens: 900,
+        );
+
+        if ($result === null || ! preg_match('/\[.*\]/s', $result->text, $match)) {
+            return null;
+        }
+
+        $decoded = json_decode($match[0], true);
+
+        if (! is_array($decoded)) {
+            return null;
+        }
+
+        $this->lastUsageId = $result->usageId;
+        $validIds = $rankable->pluck('user_id')->all();
+
+        return collect($decoded)
+            ->filter(fn ($item) => is_array($item) && in_array($item['id'] ?? null, $validIds, true) && filled($item['suggestion'] ?? null))
+            ->map(fn ($item) => [
+                'user_id' => (int) $item['id'],
+                'suggestion' => mb_substr(trim((string) $item['suggestion']), 0, 300),
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Single-employee version of the above, for the "Get tips" button on a
+     * staff member's own productivity dashboard widget — same grounding
+     * discipline, one person, free text instead of a batch JSON array.
+     *
+     * @param  array<string, mixed>  $row  One row from rankedEmployeePerformance(), with a non-null score.
+     */
+    public function suggestProductivityImprovement(array $row): ?string
+    {
+        if (! Ai::enabled()) {
+            return null;
+        }
+
+        $weakest = $row['weakest_metric']
+            ? str_replace('_', ' ', $row['weakest_metric']).' ('.$row['weakest_percentile'].'th percentile among your role peers this period)'
+            : 'no single standout weak area — your numbers are fairly even across the board';
+
+        $lines = [
+            'Role: '.$row['role'],
+            'Rank this period: '.$row['rank'].' of '.$row['role_group_size'],
+            'Overall score: '.$row['score'].'/100',
+            'Weakest area: '.$weakest,
+            'Tasks completed: '.$row['tasks_completed'].', on-time %: '.($row['on_time_pct'] ?? 'n/a'),
+            'Calls made: '.$row['calls_made'].', leads converted: '.$row['leads_converted'],
+            'Attendance %: '.($row['attendance_pct'] ?? 'n/a').', daily reports submitted: '.$row['daily_reports'],
+        ];
+
+        $system = <<<'PROMPT'
+        You coach one staff member at a digital-solutions agency in India on
+        how to get more out of their role this period, based ONLY on the
+        numbers given. Write 2-3 short, encouraging sentences (about 40-60
+        words total) naming their weakest area and one concrete, doable
+        action that would help — never a generic platitude, never a
+        criticism, and never a cause or reason not evidenced by the numbers
+        given. Address them directly ("you"). If there's no standout weak
+        area, encourage them to keep up their consistency instead of
+        inventing a gap. Output only the message.
+        PROMPT;
+
+        return $this->trimmed($this->client->message(
+            feature: 'productivity_improvement_suggestion',
+            prompt: implode("\n", $lines),
+            system: $system,
+            maxTokens: 300,
+        ));
+    }
+
+    /**
      * A suggested next action for an account manager, based on the risk/
      * opportunity flags ClientRadarService computed for one client. Called
      * on-demand (button click), never in a batch job, to keep AI cost tied
