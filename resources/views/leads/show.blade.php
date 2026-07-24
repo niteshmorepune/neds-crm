@@ -95,5 +95,10 @@
             <h2 class="mb-4 text-base font-semibold text-gray-900">Notes</h2>
             <livewire:record-notes :record="$lead" :can-manage="$canManage" />
         </div>
+
+        <div class="rounded-lg bg-white p-6 shadow-sm">
+            <h2 class="mb-4 text-base font-semibold text-gray-900">Meet notes</h2>
+            <livewire:meeting-import :record="$lead" :can-manage="$canManage" />
+        </div>
     </div>
 </x-app-layout>
