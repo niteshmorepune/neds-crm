@@ -405,3 +405,32 @@ Record every "we chose X because Y" here — this is the project's memory.
   empty transcript despite Meet having genuinely finished processing
   one, check this matching logic first, live, against a real event's
   raw `attachments` payload before assuming a deeper bug.
+- **2026-07-24 — Google Meet Notes Phase 2: Claude summary is persisted on
+  the `meetings` row via a background job, not an ephemeral per-viewer
+  button like Ticket/Customer summaries.** Append-only migration adds
+  `ai_summary_status` / `ai_summary` / `ai_summarized_at` to `meetings`
+  (mirrors `call_logs`' `voice_transcript_*` shape exactly, per Phase 1's
+  own note that this would be a Phase 2 append-only migration). Chose the
+  persisted-job pattern (`App\Jobs\SummarizeMeeting`, same shape as
+  `TranscribeCallLogVoiceNote`) over the ephemeral on-demand pattern
+  (`TicketReplies::summarize()`) because a meeting note is shared team
+  context on a client/lead timeline — everyone who opens that page should
+  see the same summary without re-clicking, not just whoever happened to
+  click first. New `App\Enums\MeetingSummaryStatus` (Pending/Processing/
+  Completed/Failed) and a small polling component
+  (`App\Livewire\MeetingSummary`, mirrors `CallVoiceTranscript`) embedded
+  per-meeting-row inside `MeetingImport`'s list, so it surfaces on both
+  Customer and Lead pages with no extra wiring. The summary is
+  auto-queued right after a successful import when a transcript came back
+  and `GoogleMeet::summaryEnabled()` (new: `enabled() && Ai::enabled()`,
+  same combined-gate idiom as `Ai::voiceTranscriptionEnabled()`) is true;
+  a manual "Summarize with AI" / "Retry" trigger on the same component
+  covers meetings imported without a transcript yet, or a failed attempt.
+  Deliberately skipped: no thumbs-up/down feedback widget (unlike
+  Ticket/Customer summaries) — matches `ScoreLead`'s precedent of no
+  feedback UI for a persisted, non-ephemeral AI result, and would have
+  needed a new `ai_summary_usage_id` column for no strong reason yet. The
+  call still goes through `AnthropicClient::message()` and is logged to
+  `ai_usages` under feature `summarize_meeting` (added to
+  `AiUsageMetrics::label()`), so it appears in the AI Usage Report
+  automatically like every other AI feature.

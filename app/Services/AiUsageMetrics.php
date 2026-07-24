@@ -213,6 +213,7 @@ class AiUsageMetrics
             'weekly_owner_digest' => 'Weekly Owner Digest',
             'project_daily_update' => 'Project Daily Update Draft',
             'summarize_ticket' => 'Ticket Summary',
+            'summarize_meeting' => 'Meeting Summary',
             'summarize_customer' => 'Client Summary',
             'team_performance_summary' => 'Team Performance Summary',
             'client_radar_suggestion' => 'Client Radar Suggestion',
