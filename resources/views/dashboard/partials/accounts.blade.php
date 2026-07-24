@@ -6,6 +6,9 @@
     <div class="rounded-lg bg-white p-5 shadow-sm">
         <p class="text-sm text-gray-500">Collected this month</p>
         <p class="mt-2 text-3xl font-semibold text-green-600">{{ \App\Support\Money::format($stats['collected_this_month']) }}</p>
+        <div class="mt-3">
+            <a href="{{ route('reports.collected') }}" class="text-sm text-indigo-600 hover:underline">View payments collected →</a>
+        </div>
     </div>
     <div class="rounded-lg bg-white p-5 shadow-sm">
         <p class="text-sm text-gray-500">Overdue invoices</p>

@@ -498,3 +498,25 @@ Record every "we chose X because Y" here — this is the project's memory.
   `invoices.index?status=overdue` (a second, smaller gap reported in the
   same conversation) — the filter already existed, it just wasn't
   exposed from the dashboard tile.
+- **2026-07-24 — Added a "Collected This Month" drill-down (`account/
+  collected`, `InvoiceController::collectedThisMonth()`), the same gap as
+  the Overdue invoices count above but for the dashboard's "Collected
+  this month" figure.** No existing page listed individual `Payment` rows
+  (payments are only ever visible inline on their own invoice's page) —
+  built a small new report (date, client, invoice #, mode, recorded by,
+  amount) rather than repurpose an unrelated page, gated by the same
+  `menu.access:account` group and `InvoicePolicy::viewAny` the Receivables
+  Report already uses. Same "Client removed" fallback for a payment whose
+  invoice's customer has been soft-deleted, consistent with the
+  Receivables Report fix above.
+- **2026-07-24 — Real incident, not a bug: 11 real overdue invoices
+  (₹1,56,424, from 6 already-soft-deleted clients) were manually deleted
+  by an Accounts team member the same day the Dashboard/Receivables
+  mismatch above was reported.** Confirmed via the `activities` log
+  (`event=deleted`, real `user_id`, not a system/console action) rather
+  than assumed — this was an intentional write-off the owner had already
+  told that team member to do, unrelated to the code fix. Soft-deleted,
+  not gone, if it ever needs reversing. Documented here only so a future
+  session doesn't mistake the resulting clean total for evidence the
+  code fix "solved" this specific batch — it didn't; the invoices were
+  deleted before the fix could apply to them.

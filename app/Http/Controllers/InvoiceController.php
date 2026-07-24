@@ -15,6 +15,7 @@ use App\Mail\PaymentReceived;
 use App\Models\Customer;
 use App\Models\Deal;
 use App\Models\Invoice;
+use App\Models\Payment;
 use App\Models\Project;
 use App\Models\User;
 use App\Notifications\PaymentRecordedNotification;
@@ -424,6 +425,28 @@ class InvoiceController extends Controller
         return view('reports.receivables', [
             'rows' => $rows,
             'total' => $rows->sum('outstanding'),
+        ]);
+    }
+
+    /**
+     * Individual payments behind the "Collected this month" dashboard tile
+     * (`DashboardMetrics::accountsStats()`'s `collected_this_month`, which
+     * sums the same date range) — that figure had no drill-down, same gap
+     * "Overdue invoices" had before this fix.
+     */
+    public function collectedThisMonth(): View
+    {
+        $this->authorize('viewAny', Invoice::class);
+
+        $payments = Payment::query()
+            ->whereBetween('paid_on', [now()->startOfMonth()->toDateString(), now()->endOfMonth()->toDateString()])
+            ->with(['invoice.customer', 'recordedBy'])
+            ->latest('paid_on')
+            ->get();
+
+        return view('reports.collected', [
+            'payments' => $payments,
+            'total' => $payments->sum('amount'),
         ]);
     }
 }

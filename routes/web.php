@@ -209,6 +209,7 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
      */
     Route::middleware('menu.access:account')->group(function () {
         Route::get('account/receivables', [InvoiceController::class, 'receivables'])->name('reports.receivables');
+        Route::get('account/collected', [InvoiceController::class, 'collectedThisMonth'])->name('reports.collected');
     });
 
     /*

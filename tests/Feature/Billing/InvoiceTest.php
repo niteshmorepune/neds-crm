@@ -3,9 +3,12 @@
 use App\Enums\InvoiceStatus;
 use App\Enums\UserRole;
 use App\Livewire\InvoiceBuilder;
+use App\Livewire\RecordNotes;
 use App\Mail\InvoiceIssued;
+use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\MenuItem;
+use App\Models\Payment;
 use App\Models\QuotationMilestone;
 use App\Models\User;
 use App\Services\MenuResolver;
@@ -117,6 +120,45 @@ it('renders invoice index, show and the receivables report', function () {
     $this->actingAs($this->accounts)->get(route('reports.receivables'))->assertOk()->assertSee('Outstanding');
 });
 
+it('lists this month\'s payments behind the Collected this month dashboard tile', function () {
+    $invoice = invoiceWithLine();
+    $this->actingAs($this->accounts)->post(route('invoices.payments.store', $invoice), [
+        'amount' => '500', 'paid_on' => now()->toDateString(), 'mode' => 'upi',
+    ]);
+
+    // A payment from last month must not count towards this month's total.
+    $lastMonthInvoice = invoiceWithLine();
+    $lastMonthInvoice->payments()->create([
+        'paid_on' => now()->subMonth(), 'mode' => 'cash', 'amount' => 999900, 'recorded_by' => $this->accounts->id,
+    ]);
+
+    $response = $this->actingAs($this->accounts)->get(route('reports.collected'));
+
+    $response->assertOk()
+        ->assertSee('Collected This Month')
+        ->assertSee($invoice->invoice_number)
+        ->assertSee('₹500.00', false)
+        ->assertDontSee($lastMonthInvoice->invoice_number);
+
+    expect($response->viewData('total'))->toBe(50000);
+});
+
+it('shows "Client removed" on the collected-this-month report when the invoice\'s customer is soft-deleted', function () {
+    $invoice = invoiceWithLine();
+    $invoice->payments()->create(['paid_on' => now(), 'mode' => 'cash', 'amount' => 100000, 'recorded_by' => $this->accounts->id]);
+    Customer::withoutEvents(fn () => $invoice->customer->delete());
+
+    $this->actingAs($this->accounts)->get(route('reports.collected'))
+        ->assertOk()
+        ->assertSee('Client removed');
+});
+
+it('forbids a role without invoice access from viewing collected-this-month', function () {
+    $support = User::factory()->role(UserRole::Support)->create();
+
+    $this->actingAs($support)->get(route('reports.collected'))->assertForbidden();
+});
+
 it('shows the due date on an unpaid invoice but hides it once the invoice is Paid', function () {
     $invoice = invoiceWithLine(['due_date' => now()->addDays(10)->toDateString()]);
     $dueDateFormatted = $invoice->due_date->format('d M Y');
@@ -188,8 +230,8 @@ it('deletes an invoice that already has a payment recorded, soft-deleting the pa
 
     expect(Invoice::find($invoice->id))->toBeNull()
         ->and(Invoice::withTrashed()->find($invoice->id))->not->toBeNull()
-        ->and(\App\Models\Payment::find($payment->id))->toBeNull()
-        ->and(\App\Models\Payment::withTrashed()->find($payment->id))->not->toBeNull();
+        ->and(Payment::find($payment->id))->toBeNull()
+        ->and(Payment::withTrashed()->find($payment->id))->not->toBeNull();
 });
 
 it('lets an accounts-role user delete an unpaid invoice', function () {
@@ -313,7 +355,7 @@ it('renders a follow-up note against an invoice via the generic RecordNotes comp
     $invoice = invoiceWithLine();
 
     Livewire::actingAs($this->accounts)
-        ->test(\App\Livewire\RecordNotes::class, ['record' => $invoice, 'canManage' => true])
+        ->test(RecordNotes::class, ['record' => $invoice, 'canManage' => true])
         ->set('body', 'Client called, promised to pay by Friday.')
         ->call('addNote')
         ->assertHasNoErrors();

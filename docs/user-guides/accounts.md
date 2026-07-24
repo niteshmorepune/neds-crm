@@ -9,7 +9,9 @@ You handle **invoices**, **payments**, **recurring billing**, and the
   whose client record has since been removed still counts here and shows as
   "Client removed" on the Receivables report, rather than silently
   disappearing from either number.
-- **Collected this month** — payments received.
+- **Collected this month** — payments received. Click **View payments
+  collected** below the number for the individual payments behind it (date,
+  client, invoice, mode, who recorded it).
 - **Overdue invoices** — count past their due date. Click **View overdue
   invoices** below the number to see exactly which ones.
 - **Overdue tasks alert** — if you have any tasks past their due date, a red
