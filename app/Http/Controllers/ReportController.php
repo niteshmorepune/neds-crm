@@ -35,7 +35,7 @@ class ReportController extends Controller
         [$from, $to] = $this->monthRange($request);
 
         return view('reports.employee-performance', [
-            'rows' => $this->metrics->employeePerformance($from, $to),
+            'rows' => $this->metrics->rankedEmployeePerformance($from, $to),
             'from' => $from,
             'to' => $to,
         ]);
@@ -45,15 +45,17 @@ class ReportController extends Controller
     {
         $this->authorizePerformance($request);
         [$from, $to] = $this->monthRange($request);
-        $rows = $this->metrics->employeePerformance($from, $to);
+        $rows = $this->metrics->rankedEmployeePerformance($from, $to);
 
         return $this->csv("employee-performance-{$from->format('Y-m-d')}_to_{$to->format('Y-m-d')}.csv", function ($out) use ($rows) {
-            fputcsv($out, ['Employee', 'Role', 'Tasks completed', 'On-time %', 'Calls made', 'Leads converted', 'Attendance %', 'Daily reports']);
+            fputcsv($out, ['Employee', 'Role', 'Tasks completed', 'On-time %', 'Calls made', 'Leads converted', 'Attendance %', 'Daily reports', 'Score', 'Rank']);
             foreach ($rows as $r) {
                 fputcsv($out, [
                     $r['user'], $r['role'], $r['tasks_completed'],
                     $r['on_time_pct'] ?? '—', $r['calls_made'], $r['leads_converted'],
                     $r['attendance_pct'] ?? '—', $r['daily_reports'],
+                    $r['score'] ?? '—',
+                    $r['rank'] !== null ? "{$r['rank']} of {$r['role_group_size']}" : ($r['ranking_note'] ?? '—'),
                 ]);
             }
         });

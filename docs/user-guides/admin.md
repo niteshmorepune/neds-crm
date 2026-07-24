@@ -516,6 +516,19 @@ transitions to measure, so it may not show for a while on a newer pipeline.
 **Visible to Admin/Manager only** — it is never shown to the employee it's
 about, so it's a starting point for a conversation, not a rating you share.
 
+**Staff productivity ranking (Score/Rank/Focus area + ✨ Suggest Improvements
+for the Team)** — the same **Employee Performance Report** ranks each person
+against others in their own role only (Sales vs Sales, Support vs Support,
+etc. — never across roles, since the numbers mean different things per job).
+A role with fewer than 2 people shows "Not enough peers yet to compare"
+instead of a rank; Admin/Manager themselves are never ranked. Click **✨
+Suggest Improvements for the Team** to fill the Focus area column with a
+short, encouraging, specific suggestion per person, grounded only in their
+own numbers — same visibility rule as the AI Summary above (Admin/Manager
+only). Each employee separately sees only their own rank and can request
+their own tip, privately, from their own Dashboard — see the relevant
+role guide (e.g. `sales.md`, `support.md`) for what that looks like.
+
 **Client Radar suggestions (✨ Suggest action)** — on the **Client Radar** page
 (Section 2b), a button per flagged client that has Claude suggest one concrete
 next action based on that client's specific signals. Generated on demand per

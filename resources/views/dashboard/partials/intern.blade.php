@@ -18,3 +18,5 @@
         </div>
     </div>
 </div>
+
+<livewire:my-productivity />

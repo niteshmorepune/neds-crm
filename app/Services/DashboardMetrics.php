@@ -27,6 +27,8 @@ use App\Models\User;
  */
 class DashboardMetrics
 {
+    public function __construct(private readonly CollectionsMetrics $collectionsMetrics) {}
+
     /** Row 1 stat cards for the admin/manager dashboard. */
     public function adminStats(): array
     {
@@ -114,13 +116,21 @@ class DashboardMetrics
         ];
     }
 
-    /** Accounts dashboard: receivables, collections, overdue. */
+    /**
+     * Accounts dashboard: receivables, collections, overdue.
+     *
+     * 'outstanding' deliberately reuses CollectionsMetrics::
+     * outstandingInvoicesQuery() — the exact same definition
+     * InvoiceController::receivables() uses — rather than its own inline
+     * query, so this tile and the Receivables Report can never disagree
+     * on "how much are we owed" again (see the 2026-07-24 incident in
+     * CLAUDE.md's decision log).
+     */
     public function accountsStats(): array
     {
-        $outstanding = (int) Invoice::query()
-            ->whereNotIn('status', [InvoiceStatus::Cancelled->value, InvoiceStatus::Draft->value])
-            ->selectRaw('COALESCE(SUM(total - amount_paid),0) as due')
-            ->value('due');
+        $outstanding = (int) $this->collectionsMetrics->outstandingInvoicesQuery()
+            ->get()
+            ->sum(fn (Invoice $i) => $i->balance());
 
         $collected = (int) Payment::query()
             ->whereBetween('paid_on', [now()->startOfMonth()->toDateString(), now()->endOfMonth()->toDateString()])

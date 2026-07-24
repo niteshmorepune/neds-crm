@@ -10,6 +10,13 @@ When you log in you'll see:
 - **Open pipeline by stage** — your live deals and their value.
 - **Overdue tasks alert** — if you have tasks past their due date, a red banner
   appears with a direct link to your task list.
+- **Your Productivity This Month** — your rank among other Sales staff this
+  month (e.g. "#2 of 5"), an overall score, and your single biggest
+  opportunity area (e.g. "leads converted"). Private to you — nobody else
+  sees your rank, and you don't see anyone else's. If AI is enabled, click
+  **Get tips to improve** for a short, specific suggestion based on your own
+  numbers. Shows "Not enough peers yet to compare" if there aren't at least
+  2 Sales staff yet.
 
 ## 1. Leads (Lead Generation)
 1. **Lead Generation → Add Lead**.

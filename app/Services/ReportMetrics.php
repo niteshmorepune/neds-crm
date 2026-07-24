@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\AttendanceStatus;
 use App\Enums\DealStage;
 use App\Enums\InvoiceStatus;
+use App\Enums\UserRole;
 use App\Models\Attendance;
 use App\Models\CallLog;
 use App\Models\DailyReport;
@@ -22,6 +23,33 @@ use Illuminate\Support\Collection;
  */
 class ReportMetrics
 {
+    /**
+     * Per-role weights (must sum to a positive total per role) used by
+     * rankedEmployeePerformance() to combine employeePerformance()'s metrics
+     * into one composite score. A weight of 0 excludes that metric from both
+     * the score and weakest_metric candidacy for that role (e.g. Support/
+     * Accounts/Intern don't chase lead conversions). First-cut defaults —
+     * plain PHP, adjustable without a schema change.
+     */
+    private const ROLE_WEIGHTS = [
+        'sales' => [
+            'tasks_completed' => 0.15, 'on_time_pct' => 0.15, 'calls_made' => 0.20,
+            'leads_converted' => 0.30, 'attendance_pct' => 0.10, 'daily_reports' => 0.10,
+        ],
+        'support' => [
+            'tasks_completed' => 0.30, 'on_time_pct' => 0.25, 'calls_made' => 0.10,
+            'leads_converted' => 0.0, 'attendance_pct' => 0.15, 'daily_reports' => 0.20,
+        ],
+        'accounts' => [
+            'tasks_completed' => 0.35, 'on_time_pct' => 0.25, 'calls_made' => 0.0,
+            'leads_converted' => 0.0, 'attendance_pct' => 0.20, 'daily_reports' => 0.20,
+        ],
+        'intern' => [
+            'tasks_completed' => 0.40, 'on_time_pct' => 0.30, 'calls_made' => 0.0,
+            'leads_converted' => 0.0, 'attendance_pct' => 0.20, 'daily_reports' => 0.10,
+        ],
+    ];
+
     /**
      * One row per internal user for the period.
      *
@@ -69,6 +97,7 @@ class ReportMetrics
                 'user_id' => $user->id,
                 'user' => $user->name,
                 'role' => $user->role->label(),
+                'role_value' => $user->role->value,
                 'tasks_completed' => $completedCount,
                 'on_time_pct' => $tasksDue->count() > 0 ? (int) round($onTimeCount / $tasksDue->count() * 100) : null,
                 'calls_made' => CallLog::query()->where('user_id', $user->id)->whereBetween('called_at', [$from, $to])->count(),
@@ -80,6 +109,114 @@ class ReportMetrics
                 'daily_reports' => DailyReport::query()->where('user_id', $user->id)->whereNotNull('submitted_at')->whereBetween('date', [$fromDate, $toDate])->count(),
             ];
         });
+    }
+
+    /**
+     * employeePerformance() plus a per-role productivity ranking on top —
+     * no new data collected, just percentile ranking + a weighted composite
+     * score against role peers. Admin/Manager are excluded from ranking
+     * entirely (evaluators, not participants, same distinction the
+     * Incentive module makes for eligibility). Within a role group of 2+,
+     * each metric gets a 0-100 percentile rank (null values excluded from
+     * that metric's ranking rather than counted for or against the
+     * person), combined via ROLE_WEIGHTS into one score, sorted to assign a
+     * 1-based rank, and the person's single lowest-percentile weighted
+     * metric is flagged as weakest_metric (the concrete gap to close).
+     * Groups under 2 people get a ranking_note instead of a fabricated
+     * "1 of 1" rank.
+     *
+     * @return Collection<int, array<string, mixed>>
+     */
+    public function rankedEmployeePerformance(Carbon $from, Carbon $to): Collection
+    {
+        $rows = $this->employeePerformance($from, $to);
+        $rankableRoles = [UserRole::Sales->value, UserRole::Support->value, UserRole::Accounts->value, UserRole::Intern->value];
+
+        $scored = $rows->map(function (array $row) use ($rows, $rankableRoles) {
+            $unranked = [
+                'score' => null, 'rank' => null, 'role_group_size' => null,
+                'weakest_metric' => null, 'weakest_percentile' => null, 'ranking_note' => null,
+            ];
+
+            if (! in_array($row['role_value'], $rankableRoles, true)) {
+                return array_merge($row, $unranked);
+            }
+
+            $peers = $rows->where('role_value', $row['role_value'])->values();
+            $groupSize = $peers->count();
+
+            if ($groupSize < 2) {
+                return array_merge($row, $unranked, [
+                    'role_group_size' => $groupSize,
+                    'ranking_note' => 'Not enough peers in this role yet to compare.',
+                ]);
+            }
+
+            $weights = self::ROLE_WEIGHTS[$row['role_value']];
+            $percentiles = [];
+            foreach ($weights as $metric => $weight) {
+                $percentiles[$metric] = $weight > 0 ? $this->percentileRank($peers, $row['user_id'], $metric) : null;
+            }
+
+            $weightedSum = 0.0;
+            $weightTotal = 0.0;
+            $weakestMetric = null;
+            $weakestPercentile = null;
+            foreach ($weights as $metric => $weight) {
+                if ($weight <= 0 || $percentiles[$metric] === null) {
+                    continue;
+                }
+                $weightedSum += $percentiles[$metric] * $weight;
+                $weightTotal += $weight;
+                if ($weakestPercentile === null || $percentiles[$metric] < $weakestPercentile) {
+                    $weakestPercentile = $percentiles[$metric];
+                    $weakestMetric = $metric;
+                }
+            }
+
+            return array_merge($row, [
+                'score' => $weightTotal > 0 ? (int) round($weightedSum / $weightTotal) : null,
+                'rank' => null, // assigned below, once every row in the group has a score
+                'role_group_size' => $groupSize,
+                'weakest_metric' => $weakestMetric,
+                'weakest_percentile' => $weakestPercentile,
+                'ranking_note' => null,
+            ]);
+        });
+
+        $ranks = [];
+        foreach ($scored->whereNotNull('score')->groupBy('role_value') as $group) {
+            foreach ($group->sortByDesc('score')->values() as $index => $row) {
+                $ranks[$row['user_id']] = $index + 1;
+            }
+        }
+
+        return $scored->map(function (array $row) use ($ranks) {
+            $row['rank'] = $ranks[$row['user_id']] ?? null;
+
+            return $row;
+        });
+    }
+
+    /**
+     * Percentile rank (0-100) of $userId's value for $metric among $peers
+     * (average-rank method — ties share the midpoint of their span rather
+     * than an arbitrary order). Returns null if the person's own value is
+     * null, or fewer than 2 peers have a non-null value for this metric.
+     */
+    private function percentileRank(Collection $peers, int $userId, string $metric): ?int
+    {
+        $own = $peers->firstWhere('user_id', $userId)[$metric] ?? null;
+        $values = $peers->pluck($metric)->filter(fn ($v) => $v !== null)->values();
+
+        if ($own === null || $values->count() < 2) {
+            return null;
+        }
+
+        $countBelow = $values->filter(fn ($v) => $v < $own)->count();
+        $countEqual = $values->filter(fn ($v) => $v == $own)->count();
+
+        return (int) round(($countBelow + ($countEqual - 1) / 2) / ($values->count() - 1) * 100);
     }
 
     /**

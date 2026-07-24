@@ -30,3 +30,5 @@
 </div>
 
 <livewire:overdue-follow-ups />
+
+<livewire:my-productivity />

@@ -10,6 +10,7 @@ use App\Models\Invoice;
 use App\Models\Project;
 use App\Models\Quotation;
 use App\Models\QuotationMilestone;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
@@ -216,5 +217,27 @@ class CollectionsMetrics
             ->whereNull('invoice_id')
             ->orderBy('sort_order')
             ->first();
+    }
+
+    /**
+     * All invoices considered "outstanding" — Draft/Sent/PartiallyPaid/
+     * Overdue. Deliberately does NOT exclude invoices whose customer has
+     * been soft-deleted (an earlier version of the Receivables Report did,
+     * to avoid a null-pointer crash — but that also silently hid real
+     * unpaid money from both the report and the Accounts dashboard tile,
+     * and let the two drift out of sync with each other). Callers should
+     * render a soft-deleted customer the same "Client removed" way
+     * invoices/index.blade.php already does, not exclude the row.
+     *
+     * Single source of truth for "how much are we owed" — both
+     * InvoiceController::receivables() and DashboardMetrics::accountsStats()
+     * call this, so they can never disagree again.
+     */
+    public function outstandingInvoicesQuery(): Builder
+    {
+        return Invoice::query()->whereIn('status', [
+            InvoiceStatus::Draft->value, InvoiceStatus::Sent->value,
+            InvoiceStatus::PartiallyPaid->value, InvoiceStatus::Overdue->value,
+        ]);
     }
 }

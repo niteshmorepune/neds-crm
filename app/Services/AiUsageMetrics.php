@@ -216,6 +216,8 @@ class AiUsageMetrics
             'summarize_meeting' => 'Meeting Summary',
             'summarize_customer' => 'Client Summary',
             'team_performance_summary' => 'Team Performance Summary',
+            'team_productivity_gaps' => 'Team Productivity Suggestions',
+            'productivity_improvement_suggestion' => 'Productivity Improvement Suggestion',
             'client_radar_suggestion' => 'Client Radar Suggestion',
             'monthly_wins_note' => 'Monthly Wins Note',
             'portal_assistant_answer' => 'Portal Assistant Answer',

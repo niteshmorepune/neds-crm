@@ -10,6 +10,9 @@
     <div class="rounded-lg bg-white p-5 shadow-sm">
         <p class="text-sm text-gray-500">Overdue invoices</p>
         <p class="mt-2 text-3xl font-semibold text-red-600">{{ number_format($stats['overdue_count']) }}</p>
+        <div class="mt-3">
+            <a href="{{ route('invoices.index', ['status' => \App\Enums\InvoiceStatus::Overdue->value]) }}" class="text-sm text-indigo-600 hover:underline">View overdue invoices →</a>
+        </div>
     </div>
 </div>
 
@@ -22,3 +25,5 @@
         <a href="{{ route('reports.cash-forecast') }}" class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cash forecast</a>
     </div>
 </div>
+
+<livewire:my-productivity />

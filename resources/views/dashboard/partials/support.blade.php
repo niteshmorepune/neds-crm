@@ -23,3 +23,5 @@
         <a href="{{ route('tickets.index') }}" class="text-sm text-indigo-600 hover:underline">Go to tickets →</a>
     </div>
 </div>
+
+<livewire:my-productivity />
