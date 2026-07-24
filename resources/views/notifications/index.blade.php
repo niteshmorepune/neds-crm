@@ -44,9 +44,13 @@
                                 'lead_nurture_drafted'        => '✨',
                                 default                       => '🔔',
                             })
+                            @php($invoiceDeleted = ! empty($data['invoice_id']) && $deletedInvoiceIds->contains($data['invoice_id']))
                             <p class="text-sm font-medium text-gray-900">
                                 {{ $typeIcon }}
-                                @if (! empty($data['url']))
+                                @if ($invoiceDeleted)
+                                    <span class="text-gray-500">{{ $data['message'] }}</span>
+                                    <span class="ml-1 text-xs italic text-gray-400">(invoice deleted)</span>
+                                @elseif (! empty($data['url']))
                                     <a href="{{ $data['url'] }}" class="text-indigo-600 hover:underline">{{ $data['message'] }}</a>
                                 @else
                                     {{ $data['message'] }}

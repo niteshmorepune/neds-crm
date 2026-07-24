@@ -561,3 +561,25 @@ Record every "we chose X because Y" here — this is the project's memory.
   philosophy as other lightweight toggles in this app). `Payment` gained
   the `LogsActivity` trait (had none before) so a correction leaves an
   audit trail.
+- **2026-07-24 — Notifications page no longer links to a deleted invoice.**
+  Owner reported two invoice links from the Notifications page 404ing.
+  Root-caused via the production activity log (not assumed): both
+  invoices were real, legitimately deleted after their notification had
+  already fired (one an internal SMDost-webhook draft invoice cleaned up
+  an hour later, one a real recurring invoice deleted by Accounts the
+  same day its "due soon" reminder went out) — so the notification itself
+  was accurate at the time, but the link it stored became dead the moment
+  the invoice was removed. Every invoice-linked notification type
+  (`new_invoice`, `payment_recorded`, `payment_promise_broken`,
+  `recurring_invoice_due_soon`, `smdost_brief_approved`) already stores an
+  explicit `invoice_id` in its `data` JSON, so `NotificationController::
+  index()` now batch-checks which of the current page's referenced
+  invoices are soft-deleted (`Invoice::onlyTrashed()->whereIn('id', ...)`,
+  one query for the whole page) and the view renders those as plain text
+  with a "(invoice deleted)" note instead of a clickable dead link — same
+  "relabel a real, removed record instead of a broken link" treatment as
+  the Receivables Report's "Client removed" fix. Scoped to Invoice only
+  (not `ContractRenewalDueSoon`'s `recurring_invoice_id`, a different
+  model with no confirmed instance of this bug) — the bell-icon header
+  badge is just an unread count linking to this same page, no separate
+  preview list to fix.
