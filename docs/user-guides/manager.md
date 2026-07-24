@@ -218,6 +218,15 @@ many projects as needed.
 toggle that filters the list to only projects where you are the Lead or a team member.
 Useful for managers who also run their own service accounts.
 
+**Meet notes (optional):** on any client or lead's **Calls** tab, whoever
+organized and recorded the Google Meet call can click **+ Import Meet Notes**
+(after connecting their own Google account once from **Profile → Google
+Account**) to pull in the recording link, transcript link, and full
+transcript Google Meet already generated — shown the same way a logged call
+is. If AI is also enabled, an imported transcript gets a short **AI
+summary** (Key points / Decisions / Action items), visible to anyone who
+opens that client or lead's page, including you.
+
 ## Daily reports & attendance
 - **Daily Reports → Team** shows what each person submitted for the selected
   date. Each name also shows a **"X/Y this week"** badge — how many of the

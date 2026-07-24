@@ -149,6 +149,14 @@ language is fastest and the CRM transcribes and translates it to English
 automatically, shown as a separate block under your typed notes on the
 **Calling** page within about a minute.
 
+**Meet notes (optional):** if you personally organized and recorded a Google
+Meet call with a client, connect your Google account once from **Profile →
+Google Account**, then click **+ Import Meet Notes** on that client's Calls
+tab to pull in the recording link, transcript link, and full transcript
+text — read-only, nothing in your Calendar or Drive changes. If AI is also
+enabled, it gets a short **AI summary** (Key points / Decisions / Action
+items) too, either automatically or via a **Summarize with AI** button.
+
 ## 5. Notifications
 The bell (🔔) in the top bar is how the CRM reaches you **without email**.
 It fires when:
