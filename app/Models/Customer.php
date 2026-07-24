@@ -86,6 +86,7 @@ class Customer extends Model
             $customer->contacts()->delete();
             $customer->notes()->delete();
             $customer->callLogs()->delete();
+            $customer->meetings()->delete();
         });
     }
 
@@ -117,6 +118,11 @@ class Customer extends Model
     public function callLogs(): MorphMany
     {
         return $this->morphMany(CallLog::class, 'callable')->latest('called_at');
+    }
+
+    public function meetings(): MorphMany
+    {
+        return $this->morphMany(Meeting::class, 'meetable')->latest('occurred_at');
     }
 
     public function deals(): HasMany

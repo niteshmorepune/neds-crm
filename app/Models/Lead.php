@@ -106,6 +106,11 @@ class Lead extends Model
         return $this->morphMany(CallLog::class, 'callable')->latest('called_at');
     }
 
+    public function meetings(): MorphMany
+    {
+        return $this->morphMany(Meeting::class, 'meetable')->latest('occurred_at');
+    }
+
     /**
      * All roles see all leads. Access to the leads page is controlled by
      * the menu.access:lead-generation middleware; visibility within is unrestricted.

@@ -259,6 +259,17 @@ and invoices for them default to no GST charged. This is different from
 Overseas: the client is still in India, NEDS is just not charging GST on
 their bills. Can still be overridden per document if needed.
 
+**Meet notes (optional):** if enabled, connect your own Google account once
+from **Profile → Google Account**, then open a client's **Calls** tab and
+click **+ Import Meet Notes** to pull in your recent Google Meet calls with
+that client — the recording link, transcript link, and full transcript text
+Google Meet already generates are saved right there, the same way a logged
+call shows up. Read-only: nothing in your Calendar or Drive is ever changed.
+Only meetings you personally organized and recorded will have anything to
+import (Google needs Recording/Transcripts turned on and a few minutes after
+the call ends to finish processing). This currently works the same way for
+Leads too.
+
 **Monthly wins note (AI, optional):** on the 1st of each month, if AI is enabled
 and one of your clients had tasks completed, tickets resolved, a payment, or
 (for clients on Drishti) posts published/audits completed in the month before,

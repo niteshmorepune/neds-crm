@@ -355,3 +355,53 @@ Record every "we chose X because Y" here — this is the project's memory.
   rep sees only their own numbers and Admin/Manager see everyone's plus
   the pool-amount form; company-target editing itself stays on the Sales
   Dashboard (linked from this page) rather than duplicating that form.
+- **2026-07-24 — Google Meet Notes (Phase 1): per-user OAuth, not
+  domain-wide delegation; new `/settings/google/*` routes, not nested
+  under `/profile`.** Team asked for a Call-Log-style Google Meet
+  recording feature. Confirmed via AskUserQuestion: (1) each staff
+  member connects their own Google account (standard OAuth
+  authorization-code flow, plain REST via Laravel's HTTP client — no
+  `google/apiclient` SDK, same Hostinger-safe precedent as
+  `GoogleSpeechClient`) rather than the owner granting one service
+  account domain-wide delegation to impersonate any user — lower blast
+  radius, and whoever imports a meeting is almost always its own
+  organizer anyway; (2) meetings attach to Customer + Lead only,
+  mirroring `CallLog`'s `callable` polymorphic scope exactly, not the
+  broader Note-style scope; (3) embedded only (an "Import Meet Notes"
+  button inside the Calls tab / a new section on Lead show) — no new
+  sidebar "Meetings" list page; (4) two phases — this PR is Phase 1
+  (OAuth connect + Calendar-event picker + raw transcript/recording
+  link, no AI), Phase 2 (later) adds a Claude-summarized version reusing
+  the existing `AnthropicClient` + `ai_usages` logging.
+  New `google_account_connections` (encrypted tokens) + `meetings`
+  tables. OAuth redirect URI is registered in Google Cloud Console as
+  `/settings/google/callback` — deliberately a new `/settings/*` area
+  rather than `/profile/google/callback` (which would have matched
+  where the "Connect Google Account" UI actually lives, on the Profile
+  page) to avoid a round-trip back to Google Cloud Console to
+  re-register the URI after already creating the OAuth client with the
+  first one. New `GOOGLE_MEET_ENABLED` flag (independent of
+  `AI_ENABLED` — Phase 1 has no AI step) gates both the connect UI and
+  the import button.
+  **Real Google-side surprise mid-build, not a code decision**: the
+  owner's original Workspace signup (personal Gmail account, "Business
+  Standard" active in Billing) had never had a domain/organization
+  completed — Directory/Security/Devices and per-app settings were all
+  missing from the Admin Console, and direct links 403'd. Root-caused
+  before writing any workaround, rather than assumed a permissions bug.
+  Fixed by connecting `niranjanenterprises.com` (the staff's real
+  official email domain, kept deliberately separate from the CRM's own
+  `niranjanenterprises.co.in` and from where real company email is
+  actually hosted, cPanel) as the Workspace org domain — Workspace here
+  is *only* for Calendar/Meet/Drive identities, MX records were never
+  touched. Also hit and waited out a same-day propagation delay between
+  finishing Workspace setup and Google Cloud recognizing the
+  organization for project creation.
+  **`GoogleMeetImportClient`'s attachment-matching logic (recording =
+  `video/*`, transcript = a Google Doc attached to the same Calendar
+  event) is UNVERIFIED against a real live recorded/transcribed
+  meeting** as of this entry — no meeting has been held yet on the
+  freshly-provisioned Workspace. If a real import comes back with an
+  empty transcript despite Meet having genuinely finished processing
+  one, check this matching logic first, live, against a real event's
+  raw `attachments` payload before assuming a deeper bug.

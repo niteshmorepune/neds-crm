@@ -140,4 +140,19 @@ return [
         'api_key' => env('GOOGLE_SPEECH_API_KEY'),
     ],
 
+    /*
+     | Google Meet Notes (Phase 1) — per-user OAuth (confirmed with the owner,
+     | not domain-wide delegation) so the CRM can read a staff member's own
+     | Calendar events and Drive-hosted Meet recordings/transcripts. Plain
+     | OAuth2 + REST via Laravel's HTTP client, no google/apiclient SDK — same
+     | Hostinger-safe precedent as `google_speech` above. Independent of
+     | AI_ENABLED since Phase 1 has no AI step (Phase 2 will also require it).
+     */
+    'google_meet' => [
+        'enabled' => env('GOOGLE_MEET_ENABLED', false),
+        'client_id' => env('GOOGLE_OAUTH_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_OAUTH_CLIENT_SECRET'),
+        'redirect_uri' => rtrim((string) env('APP_URL'), '/').'/settings/google/callback',
+    ],
+
 ];

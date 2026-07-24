@@ -13,6 +13,7 @@ use App\Http\Controllers\DailyReportController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DealController;
 use App\Http\Controllers\FestivalController;
+use App\Http\Controllers\GoogleConnectionController;
 use App\Http\Controllers\HelpController;
 use App\Http\Controllers\IncentiveController;
 use App\Http\Controllers\InvoiceController;
@@ -81,6 +82,18 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
 
     Route::get('two-factor/challenge', [TwoFactorChallengeController::class, 'show'])->name('two-factor.challenge');
     Route::post('two-factor/challenge', [TwoFactorChallengeController::class, 'store'])->name('two-factor.challenge.store');
+
+    /*
+     * Google Meet Notes (Phase 1) — self-service "Connect Google Account"
+     * from the profile page. Redirect URI is registered in Google Cloud
+     * Console as https://crm.niranjanenterprises.co.in/settings/google/callback
+     * — the /settings prefix here is deliberate (a new account-integrations
+     * area, distinct from /profile) rather than reconfiguring the already-
+     * registered OAuth client.
+     */
+    Route::get('settings/google/redirect', [GoogleConnectionController::class, 'redirect'])->name('google.redirect');
+    Route::get('settings/google/callback', [GoogleConnectionController::class, 'callback'])->name('google.callback');
+    Route::delete('settings/google/disconnect', [GoogleConnectionController::class, 'destroy'])->name('google.disconnect');
 
     /*
      * Clients (Customers) — Milestone 1. Gated by menu.access:customer (the
