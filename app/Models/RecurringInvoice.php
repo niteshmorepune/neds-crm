@@ -132,11 +132,18 @@ class RecurringInvoice extends Model
      * Services tab — time + payment based, distinct from is_active (which
      * only governs whether the system keeps auto-billing). One of:
      * 'upcoming' | 'active' | 'on_hold' | 'payment_received' |
-     * 'payment_pending' | 'ended'.
+     * 'payment_pending' | 'not_billed' | 'ended'.
      *
      * $revealPaymentStatus should be false for a viewer without invoice
      * access (e.g. Support) — a period that's over falls back to 'ended'
      * instead of exposing whether the invoice was actually paid.
+     *
+     * 'not_billed' (added 2026-07-24) is distinct from 'ended': a period
+     * whose end_date has passed but that never generated a single invoice
+     * (not even one later deleted — see isOrphaned() for that case) is
+     * often a deliberate historical record (e.g. logging a past service
+     * period for reporting) rather than a completed billing cycle, so it
+     * must never claim "Ended" as if billing happened and finished.
      */
     public function dashboardStatus(bool $revealPaymentStatus = true): string
     {
@@ -157,7 +164,7 @@ class RecurringInvoice extends Model
         $latestInvoice = $this->invoices->sortByDesc('issue_date')->first();
 
         if (! $latestInvoice) {
-            return 'ended';
+            return 'not_billed';
         }
 
         return $latestInvoice->status === InvoiceStatus::Paid ? 'payment_received' : 'payment_pending';

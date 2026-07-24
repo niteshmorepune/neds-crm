@@ -209,10 +209,14 @@ it('dashboardStatus: payment_pending when the period is over and its invoice is 
     expect($r->dashboardStatus())->toBe('payment_pending');
 });
 
-it('dashboardStatus: ended when the period is over and no invoice was ever generated', function () {
+it('dashboardStatus: not_billed (not "ended") when the period is over and no invoice was ever generated', function () {
+    // 2026-07-24 fix: this used to return 'ended', which wrongly implied a
+    // completed billing cycle for a template that never actually billed
+    // anything — real production data showed staff using paused,
+    // never-billed templates to log historical service periods.
     $r = recurringWithLine(['start_date' => now()->subMonth()->toDateString(), 'end_date' => now()->subDay()->toDateString(), 'is_active' => false]);
 
-    expect($r->dashboardStatus())->toBe('ended');
+    expect($r->dashboardStatus())->toBe('not_billed');
 });
 
 it('dashboardStatus: falls back to ended (not payment detail) when the viewer lacks invoice access', function () {

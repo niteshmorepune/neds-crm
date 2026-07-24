@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\DealStage;
+use App\Enums\InvoiceStatus;
 use App\Enums\RecurringFrequency;
 use App\Enums\UserRole;
 use App\Models\Contact;
@@ -195,9 +196,40 @@ it('excludes Ended templates from the "On hold" summary count', function () {
     expect($matches[1] ?? null)->toBe('1');
 });
 
-it('labels a naturally-finished one-cycle recurring invoice "Ended", not "On Hold"', function () {
+it('labels a one-cycle recurring invoice that actually billed and was paid "Payment Received"', function () {
+    // Confirms the client page's revealPaymentStatus=true path — "Ended" is
+    // never shown to an Admin/Manager viewer once an invoice exists; that's
+    // reserved for a viewer without invoice access (see the next test) or a
+    // period that ended without ever billing (see the "Not Billed" test).
     $service = Service::factory()->create(['name' => 'GMB']);
     $client = Customer::factory()->create(['company_name' => 'Finished Cycle Co']);
+
+    $recurring = RecurringInvoice::factory()->create([
+        'customer_id' => $client->id,
+        'service_id' => $service->id,
+        'is_active' => false,
+        'start_date' => now()->subMonths(2),
+        'end_date' => now()->subMonth(),
+        'next_run_on' => now()->addMonth(),
+    ]);
+    Invoice::factory()->status(InvoiceStatus::Paid)->create([
+        'recurring_invoice_id' => $recurring->id, 'customer_id' => $client->id,
+    ]);
+
+    $this->actingAs($this->admin)
+        ->get(route('clients.show', $client))
+        ->assertOk()
+        ->assertSee('Payment Received')
+        ->assertDontSee('On Hold');
+});
+
+it('labels a one-cycle recurring invoice that never billed "Not Billed", not "Ended"', function () {
+    // 2026-07-24 fix: this used to say "Ended", which wrongly implied a
+    // completed billing cycle for a template that never actually billed
+    // anything — real production data showed staff using paused,
+    // never-billed templates to log historical service periods.
+    $service = Service::factory()->create(['name' => 'GMB']);
+    $client = Customer::factory()->create(['company_name' => 'Never Billed Co']);
 
     RecurringInvoice::factory()->create([
         'customer_id' => $client->id,
@@ -211,7 +243,7 @@ it('labels a naturally-finished one-cycle recurring invoice "Ended", not "On Hol
     $this->actingAs($this->admin)
         ->get(route('clients.show', $client))
         ->assertOk()
-        ->assertSee('Ended')
+        ->assertSee('Not Billed')
         ->assertDontSee('On Hold');
 });
 

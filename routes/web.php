@@ -200,6 +200,7 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
         Route::post('invoices/{invoice}/send', [InvoiceController::class, 'send'])->name('invoices.send');
         Route::post('invoices/{invoice}/assign-number', [InvoiceController::class, 'assignNumber'])->name('invoices.assign-number');
         Route::post('invoices/{invoice}/payments', [InvoiceController::class, 'storePayment'])->name('invoices.payments.store');
+        Route::patch('invoices/{invoice}/payments/{payment}', [InvoiceController::class, 'updatePayment'])->name('invoices.payments.update');
         Route::post('invoices/{invoice}/payment-promise', [InvoiceController::class, 'updatePaymentPromise'])->name('invoices.payment-promise.update');
         Route::delete('invoices/{invoice}', [InvoiceController::class, 'destroy'])->name('invoices.destroy');
     });

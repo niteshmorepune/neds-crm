@@ -10,6 +10,7 @@ use App\Http\Requests\InvoiceLogStoreRequest;
 use App\Http\Requests\InvoiceLogUpdateRequest;
 use App\Http\Requests\InvoicePaymentPromiseUpdateRequest;
 use App\Http\Requests\PaymentStoreRequest;
+use App\Http\Requests\PaymentUpdateRequest;
 use App\Mail\InvoiceIssued;
 use App\Mail\PaymentReceived;
 use App\Models\Customer;
@@ -350,6 +351,24 @@ class InvoiceController extends Controller
         }
 
         return back()->with('status', $status);
+    }
+
+    /**
+     * Corrects a mistakenly-entered date/mode/reference on an already-recorded
+     * payment. Deliberately excludes amount/tds_amount — those drive
+     * Invoice::balance()/status and an already-sent PaymentRecordedNotification,
+     * so they still require deleting and re-recording the payment. Same
+     * accounts-team gate as recording a payment; Payment::LogsActivity gives
+     * an audit trail of the correction.
+     */
+    public function updatePayment(PaymentUpdateRequest $request, Invoice $invoice, Payment $payment): RedirectResponse
+    {
+        $this->authorize('recordPayment', $invoice);
+        abort_unless($payment->invoice_id === $invoice->id, 404);
+
+        $payment->update($request->validated());
+
+        return back()->with('status', 'Payment updated.');
     }
 
     /**

@@ -74,6 +74,7 @@
                         'on_hold' => ['label' => 'On Hold', 'classes' => 'bg-amber-50 text-amber-700'],
                         'payment_received' => ['label' => 'Payment Received', 'classes' => 'bg-emerald-50 text-emerald-700'],
                         'payment_pending' => ['label' => 'Payment Pending', 'classes' => 'bg-amber-50 text-amber-700'],
+                        'not_billed' => ['label' => 'Not Billed', 'classes' => 'bg-gray-50 text-gray-500'],
                         'ended' => ['label' => 'Ended', 'classes' => 'bg-gray-100 text-gray-600'],
                     ];
                 @endphp

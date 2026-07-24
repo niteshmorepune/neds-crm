@@ -547,6 +547,37 @@ deliberately reopened it to bill a pending month.
 
 ---
 
+## 16. Dashboard "Outstanding receivables" didn't match the Receivables Report
+
+**Symptom:** The Accounts dashboard's **Outstanding receivables** figure
+was a different number than the **Total outstanding** shown on the
+Receivables report itself, for the same day.
+
+**Root cause:** fixed 2026-07-24. The two used separately-written queries
+that quietly disagreed on two things: invoices belonging to a client whose
+record had since been removed were excluded from the Receivables report
+but not from the dashboard tile, and the two didn't agree on whether Draft
+invoices count as outstanding. Both now share one definition
+(`CollectionsMetrics::outstandingInvoicesQuery()`), so this specific
+mismatch shouldn't recur.
+
+**What "Client removed" means on the Receivables report / Collected This
+Month page:** the invoice (or payment) is real and still counted in the
+total — its client's record has just been removed from the client list
+separately, most often when a duplicate or closed-account record is
+cleaned up. It doesn't mean the money isn't owed; it's shown this way
+(same as on the Deals/Projects/Quotations/Tickets/Invoices pages) instead
+of silently disappearing from the total. If you don't recognize why a
+specific one shows this, check with whoever manages the client list
+before assuming it's an error.
+
+**If the two figures ever disagree again:** confirm both pages are on the
+same deploy (`git log -1` on the server should be no older than
+2026-07-24), then flag it — this shouldn't be possible by design anymore,
+so a fresh mismatch would be a new bug, not a repeat of this one.
+
+---
+
 ## General: when in doubt, run these four commands
 
 After any deployment, `.env` edit, or unexpected behaviour:

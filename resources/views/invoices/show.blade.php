@@ -112,14 +112,44 @@
                 <h2 class="text-base font-semibold text-gray-900">Payments</h2>
                 <ul class="mt-3 divide-y divide-gray-100 text-sm">
                     @forelse ($invoice->payments as $payment)
-                        <li class="flex items-center justify-between py-2">
-                            <span>
-                                {{ \App\Support\Money::format($payment->amount) }} · {{ $payment->mode->label() }} {{ $payment->reference ? "($payment->reference)" : '' }}
-                                @if ($payment->tds_amount > 0)
-                                    <span class="text-gray-400">(TDS: {{ \App\Support\Money::format($payment->tds_amount) }})</span>
-                                @endif
-                            </span>
-                            <span class="text-gray-400">{{ $payment->paid_on->format('d M Y') }}</span>
+                        <li class="py-2" x-data="{ editing: false }">
+                            <div class="flex items-center justify-between">
+                                <span>
+                                    {{ \App\Support\Money::format($payment->amount) }} · {{ $payment->mode->label() }} {{ $payment->reference ? "($payment->reference)" : '' }}
+                                    @if ($payment->tds_amount > 0)
+                                        <span class="text-gray-400">(TDS: {{ \App\Support\Money::format($payment->tds_amount) }})</span>
+                                    @endif
+                                </span>
+                                <span class="flex items-center gap-2">
+                                    <span class="text-gray-400">{{ $payment->paid_on->format('d M Y') }}</span>
+                                    @can('recordPayment', $invoice)
+                                        <button type="button" @click="editing = !editing" class="text-xs text-indigo-600 hover:underline">Edit</button>
+                                    @endcan
+                                </span>
+                            </div>
+                            @can('recordPayment', $invoice)
+                                <form x-show="editing" x-cloak method="POST" action="{{ route('invoices.payments.update', [$invoice, $payment]) }}" class="mt-2 flex flex-wrap items-end gap-2">
+                                    @csrf
+                                    @method('PATCH')
+                                    <div>
+                                        <x-input-label :for="'paid_on_'.$payment->id" value="Date" class="text-xs" />
+                                        <x-text-input :id="'paid_on_'.$payment->id" name="paid_on" type="date" class="mt-1 block text-sm" :value="$payment->paid_on->toDateString()" />
+                                    </div>
+                                    <div>
+                                        <x-input-label :for="'mode_'.$payment->id" value="Mode" class="text-xs" />
+                                        <select :id="'mode_'.$payment->id" name="mode" class="mt-1 block rounded-md border-gray-300 text-sm shadow-sm">
+                                            @foreach (\App\Enums\PaymentMode::cases() as $mode)
+                                                <option value="{{ $mode->value }}" @selected($payment->mode === $mode)>{{ $mode->label() }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <x-input-label :for="'reference_'.$payment->id" value="Reference" class="text-xs" />
+                                        <x-text-input :id="'reference_'.$payment->id" name="reference" type="text" class="mt-1 block text-sm" :value="$payment->reference" />
+                                    </div>
+                                    <button type="submit" class="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-500">Save</button>
+                                </form>
+                            @endcan
                         </li>
                     @empty
                         <li class="py-2 text-gray-400">No payments recorded.</li>

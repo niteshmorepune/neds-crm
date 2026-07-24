@@ -520,3 +520,44 @@ Record every "we chose X because Y" here — this is the project's memory.
   session doesn't mistake the resulting clean total for evidence the
   code fix "solved" this specific batch — it didn't; the invoices were
   deleted before the fix could apply to them.
+- **2026-07-24 — Recurring Services "Ended" → "Not Billed": relabel real
+  records, don't hide them.** Team reported (via screenshot) that the
+  Client Dashboard's Recurring Services/Invoices sections showed SEO/Social
+  Media rows with no invoice ever generated for them. Investigated
+  production data first: all 15 affected rows traced to one person, one
+  24-minute window, `next_run_on` uniformly set far past `end_date` —
+  deliberate historical record-keeping (a paused-before-first-bill
+  template), not a data-entry mistake. `RecurringInvoice::isOrphaned()`
+  already handled "invoice created then deleted" but had no branch for
+  "deactivated, never billed at all" — that gap made `dashboardStatus()`
+  fall through to `'ended'`, which reads as "billing completed
+  successfully," the opposite of what happened. Confirmed with the owner
+  via AskUserQuestion between hiding these rows vs. relabeling them
+  honestly — chose **relabel**: added a `'not_billed'` status (new
+  gray "Not Billed" badge in `_services_tab.blade.php`) returned whenever
+  `dashboardStatus()` finds no invoice at all. Note: `'ended'` can now only
+  ever be returned via the `!$revealPaymentStatus` early-return (a
+  Support/no-invoice-access viewer) — once any invoice exists on the
+  template, an Admin/Manager viewer always sees `'payment_received'` or
+  `'payment_pending'`, never `'ended'`, regardless of paid/unpaid status.
+- **2026-07-24 — Payment correction: date/mode/reference are editable
+  in-place; amount/TDS still require delete-and-recreate.** Same
+  conversation as above — team also reported a mistakenly-entered payment
+  date could never be fixed without deleting and re-recording the whole
+  payment. Checked `Invoice::refreshPaymentStatus()` first: it recomputes
+  `amount_paid` purely from `payments()->sum('amount')`, so date/mode/
+  reference genuinely don't feed any downstream calculation — safe to
+  edit directly. Amount/`tds_amount` deliberately excluded from the new
+  edit form (`PaymentUpdateRequest` only validates `paid_on`/`mode`/
+  `reference`, the controller's `update()` call ignores any amount/
+  tds_amount sent) because those drive `Invoice::balance()`/`status` and
+  an already-sent `PaymentRecordedNotification` — correcting them still
+  needs the existing delete-and-recreate path. Confirmed scope with the
+  owner via AskUserQuestion ("Date, mode, and reference only"). New
+  `PATCH /invoices/{invoice}/payments/{payment}` route, gated by the same
+  `InvoicePolicy::recordPayment()` (accounts team) used to create a
+  payment; inline Alpine.js `x-show` edit form per payment row on the
+  invoice page, no new Livewire component (too small to justify one, same
+  philosophy as other lightweight toggles in this app). `Payment` gained
+  the `LogsActivity` trait (had none before) so a correction leaves an
+  audit trail.

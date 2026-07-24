@@ -115,6 +115,15 @@ notification is sent to all accounts staff (except the person who recorded it)
 and to the client's assigned sales person. No action needed — it's purely
 informational so everyone stays aware of cash coming in.
 
+**Correcting a mistaken payment date, mode, or reference:** click **Edit** next
+to any payment already listed on the invoice page to fix a typo without
+deleting and re-recording it — an inline form lets you change the **date**,
+**mode**, and **reference number**. The **amount and TDS are not editable
+here** — if either of those was entered wrong, you still need to delete the
+payment and record it again, since those two drive the invoice's balance and
+status and may have already triggered a payment-received email to the client.
+Every correction is logged to the activity trail for an audit record.
+
 **Payment follow-up tracking:** when a client says "I'll pay in a day or two"
 past the due date, open the invoice and set **Client promised to pay by** to
 that date, so it's not just in your head. If that date passes and the invoice
@@ -167,14 +176,19 @@ not the schedule:** the same recurring template shows one of **Upcoming**
 (hasn't started yet), **Active** (today falls within its period and it's
 still on), **On Hold** (today falls within its period but it's paused),
 **Payment Received** / **Payment Pending** (the period is over — based on
-whether its generated invoice is actually paid), or **Ended** (the period is
-over and nothing was ever billed for it). The Payment Received/Pending detail
-only shows to roles with invoice access (e.g. not Support) — everyone else
-sees Ended for a finished period regardless of its payment status. One
-template deliberately never shows here at all: if its only invoice was
-generated and then deleted, and it was never reactivated, it's treated as
-abandoned and hidden from the client's view entirely rather than showing a
-misleading On Hold/Ended row for something that was retracted.
+whether its generated invoice is actually paid), or **Not Billed** (the
+period is over and no invoice was ever generated for it — e.g. a template
+that was paused before its first billing cycle, kept around for historical
+record). The Payment Received/Pending detail only shows to roles with
+invoice access (e.g. not Support) — everyone else sees **Ended** for a
+finished period regardless of its payment status (this "Ended" wording is
+specific to that restricted view — Admin/Manager and anyone else with
+invoice access never see it; they see Not Billed instead when nothing was
+ever generated). One template deliberately never shows here at all: if its
+only invoice was generated and then deleted, and it was never reactivated,
+it's treated as abandoned and hidden from the client's view entirely rather
+than showing a misleading On Hold/Not Billed row for something that was
+retracted.
 
 **Non-GST clients:** when you pick a client marked **Non-GST client** on their
 profile, the template's **Non-GST client** checkbox is ticked automatically —

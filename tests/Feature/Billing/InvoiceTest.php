@@ -1,10 +1,12 @@
 <?php
 
 use App\Enums\InvoiceStatus;
+use App\Enums\PaymentMode;
 use App\Enums\UserRole;
 use App\Livewire\InvoiceBuilder;
 use App\Livewire\RecordNotes;
 use App\Mail\InvoiceIssued;
+use App\Models\Activity;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\MenuItem;
@@ -51,6 +53,83 @@ it('records a partial payment then marks paid in full', function () {
     $invoice->refresh();
     expect($invoice->status)->toBe(InvoiceStatus::Paid)
         ->and($invoice->balance())->toBe(0);
+});
+
+it('lets accounts correct a payment\'s date, mode, and reference', function () {
+    $invoice = invoiceWithLine();
+    $this->actingAs($this->accounts)->post(route('invoices.payments.store', $invoice), [
+        'amount' => '500', 'paid_on' => now()->subDays(3)->toDateString(), 'mode' => 'cash',
+    ]);
+    $payment = $invoice->payments()->firstOrFail();
+    $correctedDate = now()->toDateString();
+
+    $this->actingAs($this->accounts)->patch(route('invoices.payments.update', [$invoice, $payment]), [
+        'paid_on' => $correctedDate, 'mode' => 'upi', 'reference' => 'UPI-REF-123',
+    ])->assertRedirect();
+
+    $payment->refresh();
+    expect($payment->paid_on->toDateString())->toBe($correctedDate)
+        ->and($payment->mode)->toBe(PaymentMode::Upi)
+        ->and($payment->reference)->toBe('UPI-REF-123')
+        ->and($payment->amount)->toBe(50000); // unchanged
+});
+
+it('ignores an amount/tds_amount sent to the payment update endpoint — those still require delete-and-recreate', function () {
+    $invoice = invoiceWithLine();
+    $this->actingAs($this->accounts)->post(route('invoices.payments.store', $invoice), [
+        'amount' => '500', 'paid_on' => now()->toDateString(), 'mode' => 'cash',
+    ]);
+    $payment = $invoice->payments()->firstOrFail();
+
+    $this->actingAs($this->accounts)->patch(route('invoices.payments.update', [$invoice, $payment]), [
+        'paid_on' => now()->toDateString(), 'mode' => 'cash', 'amount' => '999999', 'tds_amount' => '999999',
+    ]);
+
+    expect($payment->fresh()->amount)->toBe(50000)
+        ->and($payment->fresh()->tds_amount)->toBe(0);
+});
+
+it('logs a payment correction to the activity trail', function () {
+    $invoice = invoiceWithLine();
+    $this->actingAs($this->accounts)->post(route('invoices.payments.store', $invoice), [
+        'amount' => '500', 'paid_on' => now()->toDateString(), 'mode' => 'cash',
+    ]);
+    $payment = $invoice->payments()->firstOrFail();
+
+    $this->actingAs($this->accounts)->patch(route('invoices.payments.update', [$invoice, $payment]), [
+        'paid_on' => now()->subDay()->toDateString(), 'mode' => 'upi',
+    ]);
+
+    expect(Activity::where('subject_type', Payment::class)
+        ->where('subject_id', $payment->id)
+        ->where('event', 'updated')
+        ->exists())->toBeTrue();
+});
+
+it('404s when the payment does not belong to the given invoice', function () {
+    $invoiceA = invoiceWithLine();
+    $invoiceB = invoiceWithLine();
+    $this->actingAs($this->accounts)->post(route('invoices.payments.store', $invoiceA), [
+        'amount' => '500', 'paid_on' => now()->toDateString(), 'mode' => 'cash',
+    ]);
+    $payment = $invoiceA->payments()->firstOrFail();
+
+    $this->actingAs($this->accounts)->patch(route('invoices.payments.update', [$invoiceB, $payment]), [
+        'paid_on' => now()->toDateString(), 'mode' => 'cash',
+    ])->assertNotFound();
+});
+
+it('forbids a role without invoice access from editing a payment', function () {
+    $invoice = invoiceWithLine();
+    $this->actingAs($this->accounts)->post(route('invoices.payments.store', $invoice), [
+        'amount' => '500', 'paid_on' => now()->toDateString(), 'mode' => 'cash',
+    ]);
+    $payment = $invoice->payments()->firstOrFail();
+    $support = User::factory()->role(UserRole::Support)->create();
+
+    $this->actingAs($support)->patch(route('invoices.payments.update', [$invoice, $payment]), [
+        'paid_on' => now()->toDateString(), 'mode' => 'cash',
+    ])->assertForbidden();
 });
 
 it('records TDS alongside a payment, deducting it from the balance and settling the invoice', function () {
