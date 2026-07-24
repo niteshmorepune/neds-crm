@@ -7,6 +7,7 @@ use App\Models\Customer;
 use App\Models\Deal;
 use App\Models\Festival;
 use App\Models\Lead;
+use App\Models\Meeting;
 use App\Models\Project;
 use App\Models\Quotation;
 use App\Models\Service;
@@ -86,6 +87,26 @@ it('summarizes a customer timeline', function () {
 
     expect($summary)->toContain('open ticket');
     expect(AiUsage::where('feature', 'summarize_customer')->exists())->toBeTrue();
+});
+
+it('summarizes a meeting transcript', function () {
+    aiOn();
+    fakeAiText("Key points:\n- Discussed renewal");
+    $meeting = Meeting::factory()->create(['raw_transcript' => 'Client: lets renew the AMC.']);
+
+    $summary = app(AiAssistant::class)->summarizeMeeting($meeting);
+
+    expect($summary)->toContain('Discussed renewal');
+    expect(AiUsage::where('feature', 'summarize_meeting')->exists())->toBeTrue();
+});
+
+it('returns null and makes no call when summarizing a meeting with AI disabled', function () {
+    config(['services.anthropic.enabled' => false]);
+    Http::fake();
+    $meeting = Meeting::factory()->create(['raw_transcript' => 'Client: lets renew.']);
+
+    expect(app(AiAssistant::class)->summarizeMeeting($meeting))->toBeNull();
+    Http::assertNothingSent();
 });
 
 it('drafts a festival greeting caption', function () {

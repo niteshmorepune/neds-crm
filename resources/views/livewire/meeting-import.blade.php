@@ -78,6 +78,7 @@
                         <p class="mt-1 max-h-48 overflow-y-auto whitespace-pre-wrap text-xs text-gray-600">{{ $meeting->raw_transcript }}</p>
                     </details>
                 @endif
+                <livewire:meeting-summary :meeting-id="$meeting->id" :can-manage="$canManage" :key="'meeting-summary-'.$meeting->id" />
             </li>
         @empty
             <li class="text-sm text-gray-400">No Meet notes imported yet.</li>

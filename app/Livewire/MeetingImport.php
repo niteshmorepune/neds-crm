@@ -2,6 +2,8 @@
 
 namespace App\Livewire;
 
+use App\Enums\MeetingSummaryStatus;
+use App\Jobs\SummarizeMeeting;
 use App\Models\Meeting;
 use App\Services\GoogleCalendarClient;
 use App\Services\GoogleMeetImportClient;
@@ -13,12 +15,14 @@ use Livewire\Component;
  * "Import Meet Notes" — embedded on Customer/Lead pages (mirrors CallLog's
  * attach scope exactly). Lists the viewing user's own recent Google
  * Calendar events with a Meet link, imports the raw transcript/recording
- * Google Meet already generated for the one they pick. No AI step yet
- * (Phase 1) — Phase 2 adds a Claude-summarized version on top of the raw
- * transcript stored here. No dedicated Policy: only ever rendered inside an
- * already policy-gated Customer/Lead show page, same precedent as
- * CallVoiceTranscript — but mutating methods still check $canManage
- * defensively, same as RecordNotes.
+ * Google Meet already generated for the one they pick, then (Phase 2)
+ * queues a Claude summary if a transcript came back and summaries are
+ * enabled — the per-meeting <livewire:meeting-summary> component (rendered
+ * from the view) polls for that job's result and offers a manual
+ * retry/summarize trigger for meetings imported without one. No dedicated
+ * Policy: only ever rendered inside an already policy-gated Customer/Lead
+ * show page, same precedent as CallVoiceTranscript — but mutating methods
+ * still check $canManage defensively, same as RecordNotes.
  */
 class MeetingImport extends Component
 {
@@ -98,11 +102,16 @@ class MeetingImport extends Component
             return;
         }
 
-        $this->record->meetings()->create([
+        $meeting = $this->record->meetings()->create([
             'user_id' => auth()->id(),
             'google_event_id' => $eventId,
             ...$detail,
         ]);
+
+        if (filled($meeting->raw_transcript) && GoogleMeet::summaryEnabled()) {
+            $meeting->forceFill(['ai_summary_status' => MeetingSummaryStatus::Pending])->saveQuietly();
+            SummarizeMeeting::dispatch($meeting->id);
+        }
 
         $this->showPicker = false;
         $this->events = null;

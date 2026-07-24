@@ -10,6 +10,7 @@ use App\Models\Customer;
 use App\Models\Deal;
 use App\Models\Festival;
 use App\Models\Lead;
+use App\Models\Meeting;
 use App\Models\Project;
 use App\Models\Quotation;
 use App\Models\QuotationItem;
@@ -635,6 +636,52 @@ class AiAssistant
             feature: 'summarize_customer',
             prompt: implode("\n", $lines),
             system: $this->summarySystem(),
+        ));
+    }
+
+    /**
+     * Summarizes a Meeting's stored raw_transcript (Phase 2 of Google Meet
+     * Notes) into structured notes — key points, decisions, action items.
+     * Transcript is capped to bound token usage on long calls. Called from
+     * the SummarizeMeeting job, not on demand — unlike summarizeTicket/
+     * summarizeCustomer, the result is persisted on the Meeting row rather
+     * than shown ephemerally, since a meeting summary should be visible to
+     * anyone viewing the client/lead timeline, not just whoever clicked.
+     */
+    public function summarizeMeeting(Meeting $meeting): ?string
+    {
+        if (! Ai::enabled()) {
+            return null;
+        }
+
+        $lines = [
+            'Meeting: '.$meeting->title,
+            'Date: '.$meeting->occurred_at->timezone(config('app.display_timezone'))->format('d M Y'),
+        ];
+
+        if (! empty($meeting->attendees)) {
+            $lines[] = 'Attendees: '.implode(', ', $meeting->attendees);
+        }
+
+        $lines[] = '';
+        $lines[] = 'Transcript:';
+        $lines[] = mb_substr((string) $meeting->raw_transcript, 0, 12000);
+
+        $system = <<<'PROMPT'
+        You summarize a Google Meet call transcript for a digital-solutions
+        agency in India. Produce structured notes with three short sections —
+        Key points, Decisions, and Action items — using short bullet points
+        under each heading. Omit a section entirely if the transcript has
+        nothing for it. Base every point ONLY on what's actually in the
+        transcript — never invent a decision, commitment, or action item not
+        evidenced there. Output only the notes.
+        PROMPT;
+
+        return $this->trimmed($this->client->message(
+            feature: 'summarize_meeting',
+            prompt: implode("\n", $lines),
+            system: $system,
+            maxTokens: 700,
         ));
     }
 

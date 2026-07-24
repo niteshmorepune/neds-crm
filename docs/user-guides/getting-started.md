@@ -39,7 +39,10 @@ enabled, a **Google Account** section further down the Profile page lets you
 connect your own Google account (read-only — nothing in your Calendar or
 Drive is ever changed). Once connected, a client or lead's page gets an
 **Import Meet Notes** option that pulls in the recording/transcript Google
-Meet already generates for calls you personally organized and recorded.
+Meet already generates for calls you personally organized and recorded. If
+AI is also enabled, Claude can summarize an imported transcript into short
+"Key points / Decisions / Action items" notes — either automatically after
+import or via a **Summarize with AI** button.
 
 ## 4. Finding your way around
 - **Left sidebar** — your modules. What you see depends on your role.

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\MeetingSummaryStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -21,6 +22,9 @@ class Meeting extends Model
         'drive_recording_url',
         'drive_transcript_url',
         'raw_transcript',
+        'ai_summary_status',
+        'ai_summary',
+        'ai_summarized_at',
     ];
 
     protected function casts(): array
@@ -29,6 +33,8 @@ class Meeting extends Model
             'occurred_at' => 'datetime',
             'duration_minutes' => 'integer',
             'attendees' => 'array',
+            'ai_summary_status' => MeetingSummaryStatus::class,
+            'ai_summarized_at' => 'datetime',
         ];
     }
 

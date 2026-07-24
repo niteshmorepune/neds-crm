@@ -1,6 +1,8 @@
 <?php
 
+use App\Enums\MeetingSummaryStatus;
 use App\Enums\UserRole;
+use App\Jobs\SummarizeMeeting;
 use App\Livewire\MeetingImport;
 use App\Models\Customer;
 use App\Models\GoogleAccountConnection;
@@ -9,6 +11,7 @@ use App\Models\Meeting;
 use App\Models\User;
 use Database\Seeders\MenuItemsSeeder;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
 
 beforeEach(function () {
@@ -122,6 +125,79 @@ it('attaches to a Lead as well as a Customer', function () {
     $meeting = Meeting::where('google_event_id', 'evt-1')->first();
     expect($meeting->meetable_type)->toBe(Lead::class)
         ->and($meeting->meetable_id)->toBe($lead->id);
+});
+
+it('queues a summary job after importing a meeting with a transcript, when summaries are enabled', function () {
+    config(['services.anthropic.enabled' => true, 'services.anthropic.key' => 'sk-test']);
+    Queue::fake();
+    $user = User::factory()->role(UserRole::Sales)->create();
+    GoogleAccountConnection::factory()->create(['user_id' => $user->id, 'expires_at' => now()->addHour()]);
+    $customer = Customer::factory()->create();
+
+    Http::fake([
+        'www.googleapis.com/calendar/v3/calendars/primary/events/evt-1' => Http::response([
+            'summary' => 'Client sync call',
+            'start' => ['dateTime' => '2026-07-20T10:00:00+05:30'],
+            'attachments' => [
+                ['mimeType' => 'application/vnd.google-apps.document', 'fileUrl' => 'https://docs.google.com/transcript', 'fileId' => 'doc-123'],
+            ],
+        ]),
+        'www.googleapis.com/drive/v3/files/doc-123/export*' => Http::response('Rep: hello'),
+    ]);
+
+    Livewire::actingAs($user)
+        ->test(MeetingImport::class, ['record' => $customer, 'canManage' => true])
+        ->call('importEvent', 'evt-1');
+
+    $meeting = Meeting::where('google_event_id', 'evt-1')->first();
+    expect($meeting->ai_summary_status)->toBe(MeetingSummaryStatus::Pending);
+    Queue::assertPushed(SummarizeMeeting::class, fn ($job) => $job->meetingId === $meeting->id);
+});
+
+it('does not queue a summary job when the imported meeting has no transcript yet', function () {
+    config(['services.anthropic.enabled' => true, 'services.anthropic.key' => 'sk-test']);
+    Queue::fake();
+    $user = User::factory()->role(UserRole::Sales)->create();
+    GoogleAccountConnection::factory()->create(['user_id' => $user->id, 'expires_at' => now()->addHour()]);
+    $customer = Customer::factory()->create();
+
+    Http::fake([
+        'www.googleapis.com/calendar/v3/calendars/primary/events/evt-1' => Http::response([
+            'summary' => 'Client sync call',
+            'start' => ['dateTime' => '2026-07-20T10:00:00+05:30'],
+        ]),
+    ]);
+
+    Livewire::actingAs($user)
+        ->test(MeetingImport::class, ['record' => $customer, 'canManage' => true])
+        ->call('importEvent', 'evt-1');
+
+    Queue::assertNothingPushed();
+});
+
+it('does not queue a summary job when AI is disabled', function () {
+    config(['services.anthropic.enabled' => false]);
+    Queue::fake();
+    $user = User::factory()->role(UserRole::Sales)->create();
+    GoogleAccountConnection::factory()->create(['user_id' => $user->id, 'expires_at' => now()->addHour()]);
+    $customer = Customer::factory()->create();
+
+    Http::fake([
+        'www.googleapis.com/calendar/v3/calendars/primary/events/evt-1' => Http::response([
+            'summary' => 'Client sync call',
+            'start' => ['dateTime' => '2026-07-20T10:00:00+05:30'],
+            'attachments' => [
+                ['mimeType' => 'application/vnd.google-apps.document', 'fileUrl' => 'https://docs.google.com/transcript', 'fileId' => 'doc-123'],
+            ],
+        ]),
+        'www.googleapis.com/drive/v3/files/doc-123/export*' => Http::response('Rep: hello'),
+    ]);
+
+    Livewire::actingAs($user)
+        ->test(MeetingImport::class, ['record' => $customer, 'canManage' => true])
+        ->call('importEvent', 'evt-1');
+
+    Queue::assertNothingPushed();
 });
 
 it('shows imported meetings on the Customer show page', function () {

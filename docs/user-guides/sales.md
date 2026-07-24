@@ -268,7 +268,11 @@ call shows up. Read-only: nothing in your Calendar or Drive is ever changed.
 Only meetings you personally organized and recorded will have anything to
 import (Google needs Recording/Transcripts turned on and a few minutes after
 the call ends to finish processing). This currently works the same way for
-Leads too.
+Leads too. If AI is also enabled, an imported meeting with a transcript gets
+a **Summarize with AI** button (or the summary appears automatically a
+little after import) — Claude turns the raw transcript into short "Key
+points / Decisions / Action items" notes, visible to anyone who opens that
+client's page. If it fails, a **Retry** link appears in its place.
 
 **Monthly wins note (AI, optional):** on the 1st of each month, if AI is enabled
 and one of your clients had tasks completed, tickets resolved, a payment, or

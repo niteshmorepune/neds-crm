@@ -3,11 +3,11 @@
 namespace App\Support;
 
 /**
- * Feature gate for the Google Meet Notes integration (Phase 1). Independent
- * of Ai::enabled() — this feature has no AI step yet, just OAuth + reading
- * Calendar/Drive. Checked wherever "Connect Google Account" or "Import Meet
- * Notes" could be shown, so a half-configured OAuth app never invites a
- * connection attempt that can only fail.
+ * Feature gate for the Google Meet Notes integration. Phase 1 (OAuth +
+ * reading Calendar/Drive) is independent of Ai::enabled() — enabled() alone
+ * covers it. Phase 2 (Claude summarization) additionally needs AI_ENABLED,
+ * hence the separate summaryEnabled() gate, same idiom as
+ * Ai::voiceTranscriptionEnabled() for Call Log voice notes.
  */
 class GoogleMeet
 {
@@ -16,5 +16,10 @@ class GoogleMeet
         return (bool) config('services.google_meet.enabled')
             && filled(config('services.google_meet.client_id'))
             && filled(config('services.google_meet.client_secret'));
+    }
+
+    public static function summaryEnabled(): bool
+    {
+        return self::enabled() && Ai::enabled();
     }
 }
