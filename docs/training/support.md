@@ -1,10 +1,12 @@
 # Support — Recording Script
 
 **Audience:** support team (watch `getting-started.md` first).
-**Target length:** ~9 minutes
+**Target length:** ~11 minutes
 
 **Before you record:** have one open ticket and one project you're assigned
-to ready to click through. Log in as a support user.
+to ready to click through, plus — if you've connected a Google account — a
+recent Google Meet call with a client ready to import. Log in as a support
+user.
 
 ---
 
@@ -68,7 +70,20 @@ shouldn't see. You can edit or delete your own notes anytime — managers can
 edit or delete anyone's. One thing to flag: support can't add or edit
 client contacts — that's sales' job — but you can view them fine."
 
-## Scene 7 — Tasks and scheduled maintenance (6:15–7:30)
+## Scene 7 — Google Meet Notes (6:15–6:55)
+**ON SCREEN:** Open a client's Calls tab → click + Import Meet Notes →
+point at the recording link, transcript link, and an AI-summarized "Key
+points / Decisions / Action items" section if AI is enabled.
+**SAY:** "If you're on Google Meet calls with clients, connect your Google
+account once from Profile — then on a client's Calls tab, click '+ Import
+Meet Notes' to pull in recent Meet calls with them. It saves the recording
+link, transcript link, and full transcript text right there, same as a
+logged call — read-only, nothing in your Calendar or Drive changes. It
+only picks up meetings you personally organized and recorded. If AI's
+enabled, an imported meeting with a transcript also gets a short AI
+summary — key points, decisions, action items."
+
+## Scene 8 — Tasks and scheduled maintenance (6:55–8:10)
 **ON SCREEN:** Employee Task list, point at a task with an obvious
 "maintenance" style title.
 **SAY:** "Employee Task is your task list — move things from To-do through
@@ -80,16 +95,35 @@ already linked to the right project, just open, do the work, mark Done.
 Don't let these pile up overdue — they count against your on-time
 percentage in the performance report."
 
-## Scene 8 — Calls (7:30–8:00)
+## Scene 9 — Calls, dictation, and voice notes (8:10–9:10)
 **ON SCREEN:** ☎ Log a call → point out there's no Lead option, just
-Client → Notes field → Dictate.
+Client → Notes field → Dictate → then, on the Calling page, "Record voice
+note" and the transcribed/translated block underneath.
 **SAY:** "Use Log a call or the Calling page to record calls about a
 ticket or project. Support doesn't have access to Leads, so the form only
-lets you log against a Client — no Lead option to pick. Same as leads
-though, you can click Dictate on the Notes field and speak instead of
-typing, Chrome or Edge only."
+lets you log against a Client — no Lead option to pick. On the Notes
+field, click Dictate and speak instead of typing, Chrome or Edge only. If
+AI's enabled, there's also 'Record voice note' on the Calling page — speak
+your recap in Hindi, Marathi, or English, whichever's fastest, and the CRM
+transcribes and translates it to English automatically, showing up as its
+own block under your typed notes within about a minute. Handy if English
+isn't the easiest language to type a call summary in on the spot."
 
-## Scene 9 — Notifications and wrap-up (8:00–9:00)
+## Scene 10 — Your Productivity and Reminders (9:10–9:55)
+**ON SCREEN:** Point at the "Your Productivity This Month" widget, then the
+Reminders card.
+**SAY:** "Two more things on your dashboard. 'Your Productivity This Month'
+shows your rank among other Support staff — private, nobody else sees your
+rank and you don't see theirs — plus your single biggest opportunity area.
+If AI's enabled, click 'Get tips to improve' for a specific suggestion
+based on your own numbers. And the Reminders card shows any nudges targeted
+at Support, or everyone — like routing every issue through Tickets, even a
+quick one. Some of these clear themselves automatically once you do the
+real thing — logging a ticket, for instance — no click needed. Others need
+a Done click, or Snooze to hide it from your own view for a few days
+without making it disappear for your manager."
+
+## Scene 11 — Notifications and wrap-up (9:55–11:00)
 **ON SCREEN:** Bell icon, then mention the 9 AM email.
 **SAY:** "The bell fires when a task's assigned to you or a call follow-up
 comes due — that's how the CRM reaches you without email. And at 9 AM

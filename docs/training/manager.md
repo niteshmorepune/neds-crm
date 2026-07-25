@@ -2,12 +2,14 @@
 
 **Audience:** managers (watch `getting-started.md` first — includes 2FA
 setup, which is required for this role).
-**Target length:** ~15 minutes
+**Target length:** ~18 minutes (grown a lot with recent features — splits
+naturally after Scene 8, before the Team Nudges/Notice Board scenes, if
+that's more than you want in one take)
 
 **Before you record:** have a client with multiple projects, a client
 flagged on Client Radar, an open ticket past SLA, a pending leave request,
-and (if set up) one content piece and one partner ready to point at. Log in
-as a manager user.
+a Team Nudge you can create/edit, and (if set up) one content piece and one
+partner ready to point at. Log in as a manager user.
 
 ---
 
@@ -36,22 +38,33 @@ second button — Draft recovery message — that writes an apology grounded
 in the actual ticket that was rated poorly. Review and personalize before
 sending either one; nothing goes out on its own."
 
-## Scene 3 — Employee Performance and Revenue reports (2:15–3:45)
+## Scene 3 — Employee Performance, Staff Ranking, and Revenue (2:15–4:25)
 **ON SCREEN:** Dashboard → Reports → Employee Performance Report, pick a
-month, click ✨ Generate AI Summary, then Revenue Report.
+month, click ✨ Generate AI Summary, then point at the Score/Rank/Focus area
+columns further down and click ✨ Suggest Improvements for the Team, then
+Revenue Report.
 **SAY:** "Two reports you'll use a lot. Employee Performance, per person for
 a chosen month — tasks completed, on-time percentage, calls made, leads
 converted, attendance percentage, daily reports submitted. Click Generate
 AI Summary and Claude turns those numbers into a narrative of trends and
 standouts — for a Sales rep with enough pipeline history, it'll name a
 specific stage where their deals move slower than the team average, not
-just a vague 'may need support' line. This is Admin/Manager only — it's
-never shown to the employee it's about, so treat it as a conversation
-starter, not something you hand them. Export the table to CSV for
+just a vague 'may need support' line. Below that, a ranked table scores and
+ranks each person only against their own role — Sales against Sales,
+Support against Support, and so on, since comparing across roles wouldn't
+mean anything — with a Focus area column showing their single weakest
+metric. A role with fewer than 2 people just shows 'not enough peers to
+compare' instead of a rank. Click 'Suggest Improvements for the Team' and
+Claude fills that Focus area column with a short, encouraging, specific
+suggestion per person. All of this — the AI summary, the ranking, the
+suggestions — is Admin/Manager only; it's never shown to the employee it's
+about, so treat it as a conversation starter, not something you hand them
+directly. Each employee does separately see their own rank and a tip on
+their own dashboard, just never anyone else's. Export the table to CSV for
 appraisals. Revenue Report, for a financial year — income by month, by
 service, by client, split recurring versus one-time."
 
-## Scene 4 — Lead sources, AI usage, and Ask the CRM (3:45–5:30)
+## Scene 4 — Lead sources, AI usage, and Ask the CRM (4:25–6:10)
 **ON SCREEN:** Reports → Lead Source Performance, then AI Usage Report,
 then Ask the CRM — type a question and show the answer.
 **SAY:** "Lead Source Performance shows conversion rate by source — website,
@@ -68,7 +81,7 @@ invented. If it doesn't recognise your question, it lists what it can
 currently answer instead of guessing, and every answer links back to the
 full report and shows the exact numbers it used."
 
-## Scene 5 — Sales Dashboard, company-wide (5:30–6:45)
+## Scene 5 — Sales Dashboard, company-wide (6:10–7:25)
 **ON SCREEN:** Sidebar → Sales Dashboard → point at the rep leaderboard,
 then Save Targets form and a "Suggested: ₹…" hint.
 **SAY:** "Sales Dashboard, company-wide for you — same KPI strip, trend
@@ -82,7 +95,22 @@ there's enough recent history, you'll see a 'Suggested: ₹…' hint under a
 blank field — that's the trailing three months' average won value plus 10
 percent — click it to fill the field, or just type your own number."
 
-## Scene 6 — Collections and Cash Forecast (6:45–8:00)
+## Scene 6 — Sales Incentive: setting the team pool (7:25–8:10)
+**ON SCREEN:** Sidebar → Incentives → point at each rep's own tiered
+incentive, then the team bonus pool amount (editable) and the company
+target it's gated on.
+**SAY:** "Sidebar → Incentives is also where you manage the team side of
+sales commission. Each rep sees their own monthly incentive live — a
+tiered rate on before-tax sales, 6% up to ₹50,000 rising to 20% above
+₹2,50,000, marginal like income tax so there's never a reason to hold a
+deal back near a boundary. As Admin/Manager, you also set the team bonus
+pool amount here — a fixed rupee figure split evenly across active Sales
+staff, but it only pays out if the company hits the monthly target you set
+on the Sales Dashboard. On the 1st of each month, last month's numbers lock
+in as a final statement, so payroll has a stable figure even if a deal
+gets edited afterwards."
+
+## Scene 7 — Collections and Cash Forecast (8:10–9:25)
 **ON SCREEN:** Sidebar → Collections, then Reports → Cash Forecast.
 **SAY:** "Collections is the same client-by-client follow-up worklist
 accounts uses — who hasn't paid, what's partial, broken payment promises,
@@ -92,7 +120,7 @@ recurring revenue expected and receivables already due, bucketed by the
 next three months, with the open pipeline's weighted forecast shown
 separately since it's indicative, not committed cash."
 
-## Scene 7 — Bell notifications and digests (8:00–9:00)
+## Scene 8 — Bell notifications and digests (9:25–10:25)
 **ON SCREEN:** Bell icon.
 **SAY:** "As a manager you're notified for a fair amount: any deal marked
 Won, company-wide; the same 7-day recurring-invoice-due warning accounts
@@ -106,18 +134,52 @@ Monday at 9 AM, a weekly owner digest synthesizing pipeline, MRR, cash
 expected, and how many clients Client Radar has flagged, also as a
 Monday dashboard banner."
 
-## Scene 8 — Oversight: who's working what (9:00–10:15)
+## Scene 9 — Team Nudges: assigning trackable reminders (10:25–11:15)
+**ON SCREEN:** Sidebar → Team Nudges → + New Nudge → fill title, target
+role, recurrence → Save. Then scroll to the team completion overview,
+point at a Pending, a Snoozed, and a Done row.
+**SAY:** "Team Nudges is different from Notice Board, coming up next — a
+notice is a broadcast, a nudge is a targeted, trackable to-do. Sidebar →
+Team Nudges, New Nudge: a title, an optional description, who it's for —
+one role, or everyone — and whether it's one-time or weekly. Weekly nudges
+can also auto-clear on their own once the person does the real thing, like
+logging a Ticket, no click needed from them. Every targeted person sees it
+as a card on their own dashboard with Done and Snooze buttons. Down here,
+the team completion overview shows the real status for every nudge —
+Pending, Snoozed, or Done, plus how and when. Someone snoozing their own
+view never hides anything from you here — snoozed shows as its own status,
+it's never quietly folded into Done."
+
+## Scene 10 — Notice Board (11:15–11:50)
+**ON SCREEN:** Sidebar → Notice Board → New Announcement → title, message,
+audience, pin checkbox.
+**SAY:** "Notice Board, in the sidebar, is for posting time-bound company
+notices — office closures, holidays, policy changes — without relying on
+email or WhatsApp. Set a title, message, audience — Staff only, Clients
+only, or both — a start time, and an optional end time; leave the end date
+blank for a standing notice with no expiry, and tick Pin to top to keep an
+important one above newer posts. A Staff/Both post shows as a dismissible
+banner at the top of everyone's Dashboard; a Clients/Both post shows the
+same way on the Client Portal home page. Nothing to manually take down —
+it stops showing once its end date passes."
+
+## Scene 11 — Oversight: who's working what, and Google Meet Notes (11:50–13:20)
 **ON SCREEN:** Open a client → Services tab → point at the Team column.
-Then Project Updates → toggle My Services.
+Then Project Updates → toggle My Services. Then briefly point at a
+Google Meet import on a client's Calls tab if one exists.
 **SAY:** "You have access to every module for oversight — leads, deals,
 invoices, projects, tickets, all of it, and the search bar gets you
 anywhere fast. The fastest way to answer 'who handles GMB for this client'
 is opening their profile, Services tab — the Team column shows the lead and
 any other team members per project. And on Project Updates, there's a My
 Services toggle if you also run your own accounts, so you're not scrolling
-past everyone else's."
+past everyone else's. One more thing worth knowing about even if you don't
+use it directly: staff who connect their Google account can import Google
+Meet call recordings and transcripts onto a client's Calls tab, with an AI
+summary if enabled — useful context if you're catching up on a client you
+don't usually work with."
 
-## Scene 9 — Attendance, leave approvals, and daily reports (10:15–11:45)
+## Scene 12 — Attendance, leave approvals, and daily reports (13:20–14:50)
 **ON SCREEN:** Attendance → switch team member in the dropdown →
 Corrections → pick a date → update status/notes. Then Leave Requests →
 Review pending → approve one, pointing at its Type. Then Daily Reports →
@@ -136,7 +198,7 @@ Team view shows everyone's submission for the day, with an X-out-of-7
 badge per person so a chronic non-submitter stands out — red, amber, or
 green."
 
-## Scene 10 — Scheduled maintenance tasks (11:45–12:30)
+## Scene 13 — Scheduled maintenance tasks (14:50–15:35)
 **ON SCREEN:** Open a project with auto-created tasks.
 **SAY:** "Every morning at 8 AM the CRM auto-creates maintenance tasks for
 each active project — backups, security scans, that kind of thing —
@@ -145,7 +207,7 @@ piling up overdue, since they count in the performance report, and that
 projects are marked Active with a service set, or they won't get any
 tasks at all."
 
-## Scene 11 — Content collaboration and partner health (12:30–13:45)
+## Scene 14 — Content collaboration and partner health (15:35–16:50)
 **ON SCREEN:** Sidebar → Partners → click a partner name → point at their
 collections/delivery table → then a project's Content Pieces card.
 **SAY:** "If we're working with an outside content agency, that's the
@@ -160,7 +222,7 @@ call with them, so you can answer 'how are my clients doing' without
 digging. This is covered in a lot more depth in the written manager guide
 if you need the full workflow."
 
-## Scene 12 — Automated integrations, brief overview (13:45–14:30)
+## Scene 15 — Automated integrations, brief overview (16:50–17:35)
 **ON SCREEN:** A client's Activity tab showing an automated event.
 **SAY:** "Quick note on the automated side — when a deal is marked Won, the
 client gets set up in Drishti and SMDost automatically, no manual entry.
@@ -168,7 +230,7 @@ Every one of these automated events leaves a trace on the client's Activity
 tab, so if something seems off, that's the first place to check. Full
 troubleshooting steps are in the Integrations guide."
 
-## Scene 13 — Wrap-up (14:30–15:00)
+## Scene 16 — Wrap-up (17:35–18:05)
 **ON SCREEN:** Dashboard, point at SLA-at-risk widget.
 **SAY:** "Two habits worth building: check Client Radar and SLA-at-risk
 tickets regularly, and let the stagnation alert emails do the chasing for

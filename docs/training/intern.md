@@ -1,7 +1,7 @@
 # Intern — Recording Script
 
 **Audience:** interns (watch `getting-started.md` first).
-**Target length:** ~5 minutes
+**Target length:** ~6 minutes
 
 **Before you record:** log in as an intern-role test user. Have one project
 you're a member of and a couple of assigned tasks ready to show.
@@ -47,13 +47,23 @@ the other. Under Attendance in the sidebar you can see your own history. If
 you ever need a correction — you forgot to punch, or the machine was
 down — ask your admin or manager, only they can edit attendance records."
 
-## Scene 6 — Daily report and what's off-limits (4:00–5:00)
+## Scene 6 — Daily report (4:00–4:45)
 **ON SCREEN:** Daily Reports form.
 **SAY:** "At the end of each day, open Daily Reports and write a quick
 summary of what you worked on — some numbers are already filled in for
-you. You'll get a reminder at 6 PM if you haven't submitted yet. Last
-thing — a few modules aren't available to interns: leads, deals,
-quotations, invoices, tickets, calling, partners, services, and the
-user/menu admin pages. If something comes up that needs one of those, just
-flag it to your manager or leave a note on the relevant project. That
-covers everything for interns."
+you. You'll get a reminder at 6 PM if you haven't submitted yet."
+
+## Scene 7 — Your Productivity, Reminders, and what's off-limits (4:45–6:00)
+**ON SCREEN:** Point at the "Your Productivity This Month" widget, then the
+Reminders card.
+**SAY:** "Two things on your dashboard worth knowing. 'Your Productivity
+This Month' shows your rank among other interns — private, nobody else
+sees your rank and you don't see theirs — plus your single biggest
+opportunity area. If AI's enabled, click 'Get tips to improve' for a
+specific suggestion. And the Reminders card shows any nudges targeted at
+you — click Done once you've handled one, or Snooze to hide it from your
+own view for a few days. Last thing — a few modules aren't available to
+interns: leads, deals, quotations, invoices, tickets, calling, partners,
+services, and the user/menu admin pages. If something comes up that needs
+one of those, just flag it to your manager or leave a note on the relevant
+project. That covers everything for interns."

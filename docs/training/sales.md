@@ -1,12 +1,15 @@
 # Sales — Recording Script
 
 **Audience:** sales team (watch `getting-started.md` first).
-**Target length:** ~13 minutes
+**Target length:** ~15 minutes (splits naturally after Scene 9 if that
+feels like too much for one take — Scenes 1–9 cover lead-to-deal, 10–15
+cover quotation-to-invoice-and-beyond)
 
 **Before you record:** have one existing lead, one existing client with an
 open deal (ideally with a "Deals like this one" match — another closed deal
-on the same service), and one existing quotation linked to a deal with notes
-ready to click through. Log in as a sales user.
+on the same service), one existing quotation linked to a deal with notes,
+and — if you've connected a Google account — a recent Google Meet call with
+a client ready to import. Log in as a sales user.
 
 ---
 
@@ -43,21 +46,36 @@ and it'll show in your morning digest. There's also a Draft follow-up
 button — that's Claude writing a suggested message for you to edit and
 send yourself. It never sends anything on its own."
 
-## Scene 4 — Converting a lead (3:45–4:30)
+## Scene 4 — Google Meet Notes (3:45–4:25)
+**ON SCREEN:** Open a client's Calls tab → click + Import Meet Notes →
+point at the recording link, transcript link, and — if AI is enabled — an
+AI-summarized "Key points / Decisions / Action items" section.
+**SAY:** "If you're on Google Meet calls with clients, connect your Google
+account once from Profile — then on a client or lead's Calls tab, click '+
+Import Meet Notes' to pull in your recent Meet calls with them. It saves the
+recording link, transcript link, and the full transcript text right there,
+same as a logged call. It's read-only — nothing in your Calendar or Drive
+ever changes — and it only picks up meetings you personally organized and
+recorded, a few minutes after the call ends for Google to finish
+processing. If AI is enabled, an imported meeting with a transcript also
+gets a short AI summary — key points, decisions, action items — so you
+don't have to re-read the whole transcript later."
+
+## Scene 5 — Converting a lead (4:25–5:10)
 **ON SCREEN:** Click Convert on a lead.
 **SAY:** "When it's real business, click Convert. That creates a Client and
 a Deal automatically, linked together. The new client shows up as
 'Prospect' in yellow — it flips to Active in green automatically the
 moment you mark the deal Won."
 
-## Scene 5 — Send Quotation shortcut (4:30–5:00)
+## Scene 6 — Send Quotation shortcut (5:10–5:40)
 **ON SCREEN:** Open a lead, click Send Quotation.
 **SAY:** "You don't actually have to convert first — open any lead and
 click Send Quotation. If they're not converted yet, the CRM does that for
 you automatically and drops you straight into the quotation builder,
 already filled in."
 
-## Scene 6 — Pipeline board (5:00–6:00)
+## Scene 7 — Pipeline board (5:40–6:40)
 **ON SCREEN:** Sales Department board, drag a deal between columns, point
 at a stale-deal badge.
 **SAY:** "Your pipeline board — New, Contacted, Proposal, Negotiation, Won
@@ -70,7 +88,7 @@ follow up, not a penalty. If a deal came through a partner agency rather
 than directly, set the 'Referred by' dropdown on the deal — leave it as
 Direct otherwise."
 
-## Scene 7 — Pipeline KPIs and the Sales Dashboard (6:00–7:30)
+## Scene 8 — Pipeline KPIs and the Sales Dashboard (6:40–8:10)
 **ON SCREEN:** Point at the KPI strip above the board (open pipeline,
 weighted forecast, won this month/FY, win rate, avg deal size, avg sales
 cycle), then Sidebar → Sales Dashboard.
@@ -84,7 +102,7 @@ actually converting, a Needs Attention list of deals that are stale,
 overdue on follow-up, or sitting at a ₹0 value, and — if your manager's set
 one — a target-vs-actual progress bar."
 
-## Scene 8 — Deals like this one (7:30–8:00)
+## Scene 9 — Deals like this one (8:10–8:40)
 **ON SCREEN:** Open a deal with at least one comparable closed deal, scroll
 to the "Deals like this one" panel.
 **SAY:** "One more thing on a deal's page — 'Deals like this one' shows up
@@ -94,25 +112,30 @@ actually tend to go, both wins and losses. It needs a service set on the
 deal, and at least one other closed deal in that service to compare
 against."
 
-## Scene 9 — Building a quotation (8:00–9:45)
+## Scene 10 — Building a quotation, with AI scope of work (8:40–10:40)
 **ON SCREEN:** Open a deal → + New Quotation → click ✨ Suggest line items
-→ review the suggested lines → add a milestone → save → download PDF.
+→ review the suggested lines → scroll to Scope of Work → click ✨ Draft
+scope of work → add a milestone → save → download PDF.
 **SAY:** "For quotations — easiest way is opening a deal and clicking '+
 New Quotation' right there, client and deal already filled in. If the deal
 has notes on it, try '✨ Suggest line items' first — Claude drafts a first
 pass at the description, quantity, and SAC code for each line based only
 on what's actually in those notes. It never fills in a rate or a GST
 percent — those stay blank on every suggested line, exactly like a
-manually-added one, so you're still the one pricing and saving it. If the
-deal has no notes, it'll just say so instead of guessing. GST calculates
-itself once you fill in a rate — CGST plus SGST for Maharashtra clients,
-IGST for everyone else. For project work, add milestones — advance on
-signing, balance on delivery, that kind of thing. Save, download the PDF,
-send it to the client — or click Send to Client to email it straight from
-here. Once they agree, mark it Accepted, then Convert to invoice —
+manually-added one, so you're still the one pricing and saving it. Below
+the line items, there's a Scope of Work paragraph shown to the client — if
+the deal has notes, '✨ Draft scope of work' writes that paragraph for you
+too, grounded only in the deal's notes and service line, and it never
+mentions price or rate — that's what the line items are for. Either
+button, if the deal has no notes yet, just says so instead of guessing. GST
+calculates itself once you fill in a rate — CGST plus SGST for Maharashtra
+clients, IGST for everyone else. For project work, add milestones — advance
+on signing, balance on delivery, that kind of thing. Save, download the
+PDF, send it to the client — or click Send to Client to email it straight
+from here. Once they agree, mark it Accepted, then Convert to invoice —
 accounts takes it from there."
 
-## Scene 10 — Clients (9:45–10:45)
+## Scene 11 — Clients (10:40–11:40)
 **ON SCREEN:** Clients list, then Clients → Import, then point at the
 Non-GST client checkbox on a client's edit page.
 **SAY:** "Your Clients list only shows companies assigned to you plus
@@ -126,7 +149,7 @@ billed with no GST, tick 'Non-GST client' instead — different from
 Country, they're still in India, we're just not charging GST on their
 bills."
 
-## Scene 11 — AI content drafts on a client (10:45–11:45)
+## Scene 12 — AI content drafts on a client (11:40–12:40)
 **ON SCREEN:** Open a client → Notes tab → point at an "AI-drafted monthly
 update" note. Then open one of your projects and point at the "Pending
 Client Update" panel.
@@ -141,7 +164,33 @@ Approve & Send to post it straight to the client's portal and email their
 billing contact in one step, or Discard if it's not worth sharing. Nothing
 reaches the client until you click Approve & Send."
 
-## Scene 12 — Bell notifications + wrap-up (11:45–13:00)
+## Scene 13 — Sales Incentive (12:40–13:25)
+**ON SCREEN:** Sidebar → Incentives.
+**SAY:** "Sidebar → Incentives shows your monthly sales incentive, live —
+calculated from the same 'won this month' value you already see on the
+Sales Dashboard, so the two pages never disagree. It's a tiered rate on
+your before-tax sales this month — 6% up to ₹50,000, 10% up to ₹1,00,000,
+12.5% up to ₹1,50,000, 15% up to ₹2,50,000, 20% above that — and the rates
+are marginal, like income tax, so each slab only applies to the sales
+within that band. There's never a reason to hold a deal back to avoid
+crossing a boundary. There's also a team bonus — a fixed pool split evenly
+across active Sales staff — that only pays out if the company hits its
+monthly target. This stays live all month; on the 1st, last month's number
+gets locked in as a final statement."
+
+## Scene 14 — Your Productivity and Reminders (13:25–14:10)
+**ON SCREEN:** Point at the "Your Productivity This Month" widget, then the
+Reminders card.
+**SAY:** "Two more things on your dashboard. 'Your Productivity This Month'
+shows your rank among other Sales staff — private, nobody else sees your
+rank and you don't see theirs — plus your single biggest opportunity area.
+If AI's enabled, click 'Get tips to improve' for a specific suggestion
+based on your own numbers. And the Reminders card shows any nudges targeted
+at Sales, or everyone — click Done once you've handled one, or Snooze to
+hide it from your own view for a few days without making it disappear for
+your manager."
+
+## Scene 15 — Bell notifications + wrap-up (14:10–15:00)
 **ON SCREEN:** Point at the bell icon.
 **SAY:** "You'll get bell notifications for a new lead assigned to you, a
 nurture follow-up Claude drafted when a lead's gone quiet, a new quotation

@@ -2,18 +2,21 @@
 
 **Audience:** admins (watch `getting-started.md` first — includes 2FA
 setup, which is required for this role).
-**Target length:** ~10 minutes
+**Target length:** ~12 minutes
 
 **Before you record:** have the Users list, Services list, Menu Controller,
-and Audit Log pages ready to click through. Log in as an admin user.
+Subscriptions, and Audit Log pages ready to click through. Log in as an
+admin user.
 
 ---
 
 ## Scene 1 — Intro (0:00–0:20)
 **SAY:** "This one's for admins. You can do everything a manager can, plus
-manage staff accounts, service lines, the sidebar, the audit log, and
-backups. If you haven't watched the manager video, watch that one too —
-everything there applies to you as well."
+manage staff accounts, service lines, the sidebar, subscriptions, the audit
+log, and backups. If you haven't watched the manager video, watch that one
+too — everything there applies to you as well, including Notice Board,
+Team Nudges, Sales Incentives, and Staff Productivity Ranking, which are
+covered there in full."
 
 ## Scene 2 — Adding and managing users, and additional roles (0:20–2:15)
 **ON SCREEN:** Users → Add user → fill the form → Save. Then open an
@@ -73,7 +76,22 @@ an individual's sidebar — cosmetic only, they don't grant or remove any
 actual access, and there's a banner reminding you of that right on the
 page. Changes apply the next time that person loads a page."
 
-## Scene 7 — Client status and import (5:15–6:15)
+## Scene 7 — Subscriptions (5:15–6:00)
+**ON SCREEN:** Sidebar → Subscriptions → click Add → fill name, vendor,
+cost per cycle, billing cycle, next renewal date, reminder window → Save.
+**SAY:** "Subscriptions is admin-only — not even managers see this one,
+since it's internal vendor and billing info. Track the tools NEDS itself
+pays for: the Claude subscription, Hostinger hosting, domain renewals,
+anything else, so renewals stop being tribal knowledge. Each entry has a
+name, vendor, cost per cycle, a billing cycle — monthly, quarterly, or
+yearly — a next renewal date, and how many days before to remind you. Once
+a reminder window opens, every active admin gets both an email and a bell
+notification, so you won't miss it even on a day you're not logged in. And
+once a renewal date passes, it's treated as auto-renewed — the date just
+rolls forward a cycle on its own. If you actually cancel something instead
+of renewing, untick Active on that entry rather than deleting it."
+
+## Scene 8 — Client status and import (6:00–7:00)
 **ON SCREEN:** Clients list, status filter dropdown, then Clients →
 Import.
 **SAY:** "Clients have three statuses — Prospect, in yellow, created when a
@@ -83,7 +101,7 @@ list defaults to Active — use the filter to see the others. For bulk
 import, Clients, Import, and download the template first — it's got
 address, owner, and tags columns. Leave owner blank to assign to yourself."
 
-## Scene 8 — Lead capture channels (6:15–7:00)
+## Scene 9 — Lead capture channels (7:00–7:45)
 **ON SCREEN:** A lead in Lead Generation with source "Meta Ads", then
 mention the website form and WhatsApp.
 **SAY:** "Leads flow in automatically from three channels now — no manual
@@ -95,7 +113,7 @@ auto-assign to whichever Sales rep has the fewest open leads right now, so
 nothing sits unowned. If Meta Lead Ads ever needs re-configuring, the
 step-by-step is in the written admin guide."
 
-## Scene 9 — Audit log and backups (7:00–7:45)
+## Scene 10 — Audit log and backups (7:45–8:30)
 **ON SCREEN:** Audit Log, filter by record type.
 **SAY:** "The Audit Log shows who created, updated, or deleted any record,
 and when — filter by type to investigate 'who changed this.' On backups,
@@ -103,32 +121,36 @@ there's genuinely nothing for you to do — the database backs itself up
 every night automatically. If you ever need to restore one, that process is
 written up separately for whoever's handling the server."
 
-## Scene 10 — Integrations overview, brief (7:45–8:45)
+## Scene 11 — Integrations overview, brief (8:30–9:30)
 **ON SCREEN:** A client's Activity tab.
 **SAY:** "A few things run automatically behind the scenes that are worth
 knowing about even though you won't touch them day to day: when a deal is
 won, the client gets set up in our other tools automatically; the
 website's contact form creates leads automatically; WhatsApp messages
-create support tickets automatically. All of these leave a trace on the
-client's Activity tab if you ever need to check whether something fired.
-If any of these integrations misbehave, that's a job for whoever manages
-the server — full troubleshooting steps live in the written admin and
-integrations guides."
+create support tickets automatically; and if staff have connected their
+Google account, Meet call recordings and transcripts can be imported onto a
+client's Calls tab. All of these leave a trace on the client's Activity
+tab if you ever need to check whether something fired. If any of these
+integrations misbehave, that's a job for whoever manages the server — full
+troubleshooting steps live in the written admin and integrations guides."
 
-## Scene 11 — AI features and wrap-up (8:45–10:00)
+## Scene 12 — AI features and wrap-up (9:30–12:00)
 **ON SCREEN:** A lead with a score badge, a ticket's Draft with AI button,
-and the AI Usage Report.
+the Employee Performance Report's ranked table, and the AI Usage Report.
 **SAY:** "Last thing — the AI features, and there are a lot of them now.
 Beyond lead scoring and Draft/Summarize buttons on leads and tickets,
-there's a weekly owner digest every Monday, an AI narrative on the
-Employee Performance report, Client Radar suggestions, a ticket triage
-suggestion on new tickets, quotation line item suggestions, onboarding
-task suggestions on a project, and a portal assistant clients can ask
-questions to themselves. Every single one only ever drafts or suggests for
-a human to review — Claude never sends, posts, or acts on its own. When
-someone rates a draft helpful or not, that rolls up into the AI Usage
-Report, which is the place to check what's actually earning its keep
-versus what nobody's touching. If these buttons aren't showing up for
-anyone, that's a server configuration question, not something to debug
-from the UI. That's the admin essentials — the written admin guide has the
-full detail on everything we skipped for time."
+there's a weekly owner digest every Monday, an AI narrative and a
+per-role productivity ranking with suggested focus areas on the Employee
+Performance report, Client Radar suggestions, a ticket triage suggestion
+on new tickets, quotation line item and scope-of-work suggestions,
+onboarding task suggestions on a project, Google Meet transcript
+summaries, and a portal assistant clients can ask questions to themselves.
+Every single one only ever drafts or suggests for a human to review —
+Claude never sends, posts, or acts on its own. When someone rates a draft
+helpful or not, that rolls up into the AI Usage Report, which is the place
+to check what's actually earning its keep versus what nobody's touching.
+If these buttons aren't showing up for anyone, that's a server
+configuration question, not something to debug from the UI. That's the
+admin essentials — the written admin guide has the full detail on
+everything we skipped for time, and the manager video covers Notice Board,
+Team Nudges, and Sales Incentives, which you share with that role."

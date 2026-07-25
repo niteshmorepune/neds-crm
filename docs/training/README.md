@@ -39,25 +39,28 @@ section instead of re-editing footage.
 
 | Script | Who watches it | Target length |
 |---|---|---|
-| [`getting-started.md`](getting-started.md) | **Everyone**, first video watched | ~8 min |
-| [`sales.md`](sales.md) | Sales | ~13 min |
-| [`support.md`](support.md) | Support | ~9 min |
-| [`accounts.md`](accounts.md) | Accounts | ~13 min |
-| [`manager.md`](manager.md) | Manager | ~15 min |
-| [`admin.md`](admin.md) | Admin | ~10 min |
-| [`intern.md`](intern.md) | Intern | ~5 min |
+| [`getting-started.md`](getting-started.md) | **Everyone**, first video watched | ~9 min |
+| [`sales.md`](sales.md) | Sales | ~15 min |
+| [`support.md`](support.md) | Support | ~11 min |
+| [`accounts.md`](accounts.md) | Accounts | ~15 min |
+| [`manager.md`](manager.md) | Manager | ~18 min |
+| [`admin.md`](admin.md) | Admin | ~12 min |
+| [`intern.md`](intern.md) | Intern | ~6 min |
 
 Everyone watches `getting-started.md` first, then the one script matching
 their role. Managers/admins may also want to skim the Sales/Support/Accounts
 scripts since they oversee those modules, but it's not required.
 
-**On the longer scripts (Sales, Accounts, Manager, now 13-15 min):** these
-grew a lot in the 2026-07-19 refresh — a lot has shipped since these were
-first written. Still recordable in one sitting, but if 13-15 minutes feels
-like too much to hold in one take, it's fine to split at a natural scene
-boundary (e.g. record Manager's Reports scenes as its own clip) rather than
-force it into one video — two clean videos beat one long one with a lot of
-restarts.
+**On the longer scripts (Sales, Accounts, Manager, now 15-18 min):** these
+grew a lot again in the 2026-07-25 refresh (Team Nudges, Notice Board,
+Sales Incentive, Staff Productivity Ranking, Google Meet Notes, and more —
+see each script's git history for the full list) on top of the 2026-07-19
+refresh before it. Still recordable in one sitting if you're comfortable
+with a longer take, but each of the three now names its own natural split
+point right in the header (e.g. Sales splits after Scene 9, Manager after
+Scene 8) — two clean videos beat one long one with a lot of restarts. If a
+future refresh pushes these even longer, that's the signal to actually
+split the file into two scripts rather than just noting a split point.
 
 ## PDF handouts
 

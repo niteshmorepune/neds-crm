@@ -2,12 +2,13 @@
 
 **Audience:** every new hire, regardless of role. This is the first video
 they watch, before their role-specific one.
-**Target length:** ~8 minutes
+**Target length:** ~9 minutes
 
 **Before you record:** log in as any real test user. Have a task assigned to
 that user that's overdue (so the red banner shows), make sure the bell icon
-has at least one unread notification to point at, and have a pending leave
-request ready if you can (any status is fine).
+has at least one unread notification to point at, have a pending leave
+request ready if you can (any status is fine), and — if one exists — a
+Notice Board post or a Team Nudge targeted at your test user's role.
 
 ---
 
@@ -61,7 +62,21 @@ to it, or Dismiss to clear it."
 banner right when you log in — click 'View tasks' to go straight to your
 backlog and clear it."
 
-## Scene 7 — My Day (3:45–4:25)
+## Scene 7 — Notice Board and Reminders (3:45–4:30)
+**ON SCREEN:** Point at a Notice Board banner if one's currently posted,
+then the Reminders card right below it.
+**SAY:** "Two more things show up near the top of your dashboard. If admin
+or a manager has posted a company-wide notice — a holiday, a policy change —
+you'll see it as a dismissible banner; dismissing is per-device, so it may
+reappear if you check from somewhere else. Right below that, a Reminders
+card shows any nudges targeted at your role, or everyone — things like 'log
+every active client as a Deal.' Click Done once you've actually done it, or
+Snooze 3 days to hide it from your own view for a few days — snoozing
+doesn't make it go away for admin and manager, they still see the real
+status on their side. Some reminders clear themselves automatically once you
+do the real thing they're asking for, no click needed."
+
+## Scene 8 — My Day (4:30–5:10)
 **ON SCREEN:** Sidebar → My Day.
 **SAY:** "One page worth building a habit around: My Day. It's a single
 worklist pulling together everything due or overdue that's actually yours —
@@ -70,7 +85,7 @@ about to breach SLA. Instead of checking four or five separate screens each
 morning, check this one first. Every item links straight to the record, and
 once you're caught up, the list just empties out."
 
-## Scene 8 — Attendance: check in/out AND the biometric machine (4:25–5:35)
+## Scene 9 — Attendance: check in/out AND the biometric machine (5:10–6:20)
 **ON SCREEN:** The attendance widget on the dashboard, Check In / Check Out
 buttons.
 **SAY:** "Every day, use this attendance widget — Check In when you start,
@@ -83,7 +98,7 @@ is earliest for check-in and latest for check-out, from either source — so
 there's no conflict, and doing both is exactly what you should do every
 day."
 
-## Scene 9 — Requesting leave (5:35–6:15)
+## Scene 10 — Requesting leave (6:20–7:00)
 **ON SCREEN:** Sidebar → Leave Requests → fill in leave type, dates, reason
 → Submit.
 **SAY:** "Need a day off? Leave Requests in the sidebar. Pick a leave type —
@@ -95,7 +110,7 @@ Leave for a full day, Half Day for a half day — Sundays are skipped since
 they're not office days anyway. You can cancel your own request as long as
 it's still pending."
 
-## Scene 10 — Daily report (6:15–7:00)
+## Scene 11 — Daily report (7:00–7:45)
 **ON SCREEN:** Open Daily Reports, show the form, point at the "🔄 routine
 maintenance" collapsed line under My Tasks if visible.
 **SAY:** "At the end of your day, open Daily Reports and write a couple of
@@ -107,7 +122,7 @@ CRM created automatically on a schedule, like a routine maintenance check,
 is collapsed under a 'click to view' line so it doesn't bury the tasks
 someone actually assigned you personally."
 
-## Scene 11 — Morning digest + wrap-up (7:00–7:45)
+## Scene 12 — Morning digest + wrap-up (7:45–8:30)
 **ON SCREEN:** (Optional — show an example digest email if you have one
 handy, otherwise just talk over the dashboard.)
 **SAY:** "Every morning at 9 AM you'll get an email summarising your day —
