@@ -22,6 +22,11 @@ class MenuItemsSeeder extends Seeder
     {
         $all = [UserRole::Manager, UserRole::Sales, UserRole::Support, UserRole::Accounts, UserRole::Intern];
 
+        // Ordered by workflow stage, not by build history (confirmed with the
+        // owner 2026-07-25): daily habits first, then the Sales pipeline
+        // end-to-end (Lead → Deal → Quotation → Client → Incentive), then
+        // Finance, then Delivery/Support, then shared oversight tools, then
+        // admin-only config at the very bottom.
         $this->items = [
             ['key' => 'dashboard',        'label' => 'Dashboard',        'route' => 'dashboard',        'icon' => 'dashboard',  'roles' => $all],
             ['key' => 'my-day',           'label' => 'My Day',           'route' => 'my-day.index',     'icon' => 'sun',        'roles' => $all],
@@ -30,23 +35,23 @@ class MenuItemsSeeder extends Seeder
             ['key' => 'lead-generation',  'label' => 'Lead Generation',  'route' => 'leads.index',      'icon' => 'funnel',     'roles' => [UserRole::Manager, UserRole::Sales]],
             ['key' => 'sales-department', 'label' => 'Sales Department',  'route' => 'deals.index',      'icon' => 'trending',   'roles' => [UserRole::Manager, UserRole::Sales]],
             ['key' => 'sales-dashboard',  'label' => 'Sales Dashboard',  'route' => 'sales-dashboard.index', 'icon' => 'chart-bar', 'roles' => [UserRole::Manager, UserRole::Sales]],
-            ['key' => 'incentives',       'label' => 'Incentives',       'route' => 'incentives.index', 'icon' => 'currency-rupee', 'roles' => [UserRole::Manager, UserRole::Sales]],
-            ['key' => 'account',          'label' => 'Account',          'route' => 'reports.receivables', 'icon' => 'wallet',  'roles' => [UserRole::Manager, UserRole::Accounts]],
-            ['key' => 'collections',      'label' => 'Collections',      'route' => 'reports.collections', 'icon' => 'banknotes', 'roles' => [UserRole::Manager, UserRole::Accounts]],
-            ['key' => 'project-updates',  'label' => 'Project Updates',  'route' => 'projects.index',   'icon' => 'briefcase',  'roles' => [UserRole::Manager, UserRole::Sales, UserRole::Support, UserRole::Intern]],
-            ['key' => 'tickets',          'label' => 'Tickets',          'route' => 'tickets.index',    'icon' => 'lifebuoy',   'roles' => [UserRole::Manager, UserRole::Support, UserRole::Sales]],
-            ['key' => 'categories',       'label' => 'Services',         'route' => 'services.index',   'icon' => 'tag',        'roles' => [UserRole::Manager]],
-            ['key' => 'festivals',        'label' => 'Festivals',        'route' => 'festivals.index',  'icon' => 'calendar',   'roles' => [UserRole::Manager]],
-            ['key' => 'client-radar',     'label' => 'Client Radar',     'route' => 'client-radar.index', 'icon' => 'radar',    'roles' => [UserRole::Manager]],
             ['key' => 'quotations',       'label' => 'Quotations',       'route' => 'quotations.index', 'icon' => 'document',   'roles' => [UserRole::Manager, UserRole::Sales, UserRole::Accounts]],
             ['key' => 'customer',         'label' => 'Clients',          'route' => 'clients.index',    'icon' => 'users',      'roles' => [UserRole::Manager, UserRole::Sales, UserRole::Support, UserRole::Accounts, UserRole::Intern]],
+            ['key' => 'incentives',       'label' => 'Incentives',       'route' => 'incentives.index', 'icon' => 'currency-rupee', 'roles' => [UserRole::Manager, UserRole::Sales]],
             ['key' => 'invoices',         'label' => 'Invoices',         'route' => 'invoices.index',   'icon' => 'receipt',    'roles' => [UserRole::Manager, UserRole::Accounts, UserRole::Sales]],
+            ['key' => 'account',          'label' => 'Account',          'route' => 'reports.receivables', 'icon' => 'wallet',  'roles' => [UserRole::Manager, UserRole::Accounts]],
+            ['key' => 'collections',      'label' => 'Collections',      'route' => 'reports.collections', 'icon' => 'banknotes', 'roles' => [UserRole::Manager, UserRole::Accounts]],
+            ['key' => 'tickets',          'label' => 'Tickets',          'route' => 'tickets.index',    'icon' => 'lifebuoy',   'roles' => [UserRole::Manager, UserRole::Support, UserRole::Sales]],
             ['key' => 'calling',          'label' => 'Calling',          'route' => 'calls.index',      'icon' => 'phone',      'roles' => [UserRole::Manager, UserRole::Sales, UserRole::Support]],
+            ['key' => 'project-updates',  'label' => 'Project Updates',  'route' => 'projects.index',   'icon' => 'briefcase',  'roles' => [UserRole::Manager, UserRole::Sales, UserRole::Support, UserRole::Intern]],
             ['key' => 'emptask',          'label' => 'Employee Task',    'route' => 'tasks.index',      'icon' => 'check',      'roles' => $all],
+            ['key' => 'client-radar',     'label' => 'Client Radar',     'route' => 'client-radar.index', 'icon' => 'radar',    'roles' => [UserRole::Manager]],
             ['key' => 'daily-reports',    'label' => 'Daily Reports',    'route' => 'daily-reports.index', 'icon' => 'clipboard', 'roles' => $all],
             ['key' => 'partners',         'label' => 'Partners',         'route' => 'partners.index',   'icon' => 'users',      'roles' => [UserRole::Manager]],
             ['key' => 'announcements',    'label' => 'Notice Board',     'route' => 'announcements.index', 'icon' => 'megaphone', 'roles' => [UserRole::Manager]],
             ['key' => 'team-nudges',      'label' => 'Team Nudges',      'route' => 'team-nudges.index', 'icon' => 'bell',       'roles' => [UserRole::Manager]],
+            ['key' => 'categories',       'label' => 'Services',         'route' => 'services.index',   'icon' => 'tag',        'roles' => [UserRole::Manager]],
+            ['key' => 'festivals',        'label' => 'Festivals',        'route' => 'festivals.index',  'icon' => 'calendar',   'roles' => [UserRole::Manager]],
             ['key' => 'subscriptions',    'label' => 'Subscriptions',    'route' => 'subscriptions.index', 'icon' => 'credit-card', 'roles' => []], // admin only
             ['key' => 'users',            'label' => 'Users',            'route' => 'users.index',      'icon' => 'users',      'roles' => []], // admin only
             ['key' => 'menu-controller',  'label' => 'Menu Controller',  'route' => 'menu-controller',  'icon' => 'sliders',    'roles' => []], // admin only
