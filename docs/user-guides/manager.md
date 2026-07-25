@@ -29,6 +29,21 @@ Dashboard; a Clients/Both post shows the same way on the Client Portal home
 page. Nothing to manually take down — a post stops showing once its end date
 passes, and only shows once its start time arrives.
 
+## Team Nudges
+**Team Nudges** in the sidebar (Admin/Manager only) is for assigning a
+targeted, trackable reminder to a specific role (or everyone) — unlike a
+Notice Board post, which is just a broadcast. Set a **title**, optional
+**description**, **target** role, **recurrence** (One-time or Weekly), and —
+for weekly nudges only — an optional **auto-detect** check that clears the
+reminder for someone automatically once they've done the real thing (e.g.
+logged a Ticket), no manual click needed.
+
+Each targeted person sees it as a card on their own Dashboard with
+**Done**/**Snooze 3d** buttons. This page's **team completion overview**
+always shows the real per-person status (Pending/Snoozed/Done) — snoozing
+only hides a nudge from that person's own view, it never hides the true
+status from you here.
+
 ## Client Radar
 A **Client Radar** sidebar item (and a dashboard banner when clients are
 flagged) surfaces active clients worth a proactive check-in:

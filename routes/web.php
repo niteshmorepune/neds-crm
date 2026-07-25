@@ -39,6 +39,7 @@ use App\Http\Controllers\SearchController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\TeamNudgeController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\TwoFactorSetupController;
 use App\Http\Controllers\UserController;
@@ -254,6 +255,17 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
      */
     Route::middleware('menu.access:announcements')->group(function () {
         Route::resource('announcements', AnnouncementController::class)->except('show');
+    });
+
+    /*
+     * Team Nudges — reusable, targeted reminders shown on each staff member's
+     * own Dashboard. Admin/manager only (menu.access:team-nudges) for
+     * authoring + the completion overview; every user acts on their own
+     * status rows via App\Livewire\MyTeamNudges, embedded on the Dashboard
+     * regardless of this gate.
+     */
+    Route::middleware('menu.access:team-nudges')->group(function () {
+        Route::resource('team-nudges', TeamNudgeController::class)->except('show');
     });
 
     /*

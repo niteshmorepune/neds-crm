@@ -407,6 +407,25 @@ are shown — there's nothing to manually take down once a notice's end date
 passes. Dismissing is per-browser (not tracked per person), so a notice can
 reappear if someone checks from a different device.
 
+## 9a-2. Team Nudges — targeted reminders + who's actually done them
+**Team Nudges** in the sidebar (Admin/Manager only) is different from the
+Notice Board: a notice is a broadcast announcement, a nudge is a targeted,
+trackable to-do you assign to a role. Each nudge has a **title**, an optional
+**description**, a **target** (Everyone, or one specific role), a
+**recurrence** (One-time, or Weekly), and — weekly nudges only — an optional
+**auto-detect** check that clears the reminder automatically the moment the
+targeted person does the real thing (e.g. logs a Ticket), no manual click
+needed from them.
+
+Every targeted, active person sees the nudge as a card on their own
+Dashboard (see [Getting Started → Reminders](getting-started.md)), with
+**Done**/**Snooze 3d** buttons. Below the nudge list, the **team completion
+overview** on this page shows the real per-person status for every active
+nudge — Pending, Snoozed, or Done, plus how it was completed (manual or
+auto) and when. A person snoozing their own view never changes what you see
+here — snoozed is shown as its own status, never quietly folded into "Done,"
+so this page always reflects reality regardless of who's snoozed what.
+
 ## 9b. Subscriptions — internal renewal reminders
 **Subscriptions** in the sidebar is admin-only (not even managers see this —
 it's internal vendor/billing info, unlike most other admin-ish modules).

@@ -103,3 +103,11 @@ Schedule::command('app:dispatch-scheduled-tasks')->dailyAt('08:00')->timezone('A
 // 7 days ahead of each festival. Idempotent (checks for an existing content
 // piece per project+festival) so a missed run just catches up the next day.
 Schedule::command('app:draft-festival-greetings')->dailyAt('07:15')->timezone('Asia/Kolkata');
+
+// Team Nudges — creates this week's pending status row for every active
+// weekly nudge + targeted user, every Monday (office week starts Monday).
+Schedule::command('app:rollover-team-nudges')->weeklyOn(1, '06:00')->timezone('Asia/Kolkata');
+
+// Auto-clears a pending nudge the same day real matching activity happens
+// (e.g. a Support user logs a Ticket), rather than waiting for next Monday's rollover.
+Schedule::command('app:run-team-nudge-auto-detect')->dailyAt('06:15')->timezone('Asia/Kolkata');
