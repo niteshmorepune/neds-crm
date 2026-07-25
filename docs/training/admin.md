@@ -2,11 +2,12 @@
 
 **Audience:** admins (watch `getting-started.md` first — includes 2FA
 setup, which is required for this role).
-**Target length:** ~12 minutes
+**Target length:** ~13 minutes
 
 **Before you record:** have the Users list, Services list, Menu Controller,
-Subscriptions, and Audit Log pages ready to click through. Log in as an
-admin user.
+Subscriptions, and Audit Log pages ready to click through, plus (if
+`GOOGLE_MEET_ENABLED`) the Profile page's Google Account section. Log in as
+an admin user.
 
 ---
 
@@ -127,14 +128,29 @@ written up separately for whoever's handling the server."
 knowing about even though you won't touch them day to day: when a deal is
 won, the client gets set up in our other tools automatically; the
 website's contact form creates leads automatically; WhatsApp messages
-create support tickets automatically; and if staff have connected their
-Google account, Meet call recordings and transcripts can be imported onto a
-client's Calls tab. All of these leave a trace on the client's Activity
-tab if you ever need to check whether something fired. If any of these
-integrations misbehave, that's a job for whoever manages the server — full
-troubleshooting steps live in the written admin and integrations guides."
+create support tickets automatically; and — covered properly in a moment —
+Google Meet calls can be scheduled and imported onto a client's Calls tab.
+All of these leave a trace on the client's Activity tab if you ever need
+to check whether something fired. If any of these integrations misbehave,
+that's a job for whoever manages the server — full troubleshooting steps
+live in the written admin and integrations guides."
 
-## Scene 12 — AI features and wrap-up (9:30–12:00)
+## Scene 12 — Connecting Google for Create Meeting (9:30–10:15)
+**ON SCREEN:** Profile → Google Account section → Connect Google Account →
+(after real consent) point at "Connected as…" and the Disconnect button.
+Then briefly show Create Meeting on a client's Calls tab.
+**SAY:** "One more setup step, if we're using Google Meet — and this one's
+yours alone, nobody else sees this section. On your Profile page, Google
+Account, click Connect Google Account and sign in with NEDS's own Google
+account, not your personal one. Once that's done, every staff member —
+Sales, Support, everyone — gets a Create Meeting button on any client or
+lead's Calls tab: it schedules a real Meet call through this same
+connection, emails the client the invite automatically, and shows them the
+link to share directly too. Nobody else ever needs to connect their own
+Google account, and if you ever need to swap which Google account this
+uses, just Disconnect and Connect again."
+
+## Scene 13 — AI features and wrap-up (10:15–12:45)
 **ON SCREEN:** A lead with a score badge, a ticket's Draft with AI button,
 the Employee Performance Report's ranked table, and the AI Usage Report.
 **SAY:** "Last thing — the AI features, and there are a lot of them now.

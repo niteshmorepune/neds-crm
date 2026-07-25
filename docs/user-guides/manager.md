@@ -245,14 +245,18 @@ many projects as needed.
 toggle that filters the list to only projects where you are the Lead or a team member.
 Useful for managers who also run their own service accounts.
 
-**Meet notes (optional):** on any client or lead's **Calls** tab, whoever
-organized and recorded the Google Meet call can click **+ Import Meet Notes**
-(after connecting their own Google account once from **Profile → Google
-Account**) to pull in the recording link, transcript link, and full
-transcript Google Meet already generated — shown the same way a logged call
-is. If AI is also enabled, an imported transcript gets a short **AI
-summary** (Key points / Decisions / Action items), visible to anyone who
-opens that client or lead's page, including you.
+**Create Meeting and Meet notes (optional):** once an admin has connected
+NEDS's Google account once (**Profile → Google Account**), anyone on the
+team can click **Create Meeting** on a client or lead's **Calls** tab to
+schedule a real Google Meet call through that same connection — it invites
+the client automatically and shows the link to share directly too, no
+personal Google account needed per staff member. For a call that already
+happened outside that flow, **Import Meet Notes** pulls in the recording
+link, transcript link, and full transcript Google Meet already generated —
+shown the same way a logged call is. If AI is also enabled, an imported
+transcript gets a short **AI summary** (Key points / Decisions / Action
+items), visible to anyone who opens that client or lead's page, including
+you.
 
 ## Daily reports & attendance
 - **Daily Reports → Team** shows what each person submitted for the selected

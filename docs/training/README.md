@@ -44,7 +44,7 @@ section instead of re-editing footage.
 | [`support.md`](support.md) | Support | ~11 min |
 | [`accounts.md`](accounts.md) | Accounts | ~15 min |
 | [`manager.md`](manager.md) | Manager | ~18 min |
-| [`admin.md`](admin.md) | Admin | ~12 min |
+| [`admin.md`](admin.md) | Admin | ~13 min |
 | [`intern.md`](intern.md) | Intern | ~6 min |
 | [`client-portal.md`](client-portal.md) | **Clients** — shared as an onboarding video after portal invite, not watched by staff | ~7 min |
 

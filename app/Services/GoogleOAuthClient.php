@@ -10,8 +10,11 @@ use Illuminate\Support\Facades\Log;
 /**
  * Plain OAuth2 authorization-code flow against Google, via Laravel's HTTP
  * client — deliberately no google/apiclient SDK, same Hostinger-safe
- * precedent as GoogleSpeechClient. Per-user OAuth (each staff member
- * connects their own account), not domain-wide delegation.
+ * precedent as GoogleSpeechClient. Company-wide connection (Admin-only,
+ * since 2026-07-25 — see GoogleConnectionController), not per-user OAuth
+ * like the original Phase 1 design, and not full domain-wide delegation
+ * either: one real Google account's own Calendar/Drive, used server-side on
+ * behalf of any staff member.
  */
 class GoogleOAuthClient
 {
@@ -21,9 +24,17 @@ class GoogleOAuthClient
 
     private const USERINFO_URL = 'https://www.googleapis.com/oauth2/v2/userinfo';
 
-    /** Read-only scopes only — this feature never writes to a user's Calendar or Drive. */
+    /**
+     * `calendar.events` (not read-only anymore) is required to create a
+     * Meet-enabled Calendar event on behalf of any staff member — added
+     * 2026-07-25 alongside the original read-only scopes, which are still
+     * needed for importing recordings/transcripts. An already-connected
+     * admin must reconnect once after this change for the new scope to take
+     * effect (`prompt=consent` below always forces a fresh grant).
+     */
     private const SCOPES = [
         'https://www.googleapis.com/auth/calendar.readonly',
+        'https://www.googleapis.com/auth/calendar.events',
         'https://www.googleapis.com/auth/drive.readonly',
         'https://www.googleapis.com/auth/userinfo.email',
     ];

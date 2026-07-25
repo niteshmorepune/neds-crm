@@ -34,15 +34,18 @@ scheduling link** field and save. This is what powers the **Schedule a
 Meeting** button clients see on their portal project page — without it set,
 that button simply won't appear for your clients.
 
-**Meet notes (optional, separate from the scheduling link above):** if
-enabled, a **Google Account** section further down the Profile page lets you
-connect your own Google account (read-only — nothing in your Calendar or
-Drive is ever changed). Once connected, a client or lead's page gets an
-**Import Meet Notes** option that pulls in the recording/transcript Google
-Meet already generates for calls you personally organized and recorded. If
-AI is also enabled, Claude can summarize an imported transcript into short
-"Key points / Decisions / Action items" notes — either automatically after
-import or via a **Summarize with AI** button.
+**Meet notes and Create Meeting (optional, separate from the scheduling link
+above):** if enabled, an admin connects NEDS's Google account once (Profile
+→ Google Account — admin-only screen, not something everyone needs or sees).
+Once that's done, **everyone** gets a **Create Meeting** button on any
+client or lead's Calls tab — it schedules a real Google Meet call through
+that same connection, emails the client the invite automatically, and shows
+you the link to share directly too. There's also **Import Meet Notes**, for
+a call that already happened outside that flow — it pulls in the recording/
+transcript Google Meet already generated. If AI is also enabled, Claude can
+summarize an imported transcript into short "Key points / Decisions / Action
+items" notes — either automatically after import or via a **Summarize with
+AI** button.
 
 ## 4. Finding your way around
 - **Left sidebar** — your modules. What you see depends on your role.
