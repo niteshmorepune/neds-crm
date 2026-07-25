@@ -32,5 +32,3 @@
 <livewire:overdue-follow-ups />
 
 <livewire:my-productivity />
-
-<livewire:my-team-nudges />

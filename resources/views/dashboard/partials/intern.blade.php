@@ -20,5 +20,3 @@
 </div>
 
 <livewire:my-productivity />
-
-<livewire:my-team-nudges />

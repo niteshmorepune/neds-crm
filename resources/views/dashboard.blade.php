@@ -7,6 +7,8 @@
 
         <x-announcement-banner :announcements="$announcements" />
 
+        <livewire:my-team-nudges />
+
         @if (auth()->user()->ai_daily_digest && auth()->user()->ai_daily_digest_date?->isToday())
             <div class="rounded-lg border border-indigo-200 bg-indigo-50 p-4">
                 <p class="text-sm font-medium text-indigo-800">🤖 {{ auth()->user()->ai_daily_digest }}</p>
