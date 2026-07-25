@@ -193,6 +193,44 @@ it('dashboardStatus: on_hold when within its period but paused', function () {
     expect($r->dashboardStatus())->toBe('on_hold');
 });
 
+it('dashboardStatus: active (not on_hold) when a single-cycle template already billed and auto-deactivated, but its period is still ongoing', function () {
+    // 2026-07-25 fix: GenerateRecurringInvoices/generateNow() set is_active=false
+    // the moment a template's schedule runs past its own end_date — which
+    // happens the instant a one-cycle template bills, even while today is
+    // still within that same cycle's period. That auto-deactivation is NOT
+    // a pause; the period must still read as Active until it actually ends.
+    $r = recurringWithLine([
+        'start_date' => now()->startOfMonth()->toDateString(),
+        'end_date' => now()->endOfMonth()->toDateString(),
+        'is_active' => false,
+        'next_run_on' => now()->endOfMonth()->addDay()->toDateString(),
+    ]);
+
+    expect($r->dashboardStatus())->toBe('active');
+});
+
+it('dashboardStatus: still on_hold when paused mid-schedule with real future billing still blocked (next_run_on within end_date)', function () {
+    $r = recurringWithLine([
+        'start_date' => now()->subMonth()->toDateString(),
+        'end_date' => now()->addMonths(3)->toDateString(),
+        'is_active' => false,
+        'next_run_on' => now()->addDay()->toDateString(),
+    ]);
+
+    expect($r->dashboardStatus())->toBe('on_hold');
+});
+
+it('dashboardStatus: still on_hold when paused on an open-ended template (no end_date at all)', function () {
+    $r = recurringWithLine([
+        'start_date' => now()->subMonth()->toDateString(),
+        'end_date' => null,
+        'is_active' => false,
+        'next_run_on' => now()->addDay()->toDateString(),
+    ]);
+
+    expect($r->dashboardStatus())->toBe('on_hold');
+});
+
 it('dashboardStatus: payment_received when the period is over and its invoice is paid', function () {
     $r = recurringWithLine(['start_date' => now()->subMonth()->toDateString(), 'end_date' => now()->subDay()->toDateString(), 'is_active' => false]);
     Invoice::factory()->status(InvoiceStatus::Paid)->create(['recurring_invoice_id' => $r->id, 'customer_id' => $r->customer_id]);

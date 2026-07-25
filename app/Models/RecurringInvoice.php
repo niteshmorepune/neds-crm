@@ -154,7 +154,24 @@ class RecurringInvoice extends Model
         $periodOver = $this->end_date !== null && $this->end_date->isPast();
 
         if (! $periodOver) {
-            return $this->is_active ? 'active' : 'on_hold';
+            if ($this->is_active) {
+                return 'active';
+            }
+
+            // is_active=false while the period is still ongoing has two very
+            // different causes: a human deliberately paused it (real
+            // On Hold), or generateNow()/GenerateRecurringInvoices already
+            // billed this cycle and auto-deactivated the template because
+            // its schedule ran past end_date (nothing wrong — same
+            // "naturally exhausted vs. paused" distinction as isStaleActive()/
+            // hasEnded()). Only the former is really "On Hold" — the latter
+            // just means billing is done for a period that's still current,
+            // which must still read as Active, not paused.
+            $naturallyExhausted = $this->end_date !== null
+                && $this->next_run_on !== null
+                && $this->next_run_on->gt($this->end_date);
+
+            return $naturallyExhausted ? 'active' : 'on_hold';
         }
 
         if (! $revealPaymentStatus) {
