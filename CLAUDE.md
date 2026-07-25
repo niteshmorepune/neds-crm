@@ -583,3 +583,64 @@ Record every "we chose X because Y" here — this is the project's memory.
   model with no confirmed instance of this bug) — the bell-icon header
   badge is just an unread count linking to this same page, no separate
   preview list to fix.
+- **2026-07-25 — Team Nudges: a new, reusable admin-managed reminder
+  system, separate from the existing Notice Board.** Came out of a
+  broader "what's the best plan to close the adoption gap" conversation
+  (66 active clients but only 11 deals/3 tickets ever logged — see the
+  2026-07-18 baseline). Owner asked for reminders that pop up on the
+  Dashboard and get tracked, not just a one-off chat nudge. Checked
+  `Announcement` (Notice Board) first — it's a broadcast, time-bound post
+  with no per-user targeting, completion state, or auto-detection, so it
+  doesn't cover this; built new `TeamNudge`/`TeamNudgeStatus` models
+  alongside it rather than overloading it. Confirmed 3 design decisions
+  with the owner via AskUserQuestion before building: (1) reusable, not
+  hardcoded to today's 3 items — Admin/Manager can create a nudge anytime
+  (title, target role or everyone, one-time or weekly recurrence, optional
+  due date); (2) completion is **both** self-reported (Done/Snooze
+  buttons on the recipient's own dashboard) **and** auto-detected for
+  specific weekly checks (`App\Enums\NudgeAutoDetectType`, mapped 1:1 to a
+  real Eloquent check in `App\Services\TeamNudgeDetector` — same bounded-
+  registry discipline as `CrmQueryType`/`CrmQueryCatalog`, never a
+  free-form condition); (3) an individual can snooze their own view, but
+  the Admin/Manager team-wide overview always shows the real status
+  (Pending/Snoozed/Done) — snoozing is per-viewer, never a way to hide
+  something from oversight.
+  **One targeting call made without asking, flagged in the plan instead**:
+  a nudge's `target_role` is matched via `$user->hasRole()` (primary
+  **and** additional roles), following the *sidebar's* precedent (2026-
+  07-09: additional roles auto-expand menu access) rather than the
+  *dashboard panel's* precedent (deliberately primary-role-only, so a
+  secondary role never outranks which panel someone lands on) — a nudge
+  is an access question ("does this apply to you"), not a "which single
+  panel" question, so the sidebar rule is the closer match.
+  A scheduled command pair drives the weekly lifecycle:
+  `app:rollover-team-nudges` (Monday 06:00 IST) creates a fresh `pending`
+  row per targeted active user without touching prior weeks' rows, so
+  completion history accumulates instead of being overwritten;
+  `app:run-team-nudge-auto-detect` (daily 06:15 IST) clears a pending
+  auto-detect row the same day real activity happens, rather than making
+  someone wait for the next Monday. `App\Livewire\MyTeamNudges` (embedded
+  on all 5 dashboard partials, including Admin's — Admin is itself a
+  valid nudge target for the "record training videos" item) lazily
+  materializes its own status row via `firstOrCreate` if the scheduled
+  job hasn't reached it yet (e.g. a brand-new nudge, or someone hired
+  mid-week), sharing one `TeamNudge::currentPeriodStart()` helper with
+  the console commands so a lazily-created row always lines up with a
+  scheduler-created one. `App\Livewire\TeamNudgeOverview` deliberately
+  derives the targeted-user list directly (not from existing status rows)
+  so someone who hasn't opened their dashboard yet still shows as
+  "Pending" rather than silently missing from the admin's view.
+  Seeded 3 nudges via `TeamNudgeSeeder` (idempotent, `updateOrCreate` by
+  title, added to `DatabaseSeeder`'s chain since it's real content the
+  owner wants live, not demo data): record training videos (Admin,
+  one-time, manual), log every active client as a Deal (Sales, one-time,
+  manual — a retroactive backfill, not a recurring habit, so no
+  auto-detect), route every issue through Tickets (Support, weekly,
+  auto-detects on a real `Ticket.created_by` within the period). New
+  sidebar item `team-nudges` (Admin/Manager, mirrors `announcements`'
+  gating exactly). PR #101, branch `milestone-team-nudges` — full suite
+  (1267 tests) green, Pint clean, migrated/seeded against local MySQL and
+  the two console commands smoke-tested against real dev data before
+  opening the PR. Manual browser click-through (Done/Snooze buttons,
+  admin create/edit form) not done this session — flagged in the PR as
+  the one gap before merge.
