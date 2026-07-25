@@ -2,87 +2,104 @@
     <x-slot name="header">Dashboard</x-slot>
 
     <div class="max-w-7xl mx-auto space-y-6">
-        {{-- Common to every role --}}
-        <livewire:attendance-widget />
-
         <x-announcement-banner :announcements="$announcements" />
 
-        <livewire:my-team-nudges />
-
-        @if (auth()->user()->ai_daily_digest && auth()->user()->ai_daily_digest_date?->isToday())
-            <div class="rounded-lg border border-indigo-200 bg-indigo-50 p-4">
-                <p class="text-sm font-medium text-indigo-800">🤖 {{ auth()->user()->ai_daily_digest }}</p>
+        {{-- "Today" panel: every daily-action item and alert renders as one
+             compact row here instead of its own full card, so the dashboard's
+             actual content (stats, charts, reports below) doesn't get pushed
+             below the fold. Attendance is always first and never draws a top
+             divider; every other row always draws its own — that way dividers
+             stay correct no matter which conditional rows end up rendering,
+             including rows that come from separate Livewire islands
+             (Attendance, Team Nudges) where a CSS :first-child/divide-y rule
+             on the outer shell wouldn't reach across component boundaries. --}}
+        <div class="overflow-hidden rounded-lg bg-white shadow-sm">
+            <div class="px-4 py-2.5 sm:px-5">
+                <h2 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Today</h2>
             </div>
-        @endif
 
-        @if (auth()->user()->hasRole(\App\Enums\UserRole::Admin, \App\Enums\UserRole::Manager)
-                && auth()->user()->ai_weekly_digest && auth()->user()->ai_weekly_digest_date?->isToday())
-            <div class="rounded-lg border border-indigo-200 bg-indigo-50 p-4">
-                <p class="mb-1 text-xs font-semibold uppercase tracking-wide text-indigo-500">Your week ahead</p>
-                <p class="text-sm font-medium text-indigo-800">🤖 {{ auth()->user()->ai_weekly_digest }}</p>
-            </div>
-        @endif
+            <livewire:attendance-widget />
 
-        @php($overdueTaskCount = \App\Models\Task::where('assignee_id', auth()->id())
-            ->where('status', '!=', \App\Enums\TaskStatus::Done->value)
-            ->whereNotNull('due_date')
-            ->whereDate('due_date', '<', today())
-            ->count())
-        @if ($overdueTaskCount > 0)
-            <div class="rounded-lg border border-red-200 bg-red-50 p-4">
-                <div class="flex items-center justify-between gap-4">
-                    <p class="text-sm font-medium text-red-800">
-                        ⚠️ You have {{ $overdueTaskCount }} overdue {{ $overdueTaskCount === 1 ? 'task' : 'tasks' }}. Please complete them as soon as possible.
+            @if (auth()->user()->ai_daily_digest && auth()->user()->ai_daily_digest_date?->isToday())
+                <div class="flex items-center gap-3 border-t border-gray-100 px-4 py-3 sm:px-5">
+                    <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-indigo-50 text-sm">🤖</span>
+                    <p class="min-w-0 flex-1 text-sm text-indigo-900">{{ auth()->user()->ai_daily_digest }}</p>
+                </div>
+            @endif
+
+            @if (auth()->user()->hasRole(\App\Enums\UserRole::Admin, \App\Enums\UserRole::Manager)
+                    && auth()->user()->ai_weekly_digest && auth()->user()->ai_weekly_digest_date?->isToday())
+                <div class="flex items-start gap-3 border-t border-gray-100 px-4 py-3 sm:px-5">
+                    <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-indigo-50 text-sm">🤖</span>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-indigo-500">Your week ahead</p>
+                        <p class="text-sm text-indigo-900">{{ auth()->user()->ai_weekly_digest }}</p>
+                    </div>
+                </div>
+            @endif
+
+            @php($overdueTaskCount = \App\Models\Task::where('assignee_id', auth()->id())
+                ->where('status', '!=', \App\Enums\TaskStatus::Done->value)
+                ->whereNotNull('due_date')
+                ->whereDate('due_date', '<', today())
+                ->count())
+            @if ($overdueTaskCount > 0)
+                <div class="flex items-center gap-3 border-t border-gray-100 px-4 py-3 sm:px-5">
+                    <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-red-50 text-sm">⚠️</span>
+                    <p class="min-w-0 flex-1 text-sm font-medium text-red-800">
+                        You have {{ $overdueTaskCount }} overdue {{ $overdueTaskCount === 1 ? 'task' : 'tasks' }}.
                     </p>
                     <a href="{{ route('tasks.index', ['mine' => 1]) }}" class="shrink-0 text-sm font-medium text-red-600 hover:underline">View tasks →</a>
                 </div>
-            </div>
-        @endif
+            @endif
 
-        @if (auth()->user()->hasRole(\App\Enums\UserRole::Admin, \App\Enums\UserRole::Manager))
-            @php($pendingLeaveCount = \App\Models\LeaveRequest::pending()->count())
-            @if ($pendingLeaveCount > 0)
-                <div class="rounded-lg border border-amber-200 bg-amber-50 p-4">
-                    <div class="flex items-center justify-between gap-4">
-                        <p class="text-sm font-medium text-amber-800">
-                            🌴 {{ $pendingLeaveCount }} leave {{ $pendingLeaveCount === 1 ? 'request needs' : 'requests need' }} your approval.
+            @if (auth()->user()->hasRole(\App\Enums\UserRole::Admin, \App\Enums\UserRole::Manager))
+                @php($pendingLeaveCount = \App\Models\LeaveRequest::pending()->count())
+                @if ($pendingLeaveCount > 0)
+                    <div class="flex items-center gap-3 border-t border-gray-100 px-4 py-3 sm:px-5">
+                        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-amber-50 text-sm">🌴</span>
+                        <p class="min-w-0 flex-1 text-sm font-medium text-amber-800">
+                            {{ $pendingLeaveCount }} leave {{ $pendingLeaveCount === 1 ? 'request needs' : 'requests need' }} your approval.
                         </p>
                         <a href="{{ route('leave-requests.approvals') }}" class="shrink-0 text-sm font-medium text-amber-700 hover:underline">Review →</a>
                     </div>
-                </div>
+                @endif
             @endif
-        @endif
 
-        @if (auth()->user()->hasRole(\App\Enums\UserRole::Admin, \App\Enums\UserRole::Manager))
-            @php($radarFlaggedCount = app(\App\Services\ClientRadarService::class)->flaggedClients()->count())
-            @if ($radarFlaggedCount > 0)
-                <div class="rounded-lg border border-orange-200 bg-orange-50 p-4">
-                    <div class="flex items-center justify-between gap-4">
-                        <p class="text-sm font-medium text-orange-800">
-                            📡 {{ $radarFlaggedCount }} {{ $radarFlaggedCount === 1 ? 'client needs' : 'clients need' }} attention.
+            @if (auth()->user()->hasRole(\App\Enums\UserRole::Admin, \App\Enums\UserRole::Manager))
+                @php($radarFlaggedCount = app(\App\Services\ClientRadarService::class)->flaggedClients()->count())
+                @if ($radarFlaggedCount > 0)
+                    <div class="flex items-center gap-3 border-t border-gray-100 px-4 py-3 sm:px-5">
+                        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-orange-50 text-sm">📡</span>
+                        <p class="min-w-0 flex-1 text-sm font-medium text-orange-800">
+                            {{ $radarFlaggedCount }} {{ $radarFlaggedCount === 1 ? 'client needs' : 'clients need' }} attention.
                         </p>
                         <a href="{{ route('client-radar.index') }}" class="shrink-0 text-sm font-medium text-orange-700 hover:underline">View Client Radar →</a>
                     </div>
+                @endif
+            @endif
+
+            @php($nextFestival = \App\Models\Festival::active()->upcomingWithin(7)->orderBy('date')->first())
+            @if ($nextFestival)
+                <div class="flex items-center gap-3 border-t border-gray-100 px-4 py-3 sm:px-5">
+                    <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-pink-50 text-sm">🎉</span>
+                    <p class="min-w-0 flex-1 text-sm font-medium text-pink-800">
+                        @if ($nextFestival->date->isToday())
+                            Happy {{ $nextFestival->name }}, from all of us at NEDS!
+                        @else
+                            {{ $nextFestival->name }} is in {{ $nextFestival->daysUntil() }} day{{ $nextFestival->daysUntil() === 1 ? '' : 's' }}!
+                        @endif
+                    </p>
                 </div>
             @endif
-        @endif
 
-        @php($nextFestival = \App\Models\Festival::active()->upcomingWithin(7)->orderBy('date')->first())
-        @if ($nextFestival)
-            <div class="rounded-lg border border-pink-200 bg-pink-50 p-4">
-                <p class="text-sm font-medium text-pink-800">
-                    @if ($nextFestival->date->isToday())
-                        🎉 Happy {{ $nextFestival->name }}, from all of us at NEDS!
-                    @else
-                        🎉 {{ $nextFestival->name }} is in {{ $nextFestival->daysUntil() }} day{{ $nextFestival->daysUntil() === 1 ? '' : 's' }}!
-                    @endif
-                </p>
+            <livewire:my-team-nudges />
+
+            <div class="flex items-center gap-3 border-t border-gray-100 px-4 py-3 sm:px-5">
+                <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-emerald-50 text-sm">📝</span>
+                <p class="min-w-0 flex-1 text-sm text-gray-600">End of day? Submit your daily report.</p>
+                <a href="{{ route('daily-reports.index') }}" class="shrink-0 rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-500">Daily report</a>
             </div>
-        @endif
-
-        <div class="rounded-lg bg-white p-4 shadow-sm flex items-center justify-between">
-            <span class="text-sm text-gray-600">End of day? Submit your daily report.</span>
-            <a href="{{ route('daily-reports.index') }}" class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">Daily report</a>
         </div>
 
         {{-- Role-specific panel --}}
