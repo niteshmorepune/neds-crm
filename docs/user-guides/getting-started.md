@@ -76,6 +76,17 @@ it; dismissing is remembered only on that browser/device, so it may reappear
 if you check the CRM from a different computer or phone. A notice
 disappears on its own once its end date passes.
 
+## 4d. Reminders (Team Nudges)
+Below the Notice Board, a **Reminders** card on your Dashboard shows any
+nudges admin/manager has targeted at your role (or everyone) — things like
+"log every active client as a Deal" or "route issues through Tickets."
+- Click **Done** once you've actually done it.
+- Click **Snooze 3d** to hide it from your view for 3 days — snoozing only
+  hides it from *you*; admin/manager still see the real status on their side,
+  so snoozing isn't a way to make something go away for good.
+- Some reminders clear themselves automatically the moment you do the real
+  thing they're asking for (e.g. logging a Ticket) — no click needed for those.
+
 ## 5. Attendance — check in and out
 On the **Dashboard**, use the attendance widget:
 - **Check in** when you start your day.

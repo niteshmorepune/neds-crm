@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             ServicesSeeder::class,
             FestivalsSeeder::class,
             AdminUserSeeder::class,
+            TeamNudgeSeeder::class,
         ]);
     }
 }
