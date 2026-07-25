@@ -102,6 +102,7 @@ class CustomerController extends Controller
         return view('clients.show', [
             'client' => $client,
             'canManage' => $this->user()->can('manage', $client),
+            'canManageMeetings' => $this->user()->can('manageMeetings', $client),
             'canViewInvoices' => $this->user()->can('viewAny', Invoice::class),
         ]);
     }

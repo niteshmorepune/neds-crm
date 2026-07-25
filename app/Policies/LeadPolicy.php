@@ -43,4 +43,17 @@ class LeadPolicy
     {
         return $user->hasRole(UserRole::Admin, UserRole::Manager);
     }
+
+    /**
+     * Create/import Google Meet notes on this lead — deliberately its own
+     * check, not update() (owning-Sales-only editing). Mirrors CustomerPolicy::
+     * manageMeetings() and Calling's menu-access role set: Admin/Manager/
+     * Sales/Support, no ownership restriction — any of these roles can
+     * schedule a meeting or log notes for any lead through the shared
+     * company Google connection, not just the owning rep.
+     */
+    public function manageMeetings(User $user, Lead $lead): bool
+    {
+        return $user->hasRole(UserRole::Admin, UserRole::Manager, UserRole::Sales, UserRole::Support);
+    }
 }

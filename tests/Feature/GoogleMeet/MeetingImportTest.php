@@ -220,6 +220,37 @@ it('shows imported meetings on the Customer show page', function () {
         ->assertSee('Quarterly review call');
 });
 
+it('regression: a Support user sees Create Meeting on a real client page, over real HTTP', function () {
+    // 2026-07-25 — reported live: Support saw no Create Meeting/Import Meet
+    // Notes/connect-prompt at all on a real client page, because the
+    // Livewire component's canManage prop was fed CustomerPolicy::manage()
+    // (contacts management, deliberately Support-excluded) instead of a
+    // check appropriate for Meet notes. Asserts the real HTTP-rendered page,
+    // not just the Livewire component in isolation, since the bug was in
+    // the CONTROLLER/VIEW wiring, not the component itself.
+    $this->seed(MenuItemsSeeder::class);
+    companyGoogleConnection();
+    $support = User::factory()->role(UserRole::Support)->create();
+    $customer = Customer::factory()->create();
+
+    $this->actingAs($support)
+        ->get(route('clients.show', $customer))
+        ->assertOk()
+        ->assertSee('Create Meeting')
+        ->assertSee('Import Meet Notes');
+});
+
+it('regression: a Support user without a company connection at least sees the connect prompt, not nothing', function () {
+    $this->seed(MenuItemsSeeder::class);
+    $support = User::factory()->role(UserRole::Support)->create();
+    $customer = Customer::factory()->create();
+
+    $this->actingAs($support)
+        ->get(route('clients.show', $customer))
+        ->assertOk()
+        ->assertSee('Ask an admin to connect', false);
+});
+
 // --- Create Meeting ---
 
 it('creates a meeting via the company connection, inviting the customer\'s billing email, and attaches it immediately', function () {

@@ -98,7 +98,7 @@
 
         <div class="rounded-lg bg-white p-6 shadow-sm">
             <h2 class="mb-4 text-base font-semibold text-gray-900">Meet notes</h2>
-            <livewire:meeting-import :record="$lead" :can-manage="$canManage" />
+            <livewire:meeting-import :record="$lead" :can-manage="$canManageMeetings" />
         </div>
     </div>
 </x-app-layout>

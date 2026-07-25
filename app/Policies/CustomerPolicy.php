@@ -78,6 +78,20 @@ class CustomerPolicy
         return $user->hasRole(UserRole::Sales) && $this->salesOwnsOrUnassigned($user, $customer);
     }
 
+    /**
+     * Create/import Google Meet notes on this client — deliberately its own
+     * check, not manage() (contacts). Meet notes are conceptually adjacent to
+     * Call Logs (both are "communication records with a client"), so this
+     * mirrors Calling's menu-access role set exactly: Admin/Manager/Sales/
+     * Support, no ownership restriction — the whole point of the shared
+     * company Google connection is that any of these roles can schedule a
+     * meeting or log notes for any client, not just their own.
+     */
+    public function manageMeetings(User $user, Customer $customer): bool
+    {
+        return $user->hasRole(UserRole::Admin, UserRole::Manager, UserRole::Sales, UserRole::Support);
+    }
+
     private function salesOwnsOrUnassigned(User $user, Customer $customer): bool
     {
         return $customer->owner_id === $user->id || $customer->owner_id === null;

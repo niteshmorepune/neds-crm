@@ -42,3 +42,28 @@ it('lets managers and admins see all leads', function () {
     expect(Lead::visibleTo($manager)->pluck('id'))->toContain($foreign->id)
         ->and($manager->can('view', $foreign))->toBeTrue();
 });
+
+it('manageMeetings: is its own check, not tied to update() — a non-owning sales rep can still manage meetings', function () {
+    // 2026-07-25 regression: MeetingImport originally reused update() (owning
+    // Sales rep or Admin/Manager only), which would have blocked Support AND
+    // any non-owning Sales rep from Create Meeting — the opposite of the
+    // shared-connection feature's whole point.
+    $owner = User::factory()->role(UserRole::Sales)->create();
+    $otherSales = User::factory()->role(UserRole::Sales)->create();
+    $support = User::factory()->role(UserRole::Support)->create();
+    $lead = Lead::factory()->ownedBy($owner->id)->create();
+
+    expect($otherSales->can('update', $lead))->toBeFalse()
+        ->and($otherSales->can('manageMeetings', $lead))->toBeTrue()
+        ->and($support->can('manageMeetings', $lead))->toBeTrue();
+});
+
+it('manageMeetings: excludes accounts and intern', function (UserRole $role) {
+    $lead = Lead::factory()->create();
+    $user = User::factory()->role($role)->create();
+
+    expect($user->can('manageMeetings', $lead))->toBeFalse();
+})->with([
+    'accounts' => UserRole::Accounts,
+    'intern' => UserRole::Intern,
+]);

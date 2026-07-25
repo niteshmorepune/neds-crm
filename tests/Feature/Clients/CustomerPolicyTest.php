@@ -80,3 +80,38 @@ it('confirms accounts cannot manage (add/edit/delete) contacts either, only view
 
     expect($accounts->can('manage', $client))->toBeFalse();
 });
+
+it('manageMeetings: lets support create/import Google Meet notes even though they cannot manage() contacts', function () {
+    // 2026-07-25 regression: MeetingImport originally reused manage() (which
+    // deliberately excludes Support for contacts), silently blocking Support
+    // from Create Meeting too — the opposite of the shared-connection
+    // feature's whole point. manageMeetings() is its own check, mirroring
+    // Calling's role set instead.
+    $client = Customer::factory()->create();
+    $support = User::factory()->role(UserRole::Support)->create();
+
+    expect($support->can('manage', $client))->toBeFalse()
+        ->and($support->can('manageMeetings', $client))->toBeTrue();
+});
+
+it('manageMeetings: lets any Sales rep manage meetings on any client, not just their own', function (UserRole $role) {
+    $client = Customer::factory()->ownedBy(User::factory()->create()->id)->create();
+    $user = User::factory()->role($role)->create();
+
+    expect($user->can('manageMeetings', $client))->toBeTrue();
+})->with([
+    'admin' => UserRole::Admin,
+    'manager' => UserRole::Manager,
+    'sales (non-owning)' => UserRole::Sales,
+    'support' => UserRole::Support,
+]);
+
+it('manageMeetings: excludes accounts and intern', function (UserRole $role) {
+    $client = Customer::factory()->create();
+    $user = User::factory()->role($role)->create();
+
+    expect($user->can('manageMeetings', $client))->toBeFalse();
+})->with([
+    'accounts' => UserRole::Accounts,
+    'intern' => UserRole::Intern,
+]);

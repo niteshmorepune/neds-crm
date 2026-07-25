@@ -98,7 +98,7 @@
 
                     <div class="mt-4 border-t border-gray-100 pt-4">
                         <p class="mb-2 text-xs font-medium text-gray-500">Meet notes</p>
-                        <livewire:meeting-import :record="$client" :can-manage="$canManage" />
+                        <livewire:meeting-import :record="$client" :can-manage="$canManageMeetings" />
                     </div>
                 </div>
                 <div x-show="tab === 'deals'" x-cloak>
