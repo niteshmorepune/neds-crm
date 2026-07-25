@@ -32,7 +32,7 @@ if (!browser) {
   process.exit(1);
 }
 
-const docs = ['README', 'getting-started', 'sales', 'support', 'accounts', 'manager', 'admin', 'intern'];
+const docs = ['README', 'getting-started', 'sales', 'support', 'accounts', 'manager', 'admin', 'intern', 'client-portal'];
 
 for (const name of docs) {
   const html = resolve(tmpDir, `${name}.html`);

@@ -46,10 +46,17 @@ section instead of re-editing footage.
 | [`manager.md`](manager.md) | Manager | ~18 min |
 | [`admin.md`](admin.md) | Admin | ~12 min |
 | [`intern.md`](intern.md) | Intern | ~6 min |
+| [`client-portal.md`](client-portal.md) | **Clients** — shared as an onboarding video after portal invite, not watched by staff | ~7 min |
 
 Everyone watches `getting-started.md` first, then the one script matching
 their role. Managers/admins may also want to skim the Sales/Support/Accounts
 scripts since they oversee those modules, but it's not required.
+
+`client-portal.md` is a different kind of script from the rest — it's for
+**clients**, not staff, so its "SAY" lines speak directly to the client
+("you") the way `docs/user-guides/client-portal.md` already does. Record it
+once as a generic onboarding video (using a demo/test client account) and
+share the same recording with every new client, rather than per-client.
 
 **On the longer scripts (Sales, Accounts, Manager, now 15-18 min):** these
 grew a lot again in the 2026-07-25 refresh (Team Nudges, Notice Board,
