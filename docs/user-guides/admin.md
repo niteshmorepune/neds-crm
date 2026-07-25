@@ -650,16 +650,33 @@ API outage), the row just shows "Transcription failed" instead of blocking
 anything. This is one of two AI features here that depend on a second vendor
 besides Anthropic — see below.
 
-**Meet notes (optional, separate integration from voice notes above)** — on
-any client or lead's Calls tab, a staff member who's connected their own
-Google account (**Profile → Google Account**) can click **+ Import Meet
-Notes** to pull in the recording link, transcript link, and full transcript
-Google Meet already generates for a call they personally organized and
-recorded. Read-only: nothing in Calendar/Drive is ever changed. If AI is
-also enabled, an imported transcript gets summarized into short "Key points
-/ Decisions / Action items" notes, persisted so anyone who opens that
-client/lead page sees the same summary — either generated automatically
-shortly after import, or via a **Summarize with AI** / **Retry** button.
+**Create Meeting and Meet notes (optional, separate integration from voice
+notes above)** — since 2026-07-25 this is a single company-wide Google
+connection, not per-user: **you** (an admin) connect NEDS's own Google
+account once from **Profile → Google Account** — this section is
+admin-only, nobody else sees it. Once connected, **every** staff member
+gets a **Create Meeting** button on any client or lead's Calls tab — it
+creates a real Meet-enabled Calendar event through your connection, invites
+the client/lead's own email (Google emails them the invite directly), and
+shows the generated link back to whoever clicked it, to share directly if
+needed (e.g. over WhatsApp). Nobody else ever needs to connect their own
+Google account. **Import Meet Notes** still exists for a call that happened
+outside that flow (ad hoc, or from before this change) — it pulls in the
+recording link, transcript link, and full transcript Google Meet already
+generated for it, searching your connected account's Calendar rather than
+the viewing staff member's own. If AI is also enabled, an imported
+transcript gets summarized into short "Key points / Decisions / Action
+items" notes, persisted so anyone who opens that client/lead page sees the
+same summary — either generated automatically shortly after import, or via
+a **Summarize with AI** / **Retry** button.
+
+Since recordings and transcripts are tied to whoever's account organized
+the Calendar event, and every meeting created through the CRM is now
+organized by **your** connected account, they'll all land in your own
+Google Drive going forward — that's expected, not a bug, and is what makes
+"one shared inbox for every client meeting" work. A **Sync recording &
+transcript** button appears on a meeting created via Create Meeting once
+it's happened, to pull in whatever Google's finished processing for it.
 
 **To turn on:** add these lines to the server `.env`, then run
 `php artisan config:cache`:
@@ -679,18 +696,26 @@ GOOGLE_SPEECH_API_KEY=...
 Without this key, the **Record voice note** button doesn't appear even if
 `AI_ENABLED=true` — every other AI feature above works normally either way.
 
-Meet notes need their own Google Cloud OAuth app (Calendar + Drive APIs,
-read-only scopes) — set up once in Google Cloud Console, then add:
+Create Meeting / Meet notes need their own Google Cloud OAuth app (Calendar +
+Drive APIs) — set up once in Google Cloud Console, then add:
 ```
 GOOGLE_MEET_ENABLED=true
 GOOGLE_OAUTH_CLIENT_ID=...
 GOOGLE_OAUTH_CLIENT_SECRET=...
 ```
 Without `GOOGLE_MEET_ENABLED=true` (or a missing client id/secret), the
-**Connect Google Account** section on Profile and the **Import Meet Notes**
-button don't appear, even if `AI_ENABLED=true`. The AI-summary step on top
-of an imported transcript additionally needs `AI_ENABLED=true` — with only
-`GOOGLE_MEET_ENABLED` on, import still works, it just won't summarize.
+**Connect Google Account** section on Profile (admin-only) and the
+**Create Meeting**/**Import Meet Notes** buttons don't appear, even if
+`AI_ENABLED=true`. The AI-summary step on top of an imported transcript
+additionally needs `AI_ENABLED=true` — with only `GOOGLE_MEET_ENABLED` on,
+creating/importing meetings still works, it just won't summarize.
+
+**Scope note (2026-07-25):** the OAuth scopes now include Calendar
+**write** access (`calendar.events`), not just read, since Create Meeting
+needs to insert a new event — a step up from Phase 1's read-only design. If
+you connected before this date, disconnect and reconnect once from Profile
+so Google re-prompts for the new scope (`prompt=consent` is always forced,
+so this happens automatically on reconnect).
 
 ## Tip
 Adding a new module/menu item or changing a label is a code change that deploys

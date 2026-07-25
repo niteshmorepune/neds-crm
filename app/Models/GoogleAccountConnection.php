@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\UserRole;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -39,5 +40,20 @@ class GoogleAccountConnection extends Model
     public function isExpired(): bool
     {
         return $this->expires_at->subMinute()->isPast();
+    }
+
+    /**
+     * The single company-wide connection used to create Meet links and read
+     * recordings/transcripts on behalf of any staff member — since 2026-07-25
+     * this is Admin-only (see GoogleConnectionController), but the column
+     * itself is still keyed per-user, so this resolves to whichever Admin
+     * most recently connected (handles a second admin reconnecting to "take
+     * over" the connection without needing a schema change).
+     */
+    public static function forCompany(): ?self
+    {
+        return static::whereHas('user', fn ($q) => $q->where('role', UserRole::Admin->value))
+            ->latest('connected_at')
+            ->first();
     }
 }

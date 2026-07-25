@@ -154,11 +154,13 @@ language is fastest and the CRM transcribes and translates it to English
 automatically, shown as a separate block under your typed notes on the
 **Calling** page within about a minute.
 
-**Meet notes (optional):** if you personally organized and recorded a Google
-Meet call with a client, connect your Google account once from **Profile →
-Google Account**, then click **+ Import Meet Notes** on that client's Calls
-tab to pull in the recording link, transcript link, and full transcript
-text — read-only, nothing in your Calendar or Drive changes. If AI is also
+**Create Meeting and Meet notes (optional):** once an admin has connected
+NEDS's Google account (**Profile → Google Account**, admin-only), click
+**Create Meeting** on a client's Calls tab to schedule a real Google Meet
+call — it invites the client's email automatically and shows you the link
+to share directly too. For a call that already happened outside that flow,
+**Import Meet Notes** pulls in the recording link, transcript link, and
+full transcript text Google Meet already generated for it. If AI is also
 enabled, it gets a short **AI summary** (Key points / Decisions / Action
 items) too, either automatically or via a **Summarize with AI** button.
 

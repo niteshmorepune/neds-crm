@@ -266,20 +266,22 @@ and invoices for them default to no GST charged. This is different from
 Overseas: the client is still in India, NEDS is just not charging GST on
 their bills. Can still be overridden per document if needed.
 
-**Meet notes (optional):** if enabled, connect your own Google account once
-from **Profile → Google Account**, then open a client's **Calls** tab and
-click **+ Import Meet Notes** to pull in your recent Google Meet calls with
-that client — the recording link, transcript link, and full transcript text
-Google Meet already generates are saved right there, the same way a logged
-call shows up. Read-only: nothing in your Calendar or Drive is ever changed.
-Only meetings you personally organized and recorded will have anything to
-import (Google needs Recording/Transcripts turned on and a few minutes after
-the call ends to finish processing). This currently works the same way for
-Leads too. If AI is also enabled, an imported meeting with a transcript gets
-a **Summarize with AI** button (or the summary appears automatically a
-little after import) — Claude turns the raw transcript into short "Key
-points / Decisions / Action items" notes, visible to anyone who opens that
-client's page. If it fails, a **Retry** link appears in its place.
+**Create Meeting and Meet notes (optional):** once an admin has connected
+NEDS's Google account (**Profile → Google Account**, admin-only — nothing
+you need to do yourself), open a client or lead's **Calls** tab and click
+**Create Meeting** to schedule a real Google Meet call — pick a time, and
+it invites the client's email automatically and shows you the link to share
+directly too (handy for WhatsApp). No Google account of your own needed.
+**Import Meet Notes** is for a call that already happened outside that
+flow — it pulls in the recording link, transcript link, and full transcript
+text Google Meet already generated, the same way a logged call shows up
+(needs Recording/Transcripts turned on for that call, and a few minutes
+after it ends to finish processing). Both work the same way for Leads too.
+If AI is also enabled, an imported meeting with a transcript gets a
+**Summarize with AI** button (or the summary appears automatically a little
+after import) — Claude turns the raw transcript into short "Key points /
+Decisions / Action items" notes, visible to anyone who opens that client's
+page. If it fails, a **Retry** link appears in its place.
 
 **Monthly wins note (AI, optional):** on the 1st of each month, if AI is enabled
 and one of your clients had tasks completed, tickets resolved, a payment, or

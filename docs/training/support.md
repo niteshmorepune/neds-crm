@@ -70,18 +70,19 @@ shouldn't see. You can edit or delete your own notes anytime — managers can
 edit or delete anyone's. One thing to flag: support can't add or edit
 client contacts — that's sales' job — but you can view them fine."
 
-## Scene 7 — Google Meet Notes (6:15–6:55)
-**ON SCREEN:** Open a client's Calls tab → click + Import Meet Notes →
-point at the recording link, transcript link, and an AI-summarized "Key
+## Scene 7 — Create Meeting and Google Meet Notes (6:15–6:55)
+**ON SCREEN:** Open a client's Calls tab → click Create Meeting → pick a
+time → Create & Send Invite → point at the link. Then Import Meet Notes on
+an older call → recording link, transcript link, and an AI-summarized "Key
 points / Decisions / Action items" section if AI is enabled.
-**SAY:** "If you're on Google Meet calls with clients, connect your Google
-account once from Profile — then on a client's Calls tab, click '+ Import
-Meet Notes' to pull in recent Meet calls with them. It saves the recording
-link, transcript link, and full transcript text right there, same as a
-logged call — read-only, nothing in your Calendar or Drive changes. It
-only picks up meetings you personally organized and recorded. If AI's
-enabled, an imported meeting with a transcript also gets a short AI
-summary — key points, decisions, action items."
+**SAY:** "Once an admin's connected NEDS's Google account, click 'Create
+Meeting' on a client's Calls tab to schedule a real Meet call — pick a
+time, it emails the client automatically and shows you the link too, no
+Google account of your own needed. For a call that already happened
+outside that flow, 'Import Meet Notes' pulls in the recording link,
+transcript link, and full transcript text right there, same as a logged
+call. If AI's enabled, an imported meeting with a transcript also gets a
+short AI summary — key points, decisions, action items."
 
 ## Scene 8 — Tasks and scheduled maintenance (6:55–8:10)
 **ON SCREEN:** Employee Task list, point at a task with an obvious

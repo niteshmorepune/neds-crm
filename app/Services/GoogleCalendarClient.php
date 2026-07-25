@@ -6,11 +6,14 @@ use App\Models\GoogleAccountConnection;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 /**
- * Lists a connected user's own recent Calendar events that have a Google
- * Meet link — the picker source for "Import Meet Notes." Plain REST via
- * Laravel's HTTP client, no SDK.
+ * Reads the company connection's recent Calendar events (the picker source
+ * for "Import Meet Notes") and creates new Meet-enabled events on its
+ * behalf ("Create Meeting", added 2026-07-25, used by any staff member
+ * scheduling a call with a client or lead). Plain REST via Laravel's HTTP
+ * client, no SDK.
  */
 class GoogleCalendarClient
 {
@@ -66,6 +69,56 @@ class GoogleCalendarClient
                 ->all();
         } catch (\Throwable $e) {
             Log::warning('Google Calendar events exception', ['user_id' => $connection->user_id, 'error' => $e->getMessage()]);
+
+            return null;
+        }
+    }
+
+    /**
+     * Creates a Calendar event with an auto-generated Google Meet link and,
+     * if given, invites one attendee — `sendUpdates=all` so Google emails
+     * them the invite directly. Used by "Create Meeting" so any staff
+     * member can schedule a client/lead call through the company connection
+     * without needing their own Google account.
+     *
+     * @return array{event_id: string, meet_link: string|null}|null
+     */
+    public function createMeetingEvent(GoogleAccountConnection $connection, string $title, ?string $attendeeEmail, Carbon $start, int $durationMinutes = 30): ?array
+    {
+        if (! $this->oauth->ensureFreshToken($connection)) {
+            return null;
+        }
+
+        try {
+            $response = Http::withToken($connection->access_token)
+                ->timeout(15)
+                ->post(self::EVENTS_URL.'?conferenceDataVersion=1&sendUpdates=all', [
+                    'summary' => $title,
+                    'start' => ['dateTime' => $start->toRfc3339String()],
+                    'end' => ['dateTime' => $start->copy()->addMinutes($durationMinutes)->toRfc3339String()],
+                    'attendees' => $attendeeEmail ? [['email' => $attendeeEmail]] : [],
+                    'conferenceData' => [
+                        'createRequest' => [
+                            'requestId' => (string) Str::uuid(),
+                            'conferenceSolutionKey' => ['type' => 'hangoutsMeet'],
+                        ],
+                    ],
+                ]);
+
+            if (! $response->successful()) {
+                Log::warning('Google Calendar create-event failed', ['user_id' => $connection->user_id, 'status' => $response->status()]);
+
+                return null;
+            }
+
+            $event = $response->json();
+
+            return [
+                'event_id' => $event['id'],
+                'meet_link' => $event['hangoutLink'] ?? ($event['conferenceData']['entryPoints'][0]['uri'] ?? null),
+            ];
+        } catch (\Throwable $e) {
+            Log::warning('Google Calendar create-event exception', ['user_id' => $connection->user_id, 'error' => $e->getMessage()]);
 
             return null;
         }

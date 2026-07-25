@@ -1,13 +1,19 @@
 <?php
-$connection = ($user ?? auth()->user())->googleAccountConnection;
+// Company-wide, not this specific viewer's own row — a different admin may
+// have been the one who originally connected it (App\Models\GoogleAccountConnection::forCompany()
+// resolves to whichever Admin's connection is most recently connected).
+$connection = \App\Models\GoogleAccountConnection::forCompany();
 ?>
 
+@if (($user ?? auth()->user())->isAdmin())
 <section>
     <header>
         <h2 class="text-lg font-medium text-gray-900">Google Account</h2>
         <p class="mt-1 text-sm text-gray-600">
-            Connect your Google account to import your own Google Meet recordings and transcripts
-            into a client's timeline. Read-only — nothing is ever changed in your Calendar or Drive.
+            Connect NEDS's Google account here — this is a single company-wide connection, used to
+            create Meet links for any staff member's client/lead meetings and to read the resulting
+            recordings and transcripts back onto the right client or lead. Only Admin connects this;
+            everyone else just uses "Create Meeting" on a client or lead page once it's set up.
         </p>
     </header>
 
@@ -36,3 +42,4 @@ $connection = ($user ?? auth()->user())->googleAccountConnection;
         @endif
     </div>
 </section>
+@endif

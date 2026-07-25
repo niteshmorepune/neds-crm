@@ -163,10 +163,10 @@ banner at the top of everyone's Dashboard; a Clients/Both post shows the
 same way on the Client Portal home page. Nothing to manually take down —
 it stops showing once its end date passes."
 
-## Scene 11 — Oversight: who's working what, and Google Meet Notes (11:50–13:20)
+## Scene 11 — Oversight: who's working what, and Create Meeting (11:50–13:20)
 **ON SCREEN:** Open a client → Services tab → point at the Team column.
-Then Project Updates → toggle My Services. Then briefly point at a
-Google Meet import on a client's Calls tab if one exists.
+Then Project Updates → toggle My Services. Then briefly point at the
+Create Meeting button on a client's Calls tab.
 **SAY:** "You have access to every module for oversight — leads, deals,
 invoices, projects, tickets, all of it, and the search bar gets you
 anywhere fast. The fastest way to answer 'who handles GMB for this client'
@@ -174,10 +174,12 @@ is opening their profile, Services tab — the Team column shows the lead and
 any other team members per project. And on Project Updates, there's a My
 Services toggle if you also run your own accounts, so you're not scrolling
 past everyone else's. One more thing worth knowing about even if you don't
-use it directly: staff who connect their Google account can import Google
-Meet call recordings and transcripts onto a client's Calls tab, with an AI
-summary if enabled — useful context if you're catching up on a client you
-don't usually work with."
+use it directly: once an admin's connected NEDS's Google account, everyone
+on the team can click 'Create Meeting' on a client or lead's Calls tab to
+schedule a real Meet call and email the client the invite — no personal
+Google account needed. Older calls can still be imported with recording and
+transcript, and an AI summary if enabled — useful context if you're
+catching up on a client you don't usually work with."
 
 ## Scene 12 — Attendance, leave approvals, and daily reports (13:20–14:50)
 **ON SCREEN:** Attendance → switch team member in the dropdown →

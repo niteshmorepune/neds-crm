@@ -24,6 +24,7 @@ it('builds an authorize URL with the right scopes, client id, and state', functi
         ->toContain('prompt=consent')
         ->toContain('state=random-state-123')
         ->toContain(urlencode('calendar.readonly'))
+        ->toContain(urlencode('calendar.events'))
         ->toContain(urlencode('drive.readonly'));
 });
 

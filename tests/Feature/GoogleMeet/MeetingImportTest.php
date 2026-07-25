@@ -22,18 +22,26 @@ beforeEach(function () {
     ]);
 });
 
-it('prompts to connect Google when the user has no connection yet', function () {
-    $user = User::factory()->role(UserRole::Sales)->create();
+/** The company connection is always under an Admin — a Sales/Support rep uses it, never owns one. */
+function companyGoogleConnection(): GoogleAccountConnection
+{
+    $admin = User::factory()->role(UserRole::Admin)->create();
+
+    return GoogleAccountConnection::factory()->create(['user_id' => $admin->id, 'expires_at' => now()->addHour()]);
+}
+
+it('prompts to ask an admin to connect Google when no company connection exists yet', function () {
+    $sales = User::factory()->role(UserRole::Sales)->create();
     $customer = Customer::factory()->create();
 
-    Livewire::actingAs($user)
+    Livewire::actingAs($sales)
         ->test(MeetingImport::class, ['record' => $customer, 'canManage' => true])
-        ->assertSee('Connect your Google account');
+        ->assertSee('Ask an admin to connect', false);
 });
 
-it('loads recent Meet events into the picker once connected', function () {
-    $user = User::factory()->role(UserRole::Sales)->create();
-    GoogleAccountConnection::factory()->create(['user_id' => $user->id, 'expires_at' => now()->addHour()]);
+it('a Sales rep with no Google connection of their own can still load events, via the company connection', function () {
+    companyGoogleConnection();
+    $sales = User::factory()->role(UserRole::Sales)->create();
     $customer = Customer::factory()->create();
 
     Http::fake([
@@ -47,16 +55,16 @@ it('loads recent Meet events into the picker once connected', function () {
         ]),
     ]);
 
-    Livewire::actingAs($user)
+    Livewire::actingAs($sales)
         ->test(MeetingImport::class, ['record' => $customer, 'canManage' => true])
         ->call('loadEvents')
         ->assertSet('showPicker', true)
         ->assertSee('Client sync call');
 });
 
-it('imports a picked event into a Meeting attached to the record', function () {
-    $user = User::factory()->role(UserRole::Sales)->create();
-    GoogleAccountConnection::factory()->create(['user_id' => $user->id, 'expires_at' => now()->addHour()]);
+it('imports a picked event into a Meeting attached to the record, crediting the IMPORTING user not the connection owner', function () {
+    companyGoogleConnection();
+    $sales = User::factory()->role(UserRole::Sales)->create();
     $customer = Customer::factory()->create();
 
     Http::fake([
@@ -67,7 +75,7 @@ it('imports a picked event into a Meeting attached to the record', function () {
         ]),
     ]);
 
-    Livewire::actingAs($user)
+    Livewire::actingAs($sales)
         ->test(MeetingImport::class, ['record' => $customer, 'canManage' => true])
         ->call('importEvent', 'evt-1');
 
@@ -75,19 +83,19 @@ it('imports a picked event into a Meeting attached to the record', function () {
     expect($meeting)->not->toBeNull()
         ->and($meeting->meetable_type)->toBe(Customer::class)
         ->and($meeting->meetable_id)->toBe($customer->id)
-        ->and($meeting->user_id)->toBe($user->id)
+        ->and($meeting->user_id)->toBe($sales->id)
         ->and($meeting->title)->toBe('Client sync call');
 });
 
 it('refuses to import the same Google event twice', function () {
-    $user = User::factory()->role(UserRole::Sales)->create();
-    GoogleAccountConnection::factory()->create(['user_id' => $user->id, 'expires_at' => now()->addHour()]);
+    companyGoogleConnection();
+    $sales = User::factory()->role(UserRole::Sales)->create();
     $customer = Customer::factory()->create();
     Meeting::factory()->for($customer, 'meetable')->create(['google_event_id' => 'evt-1']);
 
     Http::fake();
 
-    Livewire::actingAs($user)
+    Livewire::actingAs($sales)
         ->test(MeetingImport::class, ['record' => $customer, 'canManage' => true])
         ->call('importEvent', 'evt-1')
         ->assertSet('error', 'This meeting has already been imported.');
@@ -96,19 +104,19 @@ it('refuses to import the same Google event twice', function () {
     Http::assertNothingSent();
 });
 
-it('blocks loadEvents/importEvent for a user without manage permission', function () {
-    $user = User::factory()->role(UserRole::Sales)->create();
+it('blocks loadEvents/importEvent/createMeeting for a user without manage permission', function () {
+    $sales = User::factory()->role(UserRole::Sales)->create();
     $customer = Customer::factory()->create();
 
-    Livewire::actingAs($user)
+    Livewire::actingAs($sales)
         ->test(MeetingImport::class, ['record' => $customer, 'canManage' => false])
         ->call('loadEvents')
         ->assertForbidden();
 });
 
 it('attaches to a Lead as well as a Customer', function () {
-    $user = User::factory()->role(UserRole::Sales)->create();
-    GoogleAccountConnection::factory()->create(['user_id' => $user->id, 'expires_at' => now()->addHour()]);
+    companyGoogleConnection();
+    $sales = User::factory()->role(UserRole::Sales)->create();
     $lead = Lead::factory()->create();
 
     Http::fake([
@@ -118,7 +126,7 @@ it('attaches to a Lead as well as a Customer', function () {
         ]),
     ]);
 
-    Livewire::actingAs($user)
+    Livewire::actingAs($sales)
         ->test(MeetingImport::class, ['record' => $lead, 'canManage' => true])
         ->call('importEvent', 'evt-1');
 
@@ -130,8 +138,8 @@ it('attaches to a Lead as well as a Customer', function () {
 it('queues a summary job after importing a meeting with a transcript, when summaries are enabled', function () {
     config(['services.anthropic.enabled' => true, 'services.anthropic.key' => 'sk-test']);
     Queue::fake();
-    $user = User::factory()->role(UserRole::Sales)->create();
-    GoogleAccountConnection::factory()->create(['user_id' => $user->id, 'expires_at' => now()->addHour()]);
+    companyGoogleConnection();
+    $sales = User::factory()->role(UserRole::Sales)->create();
     $customer = Customer::factory()->create();
 
     Http::fake([
@@ -145,7 +153,7 @@ it('queues a summary job after importing a meeting with a transcript, when summa
         'www.googleapis.com/drive/v3/files/doc-123/export*' => Http::response('Rep: hello'),
     ]);
 
-    Livewire::actingAs($user)
+    Livewire::actingAs($sales)
         ->test(MeetingImport::class, ['record' => $customer, 'canManage' => true])
         ->call('importEvent', 'evt-1');
 
@@ -157,8 +165,8 @@ it('queues a summary job after importing a meeting with a transcript, when summa
 it('does not queue a summary job when the imported meeting has no transcript yet', function () {
     config(['services.anthropic.enabled' => true, 'services.anthropic.key' => 'sk-test']);
     Queue::fake();
-    $user = User::factory()->role(UserRole::Sales)->create();
-    GoogleAccountConnection::factory()->create(['user_id' => $user->id, 'expires_at' => now()->addHour()]);
+    companyGoogleConnection();
+    $sales = User::factory()->role(UserRole::Sales)->create();
     $customer = Customer::factory()->create();
 
     Http::fake([
@@ -168,7 +176,7 @@ it('does not queue a summary job when the imported meeting has no transcript yet
         ]),
     ]);
 
-    Livewire::actingAs($user)
+    Livewire::actingAs($sales)
         ->test(MeetingImport::class, ['record' => $customer, 'canManage' => true])
         ->call('importEvent', 'evt-1');
 
@@ -178,8 +186,8 @@ it('does not queue a summary job when the imported meeting has no transcript yet
 it('does not queue a summary job when AI is disabled', function () {
     config(['services.anthropic.enabled' => false]);
     Queue::fake();
-    $user = User::factory()->role(UserRole::Sales)->create();
-    GoogleAccountConnection::factory()->create(['user_id' => $user->id, 'expires_at' => now()->addHour()]);
+    companyGoogleConnection();
+    $sales = User::factory()->role(UserRole::Sales)->create();
     $customer = Customer::factory()->create();
 
     Http::fake([
@@ -193,7 +201,7 @@ it('does not queue a summary job when AI is disabled', function () {
         'www.googleapis.com/drive/v3/files/doc-123/export*' => Http::response('Rep: hello'),
     ]);
 
-    Livewire::actingAs($user)
+    Livewire::actingAs($sales)
         ->test(MeetingImport::class, ['record' => $customer, 'canManage' => true])
         ->call('importEvent', 'evt-1');
 
@@ -202,12 +210,137 @@ it('does not queue a summary job when AI is disabled', function () {
 
 it('shows imported meetings on the Customer show page', function () {
     $this->seed(MenuItemsSeeder::class);
-    $user = User::factory()->role(UserRole::Sales)->create();
-    $customer = Customer::factory()->create(['owner_id' => $user->id]);
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    $customer = Customer::factory()->create(['owner_id' => $sales->id]);
     Meeting::factory()->for($customer, 'meetable')->create(['title' => 'Quarterly review call']);
 
-    $this->actingAs($user)
+    $this->actingAs($sales)
         ->get(route('clients.show', $customer))
         ->assertOk()
         ->assertSee('Quarterly review call');
+});
+
+// --- Create Meeting ---
+
+it('creates a meeting via the company connection, inviting the customer\'s billing email, and attaches it immediately', function () {
+    companyGoogleConnection();
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    $customer = Customer::factory()->create(['email' => 'client@example.com']);
+
+    Http::fake([
+        'www.googleapis.com/calendar/v3/calendars/primary/events?*' => Http::response([
+            'id' => 'new-evt-1',
+            'hangoutLink' => 'https://meet.google.com/abc-defg-hij',
+        ]),
+    ]);
+
+    Livewire::actingAs($sales)
+        ->test(MeetingImport::class, ['record' => $customer, 'canManage' => true])
+        ->call('openScheduler')
+        ->set('scheduleAt', now()->addHour()->format('Y-m-d\TH:i'))
+        ->call('createMeeting')
+        ->assertSet('createdMeetLink', 'https://meet.google.com/abc-defg-hij');
+
+    $meeting = Meeting::where('google_event_id', 'new-evt-1')->first();
+    expect($meeting)->not->toBeNull()
+        ->and($meeting->meetable_type)->toBe(Customer::class)
+        ->and($meeting->meetable_id)->toBe($customer->id)
+        ->and($meeting->user_id)->toBe($sales->id)
+        ->and($meeting->attendees)->toBe(['client@example.com']);
+
+    Http::assertSent(function ($request) {
+        return $request->method() === 'POST'
+            && str_contains($request->url(), 'sendUpdates=all')
+            && ($request->data()['attendees'][0]['email'] ?? null) === 'client@example.com';
+    });
+});
+
+it('creates a meeting for a Lead using the lead\'s own email', function () {
+    companyGoogleConnection();
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    $lead = Lead::factory()->create(['email' => 'lead@example.com']);
+
+    Http::fake([
+        'www.googleapis.com/calendar/v3/calendars/primary/events?*' => Http::response([
+            'id' => 'new-evt-2',
+            'hangoutLink' => 'https://meet.google.com/lead-link',
+        ]),
+    ]);
+
+    Livewire::actingAs($sales)
+        ->test(MeetingImport::class, ['record' => $lead, 'canManage' => true])
+        ->call('openScheduler')
+        ->set('scheduleAt', now()->addHour()->format('Y-m-d\TH:i'))
+        ->call('createMeeting');
+
+    $meeting = Meeting::where('google_event_id', 'new-evt-2')->first();
+    expect($meeting->meetable_type)->toBe(Lead::class)
+        ->and($meeting->attendees)->toBe(['lead@example.com']);
+});
+
+it('shows a friendly error instead of creating a meeting when no company connection exists', function () {
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    $customer = Customer::factory()->create();
+
+    Livewire::actingAs($sales)
+        ->test(MeetingImport::class, ['record' => $customer, 'canManage' => true])
+        ->call('openScheduler')
+        ->call('createMeeting')
+        ->assertSet('error', 'No Google account connected yet — ask an admin to connect one in Settings.');
+
+    expect(Meeting::count())->toBe(0);
+});
+
+it('blocks createMeeting for a user without manage permission', function () {
+    companyGoogleConnection();
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    $customer = Customer::factory()->create();
+
+    Livewire::actingAs($sales)
+        ->test(MeetingImport::class, ['record' => $customer, 'canManage' => false])
+        ->call('createMeeting')
+        ->assertForbidden();
+});
+
+// --- Sync recording & transcript ---
+
+it('syncs recording and transcript onto an already-attached meeting, keyed by its known event id', function () {
+    companyGoogleConnection();
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    $customer = Customer::factory()->create();
+    $meeting = Meeting::factory()->for($customer, 'meetable')->create([
+        'google_event_id' => 'evt-scheduled-1',
+        'drive_recording_url' => null,
+        'drive_transcript_url' => null,
+    ]);
+
+    Http::fake([
+        'www.googleapis.com/calendar/v3/calendars/primary/events/evt-scheduled-1' => Http::response([
+            'summary' => 'NEDS <> Client',
+            'start' => ['dateTime' => '2026-07-25T10:00:00+05:30'],
+            'end' => ['dateTime' => '2026-07-25T10:30:00+05:30'],
+            'attachments' => [
+                ['mimeType' => 'video/mp4', 'fileUrl' => 'https://drive.google.com/recording'],
+            ],
+        ]),
+    ]);
+
+    Livewire::actingAs($sales)
+        ->test(MeetingImport::class, ['record' => $customer, 'canManage' => true])
+        ->call('syncRecording', $meeting->id);
+
+    expect($meeting->fresh()->drive_recording_url)->toBe('https://drive.google.com/recording')
+        ->and($meeting->fresh()->duration_minutes)->toBe(30);
+});
+
+it('blocks syncRecording for a user without manage permission', function () {
+    companyGoogleConnection();
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    $customer = Customer::factory()->create();
+    $meeting = Meeting::factory()->for($customer, 'meetable')->create(['google_event_id' => 'evt-x']);
+
+    Livewire::actingAs($sales)
+        ->test(MeetingImport::class, ['record' => $customer, 'canManage' => false])
+        ->call('syncRecording', $meeting->id)
+        ->assertForbidden();
 });
