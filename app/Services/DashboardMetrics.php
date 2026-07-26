@@ -8,6 +8,7 @@ use App\Enums\InvoiceStatus;
 use App\Enums\LeadStatus;
 use App\Enums\TaskStatus;
 use App\Enums\TicketPriority;
+use App\Models\CallLog;
 use App\Models\Customer;
 use App\Models\Deal;
 use App\Models\Invoice;
@@ -184,6 +185,27 @@ class DashboardMetrics
             ->count();
 
         return compact('pendingTasks', 'completedToday', 'projects');
+    }
+
+    /**
+     * Stat cards for the telecaller dashboard: the shared calling queue
+     * (new leads, not owned by this person specifically — Telecaller works
+     * whichever lead needs calling, see LeadPolicy) plus their own call
+     * activity. No pipeline/value figures here — Telecaller has no Deal
+     * access.
+     */
+    public function telecallerStats(User $user): array
+    {
+        return [
+            'new_leads' => Lead::where('status', LeadStatus::New->value)->count(),
+            'calls_today' => CallLog::where('user_id', $user->id)
+                ->whereDate('called_at', today())
+                ->count(),
+            'followups_due' => CallLog::where('user_id', $user->id)
+                ->whereNotNull('follow_up_at')
+                ->where('follow_up_at', '<=', now())
+                ->count(),
+        ];
     }
 
     /**

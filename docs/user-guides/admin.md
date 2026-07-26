@@ -45,9 +45,22 @@ checkboxes further down the same Add/Edit form. Additional roles:
 | Admin | Everything, including users, menu controller, audit log, backups |
 | Manager | All modules except user/menu/audit/backup admin |
 | Sales | Leads, deals, their own clients, quotations, projects, tasks, tickets, calls |
-| Support | Tickets, projects (assigned), clients (read-only), calls, tasks |
+| Support | Tickets, projects, clients (read-only), calls, tasks — see below, this is also who a project's auto-created tasks route to |
 | Accounts | Invoices, payments, clients, recurring invoices |
-| **Intern** | Clients (read-only), Projects (assigned), Tasks (assigned), Attendance, Daily Reports |
+| Intern | Clients (read-only), Projects (assigned), Tasks (assigned), Attendance, Daily Reports |
+| **Telecaller** | Lead Generation (view/update any lead — a shared calling queue, not an owned pipeline), Calling. No Deals, Quotations, Invoices, Incentives, Tickets, or Clients |
+
+**Giving a real job title the right CRM role:** the CRM only has the seven
+roles above — there's no field for "Graphic Designer." Map the actual job to
+whichever role gives the closest real access, then use Menu Controller
+(Section 3) to tidy their sidebar if it still shows things they'll never use.
+
+| Real job title | Set as | Why |
+|---|---|---|
+| Developer, Graphic Designer, UI/UX Designer, Website Designer, Social Media Executive, Digital Marketing Executive, Performance Marketing Executive | **Support** | These are all ongoing project/delivery work — exactly what Support is scoped for. A project's onboarding checklist and its recurring monthly maintenance tasks (Section 6) route to whichever of that project's assignees holds the Support role first, so add them as an **assignee** on the project, not just give them the role |
+| Telecaller | **Telecaller** | A dedicated role (added 2026-07-26) — Lead Generation + Calling only. They see every lead (it's a shared queue, not "my leads") and can update status/notes on any of them, but cannot create, convert, or delete a lead, and have no access at all to Deals/Quotations/Invoices/Incentives/Tickets/Clients. New leads still auto-assign to Sales as before; Telecallers work the queue regardless of which Sales rep a lead is nominally assigned to |
+| Team Lead / Studio Manager | **Manager** | For anyone overseeing other people's work, regardless of department |
+| Trainee / Temp, any function | **Intern** | Deliberately narrower than Support (no Tickets, no Calling) — a safer default than Support for someone new or unproven, whatever their eventual title will be |
 
 **Biometric Device User ID:** each user record has an optional
 **Biometric Device User ID** field. Set this to the numeric ID from the

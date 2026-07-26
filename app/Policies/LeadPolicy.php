@@ -8,7 +8,14 @@ use App\Models\User;
 
 /**
  * All authenticated users with lead-generation menu access can view any lead.
- * Create/update is limited to admin, manager, and sales. Delete to admin/manager.
+ * Create is limited to admin, manager, and sales. Delete to admin/manager.
+ * Update: admin/manager any lead, Sales their own, Telecaller any lead —
+ * Telecaller works a shared calling queue (no ownership/auto-assignment of
+ * their own, per the 2026-07-26 decision), so they need to log outcomes and
+ * move status on whichever lead needs calling, not just ones with no owner
+ * (in practice nearly every lead has a Sales owner within moments of
+ * creation via LeadObserver::autoAssign(), so an "unowned only" restriction
+ * would leave them almost nothing to update).
  * Keep in sync with Lead::scopeVisibleTo.
  */
 class LeadPolicy
@@ -30,7 +37,7 @@ class LeadPolicy
 
     public function update(User $user, Lead $lead): bool
     {
-        return $user->hasRole(UserRole::Admin, UserRole::Manager)
+        return $user->hasRole(UserRole::Admin, UserRole::Manager, UserRole::Telecaller)
             || ($user->hasRole(UserRole::Sales) && $lead->owner_id === $user->id);
     }
 

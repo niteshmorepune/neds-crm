@@ -11,6 +11,9 @@ use App\Models\User;
  *  - admin/manager/support/accounts: can view and list all clients.
  *  - support: view-only — cannot edit client profiles or manage contacts.
  *  - sales: can only view/edit/manage clients they own or that are unassigned.
+ *  - telecaller: view-only, same as support — clients aren't part of their
+ *    scope (leads + calling only); listed explicitly in update()'s deny-list
+ *    since this method otherwise defaults to true for any non-Sales role.
  *  - admin / manager: full access including delete.
  *
  * Keep scopeVisibleTo() on the Customer model in sync with view().
@@ -43,7 +46,7 @@ class CustomerPolicy
 
     public function update(User $user, Customer $customer): bool
     {
-        if ($user->hasRole(UserRole::Intern, UserRole::Support)) {
+        if ($user->hasRole(UserRole::Intern, UserRole::Support, UserRole::Telecaller)) {
             return false;
         }
 
