@@ -20,6 +20,7 @@ it('lets admin, manager, support and accounts see all clients', function (UserRo
     'manager' => UserRole::Manager,
     'support' => UserRole::Support,
     'accounts' => UserRole::Accounts,
+    'telecaller' => UserRole::Telecaller,
 ]);
 
 it('limits a sales rep to their own and unassigned clients', function () {
@@ -74,6 +75,19 @@ it('lets support view but never edit client profiles or manage contacts', functi
         ->and($support->can('manage', $client))->toBeFalse();
 });
 
+it('lets telecaller view but never edit client profiles or manage contacts', function () {
+    // Telecaller's scope is leads + calling only — clients aren't part of it.
+    // CustomerPolicy::update() is a deny-list (defaults to true for anyone
+    // non-Sales), so telecaller must be explicitly listed there or it would
+    // silently inherit full client-edit rights.
+    $client = Customer::factory()->create();
+    $telecaller = User::factory()->role(UserRole::Telecaller)->create();
+
+    expect($telecaller->can('view', $client))->toBeTrue()
+        ->and($telecaller->can('update', $client))->toBeFalse()
+        ->and($telecaller->can('manage', $client))->toBeFalse();
+});
+
 it('confirms accounts cannot manage (add/edit/delete) contacts either, only view them', function () {
     $client = Customer::factory()->create();
     $accounts = User::factory()->role(UserRole::Accounts)->create();
@@ -106,7 +120,7 @@ it('manageMeetings: lets any Sales rep manage meetings on any client, not just t
     'support' => UserRole::Support,
 ]);
 
-it('manageMeetings: excludes accounts and intern', function (UserRole $role) {
+it('manageMeetings: excludes accounts, intern, and telecaller', function (UserRole $role) {
     $client = Customer::factory()->create();
     $user = User::factory()->role($role)->create();
 
@@ -114,4 +128,5 @@ it('manageMeetings: excludes accounts and intern', function (UserRole $role) {
 })->with([
     'accounts' => UserRole::Accounts,
     'intern' => UserRole::Intern,
+    'telecaller' => UserRole::Telecaller,
 ]);

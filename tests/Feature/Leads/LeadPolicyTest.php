@@ -35,6 +35,28 @@ it('denies support and accounts access when menu is not granted', function (User
     'accounts' => UserRole::Accounts,
 ]);
 
+it('lets telecaller view and update any lead (a shared calling queue, not an owned pipeline)', function () {
+    $telecaller = User::factory()->role(UserRole::Telecaller)->create();
+    $ownedBySales = Lead::factory()->ownedBy(User::factory()->role(UserRole::Sales)->create()->id)->create();
+    $unassigned = Lead::factory()->create(['owner_id' => null]);
+
+    $this->actingAs($telecaller)->get(route('leads.index'))->assertOk();
+
+    expect($telecaller->can('view', $ownedBySales))->toBeTrue()
+        ->and($telecaller->can('view', $unassigned))->toBeTrue()
+        ->and($telecaller->can('update', $ownedBySales))->toBeTrue()
+        ->and($telecaller->can('update', $unassigned))->toBeTrue();
+});
+
+it('does not let telecaller create, convert, or delete leads', function () {
+    $telecaller = User::factory()->role(UserRole::Telecaller)->create();
+    $lead = Lead::factory()->create();
+
+    expect($telecaller->can('create', Lead::class))->toBeFalse()
+        ->and($telecaller->can('convert', $lead))->toBeFalse()
+        ->and($telecaller->can('delete', $lead))->toBeFalse();
+});
+
 it('lets managers and admins see all leads', function () {
     $manager = User::factory()->role(UserRole::Manager)->create();
     $foreign = Lead::factory()->ownedBy(User::factory()->create()->id)->create();
@@ -58,7 +80,7 @@ it('manageMeetings: is its own check, not tied to update() — a non-owning sale
         ->and($support->can('manageMeetings', $lead))->toBeTrue();
 });
 
-it('manageMeetings: excludes accounts and intern', function (UserRole $role) {
+it('manageMeetings: excludes accounts, intern, and telecaller', function (UserRole $role) {
     $lead = Lead::factory()->create();
     $user = User::factory()->role($role)->create();
 
@@ -66,4 +88,5 @@ it('manageMeetings: excludes accounts and intern', function (UserRole $role) {
 })->with([
     'accounts' => UserRole::Accounts,
     'intern' => UserRole::Intern,
+    'telecaller' => UserRole::Telecaller,
 ]);

@@ -95,9 +95,14 @@ Completing tasks on time feeds your performance report, so keep statuses
 current.
 
 ### Scheduled maintenance tasks
-At **8 AM every day**, the CRM automatically creates maintenance tasks for each
-active project you lead and assigns them to you with an **in-app bell
-notification**. You do not need to remember these — just watch for the bell.
+At **8 AM every day**, the CRM automatically creates maintenance tasks for
+each active project and assigns them to you with an **in-app bell
+notification** — **if you're that project's Support-role team member.** (If a
+project has no Support person on its team, these fall to its lead assignee
+instead, then its owner — but the normal case is you.) You do not need to
+remember these — just watch for the bell. If you're on a project's team but
+never seem to get these, ask your manager to check you're actually listed as
+that project's Support assignee, not just its Lead/Member.
 
 Each task is already linked to the correct project and includes a description
 of what to do. Open it, complete the work, and mark it **Done**.

@@ -7,9 +7,11 @@ use App\Enums\TaskStatus;
 use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
 use App\Enums\UserRole;
+use App\Models\CallLog;
 use App\Models\Customer;
 use App\Models\Deal;
 use App\Models\Invoice;
+use App\Models\Lead;
 use App\Models\Payment;
 use App\Models\Project;
 use App\Models\Service;
@@ -101,6 +103,35 @@ it('returns pending tasks, completed today and active project count for an inter
     expect($stats['pendingTasks'])->toBe(1)
         ->and($stats['completedToday'])->toBe(1)
         ->and($stats['projects'])->toBe(1);
+});
+
+it('computes telecaller stats as shared-queue counts, not owned-lead counts', function () {
+    $telecaller = User::factory()->role(UserRole::Telecaller)->create();
+    $otherLeadOwner = User::factory()->role(UserRole::Sales)->create();
+
+    Lead::factory()->create(['status' => 'new', 'owner_id' => $otherLeadOwner->id]);
+    Lead::factory()->create(['status' => 'new', 'owner_id' => null]);
+    Lead::factory()->create(['status' => 'converted', 'owner_id' => $otherLeadOwner->id]);
+
+    CallLog::factory()->create([
+        'user_id' => $telecaller->id,
+        'called_at' => now(),
+    ]);
+    CallLog::factory()->create([
+        'user_id' => $telecaller->id,
+        'called_at' => now()->subDay(),
+    ]);
+    CallLog::factory()->create([
+        'user_id' => $telecaller->id,
+        'called_at' => now(),
+        'follow_up_at' => now()->subHour(),
+    ]);
+
+    $stats = $this->metrics->telecallerStats($telecaller);
+
+    expect($stats['new_leads'])->toBe(2)
+        ->and($stats['calls_today'])->toBe(2)
+        ->and($stats['followups_due'])->toBe(1);
 });
 
 it('summarizes support open tickets by priority and SLA risk', function () {

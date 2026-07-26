@@ -31,6 +31,7 @@ class DashboardController extends Controller
             $user->role === UserRole::Accounts => ['accounts', ['stats' => $metrics->accountsStats()]],
             $user->role === UserRole::Support => ['support', ['stats' => $metrics->supportStats($user)]],
             $user->role === UserRole::Intern => ['intern', ['stats' => $metrics->internStats($user)]],
+            $user->role === UserRole::Telecaller => ['telecaller', ['stats' => $metrics->telecallerStats($user)]],
             default => ['blank', []],
         };
 

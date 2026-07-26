@@ -26,6 +26,7 @@ class HelpController extends Controller
         'manager' => 'Manager',
         'admin' => 'Admin',
         'intern' => 'Intern',
+        'telecaller' => 'Telecaller',
         'client-portal' => 'Client Portal',
         'integrations' => 'Integrations',
         'troubleshooting' => 'Troubleshooting',
@@ -50,6 +51,7 @@ class HelpController extends Controller
             UserRole::Manager => ['getting-started', 'manager', 'integrations', 'troubleshooting'],
             UserRole::Admin => ['getting-started', 'admin', 'manager', 'integrations', 'troubleshooting'],
             UserRole::Intern => ['getting-started', 'intern'],
+            UserRole::Telecaller => ['getting-started', 'telecaller'],
         };
 
         return view('help.index', [
