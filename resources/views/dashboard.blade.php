@@ -14,8 +14,11 @@
              (Attendance, Team Nudges) where a CSS :first-child/divide-y rule
              on the outer shell wouldn't reach across component boundaries. --}}
         <div class="overflow-hidden rounded-lg bg-white shadow-sm">
-            <div class="px-4 py-2.5 sm:px-5">
+            <div class="flex items-center justify-between px-4 py-2.5 sm:px-5">
                 <h2 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Today</h2>
+                @if (auth()->user()->hasRole(\App\Enums\UserRole::Admin, \App\Enums\UserRole::Manager))
+                    <a href="{{ route('reports.weekly-digests') }}" class="text-xs font-medium text-indigo-600 hover:underline">Weekly digest history →</a>
+                @endif
             </div>
 
             <livewire:attendance-widget />

@@ -3,6 +3,7 @@
 use App\Enums\UserRole;
 use App\Mail\WeeklyOwnerDigest;
 use App\Models\User;
+use App\Models\WeeklyDigest;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
@@ -32,9 +33,14 @@ it('caches an AI weekly digest on every admin/manager and emails each one', func
     Mail::assertSent(WeeklyOwnerDigest::class, fn (WeeklyOwnerDigest $mail) => $mail->hasTo($admin->email));
     Mail::assertSent(WeeklyOwnerDigest::class, fn (WeeklyOwnerDigest $mail) => $mail->hasTo($manager->email));
     Mail::assertNotSent(WeeklyOwnerDigest::class, fn (WeeklyOwnerDigest $mail) => $mail->hasTo($sales->email));
+
+    expect(WeeklyDigest::count())->toBe(1);
+    $digest = WeeklyDigest::first();
+    expect($digest->digest_date->toDateString())->toBe(now()->toDateString())
+        ->and($digest->summary)->toBe('Pipeline is healthy; two clients need attention this week.');
 });
 
-it('skips entirely, sending nothing, when AI is disabled', function () {
+it('still records a metrics-only snapshot, but sends nothing, when AI is disabled', function () {
     Mail::fake();
     config(['services.anthropic.enabled' => false]);
     Http::fake();
@@ -46,6 +52,32 @@ it('skips entirely, sending nothing, when AI is disabled', function () {
     Http::assertNothingSent();
     Mail::assertNothingSent();
     expect($admin->fresh()->ai_weekly_digest)->toBeNull();
+
+    expect(WeeklyDigest::count())->toBe(1);
+    $digest = WeeklyDigest::first();
+    expect($digest->digest_date->toDateString())->toBe(now()->toDateString())
+        ->and($digest->summary)->toBeNull();
+});
+
+it('is idempotent per day and never overwrites an already-recorded summary with a null one from a later AI-less run', function () {
+    Mail::fake();
+    config(['services.anthropic.enabled' => true, 'services.anthropic.key' => 'sk-test']);
+    Http::fake([
+        'api.anthropic.com/*' => Http::response([
+            'content' => [['type' => 'text', 'text' => 'First run summary.']],
+            'usage' => ['input_tokens' => 40, 'output_tokens' => 20],
+        ]),
+    ]);
+    User::factory()->role(UserRole::Admin)->create(['is_active' => true]);
+
+    $this->artisan('app:send-weekly-owner-digest')->assertSuccessful();
+
+    // A second run the same day, AI now off (e.g. quota exhausted mid-day).
+    config(['services.anthropic.enabled' => false]);
+    $this->artisan('app:send-weekly-owner-digest')->assertSuccessful();
+
+    expect(WeeklyDigest::count())->toBe(1);
+    expect(WeeklyDigest::first()->summary)->toBe('First run summary.');
 });
 
 /**

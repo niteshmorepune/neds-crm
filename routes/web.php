@@ -232,6 +232,7 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
     Route::get('reports/business-overview', [ReportController::class, 'businessOverview'])->name('reports.business-overview');
     Route::get('reports/business-overview/export', [ReportController::class, 'exportBusinessOverview'])->name('reports.business-overview.export');
     Route::get('reports/cash-forecast', [ReportController::class, 'cashForecast'])->name('reports.cash-forecast');
+    Route::get('reports/weekly-digests', [ReportController::class, 'weeklyDigests'])->name('reports.weekly-digests');
 
     /*
      * Collections & delivery tracking — partner-wise + direct-client

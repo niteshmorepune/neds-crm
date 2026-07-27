@@ -532,9 +532,19 @@ outstanding (including the 90+ days overdue figure), and how many clients
 Client Radar has flagged (and why). It's a synthesis of the existing
 Business Overview, Cash Forecast, and Client Radar reports — the email
 links to all three — and also appears as a dashboard banner for the rest
-of that Monday. Unlike the daily digest, this one is skipped entirely
-(no email sent) if AI is turned off, since there's nothing to show beyond
-what those three reports already show on their own.
+of that Monday. The email/summary paragraph is skipped if AI is turned
+off, since there's nothing to synthesize beyond what those three reports
+already show on their own — but the underlying numbers are recorded
+every Monday either way (see Weekly Digest History below), so trend
+tracking never has a gap just because AI happens to be off that week.
+
+**Weekly Digest History** (link on the dashboard, next to "Your week
+ahead") — Admin/Manager only. The dashboard banner above only ever shows
+*this* Monday's digest; this page keeps every past week's snapshot (the
+same numbers, plus the AI summary when one was generated) so you can see
+whether MRR, receivables, and flagged-client count are trending up or
+down, instead of the figure being overwritten and lost every Monday.
+Includes a trendline chart for the last ~12 weeks.
 
 **Team performance summary (✨ Generate AI Summary)** — a button on the
 **Employee Performance Report** (Reports panel) that turns the existing
