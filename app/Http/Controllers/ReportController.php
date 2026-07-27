@@ -7,6 +7,7 @@ use App\Http\Requests\AiUsageSettingsRequest;
 use App\Models\AiUsageSetting;
 use App\Models\Customer;
 use App\Models\Partner;
+use App\Models\WeeklyDigest;
 use App\Services\AiUsageMetrics;
 use App\Services\BusinessOverviewMetrics;
 use App\Services\CollectionsMetrics;
@@ -233,6 +234,28 @@ class ReportController extends Controller
         ]);
     }
 
+    /**
+     * History of the Monday "Your week ahead" owner digest — the dashboard
+     * only ever shows the latest one (App\Console\Commands\
+     * SendWeeklyOwnerDigest overwrites the User row each run); this page is
+     * the persisted trend view over WeeklyDigest rows.
+     */
+    public function weeklyDigests(Request $request): View
+    {
+        $this->authorizeWeeklyDigests($request);
+
+        $digests = WeeklyDigest::query()->orderByDesc('digest_date')->paginate(15);
+
+        // Oldest-first for the chart's x-axis; capped to the last 12 weeks
+        // (~3 months) so the trendlines stay readable.
+        $trend = WeeklyDigest::query()->orderByDesc('digest_date')->limit(12)->get()->sortBy('digest_date')->values();
+
+        return view('reports.weekly-digests', [
+            'digests' => $digests,
+            'trend' => $trend,
+        ]);
+    }
+
     public function exportBusinessOverview(Request $request): StreamedResponse
     {
         $this->authorizeRevenue($request);
@@ -361,6 +384,11 @@ class ReportController extends Controller
     private function authorizeRevenue(Request $request): void
     {
         abort_unless($request->user()->hasRole(UserRole::Admin, UserRole::Manager, UserRole::Accounts), 403);
+    }
+
+    private function authorizeWeeklyDigests(Request $request): void
+    {
+        abort_unless($request->user()->hasRole(UserRole::Admin, UserRole::Manager), 403);
     }
 
     /**

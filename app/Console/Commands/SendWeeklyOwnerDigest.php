@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Enums\UserRole;
 use App\Mail\WeeklyOwnerDigest;
 use App\Models\User;
+use App\Models\WeeklyDigest;
 use App\Services\AiAssistant;
 use App\Services\BusinessOverviewMetrics;
 use App\Services\ClientRadarService;
@@ -18,7 +19,11 @@ use Illuminate\Support\Facades\Mail;
  * Monday-morning AI synthesis of pipeline, cash position, and at-risk
  * clients for Admin/Manager — reuses BusinessOverviewMetrics and
  * ClientRadarService (the same services behind those reports' own pages),
- * nothing new computed here.
+ * nothing new computed here. Always records a WeeklyDigest history row for
+ * trend tracking, even when AI is disabled/unavailable (summary stays
+ * null) — the metrics themselves don't depend on AI, only the narrative
+ * does, and the email is skipped in that case since it has no non-AI value
+ * of its own (the owner can already see each underlying report directly).
  */
 class SendWeeklyOwnerDigest extends Command
 {
@@ -28,15 +33,6 @@ class SendWeeklyOwnerDigest extends Command
 
     public function handle(BusinessOverviewMetrics $business, ClientRadarService $radar, AiAssistant $ai): int
     {
-        // Unlike the daily digest, this has no non-AI value of its own — the
-        // owner can already see each underlying report directly. Skip the
-        // whole thing rather than send an empty-of-substance email.
-        if (! Ai::enabled()) {
-            $this->info('AI disabled — nothing to synthesize, skipping.');
-
-            return self::SUCCESS;
-        }
-
         $today = Carbon::today(config('app.display_timezone'));
 
         $pipeline = $business->pipelineFunnel($today->copy()->subDays(7), $today);
@@ -70,10 +66,47 @@ class SendWeeklyOwnerDigest extends Command
             'Clients with an overdue-invoice flag: '.($flagCounts['overdue_invoice'] ?? 0),
         ];
 
-        $summary = $ai->summarizeWeeklyOwnerDigest($lines);
+        $summary = Ai::enabled() ? $ai->summarizeWeeklyOwnerDigest($lines) : null;
+
+        $metrics = [
+            'pipeline_open_deals_count' => $pipeline['open_deals'],
+            'pipeline_open_value' => $pipeline['open_value'],
+            'deals_won_count' => $pipeline['won_count'],
+            'deals_lost_count' => $pipeline['lost_count'],
+            'mrr_total' => $mrr['total_mrr'],
+            'recurring_contracts_expiring_count' => $mrr['expiring_count'],
+            'cash_expected_this_month' => $thisMonthCash,
+            'cash_expected_three_months' => $cashForecast['total_forecast'],
+            'receivables_total_outstanding' => $arAging['total_outstanding'],
+            'receivables_overdue_ninety_plus_days' => $ninetyPlusOverdue,
+            'client_radar_flagged_count' => $flagged->count(),
+            'client_radar_low_satisfaction_count' => $flagCounts['low_satisfaction'] ?? 0,
+            'client_radar_overdue_invoice_count' => $flagCounts['overdue_invoice'] ?? 0,
+        ];
+
+        if ($summary !== null) {
+            $metrics['summary'] = $summary;
+        }
+
+        // Idempotent against a manual re-run on the same Monday (never
+        // overwrites an already-recorded summary with a null one from a
+        // second, AI-less run). Deliberately whereDate() rather than
+        // updateOrCreate(['digest_date' => ...]) — the `date` cast writes
+        // digest_date using the connection's full datetime format
+        // (Model::getDateFormat() ignores the ":Y-m-d" cast parameter for
+        // storage, only Carbon::toDateString() is plain Y-m-d), so a raw
+        // string-equality lookup silently misses the existing row and hits
+        // the unique constraint instead of updating it.
+        $existing = WeeklyDigest::query()->whereDate('digest_date', $today)->first();
+
+        if ($existing) {
+            $existing->update($metrics);
+        } else {
+            WeeklyDigest::query()->create(['digest_date' => $today->toDateString(), ...$metrics]);
+        }
 
         if ($summary === null) {
-            $this->info('AI returned nothing — skipping.');
+            $this->info('AI unavailable — metrics snapshot recorded, skipping email.');
 
             return self::SUCCESS;
         }
