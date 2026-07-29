@@ -373,7 +373,7 @@ lead appears in the CRM with source "Meta Ads."
 cd /home/u314035009/neds-crm && grep META_ .env
 ```
 If `META_APP_SECRET`, `META_WEBHOOK_VERIFY_TOKEN`, or `META_PAGE_ACCESS_TOKEN`
-is blank, this integration hasn't been set up yet — see Section 8 of the
+is blank, this integration hasn't been set up yet — see Section 16 of the
 Admin guide. Run `php artisan config:cache` after filling these in.
 
 **Check 2 — Is the webhook subscription still active in Meta?**
@@ -575,6 +575,36 @@ before assuming it's an error.
 same deploy (`git log -1` on the server should be no older than
 2026-07-24), then flag it — this shouldn't be possible by design anymore,
 so a fresh mismatch would be a new bug, not a repeat of this one.
+
+---
+
+## 17. Client Portal "Set my password" / reset link shows "This link is no longer valid"
+
+**Symptom:** a client (or a staff member testing the flow) clicks **Set my
+password** in the invitation email, or **Reset password** in a reset email,
+and lands on a page saying the link is no longer valid — instead of the
+password form.
+
+**This is expected behaviour, not a bug**, in three situations:
+- **The link was already used** — the password was already set once with it.
+- **A newer link was sent since** — inviting or resending to the same
+  contact always replaces the previous link; only the most recent email's
+  link still works.
+- **Portal access was changed** — the contact's access was revoked, or the
+  contact record itself was edited/deleted, after the email went out.
+
+**Fix:** on the client's **Contacts** tab, click **Invite** (or **Resend**)
+again to issue a fresh link and email. If you're testing this yourself,
+avoid editing or re-inviting the same contact again right after sending an
+invite — doing so immediately invalidates the link that's already in the
+inbox, even if it was only sent moments earlier.
+
+**If a real client reports this and nobody re-invited or edited them
+recently:** check the contact's **Activity Log** entries (`subject_type =
+Contact`) for an `updated` event around the time they say they clicked the
+link — a `portal_enabled`/`invitation_token` change there is almost always
+the explanation. If there's genuinely no such event, it may be a real bug —
+flag it rather than assuming.
 
 ---
 

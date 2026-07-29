@@ -13,21 +13,29 @@ class SetPasswordController extends Controller
 {
     public function show(string $token): View
     {
-        $this->contactForToken($token); // 404 if invalid
+        if (! $this->contactForToken($token)) {
+            return view('portal.auth.invalid-link');
+        }
 
         return view('portal.auth.set-password', ['token' => $token]);
     }
 
     public function showReset(string $token): View
     {
-        $this->contactForToken($token); // 404 if invalid
+        if (! $this->contactForToken($token)) {
+            return view('portal.auth.invalid-link');
+        }
 
         return view('portal.auth.reset-password', ['token' => $token]);
     }
 
-    public function store(Request $request, string $token): RedirectResponse
+    public function store(Request $request, string $token): RedirectResponse|View
     {
         $contact = $this->contactForToken($token);
+
+        if (! $contact) {
+            return view('portal.auth.invalid-link');
+        }
 
         $request->validate([
             'password' => ['required', 'confirmed', 'min:8'],
@@ -44,10 +52,11 @@ class SetPasswordController extends Controller
         return redirect()->route('portal.home');
     }
 
-    private function contactForToken(string $token): Contact
+    /** Null when the token is invalid, already used, or revoked — never a 404. */
+    private function contactForToken(string $token): ?Contact
     {
         return Contact::where('invitation_token', hash('sha256', $token))
             ->where('portal_enabled', true)
-            ->firstOrFail();
+            ->first();
     }
 }

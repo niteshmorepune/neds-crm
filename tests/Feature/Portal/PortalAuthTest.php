@@ -58,8 +58,35 @@ it('sets a password from a valid invitation token and signs in', function () {
         ->and($contact->fresh()->invitation_token)->toBeNull();
 });
 
-it('404s on an invalid invitation token', function () {
-    $this->get(route('portal.password.setup', 'bogus-token'))->assertNotFound();
+it('shows a friendly invalid-link page for an invalid invitation token', function () {
+    $this->get(route('portal.password.setup', 'bogus-token'))
+        ->assertOk()
+        ->assertSee('This link is no longer valid');
+});
+
+it('shows a friendly invalid-link page once the token has already been used', function () {
+    $contact = Contact::factory()->create(['email' => 'used@x.test']);
+    $token = $contact->inviteToPortal();
+
+    $this->post(route('portal.password.store', $token), [
+        'password' => 'secret123', 'password_confirmation' => 'secret123',
+    ])->assertRedirect(route('portal.home'));
+
+    $this->post(route('portal.logout'));
+
+    $this->post(route('portal.password.store', $token), [
+        'password' => 'secret456', 'password_confirmation' => 'secret456',
+    ])->assertOk()->assertSee('This link is no longer valid');
+});
+
+it('shows a friendly invalid-link page when portal access was revoked after the invite was sent', function () {
+    $contact = Contact::factory()->create(['email' => 'revoked@x.test']);
+    $token = $contact->inviteToPortal();
+    $contact->revokePortalAccess();
+
+    $this->get(route('portal.password.setup', $token))
+        ->assertOk()
+        ->assertSee('This link is no longer valid');
 });
 
 it('lets an admin invite a contact to the portal and emails them', function () {
