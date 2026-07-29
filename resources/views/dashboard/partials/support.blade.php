@@ -1,4 +1,4 @@
-<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
     <div class="rounded-lg bg-white p-5 shadow-sm">
         <p class="text-sm text-gray-500">Open tickets</p>
         <p class="mt-2 text-3xl font-semibold text-gray-900">{{ number_format($stats['open_total']) }}</p>
@@ -6,6 +6,21 @@
     <div class="rounded-lg bg-white p-5 shadow-sm">
         <p class="text-sm text-gray-500">SLA at risk (next 4h or breached)</p>
         <p class="mt-2 text-3xl font-semibold text-red-600">{{ number_format($stats['sla_at_risk']) }}</p>
+    </div>
+    <div class="rounded-lg bg-white p-5 shadow-sm">
+        <p class="text-sm text-gray-500">Total tasks</p>
+        <p class="mt-2 text-3xl font-semibold text-gray-900">{{ number_format($stats['tasks_total']) }}</p>
+    </div>
+    <div class="rounded-lg bg-white p-5 shadow-sm">
+        <p class="text-sm text-gray-500">Pending tasks</p>
+        <p class="mt-2 text-3xl font-semibold text-amber-600">{{ number_format($stats['tasks_pending']) }}</p>
+    </div>
+    <div class="rounded-lg bg-white p-5 shadow-sm">
+        <p class="text-sm text-gray-500">Overdue tasks</p>
+        <p class="mt-2 text-3xl font-semibold text-red-600">{{ number_format($stats['tasks_overdue']) }}</p>
+        <div class="mt-3">
+            <a href="{{ route('tasks.index', ['mine' => 1]) }}" class="text-sm text-indigo-600 hover:underline">View my tasks →</a>
+        </div>
     </div>
 </div>
 

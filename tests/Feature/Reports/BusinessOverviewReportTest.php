@@ -342,6 +342,14 @@ it('shows manager the page but hides itemized financial detail', function () {
         ->assertDontSee('31–60 days overdue');
 });
 
+it('links the Total outstanding card to the Receivables Report', function () {
+    $admin = User::factory()->role(UserRole::Admin)->create();
+
+    $this->actingAs($admin)->get(route('reports.business-overview'))
+        ->assertOk()
+        ->assertSee(route('reports.receivables'), false);
+});
+
 it('links a partner name to its detail page for admin', function () {
     $admin = User::factory()->role(UserRole::Admin)->create();
     $partner = Partner::factory()->create(['name' => 'Brand-Whiz']);

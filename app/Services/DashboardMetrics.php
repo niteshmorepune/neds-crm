@@ -40,12 +40,14 @@ class DashboardMetrics
         $activeClients = (int) $clients->clone()->where('status', CustomerStatus::Active->value)->count();
         $inactiveClients = (int) $clients->clone()->where('status', CustomerStatus::Inactive->value)->count();
         $totalTasks = (int) Task::query()->count();
+        $totalLeads = (int) Lead::query()->count();
 
         return [
             'clients_total' => $this->card($totalClients, Customer::where('created_at', '<=', $cutoff)->count()),
             'clients_active' => $this->card($activeClients, Customer::where('status', CustomerStatus::Active->value)->where('created_at', '<=', $cutoff)->count()),
             'clients_inactive' => $this->card($inactiveClients, Customer::where('status', CustomerStatus::Inactive->value)->where('created_at', '<=', $cutoff)->count()),
             'tasks_total' => $this->card($totalTasks, Task::where('created_at', '<=', $cutoff)->count()),
+            'leads_total' => $this->card($totalLeads, Lead::where('created_at', '<=', $cutoff)->count()),
         ];
     }
 
@@ -144,7 +146,7 @@ class DashboardMetrics
         ];
     }
 
-    /** Support dashboard: open tickets by priority + SLA at-risk. */
+    /** Support dashboard: open tickets by priority + SLA at-risk + own task totals. */
     public function supportStats(User $user): array
     {
         $byPriority = Ticket::query()->visibleTo($user)->open()
@@ -161,10 +163,19 @@ class DashboardMetrics
             ->where('sla_due_at', '<=', now()->addHours(4))
             ->count();
 
+        $myTasks = Task::where('assignee_id', $user->id);
+
         return [
             'open_by_priority' => $priorities,
             'open_total' => (int) array_sum($priorities),
             'sla_at_risk' => $atRisk,
+            'tasks_total' => (int) $myTasks->clone()->count(),
+            'tasks_pending' => (int) $myTasks->clone()->where('status', '!=', TaskStatus::Done->value)->count(),
+            'tasks_overdue' => (int) $myTasks->clone()
+                ->where('status', '!=', TaskStatus::Done->value)
+                ->whereNotNull('due_date')
+                ->whereDate('due_date', '<', now()->startOfDay())
+                ->count(),
         ];
     }
 

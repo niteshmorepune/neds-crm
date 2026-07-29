@@ -19,10 +19,11 @@
 
         {{-- Top stat cards --}}
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div class="rounded-lg bg-white p-5 shadow-sm">
+            <a href="{{ route('reports.receivables') }}" class="block rounded-lg bg-white p-5 shadow-sm hover:bg-gray-50">
                 <p class="text-sm text-gray-500">Total outstanding</p>
                 <p class="mt-2 text-2xl font-semibold text-gray-900">{{ \App\Support\Money::format($arAging['total_outstanding']) }}</p>
-            </div>
+                <p class="mt-1 text-xs text-indigo-600">View receivables →</p>
+            </a>
             <div class="rounded-lg bg-white p-5 shadow-sm">
                 <p class="text-sm text-gray-500">Total MRR</p>
                 <p class="mt-2 text-2xl font-semibold text-indigo-600">{{ \App\Support\Money::format($mrr['total_mrr']) }}</p>

@@ -6,12 +6,13 @@
         $card('Total Clients', $stats['clients_total']),
         $card('Active Clients', $stats['clients_active']),
         $card('Inactive Clients', $stats['clients_inactive']),
+        $card('Total Leads', $stats['leads_total']),
         $card('Tasks Overview', $stats['tasks_total']),
     ];
 @endphp
 
 {{-- Row 1: stat cards --}}
-<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
     @foreach ($cards as $c)
         <div class="rounded-lg bg-white p-5 shadow-sm">
             <p class="text-sm text-gray-500">{{ $c['label'] }}</p>

@@ -35,6 +35,14 @@ it('counts clients by status for the admin cards', function () {
         ->and($stats['clients_inactive']['value'])->toBe(2);
 });
 
+it('counts total leads for the admin dashboard card', function () {
+    Lead::factory()->count(4)->create();
+
+    $stats = $this->metrics->adminStats();
+
+    expect($stats['leads_total']['value'])->toBe(4);
+});
+
 it('builds the services overview with percentages', function () {
     $seo = Service::factory()->create(['name' => 'SEO']);
     $web = Service::factory()->create(['name' => 'Website']);
@@ -145,4 +153,20 @@ it('summarizes support open tickets by priority and SLA risk', function () {
     expect($stats['open_total'])->toBe(2)
         ->and($stats['sla_at_risk'])->toBe(1)
         ->and($stats['open_by_priority']['Urgent'])->toBe(1);
+});
+
+it('includes the support user\'s own task totals (total/pending/overdue)', function () {
+    $support = User::factory()->role(UserRole::Support)->create();
+    $other = User::factory()->role(UserRole::Support)->create();
+
+    Task::factory()->create(['assignee_id' => $support->id, 'status' => TaskStatus::Done]);
+    Task::factory()->create(['assignee_id' => $support->id, 'status' => TaskStatus::Todo, 'due_date' => now()->subDay()]); // overdue
+    Task::factory()->create(['assignee_id' => $support->id, 'status' => TaskStatus::InProgress, 'due_date' => now()->addWeek()]); // pending, not overdue
+    Task::factory()->create(['assignee_id' => $other->id, 'status' => TaskStatus::Todo, 'due_date' => now()->subDay()]); // someone else's
+
+    $stats = $this->metrics->supportStats($support);
+
+    expect($stats['tasks_total'])->toBe(3)
+        ->and($stats['tasks_pending'])->toBe(2)
+        ->and($stats['tasks_overdue'])->toBe(1);
 });

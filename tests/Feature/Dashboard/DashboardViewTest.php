@@ -73,6 +73,7 @@ it('shows the company dashboard to an admin', function () {
 
     $this->actingAs($admin)->get(route('dashboard'))->assertOk()
         ->assertSee('Total Clients')
+        ->assertSee('Total Leads')
         ->assertSee('Services Overview')
         ->assertSee('Task Summary');
 });
@@ -112,6 +113,15 @@ it('shows the support panel to a support user', function () {
 
     $this->actingAs($support)->get(route('dashboard'))->assertOk()
         ->assertSee('Open tickets by priority');
+});
+
+it('shows total/pending/overdue task counts on the support dashboard', function () {
+    $support = User::factory()->role(UserRole::Support)->create();
+
+    $this->actingAs($support)->get(route('dashboard'))->assertOk()
+        ->assertSee('Total tasks')
+        ->assertSee('Pending tasks')
+        ->assertSee('Overdue tasks');
 });
 
 it('keeps showing the support panel even when Sales is granted as an additional role', function () {
