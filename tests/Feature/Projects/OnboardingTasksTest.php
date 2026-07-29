@@ -37,8 +37,8 @@ it('creates the matching onboarding checklist for the project service, assigned 
     // the job synchronously inside Project::create(), before the lead is
     // attached below.
     Bus::fake();
-    $owner = User::factory()->create();
-    $lead = User::factory()->create();
+    $owner = User::factory()->role(UserRole::Manager)->create();
+    $lead = User::factory()->role(UserRole::Manager)->create();
     $service = Service::factory()->create(['name' => 'SEO']);
     $project = Project::factory()->create(['service_id' => $service->id, 'owner_id' => $owner->id, 'status' => ProjectStatus::Active]);
     $project->assignees()->attach($lead->id, ['role' => 'lead']);
@@ -55,7 +55,7 @@ it('creates the matching onboarding checklist for the project service, assigned 
 });
 
 it('falls back to the project owner when no lead assignee is set', function () {
-    $owner = User::factory()->create();
+    $owner = User::factory()->role(UserRole::Manager)->create();
     $service = Service::factory()->create(['name' => 'GMB']);
     $project = Project::factory()->create(['service_id' => $service->id, 'owner_id' => $owner->id, 'status' => ProjectStatus::Active]);
 
@@ -85,7 +85,7 @@ it('prefers a Support-role project assignee over a non-Support pivot-role=lead a
 });
 
 it('does not create duplicate onboarding tasks when the job runs twice', function () {
-    $owner = User::factory()->create();
+    $owner = User::factory()->role(UserRole::Manager)->create();
     $service = Service::factory()->create(['name' => 'GMB']);
     $project = Project::factory()->create(['service_id' => $service->id, 'owner_id' => $owner->id, 'status' => ProjectStatus::Active]);
 
@@ -93,6 +93,16 @@ it('does not create duplicate onboarding tasks when the job runs twice', functio
     (new CreateOnboardingTasks($project->id))->handle();
 
     expect(Task::where('project_id', $project->id)->where('title', 'GMB profile setup')->count())->toBe(1);
+});
+
+it('does NOT assign an onboarding task to a Sales project owner when no Support/non-Sales lead assignee exists', function () {
+    $salesOwner = User::factory()->role(UserRole::Sales)->create();
+    $service = Service::factory()->create(['name' => 'GMB']);
+    $project = Project::factory()->create(['service_id' => $service->id, 'owner_id' => $salesOwner->id, 'status' => ProjectStatus::Active]);
+
+    (new CreateOnboardingTasks($project->id))->handle();
+
+    expect(Task::where('project_id', $project->id)->where('title', 'GMB profile setup')->exists())->toBeFalse();
 });
 
 it('does nothing when the project has no owner or assignee at all', function () {
@@ -105,7 +115,7 @@ it('does nothing when the project has no owner or assignee at all', function () 
 });
 
 it('creates the AMC Service onboarding audit for a new AMC Service project', function () {
-    $owner = User::factory()->create();
+    $owner = User::factory()->role(UserRole::Manager)->create();
     $service = Service::factory()->create(['name' => 'AMC Service']);
     $project = Project::factory()->create(['service_id' => $service->id, 'owner_id' => $owner->id, 'status' => ProjectStatus::Active]);
 

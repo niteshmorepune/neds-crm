@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ProjectStatus;
 use App\Enums\TaskStatus;
+use App\Enums\UserRole;
 use App\Jobs\CreateOnboardingTasks;
 use App\Models\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -108,6 +109,35 @@ class Project extends Model
     public function schedulingContact(): ?User
     {
         return $this->assignees->firstWhere('pivot.role', 'lead') ?? $this->owner;
+    }
+
+    /**
+     * Who an auto-generated delivery/maintenance task should go to: a
+     * Support-role project assignee first, then a non-Sales pivot-role=lead
+     * assignee, then a non-Sales project owner. Never Sales at any step —
+     * these are delivery/maintenance tasks, not sales work, and a Sales rep
+     * is frequently a project's owner_id simply because they were the deal
+     * owner who won it (CreateProjectFromDeal defaults owner_id to the deal
+     * owner). Returns null when nobody appropriate is on the project —
+     * callers should skip creating the task rather than falling back to
+     * Sales. Single source of truth for this resolution: previously
+     * duplicated separately in DispatchScheduledTasks, CreateOnboardingTasks
+     * and OnboardingTaskSuggestions, which let a Sales-exclusion fix land in
+     * one copy and not the other two.
+     */
+    public function maintenanceAssignee(): ?User
+    {
+        $support = $this->assignees->first(fn (User $u) => $u->role === UserRole::Support);
+        if ($support) {
+            return $support;
+        }
+
+        $lead = $this->assignees->firstWhere('pivot.role', 'lead');
+        if ($lead && $lead->role !== UserRole::Sales) {
+            return $lead;
+        }
+
+        return $this->owner && $this->owner->role !== UserRole::Sales ? $this->owner : null;
     }
 
     /**

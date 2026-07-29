@@ -3,7 +3,6 @@
 namespace App\Livewire;
 
 use App\Enums\TaskStatus;
-use App\Enums\UserRole;
 use App\Livewire\Concerns\RatesAiDrafts;
 use App\Models\Project;
 use App\Models\Task;
@@ -74,9 +73,7 @@ class OnboardingTaskSuggestions extends Component
             return;
         }
 
-        $assignee = $this->project->assignees->first(fn ($u) => $u->role === UserRole::Support)
-            ?? $this->project->assignees->firstWhere('pivot.role', 'lead')
-            ?? $this->project->owner;
+        $assignee = $this->project->maintenanceAssignee();
 
         $creatorId = auth()->id();
 

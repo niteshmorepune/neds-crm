@@ -78,6 +78,31 @@ it('hides the suggest button entirely when AI is disabled', function () {
         ->assertDontSee('Suggest onboarding tasks');
 });
 
+it('does NOT assign an added task to a Sales project owner when no Support/non-Sales lead assignee exists', function () {
+    config(['services.anthropic.enabled' => true, 'services.anthropic.key' => 'sk-test']);
+    Notification::fake();
+    Http::fake([
+        'api.anthropic.com/*' => Http::response([
+            'content' => [['type' => 'text', 'text' => '[{"title": "Extra task", "description": "Something extra.", "due_in_days": 5}]']],
+            'usage' => ['input_tokens' => 40, 'output_tokens' => 20],
+        ]),
+    ]);
+    $manager = User::factory()->role(UserRole::Manager)->create();
+    $salesOwner = User::factory()->role(UserRole::Sales)->create();
+    $project = projectWithDealNote('Some requirement.');
+    $project->update(['owner_id' => $salesOwner->id]);
+
+    Livewire::actingAs($manager)
+        ->test(OnboardingTaskSuggestions::class, ['project' => $project])
+        ->call('suggest')
+        ->call('addSelected');
+
+    $task = Task::where('project_id', $project->id)->where('title', 'Extra task')->first();
+    expect($task)->not->toBeNull()
+        ->and($task->assignee_id)->toBeNull();
+    Notification::assertNothingSentTo($salesOwner);
+});
+
 it('shows a friendly message and creates nothing when the AI has no extra suggestions', function () {
     config(['services.anthropic.enabled' => true, 'services.anthropic.key' => 'sk-test']);
     Http::fake([

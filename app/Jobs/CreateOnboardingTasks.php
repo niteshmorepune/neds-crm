@@ -3,7 +3,6 @@
 namespace App\Jobs;
 
 use App\Enums\TaskStatus;
-use App\Enums\UserRole;
 use App\Models\Project;
 use App\Models\Task;
 use App\Notifications\TaskAssigned;
@@ -170,12 +169,7 @@ class CreateOnboardingTasks implements ShouldQueue
         }
 
         $serviceName = $project->service?->name ?? '';
-        // Prefer a Support-team project assignee (owner request 2026-07-07:
-        // route auto-generated tasks to Support), then the pivot-role=lead
-        // assignee, then the project owner.
-        $assignee = $project->assignees->first(fn ($u) => $u->role === UserRole::Support)
-            ?? $project->assignees->firstWhere('pivot.role', 'lead')
-            ?? $project->owner;
+        $assignee = $project->maintenanceAssignee();
 
         if (! $assignee) {
             return;

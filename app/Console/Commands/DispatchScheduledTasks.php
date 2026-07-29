@@ -4,10 +4,8 @@ namespace App\Console\Commands;
 
 use App\Enums\ProjectStatus;
 use App\Enums\TaskStatus;
-use App\Enums\UserRole;
 use App\Models\Project;
 use App\Models\Task;
-use App\Models\User;
 use App\Notifications\TaskAssigned;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
@@ -263,7 +261,7 @@ class DispatchScheduledTasks extends Command
 
         foreach ($projects as $project) {
             $serviceName = $project->service?->name ?? '';
-            $assignee = $this->resolveAssignee($project);
+            $assignee = $project->maintenanceAssignee();
 
             if (! $assignee) {
                 continue;
@@ -319,35 +317,5 @@ class DispatchScheduledTasks extends Command
             'quarterly' => $today->day === 1 && in_array($today->month, [1, 4, 7, 10], true),
             default => false,
         };
-    }
-
-    private function resolveAssignee(Project $project): ?User
-    {
-        // Prefer a Support-team project assignee (owner request 2026-07-07:
-        // route auto-generated tasks to Support). Falls back to the team
-        // member with pivot role = 'lead', then the project owner — but
-        // NEVER to a Sales user at any step. These are delivery/maintenance
-        // tasks, not sales work, and a Sales rep frequently ends up as a
-        // project's owner_id simply because they were the deal owner who
-        // won it (CreateProjectFromDeal defaults owner_id to the deal
-        // owner) — that shouldn't make them the fallback assignee for
-        // routine checks like the weekly GMB post. If nobody appropriate is
-        // left, skip creating the task for this project rather than routing
-        // it to Sales.
-        $support = $project->assignees->first(fn (User $u) => $u->role === UserRole::Support);
-        if ($support) {
-            return $support;
-        }
-
-        $lead = $project->assignees->firstWhere('pivot.role', 'lead');
-        if ($lead && $lead->role !== UserRole::Sales) {
-            return $lead;
-        }
-
-        if ($project->owner && $project->owner->role !== UserRole::Sales) {
-            return $project->owner;
-        }
-
-        return null;
     }
 }
