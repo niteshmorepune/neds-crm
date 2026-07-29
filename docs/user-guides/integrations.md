@@ -259,7 +259,7 @@ integration can never block the monthly wins note from running.
 ## Integration 10 — Meta Lead Ads webhook
 
 **Status: built, not yet configured** — needs a Facebook Developer App, a
-registered Page, and a Page access token before it goes live. See Section 8
+registered Page, and a Page access token before it goes live. See Section 16
 of the Admin guide for setup steps.
 
 **What it does:** when someone submits a Facebook or Instagram Lead Ads form,
@@ -287,7 +287,7 @@ well as a manually-entered one: an answer that exactly matches an active
 to a question whose text contains the word **"budget"** — with a parseable
 number or range (e.g. "₹10,000–25,000") — sets the estimated value. Any
 other custom question is preserved as a note on the lead instead. See
-[Admin guide → Setting up Meta Lead Ads](admin.md#8-lead-capture-channels)
+[Admin guide → Setting up Meta Lead Ads](admin.md#16-lead-capture-channels)
 for how to word the ad form's questions to hit these.
 
 `utm_source`/`utm_medium` are set to a fixed `meta`/`paid_social`;

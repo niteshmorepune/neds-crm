@@ -14,8 +14,9 @@ Start with **Getting Started**, then read the guide for your role.
 | [Manager](manager.md) | Managers — dashboards and reports |
 | [Admin](admin.md) | Administrators — users, services, menu control, audit, backups |
 | [Intern](intern.md) | Interns — clients (view), assigned projects and tasks, attendance, daily reports |
+| [Telecaller](telecaller.md) | Telecallers — Lead Generation (shared queue) and Calling only |
 | [Client Portal](client-portal.md) | Clients — the read-only customer portal |
-| [Integrations](integrations.md) | Managers & Admins — Drishti, SMDost, and the 7 automated workflows |
+| [Integrations](integrations.md) | Managers & Admins — Drishti, SMDost, and the 10 automated workflows |
 | [Troubleshooting](troubleshooting.md) | Admins & Managers — fixing common issues (biometric, SSO, integrations, email) |
 
 > Some AI helpers (lead scoring, "Draft with AI", "Summarize") only appear when

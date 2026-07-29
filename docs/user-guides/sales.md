@@ -186,25 +186,6 @@ Admin/Manager additionally see a **rep leaderboard** (pipeline, won this
 month, target %, win rate, avg deal size per Sales rep) and a **Save targets**
 form to set the company's monthly/FY target and each rep's monthly target.
 
-## 2b. Incentives
-Sidebar → **Incentives** shows your monthly sales incentive, calculated live
-from the same "won this month" value shown on the Sales Dashboard (so the two
-pages never disagree):
-- **Individual incentive** — a tiered rate on your before-tax sales this
-  month: 6% up to ₹50,000, 10% up to ₹1,00,000, 12.5% up to ₹1,50,000, 15% up
-  to ₹2,50,000, 20% above that. Rates are marginal, like income tax — each
-  slab's rate only applies to the portion of sales *within* that band, so
-  there's never a reason to hold a deal back to avoid crossing a boundary.
-- **Team bonus** — a fixed pool (set by Admin/Manager) split evenly across
-  every active Sales rep, paid only in months the company-wide monthly target
-  (set on the Sales Dashboard) is met.
-- **Slab progress bar** shows where this month's sales sit across the five
-  bands, plus how much more you need to reach the next rate.
-- **Finalized history** — once a month closes, the 1st-of-the-month job locks
-  that month's numbers into a permanent record (so editing an old deal later
-  never changes a past month's incentive). Anything showing for the current,
-  still-open month is a live estimate, not yet finalized.
-
 ## 3. Quotations
 1. **Quotations → Create** — or open a **Deal** and click **+ New Quotation**
    directly on the deal page (the client and deal are pre-filled for you) — or
@@ -235,7 +216,9 @@ pages never disagree):
    how accounts knows a phase is finished and it's time to raise the next
    invoice.
 5. Save, then **download the PDF** to send to the client.
-6. When the client agrees, mark the quotation **Accepted**, then **Convert to
+6. Open it and click **Send to Client** — this emails the quotation details to
+   the client's billing address and marks it **Sent**.
+7. When the client agrees, mark the quotation **Accepted**, then **Convert to
    invoice** — accounts takes it from there.
 
 All quotations linked to a deal are listed on the deal's page so you can track
@@ -302,7 +285,26 @@ from Our Team" *and* emails it to the client's billing contact, in one step.
 Click **Discard** instead if a day's draft isn't worth sharing. Nothing reaches
 the client until you approve it.
 
-## 5. Content pieces (when you're a project's Project Manager)
+## 5. Incentives
+Sidebar → **Incentives** shows your monthly sales incentive, calculated live
+from the same "won this month" value shown on the Sales Dashboard (so the two
+pages never disagree):
+- **Individual incentive** — a tiered rate on your before-tax sales this
+  month: 6% up to ₹50,000, 10% up to ₹1,00,000, 12.5% up to ₹1,50,000, 15% up
+  to ₹2,50,000, 20% above that. Rates are marginal, like income tax — each
+  slab's rate only applies to the portion of sales *within* that band, so
+  there's never a reason to hold a deal back to avoid crossing a boundary.
+- **Team bonus** — a fixed pool (set by Admin/Manager) split evenly across
+  every active Sales rep, paid only in months the company-wide monthly target
+  (set on the Sales Dashboard) is met.
+- **Slab progress bar** shows where this month's sales sit across the five
+  bands, plus how much more you need to reach the next rate.
+- **Finalized history** — once a month closes, the 1st-of-the-month job locks
+  that month's numbers into a permanent record (so editing an old deal later
+  never changes a past month's incentive). Anything showing for the current,
+  still-open month is a live estimate, not yet finalized.
+
+## 6. Content pieces (when you're a project's Project Manager)
 If you are set as the **Project Manager** of a project, you can track content
 pieces for that project — useful when NEDS is managing social media or other
 content for a client alongside a partner agency.
@@ -331,11 +333,6 @@ clickable links so you can jump straight to the asset.
 **Upload links** (generating one requires manager access — ask your manager).
 Once a link is generated you can copy it and send it to the partner; they
 upload files without needing a CRM login.
-
-## 6. Quotations — sending to clients
-Once a quotation is ready, open it and click **Send to Client**. This emails the
-quotation details to the client's billing address and marks it as Sent. The client
-can then accept or request changes.
 
 ## Bell notifications
 The 🔔 bell icon at the top of the screen shows real-time alerts for your key

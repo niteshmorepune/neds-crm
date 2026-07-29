@@ -17,27 +17,7 @@ When you log in, you'll see:
 
 Click the links on the cards to jump straight to your task list or projects.
 
-## 2. Clients (read-only)
-Under **Clients** in the sidebar you can browse the full client directory —
-company details, contacts, and their service summary. You can view any client
-record, but you **cannot create, edit, or delete** client records or contacts.
-
-## 3. Projects (your assigned projects only)
-Under **Project Updates** you can see the projects you've been added to as a
-team member. You can:
-- Read project details and the team notes feed.
-- Add **notes/updates** to a project (your manager sets whether they're shared
-  with the client).
-
-You **cannot** create, edit, or delete projects.
-
-## 4. Tasks (Emptask)
-Under **Employee Task** (Emptask) you'll see tasks assigned to you. You can:
-- Update the status of your tasks (To Do → In Progress → Done).
-- Add comments to a task.
-- Create tasks (e.g. to track your own to-dos).
-
-## 5. Attendance
+## 2. Attendance
 Do **both** every day: use the **Check In** / **Check Out** buttons on your
 dashboard, **and** punch the biometric machine when you arrive and leave.
 The two work together automatically — your CRM check-in marks you present
@@ -51,6 +31,26 @@ sidebar.
 
 > If you need a correction (e.g. you forgot to punch, or the machine was
 > offline), ask your admin or manager — only they can edit attendance records.
+
+## 3. Clients (read-only)
+Under **Clients** in the sidebar you can browse the full client directory —
+company details, contacts, and their service summary. You can view any client
+record, but you **cannot create, edit, or delete** client records or contacts.
+
+## 4. Projects (your assigned projects only)
+Under **Project Updates** you can see the projects you've been added to as a
+team member. You can:
+- Read project details and the team notes feed.
+- Add **notes/updates** to a project (your manager sets whether they're shared
+  with the client).
+
+You **cannot** create, edit, or delete projects.
+
+## 5. Tasks (Emptask)
+Under **Employee Task** (Emptask) you'll see tasks assigned to you. You can:
+- Update the status of your tasks (To Do → In Progress → Done).
+- Add comments to a task.
+- Create tasks (e.g. to track your own to-dos).
 
 ## 6. Daily report
 At the end of each working day, open **Daily Reports** and fill in a brief

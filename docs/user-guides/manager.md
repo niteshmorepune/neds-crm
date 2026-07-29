@@ -16,56 +16,6 @@ Your dashboard shows the whole business at a glance:
 - **Link panels** — quick access to Daily Reports, the Project Dashboard, and the
   Reports below.
 
-## Notice Board
-**Notice Board** in the sidebar (Admin/Manager only) is for posting time-bound
-company notices — office closures, holidays, policy changes, service updates
-— without relying on email or WhatsApp. Each post has a title, message,
-**audience** (Staff only, Clients only, or both), a start time, and an
-optional end time (blank = standing notice, no expiry); check **Pin to top**
-to keep one above newer posts.
-
-A Staff/Both post shows as a dismissible 📣 banner at the top of everyone's
-Dashboard; a Clients/Both post shows the same way on the Client Portal home
-page. Nothing to manually take down — a post stops showing once its end date
-passes, and only shows once its start time arrives.
-
-## Team Nudges
-**Team Nudges** in the sidebar (Admin/Manager only) is for assigning a
-targeted, trackable reminder to a specific role (or everyone) — unlike a
-Notice Board post, which is just a broadcast. Set a **title**, optional
-**description**, **target** role, **recurrence** (One-time or Weekly), and —
-for weekly nudges only — an optional **auto-detect** check that clears the
-reminder for someone automatically once they've done the real thing (e.g.
-logged a Ticket), no manual click needed.
-
-Each targeted person sees it as a card on their own Dashboard with
-**Done**/**Snooze 3d** buttons. This page's **team completion overview**
-always shows the real per-person status (Pending/Snoozed/Done) — snoozing
-only hides a nudge from that person's own view, it never hides the true
-status from you here.
-
-## Client Radar
-A **Client Radar** sidebar item (and a dashboard banner when clients are
-flagged) surfaces active clients worth a proactive check-in:
-- **No Contact** — no note, call, or ticket in the last 14 days.
-- **Declining Activity** — recent touches well below the prior 30 days.
-- **Overdue Invoice** — at least one overdue invoice.
-- **Growth Opportunity** — only using one service line even though more are
-  active — a natural upsell prompt.
-- **Low Satisfaction** — at least one ticket rated 2/5 or below by the client
-  in the last 60 days (clients rate a ticket once it's Resolved/Closed, from
-  the client portal — see `client-portal.md`).
-
-Everything is computed live from existing data, nothing is stored. Click
-**✨ Suggest action** next to a client to have Claude draft a specific next
-step from that client's flags — generated on demand, per client, so it's
-never run automatically as a batch.
-
-On a **Low Satisfaction** flag specifically, a second button — **✨ Draft
-recovery message** — writes a client-facing apology grounded in the actual
-ticket that was rated poorly (not just the generic flag). Review and
-personalize it before sending; nothing goes out automatically.
-
 ## Reports
 From the **Reports** panel on the dashboard:
 
@@ -165,6 +115,43 @@ next milestone is marked **Ready to invoice**. Filter by **All clients**,
 **Direct clients**, or one specific partner. Open any partner's page (below)
 to see the same view already scoped to them.
 
+**Weekly digest history** — see [Email alerts](#email-alerts) below for the
+Monday digest itself; the history page keeps every past week's snapshot
+with trendlines so you can see whether MRR, receivables, and flagged-client
+count are trending up or down, not just this week's figure.
+
+## Oversight
+You have access to Leads, Deals, Quotations, Invoices, Projects, Tasks, Tickets,
+Clients, Attendance, Calls and Daily Reports so you can monitor and step in
+anywhere. Use the **search bar** to jump to any record.
+
+**Seeing who services which client:** open any client's profile and click the
+**Services** tab. The **Projects** table now has a **Team** column showing the
+Lead and any additional team members for each project/service. This is the
+fastest way to answer "which of our team handles GMB for ABC Corp?"
+
+Every project also has a **Project Manager** (set on the project's Edit page)
+who is ultimately accountable for it — a different person can be the Project
+Manager on every project, and one person can be the Project Manager on as
+many projects as needed.
+
+**Project Updates → My Services:** the Project Updates page has a new **My Services**
+toggle that filters the list to only projects where you are the Lead or a team member.
+Useful for managers who also run their own service accounts.
+
+**Create Meeting and Meet notes (optional):** once an admin has connected
+NEDS's Google account once (**Profile → Google Account**), anyone on the
+team can click **Create Meeting** on a client or lead's **Calls** tab to
+schedule a real Google Meet call through that same connection — it invites
+the client automatically and shows the link to share directly too, no
+personal Google account needed per staff member. For a call that already
+happened outside that flow, **Import Meet Notes** pulls in the recording
+link, transcript link, and full transcript Google Meet already generated —
+shown the same way a logged call is. If AI is also enabled, an imported
+transcript gets a short **AI summary** (Key points / Decisions / Action
+items), visible to anyone who opens that client or lead's page, including
+you.
+
 ## Sales Dashboard
 A company-wide view (Sidebar → **Sales Dashboard**, under Sales Department) —
 same KPI strip/stage-conversion/trend/needs-attention sections described in
@@ -204,59 +191,27 @@ locked in until the 1st of the following month, when a scheduled job snapshots
 each rep's just-ended month into a permanent record. That means an old deal
 edited after month-end never changes a past month's payout figure.
 
-## Bell notifications
-As a manager, you receive bell notifications for:
+## Client Radar
+A **Client Radar** sidebar item (and a dashboard banner when clients are
+flagged) surfaces active clients worth a proactive check-in:
+- **No Contact** — no note, call, or ticket in the last 14 days.
+- **Declining Activity** — recent touches well below the prior 30 days.
+- **Overdue Invoice** — at least one overdue invoice.
+- **Growth Opportunity** — only using one service line even though more are
+  active — a natural upsell prompt.
+- **Low Satisfaction** — at least one ticket rated 2/5 or below by the client
+  in the last 60 days (clients rate a ticket once it's Resolved/Closed, from
+  the client portal — see `client-portal.md`).
 
-- 🏆 **Deal won** — whenever any deal is marked Won, you and all admins are
-  notified with the deal title, client name, and value.
-- ⚠️ **Recurring invoice due in 7 days** — every morning at 8 AM, if any
-  recurring-linked invoice is due in 7 days and hasn't been paid, you're alerted
-  alongside the accounts team so you can follow up if needed.
-- 🚩 **Payment promise broken** — the morning after a client's promised payment
-  date passes with the invoice still unpaid, you're alerted alongside the
-  accounts team. Fires once per promise, and again if a new promised date is
-  set and also breaks.
-- 📅 **Contract renewal due soon** — when an active recurring contract's end
-  date is within 30 days, you and the accounts team (plus that client's sales
-  rep) are notified once. Fires again if the contract is renewed to a later
-  date and that new date later comes within the window too.
-- **SMDost brief approved** — ✅ when a brief is approved in SMDost, a draft
-  invoice appears in the CRM for accounts to price.
-- 🌴 **Leave request submitted / reviewed** — whenever anyone requests leave,
-  you and all other admins/managers are notified with their name and dates.
-  You'll also see a banner on your dashboard when there are pending requests.
+Everything is computed live from existing data, nothing is stored. Click
+**✨ Suggest action** next to a client to have Claude draft a specific next
+step from that client's flags — generated on demand, per client, so it's
+never run automatically as a batch.
 
-## Oversight
-You have access to Leads, Deals, Quotations, Invoices, Projects, Tasks, Tickets,
-Clients, Attendance, Calls and Daily Reports so you can monitor and step in
-anywhere. Use the **search bar** to jump to any record.
-
-**Seeing who services which client:** open any client's profile and click the
-**Services** tab. The **Projects** table now has a **Team** column showing the
-Lead and any additional team members for each project/service. This is the
-fastest way to answer "which of our team handles GMB for ABC Corp?"
-
-Every project also has a **Project Manager** (set on the project's Edit page)
-who is ultimately accountable for it — a different person can be the Project
-Manager on every project, and one person can be the Project Manager on as
-many projects as needed.
-
-**Project Updates → My Services:** the Project Updates page has a new **My Services**
-toggle that filters the list to only projects where you are the Lead or a team member.
-Useful for managers who also run their own service accounts.
-
-**Create Meeting and Meet notes (optional):** once an admin has connected
-NEDS's Google account once (**Profile → Google Account**), anyone on the
-team can click **Create Meeting** on a client or lead's **Calls** tab to
-schedule a real Google Meet call through that same connection — it invites
-the client automatically and shows the link to share directly too, no
-personal Google account needed per staff member. For a call that already
-happened outside that flow, **Import Meet Notes** pulls in the recording
-link, transcript link, and full transcript Google Meet already generated —
-shown the same way a logged call is. If AI is also enabled, an imported
-transcript gets a short **AI summary** (Key points / Decisions / Action
-items), visible to anyone who opens that client or lead's page, including
-you.
+On a **Low Satisfaction** flag specifically, a second button — **✨ Draft
+recovery message** — writes a client-facing apology grounded in the actual
+ticket that was rated poorly (not just the generic flag). Review and
+personalize it before sending; nothing goes out automatically.
 
 ## Daily reports & attendance
 - **Daily Reports → Team** shows what each person submitted for the selected
@@ -273,7 +228,7 @@ you.
 - **Sync from biometric** — click this button on the Attendance page if a
   punch looks missing or a check-in/out time looks wrong. It pulls fresh data
   from the biometric machine within about a minute and shows a status line
-  once done. See `admin.md` Section 1a for the full biometric setup/troubleshooting.
+  once done. See `admin.md` Section 9a for the full biometric setup/troubleshooting.
 - **Leave Requests → Review pending** — any admin or manager can approve or
   reject a leave request (you can't approve your own). The queue shows each
   request's **Type** (Full Day or Half Day) — approving a Full Day request
@@ -281,57 +236,6 @@ you.
   range (Sundays are skipped), while a Half Day request only marks that one
   day as **Half Day**, not a full day off. Rejecting lets you add a short
   note explaining why.
-
-## Email alerts
-**Morning digest (9 AM daily)** — your own personalised summary: overdue tasks,
-tasks due today, call follow-ups, lead/deal follow-ups, and open tickets assigned
-to you. If AI is enabled, it opens with a short AI-written line on what to
-prioritise — the same line also shows as a banner on your dashboard for the
-rest of the day.
-
-**Project Updates Digest (9:15 AM daily, if AI is enabled)** — a leadership-only
-summary of yesterday's AI-drafted client updates (drafted vs. approved &
-sent), any drafts still awaiting review after 2+ days, and any active project
-with no completed task or note in 5+ days. Only sent when there's something
-to report. See the Admin guide's AI section for the full breakdown.
-
-**Weekly owner digest (9 AM Monday, if AI is enabled)** — a leadership-only
-paragraph synthesizing the week ahead: pipeline, MRR, cash expected, overdue
-receivables, and how many clients Client Radar has flagged. Also shows as a
-Monday dashboard banner. The paragraph itself is only sent when AI is on —
-see the Admin guide's AI section for the full figure list. A "Weekly digest
-history →" link on the dashboard opens the full week-by-week history with
-trendlines, which is recorded every Monday regardless of whether AI is on.
-
-**Stagnation alerts (10 AM daily)** — if any lead owned by a team member has had
-no activity for 7 days, or a deal for 10 days, the owner is emailed automatically.
-You don't need to chase people — the system does it.
-
-## Scheduled maintenance tasks
-Every morning at **8 AM**, the CRM automatically creates recurring maintenance
-tasks for each active project and assigns them to the project lead (or project
-owner if no lead is set) with an in-app bell notification — no email.
-
-**As a manager, what you need to watch:**
-- Open **Project Updates → any project** to see all tasks including auto-created
-  ones. Overdue maintenance tasks show with the same red overdue flag as manual tasks.
-- **Emptask** defaults to hiding these routine tasks (filter dropdown shows
-  "Assigned tasks") so the list isn't dominated by hundreds of maintenance
-  checks — switch to "Routine maintenance" or "All tasks" in the filter bar
-  when you specifically need to audit them.
-- Above the filter bar, a **Team workload** table shows each person's total
-  tasks, status breakdown, and overdue count (assigned + routine combined) —
-  click a name to see their full list.
-- The **Employee Performance Report** (Reports on the dashboard) counts these
-  tasks in each person's on-time completion %. If someone's % is dropping, check
-  whether maintenance tasks are being dismissed without being marked Done.
-- If a project isn't generating tasks, verify the project **status is Active**
-  and a **service is set** on it. On-hold or completed projects are skipped.
-- To trigger tasks for a missed date (e.g. after adding a new project
-  mid-month), SSH into the server and run:
-  ```
-  php artisan app:dispatch-scheduled-tasks --date=YYYY-MM-DD
-  ```
 
 ## Content collaboration (Partners)
 
@@ -428,6 +332,60 @@ details, it shows:
 Useful when a partner asks "how are my clients doing with us" or "what have
 we billed through you lately," or before a check-in call with them.
 
+## Notice Board
+**Notice Board** in the sidebar (Admin/Manager only) is for posting time-bound
+company notices — office closures, holidays, policy changes, service updates
+— without relying on email or WhatsApp. Each post has a title, message,
+**audience** (Staff only, Clients only, or both), a start time, and an
+optional end time (blank = standing notice, no expiry); check **Pin to top**
+to keep one above newer posts.
+
+A Staff/Both post shows as a dismissible 📣 banner at the top of everyone's
+Dashboard; a Clients/Both post shows the same way on the Client Portal home
+page. Nothing to manually take down — a post stops showing once its end date
+passes, and only shows once its start time arrives.
+
+## Team Nudges
+**Team Nudges** in the sidebar (Admin/Manager only) is for assigning a
+targeted, trackable reminder to a specific role (or everyone) — unlike a
+Notice Board post, which is just a broadcast. Set a **title**, optional
+**description**, **target** role, **recurrence** (One-time or Weekly), and —
+for weekly nudges only — an optional **auto-detect** check that clears the
+reminder for someone automatically once they've done the real thing (e.g.
+logged a Ticket), no manual click needed.
+
+Each targeted person sees it as a card on their own Dashboard with
+**Done**/**Snooze 3d** buttons. This page's **team completion overview**
+always shows the real per-person status (Pending/Snoozed/Done) — snoozing
+only hides a nudge from that person's own view, it never hides the true
+status from you here.
+
+## Scheduled maintenance tasks
+Every morning at **8 AM**, the CRM automatically creates recurring maintenance
+tasks for each active project and assigns them to the project lead (or project
+owner if no lead is set) with an in-app bell notification — no email.
+
+**As a manager, what you need to watch:**
+- Open **Project Updates → any project** to see all tasks including auto-created
+  ones. Overdue maintenance tasks show with the same red overdue flag as manual tasks.
+- **Emptask** defaults to hiding these routine tasks (filter dropdown shows
+  "Assigned tasks") so the list isn't dominated by hundreds of maintenance
+  checks — switch to "Routine maintenance" or "All tasks" in the filter bar
+  when you specifically need to audit them.
+- Above the filter bar, a **Team workload** table shows each person's total
+  tasks, status breakdown, and overdue count (assigned + routine combined) —
+  click a name to see their full list.
+- The **Employee Performance Report** (Reports on the dashboard) counts these
+  tasks in each person's on-time completion %. If someone's % is dropping, check
+  whether maintenance tasks are being dismissed without being marked Done.
+- If a project isn't generating tasks, verify the project **status is Active**
+  and a **service is set** on it. On-hold or completed projects are skipped.
+- To trigger tasks for a missed date (e.g. after adding a new project
+  mid-month), SSH into the server and run:
+  ```
+  php artisan app:dispatch-scheduled-tasks --date=YYYY-MM-DD
+  ```
+
 ## Automated integrations
 The CRM runs automated workflows with **Drishti** and **Social Media Dost**.
 As a manager, what you need to know:
@@ -449,6 +407,53 @@ As a manager, what you need to know:
 
 For full details and troubleshooting, see the
 [Integrations guide](integrations.md).
+
+## Bell notifications
+As a manager, you receive bell notifications for:
+
+- 🏆 **Deal won** — whenever any deal is marked Won, you and all admins are
+  notified with the deal title, client name, and value.
+- ⚠️ **Recurring invoice due in 7 days** — every morning at 8 AM, if any
+  recurring-linked invoice is due in 7 days and hasn't been paid, you're alerted
+  alongside the accounts team so you can follow up if needed.
+- 🚩 **Payment promise broken** — the morning after a client's promised payment
+  date passes with the invoice still unpaid, you're alerted alongside the
+  accounts team. Fires once per promise, and again if a new promised date is
+  set and also breaks.
+- 📅 **Contract renewal due soon** — when an active recurring contract's end
+  date is within 30 days, you and the accounts team (plus that client's sales
+  rep) are notified once. Fires again if the contract is renewed to a later
+  date and that new date later comes within the window too.
+- **SMDost brief approved** — ✅ when a brief is approved in SMDost, a draft
+  invoice appears in the CRM for accounts to price.
+- 🌴 **Leave request submitted / reviewed** — whenever anyone requests leave,
+  you and all other admins/managers are notified with their name and dates.
+  You'll also see a banner on your dashboard when there are pending requests.
+
+## Email alerts
+**Morning digest (9 AM daily)** — your own personalised summary: overdue tasks,
+tasks due today, call follow-ups, lead/deal follow-ups, and open tickets assigned
+to you. If AI is enabled, it opens with a short AI-written line on what to
+prioritise — the same line also shows as a banner on your dashboard for the
+rest of the day.
+
+**Project Updates Digest (9:15 AM daily, if AI is enabled)** — a leadership-only
+summary of yesterday's AI-drafted client updates (drafted vs. approved &
+sent), any drafts still awaiting review after 2+ days, and any active project
+with no completed task or note in 5+ days. Only sent when there's something
+to report. See the Admin guide's AI section for the full breakdown.
+
+**Weekly owner digest (9 AM Monday, if AI is enabled)** — a leadership-only
+paragraph synthesizing the week ahead: pipeline, MRR, cash expected, overdue
+receivables, and how many clients Client Radar has flagged. Also shows as a
+Monday dashboard banner. The paragraph itself is only sent when AI is on —
+see the Admin guide's AI section for the full figure list. A "Weekly digest
+history →" link on the dashboard opens the full week-by-week history with
+trendlines, which is recorded every Monday regardless of whether AI is on.
+
+**Stagnation alerts (10 AM daily)** — if any lead owned by a team member has had
+no activity for 7 days, or a deal for 10 days, the owner is emailed automatically.
+You don't need to chase people — the system does it.
 
 ## Tip
 Check the **SLA at-risk** tickets and the **Overdue follow-ups** widget on the

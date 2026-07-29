@@ -5,7 +5,7 @@ Lead Ads to generate leads for NEDS's own services, plus how to read the
 results once they land in the CRM. Written 2026-07-19, after the CRM's Meta
 Lead Ads integration (webhook + auto-scoring) had been live and verified
 since 2026-07-09. See [`docs/user-guides/admin.md`](user-guides/admin.md)
-Section 8 for the technical webhook setup, and
+Section 16 for the technical webhook setup, and
 [`docs/user-guides/integrations.md`](user-guides/integrations.md) for how a
 lead is processed once it arrives.
 
@@ -15,7 +15,7 @@ lead is processed once it arrives.
       `https://niranjanenterprises.com/privacy-policy/` (already verified live)
 - [ ] `META_APP_SECRET`, `META_WEBHOOK_VERIFY_TOKEN`, `META_PAGE_ACCESS_TOKEN`
       all set in the server `.env` (already configured — see admin guide
-      Section 8 if this ever needs re-registering)
+      Section 16 if this ever needs re-registering)
 - [ ] App is in **Live** mode, not Development (required for real, non-test
       webhook delivery)
 - [ ] Decide which 1–2 service clusters to launch first — don't run all four

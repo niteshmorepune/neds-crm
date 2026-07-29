@@ -46,7 +46,28 @@ one-time escalation email. The email shows how long overdue the ticket is (e.g.
 the ticket. No repeat emails — resolving the ticket is the way to clear it from
 the breach list.
 
-## 2. Projects (Project Updates)
+## 2. Calls
+Use **☎ Log a call** (top bar) or **Calling** to record calls you make to
+clients about their tickets or projects. Support doesn't have access to
+**Leads**, so the call form only lets you log against a **Client** — there's
+no Lead option to pick from. On the Notes field, click **Dictate** and speak
+instead of typing (Chrome/Edge only). If AI features are enabled, you can also
+**Record voice note (Hindi/Marathi/English)** — speak the recap in whichever
+language is fastest and the CRM transcribes and translates it to English
+automatically, shown as a separate block under your typed notes on the
+**Calling** page within about a minute.
+
+**Create Meeting and Meet notes (optional):** once an admin has connected
+NEDS's Google account (**Profile → Google Account**, admin-only), click
+**Create Meeting** on a client's Calls tab to schedule a real Google Meet
+call — it invites the client's email automatically and shows you the link
+to share directly too. For a call that already happened outside that flow,
+**Import Meet Notes** pulls in the recording link, transcript link, and
+full transcript text Google Meet already generated for it. If AI is also
+enabled, it gets a short **AI summary** (Key points / Decisions / Action
+items) too, either automatically or via a **Summarize with AI** button.
+
+## 3. Projects (Project Updates)
 A **Project** is created from a won deal. Open **Project Updates** to see your
 projects, each with its client, service and tasks.
 
@@ -85,7 +106,7 @@ tickets, the content/optimization view for Social Media/Ads tickets, or the
 client's general profile for other service types. This saves you from
 context-switching manually when the support query is about a delivered service.
 
-## 3. Tasks (Employee Task)
+## 4. Tasks (Employee Task)
 **Employee Task** is your task list.
 - Update a task's **status** (To-do → In progress → Review → Done) as you work.
 - Tasks have a **due date**; overdue ones are flagged.
@@ -147,27 +168,6 @@ setup") in its first few weeks — these appear once, not on a schedule.
 
 **If a task is missing:** check that your project status is **Active** and that
 a service is set on the project. On-hold or completed projects do not get tasks.
-
-## 4. Calls
-Use **☎ Log a call** (top bar) or **Calling** to record calls you make to
-clients about their tickets or projects. Support doesn't have access to
-**Leads**, so the call form only lets you log against a **Client** — there's
-no Lead option to pick from. On the Notes field, click **Dictate** and speak
-instead of typing (Chrome/Edge only). If AI features are enabled, you can also
-**Record voice note (Hindi/Marathi/English)** — speak the recap in whichever
-language is fastest and the CRM transcribes and translates it to English
-automatically, shown as a separate block under your typed notes on the
-**Calling** page within about a minute.
-
-**Create Meeting and Meet notes (optional):** once an admin has connected
-NEDS's Google account (**Profile → Google Account**, admin-only), click
-**Create Meeting** on a client's Calls tab to schedule a real Google Meet
-call — it invites the client's email automatically and shows you the link
-to share directly too. For a call that already happened outside that flow,
-**Import Meet Notes** pulls in the recording link, transcript link, and
-full transcript text Google Meet already generated for it. If AI is also
-enabled, it gets a short **AI summary** (Key points / Decisions / Action
-items) too, either automatically or via a **Summarize with AI** button.
 
 ## 5. Notifications
 The bell (🔔) in the top bar is how the CRM reaches you **without email**.

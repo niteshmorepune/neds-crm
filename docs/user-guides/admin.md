@@ -6,7 +6,174 @@ Admins can do everything a manager can, plus manage **users**, **services**, the
 > Admins must use **Two-Factor Authentication** — see
 > [Getting Started](getting-started.md).
 
-## 1. Users — add and manage staff
+## 1. Clients — status, bulk import & deletion
+
+**Client status:** clients have three statuses:
+- **Prospect** (yellow) — created when a lead is converted. Not yet a paying client.
+- **Active** (green) — promoted automatically when their deal is marked **Won**.
+- **Inactive** — set manually when a relationship ends.
+
+The Clients list defaults to showing Active clients. Use the status filter to
+view Prospects, Inactive, or all. You can also set the status manually on the
+client's edit page.
+
+**Import (Clients → Import):** upload a CSV. The template (downloadable from the
+import page) has 13 columns including `address_line2`, `owner` (user's full name),
+and `tags` (comma-separated). Leave `owner` blank to assign the client to the
+importing user. Duplicate emails and GSTINs (including soft-deleted records) are
+skipped automatically.
+
+**Deleting a client:** removes the client **and all related records** — deals,
+quotations, invoices, projects, tasks, tickets, contacts, notes, and call logs.
+This cannot be undone. Use this only when the company record should be wiped
+entirely; consider making a client **Inactive** instead if you may need the
+history later.
+
+## 2. Client Radar — at-risk / upsell signals
+A dashboard banner ("N clients need attention") and a **Client Radar** sidebar
+page (Admin/Manager only) flag active clients worth a proactive check-in:
+
+- **No Contact** — no note, call log, or ticket in the last 14 days.
+- **Declining Activity** — touches in the last 30 days are well below the
+  30 days before that (only shown when No Contact doesn't already apply).
+- **Overdue Invoice** — the client has at least one overdue invoice.
+- **Growth Opportunity** — the client only uses one of the agency's service
+  lines, even though more are active — a natural upsell conversation starter.
+
+Everything on this page is computed live from existing CRM data — nothing is
+stored or sent automatically. Click **✨ Suggest action** next to a flagged
+client to have Claude draft a short, specific next step (a check-in call, a
+service to pitch, tactfully chasing payment) based only on that client's
+flags. This is generated on demand, one client at a time — not run as a
+batch job — so there's no AI cost unless someone actually looks at a client.
+
+## 3. Partners — content agency directory
+**Partners** in the sidebar is a directory of the external content agencies NEDS
+collaborates with. Managers and admins can add, edit, and delete partner records.
+
+Each partner needs only a **name**. Email and phone are optional but useful for
+quick reference when you need to contact the agency.
+
+Once a partner is registered, staff can assign them to content pieces inside
+projects (see [Manager guide → Content collaboration](manager.md)).
+
+**Deleting a partner** is allowed only when no content pieces are linked to
+them — the CRM will block the delete and show an error if any pieces still
+reference that partner.
+
+How much business each partner has actually brought in — referred clients,
+plus won/pipeline/lost deal value attributed via a deal's **Referred by**
+field — shows up in **Business Overview** (Reports panel; see [Manager guide
+→ Reports](manager.md)). As Admin you see the full financial detail there
+(itemized overdue invoices, named client breakdown, itemized upcoming
+renewals) — Manager sees the same report with those three itemized sections
+trimmed to summary numbers only. Click a partner's name there (or on the
+Partners list) to open their page for actual invoiced amounts — a
+month-by-month and per-client "Billed — last 6 months" breakdown, plus which
+of their clients are unpaid/overdue and for how long (see [Manager guide →
+Partner client health](manager.md) for the full breakdown).
+
+## 4. Notice Board — post staff/client announcements
+**Notice Board** in the sidebar (Admin/Manager only) is where you post
+time-bound notices — office closures, holiday reminders, policy changes,
+service updates. Each post has a **title**, a **message**, an **audience**
+(Staff only, Clients only, or both), a **start** time, and an optional
+**end** time — leave the end date blank for a standing notice with no
+expiry. Check **Pin to top** to keep an important notice above newer ones.
+
+A Staff or Both post shows as a dismissible banner at the top of the
+**Dashboard** for every internal role (see [Getting Started → Notice
+Board](getting-started.md)); a Clients or Both post shows the same way on
+the **Client Portal** home page. Only posts within their start/end window
+are shown — there's nothing to manually take down once a notice's end date
+passes. Dismissing is per-browser (not tracked per person), so a notice can
+reappear if someone checks from a different device.
+
+## 5. Team Nudges — targeted reminders + who's actually done them
+**Team Nudges** in the sidebar (Admin/Manager only) is different from the
+Notice Board: a notice is a broadcast announcement, a nudge is a targeted,
+trackable to-do you assign to a role. Each nudge has a **title**, an optional
+**description**, a **target** (Everyone, or one specific role), a
+**recurrence** (One-time, or Weekly), and — weekly nudges only — an optional
+**auto-detect** check that clears the reminder automatically the moment the
+targeted person does the real thing (e.g. logs a Ticket), no manual click
+needed from them.
+
+Every targeted, active person sees the nudge as a card on their own
+Dashboard (see [Getting Started → Reminders](getting-started.md)), with
+**Done**/**Snooze 3d** buttons. Below the nudge list, the **team completion
+overview** on this page shows the real per-person status for every active
+nudge — Pending, Snoozed, or Done, plus how it was completed (manual or
+auto) and when. A person snoozing their own view never changes what you see
+here — snoozed is shown as its own status, never quietly folded into "Done,"
+so this page always reflects reality regardless of who's snoozed what.
+
+## 6. Services — the service-line taxonomy
+**Services** lists your offerings (SEO, GMB, Website Design & Development,
+Social Media, Performance Marketing, Software Development, AI Automation,
+AMC Service). These power every report's service breakdown.
+- **Add** a new service line, **rename**, set the **sort order**, or **toggle
+  active**.
+- A service **in use** by leads/deals/projects/tickets can't be deleted — just
+  deactivate it so it stays on old records but isn't offered for new ones.
+
+## 7. Festivals — the greeting calendar
+**Festivals** drives two things: a "🎉 Diwali is in 5 days!" banner everyone
+sees on their dashboard, and AI-drafted client greeting content (see below).
+
+**Fixed-date national holidays are always pre-loaded** (Independence Day,
+Gandhi Jayanti, Christmas, New Year's Day, Republic Day, Maharashtra Day).
+
+**Lunar/regional festivals shift every year and are NOT pre-loaded by
+default.** As of 2026-07-05, the remaining lunar/regional festivals of 2026
+were verified against multiple calendar sources and added: Eid-e-Milad-un-Nabi
+(26 Aug — moon-sighting dependent, confirm closer to the date), Raksha Bandhan
+(28 Aug — one source disagreed with 9 Aug, double-check a regional panchang),
+Janmashtami (4 Sep), Ganesh Chaturthi (14 Sep), Navratri/Ghatasthapana
+(11 Oct), Dussehra (20 Oct), and Diwali/Lakshmi Puja (8 Nov). Sources:
+[drikpanchang.com](https://www.drikpanchang.com/calendars/indian/indiancalendar.html),
+[timeanddate.com](https://www.timeanddate.com/holidays/india/2026).
+**These dates do not carry forward to next year** — every January, re-verify
+and re-add that year's lunar/regional festivals from an official calendar;
+don't assume last year's dates still apply. Add a festival with a name and
+date; toggle **Active** to hide one without deleting it (e.g. after the year
+it applies to has passed).
+
+**AI-drafted client greetings:** every morning, the CRM checks for festivals
+7 days out and — for every active client with a **Social Media** or **GMB**
+project — automatically drafts a short greeting caption with Claude and adds
+it to that project's Content Collaboration queue (tagged with a 🎉 badge).
+Nothing is ever posted automatically — a team member always reviews, edits,
+and approves it like any other content piece. Requires `AI_ENABLED` (see
+Section 17).
+
+## 8. Subscriptions — internal renewal reminders
+**Subscriptions** in the sidebar is admin-only (not even managers see this —
+it's internal vendor/billing info, unlike most other admin-ish modules).
+Track the tools NEDS itself pays for — the Claude subscription, Hostinger
+hosting, domain renewals, and anything else — so renewals stop being tribal
+knowledge.
+
+Each entry has a **name**, optional **vendor**, **cost per cycle**, a
+**billing cycle** (Monthly/Quarterly/Yearly), a **next renewal date**, and
+**how many days before** to be reminded. A daily scheduled command
+(`app:send-subscription-renewal-reminders`, 08:45 IST) checks every active
+subscription and, once it falls inside its reminder window, sends **both** an
+email and a bell notification to every active admin — you won't miss it even
+on a day you don't log in.
+
+**Once a renewal date passes, it's treated as auto-renewed**: the date rolls
+forward one billing cycle on its own (handling several missed cycles at once
+if the reminder command didn't run for a while), and the reminder guard
+resets so the next cycle gets its own reminder in turn. If you actually
+cancel something instead of renewing it, uncheck **Active** on that entry —
+otherwise it will keep rolling forward and reminding you indefinitely.
+
+**Tip:** keep the reminder lead time shorter than the billing cycle (e.g. 7
+days for a monthly subscription, not 30) — a lead time close to or longer
+than the cycle length can cause the reminder to fire on back-to-back days.
+
+## 9. Users — add and manage staff
 Public sign-up is disabled, so **you create every staff account**.
 
 - **Users → Add user** → name, email, **role**, and a temporary password.
@@ -53,11 +220,11 @@ checkboxes further down the same Add/Edit form. Additional roles:
 **Giving a real job title the right CRM role:** the CRM only has the seven
 roles above — there's no field for "Graphic Designer." Map the actual job to
 whichever role gives the closest real access, then use Menu Controller
-(Section 3) to tidy their sidebar if it still shows things they'll never use.
+(Section 10) to tidy their sidebar if it still shows things they'll never use.
 
 | Real job title | Set as | Why |
 |---|---|---|
-| Developer, Graphic Designer, UI/UX Designer, Website Designer, Social Media Executive, Digital Marketing Executive, Performance Marketing Executive | **Support** | These are all ongoing project/delivery work — exactly what Support is scoped for. A project's onboarding checklist and its recurring monthly maintenance tasks (Section 6) route to whichever of that project's assignees holds the Support role first, so add them as an **assignee** on the project, not just give them the role |
+| Developer, Graphic Designer, UI/UX Designer, Website Designer, Social Media Executive, Digital Marketing Executive, Performance Marketing Executive | **Support** | These are all ongoing project/delivery work — exactly what Support is scoped for. A project's onboarding checklist and its recurring monthly maintenance tasks (Section 14) route to whichever of that project's assignees holds the Support role first, so add them as an **assignee** on the project, not just give them the role |
 | Telecaller | **Telecaller** | A dedicated role (added 2026-07-26) — Lead Generation + Calling only. They see every lead (it's a shared queue, not "my leads") and can update status/notes on any of them, but cannot create, convert, or delete a lead, and have no access at all to Deals/Quotations/Invoices/Incentives/Tickets/Clients. New leads still auto-assign to Sales as before; Telecallers work the queue regardless of which Sales rep a lead is nominally assigned to |
 | Team Lead / Studio Manager | **Manager** | For anyone overseeing other people's work, regardless of department |
 | Trainee / Temp, any function | **Intern** | Deliberately narrower than Support (no Tickets, no Calling) — a safer default than Support for someone new or unproven, whatever their eventual title will be |
@@ -66,9 +233,9 @@ whichever role gives the closest real access, then use Menu Controller
 **Biometric Device User ID** field. Set this to the numeric ID from the
 eSSL attendance machine's Device Users list. Once set, punches from that
 person on the biometric machine automatically update their CRM attendance
-record (check-in and check-out times). See Section 1a below.
+record (check-in and check-out times). See Section 9a below.
 
-## 1a. Biometric attendance sync (eSSL machine)
+## 9a. Biometric attendance sync (eSSL machine)
 The CRM is connected to the **eSSL x 2008** biometric attendance machine
 (serial NFZ8243301103). When staff punch in or out on the machine, their
 attendance is automatically synced to the CRM — no manual check-in needed.
@@ -117,64 +284,7 @@ the Attendance page, try this first:
    because a cell is blank (e.g. someone who hasn't clocked out yet when
    the export was taken).
 
-## 2. Services — the service-line taxonomy
-**Services** lists your offerings (SEO, GMB, Website Design & Development,
-Social Media, Performance Marketing, Software Development, AI Automation,
-AMC Service). These power every report's service breakdown.
-- **Add** a new service line, **rename**, set the **sort order**, or **toggle
-  active**.
-- A service **in use** by leads/deals/projects/tickets can't be deleted — just
-  deactivate it so it stays on old records but isn't offered for new ones.
-
-## 2a. Festivals — the greeting calendar
-**Festivals** drives two things: a "🎉 Diwali is in 5 days!" banner everyone
-sees on their dashboard, and AI-drafted client greeting content (see below).
-
-**Fixed-date national holidays are always pre-loaded** (Independence Day,
-Gandhi Jayanti, Christmas, New Year's Day, Republic Day, Maharashtra Day).
-
-**Lunar/regional festivals shift every year and are NOT pre-loaded by
-default.** As of 2026-07-05, the remaining lunar/regional festivals of 2026
-were verified against multiple calendar sources and added: Eid-e-Milad-un-Nabi
-(26 Aug — moon-sighting dependent, confirm closer to the date), Raksha Bandhan
-(28 Aug — one source disagreed with 9 Aug, double-check a regional panchang),
-Janmashtami (4 Sep), Ganesh Chaturthi (14 Sep), Navratri/Ghatasthapana
-(11 Oct), Dussehra (20 Oct), and Diwali/Lakshmi Puja (8 Nov). Sources:
-[drikpanchang.com](https://www.drikpanchang.com/calendars/indian/indiancalendar.html),
-[timeanddate.com](https://www.timeanddate.com/holidays/india/2026).
-**These dates do not carry forward to next year** — every January, re-verify
-and re-add that year's lunar/regional festivals from an official calendar;
-don't assume last year's dates still apply. Add a festival with a name and
-date; toggle **Active** to hide one without deleting it (e.g. after the year
-it applies to has passed).
-
-**AI-drafted client greetings:** every morning, the CRM checks for festivals
-7 days out and — for every active client with a **Social Media** or **GMB**
-project — automatically drafts a short greeting caption with Claude and adds
-it to that project's Content Collaboration queue (tagged with a 🎉 badge).
-Nothing is ever posted automatically — a team member always reviews, edits,
-and approves it like any other content piece. Requires `AI_ENABLED` (see
-Section 12).
-
-## 2b. Client Radar — at-risk / upsell signals
-A dashboard banner ("N clients need attention") and a **Client Radar** sidebar
-page (Admin/Manager only) flag active clients worth a proactive check-in:
-
-- **No Contact** — no note, call log, or ticket in the last 14 days.
-- **Declining Activity** — touches in the last 30 days are well below the
-  30 days before that (only shown when No Contact doesn't already apply).
-- **Overdue Invoice** — the client has at least one overdue invoice.
-- **Growth Opportunity** — the client only uses one of the agency's service
-  lines, even though more are active — a natural upsell conversation starter.
-
-Everything on this page is computed live from existing CRM data — nothing is
-stored or sent automatically. Click **✨ Suggest action** next to a flagged
-client to have Claude draft a short, specific next step (a check-in call, a
-service to pitch, tactfully chasing payment) based only on that client's
-flags. This is generated on demand, one client at a time — not run as a
-batch job — so there's no AI cost unless someone actually looks at a client.
-
-## 3. Menu Controller — who sees what
+## 10. Menu Controller — who sees what
 The **Menu Controller** has two parts:
 - **Role grid** — which roles can reach each module. *This controls real access.*
 - **Per-user overrides** — show/hide individual sidebar items for one person.
@@ -184,30 +294,16 @@ The **Menu Controller** has two parts:
 
 Changes apply on the user's next page load.
 
-## 4. Clients — status, bulk import & deletion
+## 11. Audit Log
+**Audit Log** (admin) shows who created, updated or deleted records, and when.
+Filter by record type or event. Use it to investigate "who changed this?".
 
-**Client status:** clients have three statuses:
-- **Prospect** (yellow) — created when a lead is converted. Not yet a paying client.
-- **Active** (green) — promoted automatically when their deal is marked **Won**.
-- **Inactive** — set manually when a relationship ends.
+## 12. Backups
+The database is **backed up automatically every night at 2 AM** (kept 14 daily +
+8 weekly copies on the server). You don't need to do anything. To restore from a
+backup, follow `docs/backup-restore.md`.
 
-The Clients list defaults to showing Active clients. Use the status filter to
-view Prospects, Inactive, or all. You can also set the status manually on the
-client's edit page.
-
-**Import (Clients → Import):** upload a CSV. The template (downloadable from the
-import page) has 13 columns including `address_line2`, `owner` (user's full name),
-and `tags` (comma-separated). Leave `owner` blank to assign the client to the
-importing user. Duplicate emails and GSTINs (including soft-deleted records) are
-skipped automatically.
-
-**Deleting a client:** removes the client **and all related records** — deals,
-quotations, invoices, projects, tasks, tickets, contacts, notes, and call logs.
-This cannot be undone. Use this only when the company record should be wiped
-entirely; consider making a client **Inactive** instead if you may need the
-history later.
-
-## 5. WhatsApp integration
+## 13. WhatsApp integration
 The CRM is connected to **wadesk.in** (your WhatsApp dashboard). When a client
 messages your WhatsApp support number with a **new conversation** (or reopens a
 resolved one), a support ticket is automatically created in the CRM.
@@ -227,7 +323,7 @@ This integration is configured via `COMPANY_WHATSAPP` and `WHATSAPP_WEBHOOK_TOKE
 in the server `.env`. Contact your developer if the integration stops creating
 tickets.
 
-## 6. Scheduled maintenance tasks
+## 14. Scheduled maintenance tasks
 The CRM runs `app:dispatch-scheduled-tasks` at **8 AM IST daily** via the cron
 scheduler. It scans every active project, matches it to a set of built-in task
 templates by service, and creates tasks due today — assigned to the project
@@ -291,7 +387,7 @@ tasks so it reflects everyone's real workload, even though routine tasks are
 hidden from the detailed list by default. Click a name to jump straight to
 that person's full task list.
 
-## 7. NEDS tool integrations (Drishti & SMDost)
+## 15. NEDS tool integrations (Drishti & SMDost)
 
 The CRM is connected to **nedsdrishti.in** and **socialmediadost.com**. Seven
 automated workflows run between the three tools. The full details are in the
@@ -313,7 +409,7 @@ verifying the server `.env` keys (`DRISHTI_SERVICE_KEY`, `SMDOST_SERVICE_KEY`,
 `PORTAL_SSO_SECRET`) and running `php artisan config:cache`. See the
 [Integrations guide](integrations.md) for step-by-step troubleshooting.
 
-## 8. Lead capture channels
+## 16. Lead capture channels
 Leads flow into the CRM automatically from three channels — no manual entry
 needed for any of them:
 
@@ -325,7 +421,7 @@ needed for any of them:
   in the manager guide). Configured via `LEAD_CAPTURE_TOKEN` in `.env` — if
   the form stops creating leads, check it matches the Elementor webhook URL.
 - **WhatsApp** — a message from a number that isn't an existing client's
-  creates a lead (source WhatsApp) instead of a ticket — see Section 5.
+  creates a lead (source WhatsApp) instead of a ticket — see Section 13.
 - **Meta Lead Ads** (Facebook/Instagram) — a lead form submission on a Meta
   ad creates a lead (source Meta Ads) via a webhook. **Live and configured**
   — see below for how to design a new ad's Instant Form so its leads score
@@ -378,103 +474,7 @@ Facebook Developer App, a new Page, or a rotated token):
 4. Submit a test lead on the ad form and confirm it appears in **Lead
    Generation** with source **Meta Ads**.
 
-## 9. Partners — content agency directory
-**Partners** in the sidebar is a directory of the external content agencies NEDS
-collaborates with. Managers and admins can add, edit, and delete partner records.
-
-Each partner needs only a **name**. Email and phone are optional but useful for
-quick reference when you need to contact the agency.
-
-Once a partner is registered, staff can assign them to content pieces inside
-projects (see [Manager guide → Content collaboration](manager.md)).
-
-**Deleting a partner** is allowed only when no content pieces are linked to
-them — the CRM will block the delete and show an error if any pieces still
-reference that partner.
-
-How much business each partner has actually brought in — referred clients,
-plus won/pipeline/lost deal value attributed via a deal's **Referred by**
-field — shows up in **Business Overview** (Reports panel; see [Manager guide
-→ Reports](manager.md)). As Admin you see the full financial detail there
-(itemized overdue invoices, named client breakdown, itemized upcoming
-renewals) — Manager sees the same report with those three itemized sections
-trimmed to summary numbers only. Click a partner's name there (or on the
-Partners list) to open their page for actual invoiced amounts — a
-month-by-month and per-client "Billed — last 6 months" breakdown, plus which
-of their clients are unpaid/overdue and for how long (see [Manager guide →
-Partner client health](manager.md) for the full breakdown).
-
-## 9a. Notice Board — post staff/client announcements
-**Notice Board** in the sidebar (Admin/Manager only) is where you post
-time-bound notices — office closures, holiday reminders, policy changes,
-service updates. Each post has a **title**, a **message**, an **audience**
-(Staff only, Clients only, or both), a **start** time, and an optional
-**end** time — leave the end date blank for a standing notice with no
-expiry. Check **Pin to top** to keep an important notice above newer ones.
-
-A Staff or Both post shows as a dismissible banner at the top of the
-**Dashboard** for every internal role (see [Getting Started → Notice
-Board](getting-started.md)); a Clients or Both post shows the same way on
-the **Client Portal** home page. Only posts within their start/end window
-are shown — there's nothing to manually take down once a notice's end date
-passes. Dismissing is per-browser (not tracked per person), so a notice can
-reappear if someone checks from a different device.
-
-## 9a-2. Team Nudges — targeted reminders + who's actually done them
-**Team Nudges** in the sidebar (Admin/Manager only) is different from the
-Notice Board: a notice is a broadcast announcement, a nudge is a targeted,
-trackable to-do you assign to a role. Each nudge has a **title**, an optional
-**description**, a **target** (Everyone, or one specific role), a
-**recurrence** (One-time, or Weekly), and — weekly nudges only — an optional
-**auto-detect** check that clears the reminder automatically the moment the
-targeted person does the real thing (e.g. logs a Ticket), no manual click
-needed from them.
-
-Every targeted, active person sees the nudge as a card on their own
-Dashboard (see [Getting Started → Reminders](getting-started.md)), with
-**Done**/**Snooze 3d** buttons. Below the nudge list, the **team completion
-overview** on this page shows the real per-person status for every active
-nudge — Pending, Snoozed, or Done, plus how it was completed (manual or
-auto) and when. A person snoozing their own view never changes what you see
-here — snoozed is shown as its own status, never quietly folded into "Done,"
-so this page always reflects reality regardless of who's snoozed what.
-
-## 9b. Subscriptions — internal renewal reminders
-**Subscriptions** in the sidebar is admin-only (not even managers see this —
-it's internal vendor/billing info, unlike most other admin-ish modules).
-Track the tools NEDS itself pays for — the Claude subscription, Hostinger
-hosting, domain renewals, and anything else — so renewals stop being tribal
-knowledge.
-
-Each entry has a **name**, optional **vendor**, **cost per cycle**, a
-**billing cycle** (Monthly/Quarterly/Yearly), a **next renewal date**, and
-**how many days before** to be reminded. A daily scheduled command
-(`app:send-subscription-renewal-reminders`, 08:45 IST) checks every active
-subscription and, once it falls inside its reminder window, sends **both** an
-email and a bell notification to every active admin — you won't miss it even
-on a day you don't log in.
-
-**Once a renewal date passes, it's treated as auto-renewed**: the date rolls
-forward one billing cycle on its own (handling several missed cycles at once
-if the reminder command didn't run for a while), and the reminder guard
-resets so the next cycle gets its own reminder in turn. If you actually
-cancel something instead of renewing it, uncheck **Active** on that entry —
-otherwise it will keep rolling forward and reminding you indefinitely.
-
-**Tip:** keep the reminder lead time shorter than the billing cycle (e.g. 7
-days for a monthly subscription, not 30) — a lead time close to or longer
-than the cycle length can cause the reminder to fire on back-to-back days.
-
-## 10. Audit Log
-**Audit Log** (admin) shows who created, updated or deleted records, and when.
-Filter by record type or event. Use it to investigate "who changed this?".
-
-## 11. Backups
-The database is **backed up automatically every night at 2 AM** (kept 14 daily +
-8 weekly copies on the server). You don't need to do anything. To restore from a
-backup, follow `docs/backup-restore.md`.
-
-## 12. AI features (optional)
+## 17. AI features (optional)
 Nine AI helpers are built into the CRM, powered by Anthropic's Claude. They are
 **off by default** and never take action, send, publish, or score an employee
 automatically — they only draft or summarize for a human to review.
@@ -516,7 +516,7 @@ the situation. Useful when picking up a colleague's account.
 
 **Festival greeting drafts** — every morning, for clients with an active Social
 Media or GMB project, Claude drafts a festival greeting caption 7 days ahead of
-each entry in the **Festivals** calendar (Section 2a) and adds it to that
+each entry in the **Festivals** calendar (Section 7) and adds it to that
 project's Content Collaboration queue as a draft. A team member always reviews
 and approves it before anything is scheduled or published.
 
@@ -572,7 +572,7 @@ their own tip, privately, from their own Dashboard — see the relevant
 role guide (e.g. `sales.md`, `support.md`) for what that looks like.
 
 **Client Radar suggestions (✨ Suggest action)** — on the **Client Radar** page
-(Section 2b), a button per flagged client that has Claude suggest one concrete
+(Section 2), a button per flagged client that has Claude suggest one concrete
 next action based on that client's specific signals. Generated on demand per
 client, not in a batch — so it costs nothing unless someone clicks it.
 

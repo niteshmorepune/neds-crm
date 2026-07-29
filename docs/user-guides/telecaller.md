@@ -14,7 +14,12 @@ When you log in, you'll see:
 - **Follow-ups due** — how many of your own logged calls have a follow-up
   date that's arrived.
 
-## 2. Lead Generation
+## 2. Attendance
+Do **both** every day: use the **Check In** / **Check Out** buttons on your
+dashboard, **and** punch the biometric machine when you arrive and leave —
+see the Getting Started guide for how the two work together.
+
+## 3. Lead Generation
 Under **Lead Generation** in the sidebar you can see every lead in the
 system — there's no "my leads only" filter, because leads aren't assigned to
 telecallers the way they're assigned to Sales reps. Open any lead to:
@@ -27,16 +32,11 @@ a client/deal, or **delete** a lead — those stay with Sales/Manager/Admin.
 When a lead is genuinely ready to move forward, hand it to the assigned
 Sales rep (shown on the lead) rather than converting it yourself.
 
-## 3. Calling
+## 4. Calling
 Use **☎ Log a call** (top bar) or **Calling** to record every call you make.
 Pick the **Lead** you called, the **direction**, **outcome**, and any notes —
 set a **follow-up date** if you need to call back. Your own call history is
 under **Calling** in the sidebar.
-
-## 4. Attendance
-Do **both** every day: use the **Check In** / **Check Out** buttons on your
-dashboard, **and** punch the biometric machine when you arrive and leave —
-see the Getting Started guide for how the two work together.
 
 ## 5. Daily report
 At the end of each working day, open **Daily Reports** and fill in a brief
