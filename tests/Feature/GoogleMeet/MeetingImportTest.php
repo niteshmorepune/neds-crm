@@ -286,6 +286,32 @@ it('creates a meeting via the company connection, inviting the customer\'s billi
     });
 });
 
+it('interprets the scheduled time as Asia/Kolkata (IST), not UTC — regression for the 12:00 PM becoming 5:30 PM bug', function () {
+    companyGoogleConnection();
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    $customer = Customer::factory()->create(['email' => 'client@example.com']);
+
+    Http::fake([
+        'www.googleapis.com/calendar/v3/calendars/primary/events?*' => Http::response([
+            'id' => 'new-evt-tz',
+            'hangoutLink' => 'https://meet.google.com/tz-check',
+        ]),
+    ]);
+
+    Livewire::actingAs($sales)
+        ->test(MeetingImport::class, ['record' => $customer, 'canManage' => true])
+        ->call('openScheduler')
+        ->set('scheduleAt', '2026-07-29T12:00') // picked as 12:00 PM IST
+        ->call('createMeeting');
+
+    // 12:00 PM IST (UTC+5:30) is 06:30 UTC — asserting the raw request body
+    // catches a regression to the old bug (bare Carbon::parse() treated the
+    // wall-clock string as UTC, sending 12:00 UTC = 5:30 PM IST instead).
+    Http::assertSent(function ($request) {
+        return $request->data()['start']['dateTime'] === '2026-07-29T06:30:00+00:00';
+    });
+});
+
 it('creates a meeting for a Lead using the lead\'s own email', function () {
     companyGoogleConnection();
     $sales = User::factory()->role(UserRole::Sales)->create();

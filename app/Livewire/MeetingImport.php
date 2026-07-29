@@ -66,7 +66,7 @@ class MeetingImport extends Component
 
         $this->error = null;
         $this->createdMeetLink = null;
-        $this->scheduleAt = now()->addMinutes(30)->format('Y-m-d\TH:i');
+        $this->scheduleAt = now()->addMinutes(30)->setTimezone(config('app.display_timezone', 'Asia/Kolkata'))->format('Y-m-d\TH:i');
         $this->showScheduler = true;
     }
 
@@ -98,7 +98,7 @@ class MeetingImport extends Component
             return;
         }
 
-        $start = Carbon::parse($this->scheduleAt);
+        $start = Carbon::createFromFormat('Y-m-d\TH:i', $this->scheduleAt, config('app.display_timezone', 'Asia/Kolkata'))->utc();
         $title = 'NEDS <> '.($this->record->company_name ?? $this->record->company ?? $this->record->name ?? 'Meeting');
         $attendeeEmail = $this->attendeeEmail();
 
