@@ -11,7 +11,7 @@
                 <div>
                     <h1 class="text-xl font-semibold text-gray-900">{{ $task->title }}</h1>
                     <dl class="mt-3 grid grid-cols-1 gap-x-8 gap-y-1 text-sm text-gray-600 sm:grid-cols-2">
-                        <div><span class="text-gray-400">Project:</span> {{ $task->project?->name ?? 'Standalone' }}</div>
+                        <div><span class="text-gray-400">Project:</span> {{ $task->projectLabel() }}</div>
                         <div><span class="text-gray-400">Assignee:</span> {{ $task->assignee?->name ?? 'Unassigned' }}</div>
                         <div><span class="text-gray-400">Priority:</span> {{ $task->priority->label() }}</div>
                         <div><span class="text-gray-400">Status:</span> {{ $task->status->label() }}</div>

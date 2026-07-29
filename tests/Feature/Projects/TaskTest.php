@@ -220,6 +220,69 @@ it('lets support update other fields on a task already assigned to someone else 
     expect($task->fresh()->status)->toBe(TaskStatus::InProgress);
 });
 
+it('lets a Project Manager (project owner_id) see a task an assignee created on their project, even without being a project team member themselves', function () {
+    $projectManager = User::factory()->role(UserRole::Sales)->create();
+    $assignee = User::factory()->role(UserRole::Support)->create();
+    $project = Project::factory()->create(['owner_id' => $projectManager->id]);
+    // Deliberately NOT added to $project->assignees() — owner_id alone should be enough.
+    $task = Task::factory()->create([
+        'title' => 'Assignee-created task',
+        'project_id' => $project->id,
+        'assignee_id' => $assignee->id,
+        'created_by' => $assignee->id,
+    ]);
+
+    $this->actingAs($projectManager)->get(route('tasks.index', ['type' => 'all']))
+        ->assertOk()->assertSee('Assignee-created task');
+
+    $this->actingAs($projectManager)->get(route('tasks.show', $task))->assertOk();
+});
+
+it('does not let a non-owning, non-assigned, non-team-member user see a task on someone else\'s project', function () {
+    $outsider = User::factory()->role(UserRole::Sales)->create();
+    $owner = User::factory()->role(UserRole::Sales)->create();
+    $project = Project::factory()->create(['owner_id' => $owner->id]);
+    $task = Task::factory()->create(['project_id' => $project->id, 'title' => 'Not yours']);
+
+    $this->actingAs($outsider)->get(route('tasks.index', ['type' => 'all']))
+        ->assertOk()->assertDontSee('Not yours');
+
+    $this->actingAs($outsider)->get(route('tasks.show', $task))->assertForbidden();
+});
+
+it('shows "Standalone" for a task that never had a project', function () {
+    $task = Task::factory()->assignedTo($this->manager->id)->create(['project_id' => null]);
+
+    expect($task->projectLabel())->toBe('Standalone');
+});
+
+it('shows "Project removed" (not "Standalone") for a task whose project was soft-deleted', function () {
+    // Regression: a real bug report ("a standalone SEO project is being
+    // auto-created") turned out to be this exact task-display confusion —
+    // Project uses SoftDeletes, so deleting one doesn't fire the DB's
+    // ON DELETE CASCADE (that only fires on a real DELETE, not a soft
+    // one). The task survives with its real project_id intact, but
+    // $task->project resolves to null (Eloquent excludes trashed rows by
+    // default) — indistinguishable from a genuinely standalone task
+    // without this fix.
+    $project = Project::factory()->create(['name' => 'ADTA Group SEO']);
+    $task = Task::factory()->assignedTo($this->manager->id)->create(['project_id' => $project->id]);
+    $project->delete();
+
+    expect($task->fresh()->projectLabel())->toBe('Project removed')
+        ->and($task->fresh()->project_id)->toBe($project->id);
+
+    $this->actingAs($this->manager)->get(route('tasks.show', $task))
+        ->assertOk()->assertSee('Project removed')->assertDontSee('ADTA Group SEO');
+});
+
+it('shows the real project name for a task on a live project', function () {
+    $project = Project::factory()->create(['name' => 'Live Project']);
+    $task = Task::factory()->assignedTo($this->manager->id)->create(['project_id' => $project->id]);
+
+    expect($task->projectLabel())->toBe('Live Project');
+});
+
 it('renders task index, create and show pages', function () {
     $task = Task::factory()->assignedTo($this->manager->id)->create();
 

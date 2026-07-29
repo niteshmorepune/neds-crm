@@ -92,4 +92,21 @@ class Task extends Model
             && ! $this->status->isComplete()
             && $this->due_date->isPast();
     }
+
+    /**
+     * "Standalone" only for a task that never had a project. A task whose
+     * project_id is still set but whose project has since been soft-deleted
+     * shows "Project removed" instead — otherwise it's indistinguishable
+     * from a genuine standalone task, hiding that a real project existed
+     * and was removed (same "relabel a real removed record" convention
+     * used for a soft-deleted client elsewhere in the app).
+     */
+    public function projectLabel(): string
+    {
+        if ($this->project_id === null) {
+            return 'Standalone';
+        }
+
+        return $this->project?->name ?? 'Project removed';
+    }
 }

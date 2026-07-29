@@ -115,3 +115,109 @@ it('does not offer the lead dropdown to support on the log-a-call form', functio
         ->assertDontSee('Hidden Lead')
         ->assertDontSee('…or Lead');
 });
+
+it('clears an earlier pending follow-up reminder once the same client is actually reached again', function () {
+    $customer = Customer::factory()->create();
+    $earlier = CallLog::factory()->create([
+        'user_id' => $this->sales->id,
+        'callable_type' => Customer::class,
+        'callable_id' => $customer->id,
+        'outcome' => 'no_answer',
+        'follow_up_at' => now()->addDay(),
+        'follow_up_notified_at' => null,
+    ]);
+
+    $this->actingAs($this->sales)->post(route('calls.store'), [
+        'customer_id' => $customer->id,
+        'direction' => 'outgoing',
+        'outcome' => 'connected',
+        'called_at' => now()->format('Y-m-d H:i:s'),
+    ])->assertRedirect(route('clients.show', $customer));
+
+    expect($earlier->fresh()->follow_up_at)->toBeNull();
+});
+
+it('clears the earlier reminder even when the new call happens after the reminder date already passed', function () {
+    $customer = Customer::factory()->create();
+    $earlier = CallLog::factory()->create([
+        'user_id' => $this->sales->id,
+        'callable_type' => Customer::class,
+        'callable_id' => $customer->id,
+        'outcome' => 'follow_up_needed',
+        'follow_up_at' => now()->subDay(), // already overdue
+        'follow_up_notified_at' => null,
+    ]);
+
+    $this->actingAs($this->sales)->post(route('calls.store'), [
+        'customer_id' => $customer->id,
+        'direction' => 'outgoing',
+        'outcome' => 'connected',
+        'called_at' => now()->format('Y-m-d H:i:s'),
+    ]);
+
+    expect($earlier->fresh()->follow_up_at)->toBeNull();
+});
+
+it('does NOT clear an earlier reminder when the new call fails to reach the client', function () {
+    $customer = Customer::factory()->create();
+    $earlier = CallLog::factory()->create([
+        'user_id' => $this->sales->id,
+        'callable_type' => Customer::class,
+        'callable_id' => $customer->id,
+        'outcome' => 'no_answer',
+        'follow_up_at' => now()->addDay(),
+        'follow_up_notified_at' => null,
+    ]);
+
+    $this->actingAs($this->sales)->post(route('calls.store'), [
+        'customer_id' => $customer->id,
+        'direction' => 'outgoing',
+        'outcome' => 'busy', // still didn't reach them
+        'called_at' => now()->format('Y-m-d H:i:s'),
+    ]);
+
+    expect($earlier->fresh()->follow_up_at)->not->toBeNull();
+});
+
+it('does not clear a reminder that already fired (notified)', function () {
+    $customer = Customer::factory()->create();
+    $earlier = CallLog::factory()->create([
+        'user_id' => $this->sales->id,
+        'callable_type' => Customer::class,
+        'callable_id' => $customer->id,
+        'outcome' => 'no_answer',
+        'follow_up_at' => now()->subDay(),
+    ]);
+    $earlier->forceFill(['follow_up_notified_at' => now()->subHours(2)])->save();
+
+    $this->actingAs($this->sales)->post(route('calls.store'), [
+        'customer_id' => $customer->id,
+        'direction' => 'outgoing',
+        'outcome' => 'connected',
+        'called_at' => now()->format('Y-m-d H:i:s'),
+    ]);
+
+    expect($earlier->fresh()->follow_up_at)->not->toBeNull();
+});
+
+it('does not touch another client\'s pending reminder', function () {
+    $customerA = Customer::factory()->create();
+    $customerB = Customer::factory()->create();
+    $otherReminder = CallLog::factory()->create([
+        'user_id' => $this->sales->id,
+        'callable_type' => Customer::class,
+        'callable_id' => $customerB->id,
+        'outcome' => 'no_answer',
+        'follow_up_at' => now()->addDay(),
+        'follow_up_notified_at' => null,
+    ]);
+
+    $this->actingAs($this->sales)->post(route('calls.store'), [
+        'customer_id' => $customerA->id,
+        'direction' => 'outgoing',
+        'outcome' => 'connected',
+        'called_at' => now()->format('Y-m-d H:i:s'),
+    ]);
+
+    expect($otherReminder->fresh()->follow_up_at)->not->toBeNull();
+});

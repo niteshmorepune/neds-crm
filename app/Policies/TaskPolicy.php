@@ -50,6 +50,7 @@ class TaskPolicy
     {
         return $task->assignee_id === $user->id
             || $task->created_by === $user->id
-            || ($task->project_id !== null && $task->project?->assignees()->whereKey($user->id)->exists());
+            || ($task->project_id !== null && $task->project?->assignees()->whereKey($user->id)->exists())
+            || ($task->project_id !== null && $task->project?->owner_id === $user->id);
     }
 }

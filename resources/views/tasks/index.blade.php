@@ -116,7 +116,7 @@
                                 @endif
                                 <a href="{{ route('tasks.show', $task) }}" class="font-medium text-indigo-600 hover:underline">{{ $task->title }}</a>
                             </td>
-                            <td class="px-4 py-3 text-gray-600">{{ $task->project?->name ?? '—' }}</td>
+                            <td class="px-4 py-3 text-gray-600">{{ $task->project_id ? $task->projectLabel() : '—' }}</td>
                             <td class="px-4 py-3 text-gray-600">{{ $task->assignee?->name ?? 'Unassigned' }}</td>
                             <td class="px-4 py-3 text-gray-600">{{ $task->priority->label() }}</td>
                             <td class="px-4 py-3 text-gray-600">{{ $task->status->label() }}</td>

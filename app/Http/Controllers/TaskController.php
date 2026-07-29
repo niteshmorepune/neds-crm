@@ -39,7 +39,8 @@ class TaskController extends Controller
             ->unless($isManager, fn ($q) => $q->where(function ($w) use ($user) {
                 $w->where('assignee_id', $user->id)
                     ->orWhere('created_by', $user->id)
-                    ->orWhereHas('project.assignees', fn ($a) => $a->whereKey($user->id));
+                    ->orWhereHas('project.assignees', fn ($a) => $a->whereKey($user->id))
+                    ->orWhereHas('project', fn ($p) => $p->where('owner_id', $user->id));
             }))
             ->when($request->boolean('mine'), fn ($q) => $q->where('assignee_id', $user->id))
             ->when($request->filled('assignee'), fn ($q) => $q->where('assignee_id', $request->input('assignee')))

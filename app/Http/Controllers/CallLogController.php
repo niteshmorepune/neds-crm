@@ -101,6 +101,8 @@ class CallLogController extends Controller
             $this->attachVoiceNote($call, $request);
         }
 
+        $this->clearSupersededFollowUps($call, $type, $id);
+
         // Return to the linked record's page when logged from there.
         if ($call->callable_type === Customer::class) {
             return redirect()->route('clients.show', $call->callable_id)->with('status', 'Call logged.');
@@ -110,6 +112,35 @@ class CallLogController extends Controller
         }
 
         return redirect()->route('calls.index')->with('status', 'Call logged.');
+    }
+
+    /**
+     * A newly-logged call that actually reached the client/lead supersedes
+     * any earlier pending reminder set on a previous call to the same
+     * record — otherwise a rep who calls back early (or right on schedule)
+     * still gets nagged later by a follow-up reminder for contact that's
+     * already happened. Only clears reminders that haven't fired yet
+     * (`follow_up_notified_at` still null); a reminder that already sent
+     * is left alone as a historical record. Scoped to outcomes that mean
+     * the client was actually reached — a NoAnswer/Busy attempt doesn't
+     * resolve anything, the old reminder should still stand.
+     */
+    private function clearSupersededFollowUps(CallLog $call, ?string $type, ?int $id): void
+    {
+        if (! $type || ! $id) {
+            return;
+        }
+
+        if (! in_array($call->outcome, [CallOutcome::Connected, CallOutcome::FollowUpNeeded], true)) {
+            return;
+        }
+
+        CallLog::where('callable_type', $type)
+            ->where('callable_id', $id)
+            ->where('id', '!=', $call->id)
+            ->whereNotNull('follow_up_at')
+            ->whereNull('follow_up_notified_at')
+            ->update(['follow_up_at' => null]);
     }
 
     private function attachVoiceNote(CallLog $call, Request $request): void
