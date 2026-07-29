@@ -29,7 +29,8 @@ From the **Reports** panel on the dashboard:
   (% of revenue from your top 5/10 clients): as a manager you see the summary
   numbers here (e.g. total outstanding, total MRR, the concentration
   percentages) but not the itemized invoice-level or named-client detail —
-  that's limited to Admin/Accounts.
+  that's limited to Admin/Accounts. The **Total outstanding** tile itself is
+  clickable — it opens the Receivables Report directly.
 - **Pipeline & Funnel**: company-wide open pipeline by stage, win rate, avg
   deal size, and avg sales-cycle length for the period — full detail, same as
   Admin. Export CSV.

@@ -326,8 +326,13 @@ tickets.
 ## 14. Scheduled maintenance tasks
 The CRM runs `app:dispatch-scheduled-tasks` at **8 AM IST daily** via the cron
 scheduler. It scans every active project, matches it to a set of built-in task
-templates by service, and creates tasks due today — assigned to the project
-lead with an in-app bell notification.
+templates by service, and creates tasks due today — assigned to a Support-role
+project assignee, falling back to a pivot-role "lead" team member, then the
+project owner. **This never lands on a Sales user at any step** (fixed
+2026-07-29) — a Sales rep is frequently a project's owner simply because
+they were the deal owner who won it, but these are delivery/maintenance
+checks, not sales work. If nobody appropriate is on the project, the task
+is skipped for it that day rather than routed to Sales.
 
 **No configuration is needed** — templates are built into the command and cover
 all NEDS service lines (Website Dev, SEO, GMB, Social Media, Performance

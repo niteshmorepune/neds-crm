@@ -5,6 +5,8 @@ You handle **tickets** (client issues) and **projects & tasks** (delivery work).
 ## Your dashboard
 - **Open tickets** — how many are active.
 - **SLA at risk** — tickets due soon or already overdue.
+- **Total / Pending / Overdue tasks** — your own Employee Task numbers, so
+  you don't have to open Emptask separately to see where you stand.
 - **Open tickets by priority** — urgent / high / normal / low.
 - **Your Productivity This Month** — your rank among other Support staff
   this month, an overall score, and your biggest opportunity area. Private

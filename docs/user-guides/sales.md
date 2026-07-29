@@ -91,7 +91,12 @@ sequence stops (the CRM assumes you've taken it from here).
   3 PM"). The CRM will send you a bell notification when that time arrives, and
   it appears in your morning digest. Call follow-ups that are overdue show in red
   on the **Calling** page — use the **Pending follow-ups** button to filter to
-  just those.
+  just those. **You don't need to clear a reminder yourself once you've
+  actually reached the person again** — logging a new call against the same
+  client/lead with outcome **Connected** or **Follow-up Needed**
+  automatically clears any earlier pending reminder for them, even if its
+  date hasn't arrived yet. A **No Answer**/**Busy** attempt doesn't clear
+  it, since you still haven't actually reached them.
 - Set a **next follow-up date** on the lead itself so it shows up in your
   "follow-ups due" dashboard widget.
 - **Draft follow-up (✨)** — click this button to have AI write a suggested
