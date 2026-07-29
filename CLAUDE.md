@@ -644,3 +644,155 @@ Record every "we chose X because Y" here — this is the project's memory.
   opening the PR. Manual browser click-through (Done/Snooze buttons,
   admin create/edit form) not done this session — flagged in the PR as
   the one gap before merge.
+- **2026-07-29 — Portal invitation "Set My Password" 404: root-caused to
+  NOT be a code bug, but the generic 404 it produced was a real gap —
+  fixed with a friendly "link no longer valid" page.** Owner reported a
+  client portal invite link 404ing. Investigated read-only against
+  production (routes, URL generation, DB storage, `activities` log all
+  checked out individually) before the owner supplied the actual emailed
+  link plus a screenshot, which let hashing the literal token and
+  matching it against production data pin the exact cause: an admin
+  (Prathamesh Khobare) edited the same test contact's email, revoked
+  portal access, re-invited it (sending the real email received), then
+  66 seconds later edited it again and revoked access a second time —
+  silently nulling the `invitation_token` the just-sent email pointed
+  at. `inviteToPortal()`/`revokePortalAccess()` are working exactly as
+  designed; a real client hitting a superseded or already-used link
+  would get the identical bare 404 with zero explanation, indistinguishable
+  from an actual bug. Fixed by having `SetPasswordController::show()`/
+  `showReset()`/`store()` render a new branded `portal.auth.invalid-link`
+  view (with a "Request a new link" button to the existing Forgot
+  Password flow) instead of `firstOrFail()` throwing — `contactForToken()`
+  now returns `?Contact` via `first()`. Added a troubleshooting.md entry
+  explaining the (expected) causes for staff. Direct push to master
+  (`78f86f2`, no PR — small, isolated bug fix), deployed same session.
+- **2026-07-29 — Help Guide reorganized to match the actual CRM sidebar
+  flow, not build history.** Owner reported the Help Guide should follow
+  the real app flow in logical order. Used `MenuItemsSeeder`'s live
+  sidebar array (the 2026-07-25 workflow-stage reorder) as the canonical
+  order. `admin.md` was the worst offender — it listed admin-only Users
+  and Menu Controller **first**, even though the real sidebar
+  deliberately puts admin config **last** (see the Menu-Controller/
+  sidebar entries above) — fully renumbered to mirror the sidebar, with
+  every internal "Section N" cross-reference (and the external anchor
+  from `integrations.md`, plus `meta-ads-playbook.md`'s prose refs)
+  updated to match. Also reordered `manager.md`, `sales.md` (Incentives/
+  Quotations were swapped vs. sidebar order; merged a stray duplicate
+  "Quotations — sending to clients" section back into the main Quotations
+  flow), `support.md` (Calls belongs between Tickets and Projects), and
+  `intern.md`/`telecaller.md` (Attendance — a day-one habit — was listed
+  last, after every role-specific module). `accounts.md` and
+  `getting-started.md` were already correctly ordered. Fixed drift found
+  along the way: README's guide table was missing the Telecaller row
+  entirely and claimed "7 automated workflows" (integrations.md documents
+  10). Direct push to master (`4f78eb6`, no PR — docs-only), deployed
+  same session; `docs/user-guides/*.md` is read live from disk by
+  `HelpController` (no content cache) and the PDF handouts aren't served
+  by any route (confirmed via a routes grep, not assumed), so a plain
+  `git pull` was the whole deploy.
+- **2026-07-29 — Create Meeting scheduled a Google Meet call 5.5 hours
+  off (12:00 PM became 5:30 PM) — real timezone bug, fixed.** Owner
+  reported this with a screenshot of a real, already-sent "NEDS <> ADTA
+  Group" Calendar event (real invites to the client and 3 staff) at the
+  wrong time. Root cause: `app.timezone` is `UTC` (this file's own
+  "store UTC, display Asia/Kolkata" convention), and
+  `MeetingImport::createMeeting()` used bare
+  `Carbon::parse($this->scheduleAt)` on the `datetime-local` input
+  string — resolves against `app.timezone`, not `app.display_timezone`,
+  so "12:00" was read as 12:00 UTC = 5:30 PM IST, exactly the reported
+  offset. Fixed to `Carbon::createFromFormat('Y-m-d\TH:i', $this->
+  scheduleAt, config('app.display_timezone', 'Asia/Kolkata'))->utc()`,
+  matching the pattern `AttendanceController::storeCorrection()` already
+  used for its own check-in/check-out time fields — the reference
+  implementation was one file away and just hadn't been reused here.
+  Also fixed the scheduler's default pre-filled time (`openScheduler()`'s
+  `now()->addMinutes(30)`), which had the identical bug in reverse.
+  Existing Create Meeting tests never caught this because they built
+  their test input via `now()->addHour()->format(...)`, which
+  round-trips through the same buggy parse and "accidentally" agrees
+  with itself — new regression test hardcodes a literal
+  `"2026-07-29T12:00"` input and asserts the exact UTC instant
+  (`2026-07-29T06:30:00+00:00`) sent to Google's API. **The already-
+  created wrong ADTA Group event is not retroactively fixed by this** —
+  flagged to the owner, since correcting a real client-facing Calendar
+  event that already sent real invites is not something to do
+  unprompted. Direct push to master (`aed3540`, no PR), deployed same
+  session.
+- **2026-07-29 — Eight bug reports/small features from one owner batch,
+  all fixed same session.** Investigated each independently before
+  writing any code (several turned out not to be what they first looked
+  like):
+  1. **Call log reminders never cleared once the client was actually
+     contacted again.** `SendCallFollowUpReminders`/My Day/the "Pending
+     follow-ups" filter all just checked `follow_up_at`, with nothing
+     clearing it when a newer call to the same client/lead superseded it.
+     Fixed in `CallLogController::store()`: a newly-logged call with
+     outcome Connected or Follow-up Needed now nulls out any other
+     pending (`follow_up_notified_at` still null) `follow_up_at` on the
+     same `callable` — a failed attempt (No Answer/Busy) leaves the old
+     reminder standing, since the client genuinely wasn't reached.
+  2. **A Project Manager (`Project.owner_id`) couldn't see tasks their
+     own assignees created**, if they weren't ALSO added as a project
+     team member. `TaskController::index()`'s visibility scope and
+     `TaskPolicy::isParticipant()` only checked `project.assignees`
+     (team membership) and never `project.owner_id` (the actual "Project
+     Manager" field, see the 2026-07-08 entry above). Added the
+     `owner_id` check to both.
+  3. **Support Dashboard was missing task totals** (Total/Pending/
+     Overdue) — `supportStats()` had only ever computed ticket stats
+     since the dashboard was first built (checked git history — not
+     actually a regression, just never built). Added task counts scoped
+     to the Support user's own tasks, mirroring `taskSummary()`'s shape.
+  4. **"A standalone SEO project is auto-created" — turned out to be a
+     display bug, not project creation at all.** A screenshot showed a
+     Task ("Technical SEO setup") with "Project: Standalone." Traced
+     every Project-creation path (the create form, "Create Project from
+     Deal") and found none can run unattended — so root-caused via
+     production data instead of guessing: `Project` uses `SoftDeletes`,
+     and `ProjectController::destroy()` just calls `$project->delete()`
+     (soft) with no task cleanup — deliberate, matching this app's
+     "preserve history" convention for every other soft-deleted parent.
+     But a soft delete never fires the `tasks.project_id` foreign key's
+     real `ON DELETE CASCADE` (confirmed the constraint IS active in
+     production via `SHOW CREATE TABLE tasks` — it only fires on an
+     actual `DELETE`), so a deleted project's onboarding tasks survive
+     with their real `project_id` intact, while `$task->project`
+     (Eloquent, excludes trashed rows by default) resolves to null —
+     indistinguishable from a genuinely standalone task. Confirmed via
+     production: 8 real orphaned tasks across 2 deleted projects ("SEO
+     updates," deleted 2026-07-07; "SEO for ADTA Group," deleted
+     2026-07-27 — the exact one in the screenshot). Fixed with a new
+     `Task::projectLabel()` (Standalone only when `project_id` is
+     genuinely null; "Project removed" when it's set but the project
+     resolves to null) — same "relabel a real removed record, don't
+     conflate it with something that never existed" convention as the
+     soft-deleted-client fix elsewhere in this app. Nothing deleted or
+     backfilled — the 8 orphaned tasks are legitimate historical records
+     once correctly labeled.
+  5. **Weekly GMB (and other recurring maintenance) tasks were landing
+     on a Sales rep (Kiran).** `DispatchScheduledTasks::resolveAssignee()`'s
+     fallback chain (Support assignee → lead-role assignee → project
+     owner) had no role check at the final two steps — and a Sales rep
+     is frequently a project's `owner_id` simply because
+     `CreateProjectFromDeal` defaults it to the deal owner who won it.
+     Fixed so the chain now skips Sales at every step; if nobody
+     appropriate is left, the task is skipped for that project rather
+     than routed to Sales.
+  6. **Projects belonging to an Inactive client still showed in the
+     project list.** Added a filter to `ProjectController::index()` —
+     but the first pass (`whereHas('customer', '!= Inactive')`) also
+     hid a project whose client was soft-deleted entirely, breaking the
+     established "Client removed" convention (`customer()`'s default
+     scope already excludes trashed customers from `whereHas`). Fixed
+     with `whereDoesntHave('customer', '= Inactive')` instead — only
+     excludes a customer that genuinely still exists with that exact
+     status; a deleted customer's project stays visible with its
+     existing "Client removed" label.
+  7. **Added a "Total Leads" counter** to the Admin/Manager dashboard,
+     alongside the existing Total/Active/Inactive Clients cards.
+  8. **Made the Business Overview "Total outstanding" tile clickable**,
+     linking through to the Receivables Report — the same treatment
+     already given to the Accounts dashboard's Overdue Invoices/Collected
+     tiles.
+  All 8 covered by new/updated Pest tests, full suite (1338, up from
+  1319) green, Pint clean.
