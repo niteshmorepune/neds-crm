@@ -87,6 +87,44 @@ it('falls back to the project owner when no lead assignee is set', function () {
     expect($task?->assignee_id)->toBe($owner->id);
 });
 
+it('does NOT assign a scheduled task to a Sales project owner when no Support/non-Sales lead assignee exists', function () {
+    $salesOwner = User::factory()->role(UserRole::Sales)->create();
+    $service = Service::factory()->create(['name' => 'GMB']);
+    $project = Project::factory()->create(['service_id' => $service->id, 'owner_id' => $salesOwner->id, 'status' => ProjectStatus::Active]);
+
+    $this->artisan('app:dispatch-scheduled-tasks', ['--date' => '2026-07-06'])->assertSuccessful(); // Monday
+
+    expect(Task::where('project_id', $project->id)->where('title', 'Weekly Google post')->exists())->toBeFalse();
+    Notification::assertNotSentTo($salesOwner, TaskAssigned::class, function (TaskAssigned $notification) {
+        return $notification->task->title === 'Weekly Google post';
+    });
+});
+
+it('does NOT fall back to a Sales pivot-role=lead assignee, even when the project owner is also Sales', function () {
+    $salesOwner = User::factory()->role(UserRole::Sales)->create();
+    $salesLead = User::factory()->role(UserRole::Sales)->create();
+    $service = Service::factory()->create(['name' => 'GMB']);
+    $project = Project::factory()->create(['service_id' => $service->id, 'owner_id' => $salesOwner->id, 'status' => ProjectStatus::Active]);
+    $project->assignees()->attach($salesLead->id, ['role' => 'lead']);
+
+    $this->artisan('app:dispatch-scheduled-tasks', ['--date' => '2026-07-06'])->assertSuccessful(); // Monday
+
+    expect(Task::where('project_id', $project->id)->where('title', 'Weekly Google post')->exists())->toBeFalse();
+});
+
+it('falls back to a non-Sales project owner when the pivot-role=lead assignee is Sales', function () {
+    $manager = User::factory()->role(UserRole::Manager)->create();
+    $salesLead = User::factory()->role(UserRole::Sales)->create();
+    $service = Service::factory()->create(['name' => 'GMB']);
+    $project = Project::factory()->create(['service_id' => $service->id, 'owner_id' => $manager->id, 'status' => ProjectStatus::Active]);
+    $project->assignees()->attach($salesLead->id, ['role' => 'lead']);
+
+    $this->artisan('app:dispatch-scheduled-tasks', ['--date' => '2026-07-06'])->assertSuccessful(); // Monday
+
+    $task = Task::where('project_id', $project->id)->where('title', 'Weekly Google post')->first();
+    expect($task?->assignee_id)->toBe($manager->id);
+});
+
 it('prefers a Support-role project assignee over a non-Support pivot-role=lead assignee', function () {
     $owner = User::factory()->role(UserRole::Sales)->create();
     $salesLead = User::factory()->role(UserRole::Sales)->create();

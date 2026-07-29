@@ -75,6 +75,31 @@ it('renders project index, create and show pages', function () {
     $this->actingAs($this->manager)->get(route('projects.show', $project))->assertOk()->assertSee($project->name)->assertSee('Project Manager:');
 });
 
+it('hides a project belonging to an inactive client from the project list', function () {
+    $activeClient = Customer::factory()->create(['status' => 'active', 'company_name' => 'Active Co']);
+    $inactiveClient = Customer::factory()->create(['status' => 'inactive', 'company_name' => 'Inactive Co']);
+    Project::factory()->create(['owner_id' => $this->manager->id, 'customer_id' => $activeClient->id, 'name' => 'Active project']);
+    Project::factory()->create(['owner_id' => $this->manager->id, 'customer_id' => $inactiveClient->id, 'name' => 'Inactive-client project']);
+
+    $this->actingAs($this->manager)->get(route('projects.index'))
+        ->assertOk()
+        ->assertSee('Active project')
+        ->assertDontSee('Inactive-client project');
+});
+
+it('still shows a project whose client was soft-deleted (Client removed), distinct from an Inactive-status client', function () {
+    $deletedClient = Customer::factory()->create(['company_name' => 'Deleted Co']);
+    Project::factory()->create(['owner_id' => $this->manager->id, 'customer_id' => $deletedClient->id, 'name' => 'Orphaned project']);
+    // withoutEvents: deleting a client normally cascades and hard-deletes
+    // its projects too — this simulates the orphan edge case the "Client
+    // removed" convention exists for (see OrphanedCustomerTest), not a
+    // real delete of this project.
+    Customer::withoutEvents(fn () => $deletedClient->delete());
+
+    $this->actingAs($this->manager)->get(route('projects.index'))
+        ->assertOk()->assertSee('Orphaned project');
+});
+
 it('lets a manager delete a project but blocks a sales rep who only owns it', function () {
     $owner = User::factory()->role(UserRole::Sales)->create();
     $project = Project::factory()->create(['owner_id' => $owner->id]);

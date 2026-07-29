@@ -325,15 +325,29 @@ class DispatchScheduledTasks extends Command
     {
         // Prefer a Support-team project assignee (owner request 2026-07-07:
         // route auto-generated tasks to Support). Falls back to the team
-        // member with pivot role = 'lead', then the project owner, when no
-        // Support assignee exists on the project.
+        // member with pivot role = 'lead', then the project owner — but
+        // NEVER to a Sales user at any step. These are delivery/maintenance
+        // tasks, not sales work, and a Sales rep frequently ends up as a
+        // project's owner_id simply because they were the deal owner who
+        // won it (CreateProjectFromDeal defaults owner_id to the deal
+        // owner) — that shouldn't make them the fallback assignee for
+        // routine checks like the weekly GMB post. If nobody appropriate is
+        // left, skip creating the task for this project rather than routing
+        // it to Sales.
         $support = $project->assignees->first(fn (User $u) => $u->role === UserRole::Support);
         if ($support) {
             return $support;
         }
 
         $lead = $project->assignees->firstWhere('pivot.role', 'lead');
+        if ($lead && $lead->role !== UserRole::Sales) {
+            return $lead;
+        }
 
-        return $lead ?? $project->owner;
+        if ($project->owner && $project->owner->role !== UserRole::Sales) {
+            return $project->owner;
+        }
+
+        return null;
     }
 }

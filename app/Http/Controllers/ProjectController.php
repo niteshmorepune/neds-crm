@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Actions\CreateProjectFromDeal;
+use App\Enums\CustomerStatus;
 use App\Enums\DealStage;
 use App\Enums\ProjectStatus;
 use App\Enums\UserRole;
@@ -30,6 +31,15 @@ class ProjectController extends Controller
         $baseQuery = Project::query()
             ->with(['customer', 'owner', 'service', 'assignees'])
             ->withCount('tasks')
+            // A project whose client has since gone Inactive shouldn't
+            // clutter the active project list. whereDoesntHave (not
+            // whereHas + "!= Inactive") deliberately still shows a project
+            // whose customer was soft-deleted entirely — the customer()
+            // relation already excludes trashed rows, so a plain whereHas
+            // would wrongly hide those too, breaking the established
+            // "Client removed" label convention used on every other index
+            // page (see CLAUDE.md's 2026-07-24 decision log entry).
+            ->whereDoesntHave('customer', fn ($c) => $c->where('status', CustomerStatus::Inactive->value))
             ->unless($user->hasRole(UserRole::Admin, UserRole::Manager), fn ($q) => $q->where(function ($w) use ($user) {
                 $w->where('owner_id', $user->id)
                     ->orWhereHas('assignees', fn ($a) => $a->whereKey($user->id));
