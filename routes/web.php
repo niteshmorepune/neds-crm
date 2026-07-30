@@ -30,6 +30,7 @@ use App\Http\Controllers\Portal\SetPasswordController;
 use App\Http\Controllers\Portal\SsoController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\QuarterlyAwardController;
 use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\RecurringInvoiceController;
 use App\Http\Controllers\ReportController;
@@ -267,6 +268,17 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
      */
     Route::middleware('menu.access:team-nudges')->group(function () {
         Route::resource('team-nudges', TeamNudgeController::class)->except('show');
+    });
+
+    /*
+     * Best Employee of the Quarter — Admin/Manager get the full review
+     * queue on this same index page (App\Livewire\QuarterlyAwardReview);
+     * everyone else sees only their own approved awards.
+     */
+    Route::middleware('menu.access:quarterly-awards')->group(function () {
+        Route::get('quarterly-awards', [QuarterlyAwardController::class, 'index'])->name('quarterly-awards.index');
+        Route::post('quarterly-awards/regenerate', [QuarterlyAwardController::class, 'regenerate'])->name('quarterly-awards.regenerate');
+        Route::get('quarterly-awards/{award}/certificate', [QuarterlyAwardController::class, 'certificate'])->name('quarterly-awards.certificate');
     });
 
     /*

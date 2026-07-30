@@ -129,6 +129,14 @@ these to you personally) — are collapsed under a "click to view" line so they
 don't bury the tasks that actually need your judgement. Click that line
 whenever you want to see or update them.
 
+## 6a. Best Employee of the Quarter
+**Sidebar → Best Employee** shows your own recognition history. Each
+financial-year quarter, AI reviews performance numbers already tracked
+elsewhere in the CRM (tasks, calls, attendance, and more) and suggests a
+top performer per department, plus one company-wide winner. If Admin/Manager
+approve a suggestion naming you, you'll get a bell notification and a
+downloadable certificate — recognition only, not tied to any payout.
+
 ## 7. Morning digest email
 Every morning at **9 AM** you'll receive a personalised email summarising your
 day — overdue tasks, tasks due today, call follow-ups, and any open tickets

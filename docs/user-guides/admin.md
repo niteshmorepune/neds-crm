@@ -47,6 +47,28 @@ service to pitch, tactfully chasing payment) based only on that client's
 flags. This is generated on demand, one client at a time — not run as a
 batch job — so there's no AI cost unless someone actually looks at a client.
 
+## 2a. Best Employee of the Quarter — quarterly AI-suggested recognition
+**Best Employee** in the sidebar (everyone can see it — Admin/Manager get a
+review queue, everyone else only their own past approved awards). Every
+financial-year quarter (Apr–Jun/Jul–Sep/Oct–Dec/Jan–Mar), a scheduled job
+reuses the same numbers behind Section 17's Employee Performance ranking
+(tasks, on-time %, calls, leads converted, attendance, daily reports) to
+suggest one winner per department (Sales/Support/Accounts/Intern/Telecaller)
+plus a company-wide "Best Employee of the Quarter," and drafts a short
+citation for each with AI. A department needs 2+ eligible people that
+quarter to get a suggestion at all — never a fabricated "winner of one."
+
+Nothing is announced automatically. Each suggestion is a **Pending review**
+card for Admin/Manager: approve as-is, reassign the **Winner** to a
+different eligible person in that department, and/or edit the citation
+before confirming. Approving notifies the winner and posts the citation to
+the Notice Board in one step; rejecting just discards that quarter's
+suggestion. It's recognition only — a downloadable certificate PDF, no
+reward amount tracked in the CRM (see Section 5 in `sales.md` for the
+separate, money-based Sales Incentive module). **Generate / regenerate** on
+the same page re-runs a quarter on demand — it never overwrites an
+already-approved award.
+
 ## 3. Partners — content agency directory
 **Partners** in the sidebar is a directory of the external content agencies NEDS
 collaborates with. Managers and admins can add, edit, and delete partner records.
