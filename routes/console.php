@@ -111,3 +111,7 @@ Schedule::command('app:rollover-team-nudges')->weeklyOn(1, '06:00')->timezone('A
 // Auto-clears a pending nudge the same day real matching activity happens
 // (e.g. a Support user logs a Ticket), rather than waiting for next Monday's rollover.
 Schedule::command('app:run-team-nudge-auto-detect')->dailyAt('06:15')->timezone('Asia/Kolkata');
+
+// Best Employee of the Quarter — generates AI-suggested candidates for the
+// FY quarter that just ended (Apr/Jul/Oct/Jan 1st), for Admin/Manager review.
+Schedule::command('app:generate-quarterly-awards')->quarterlyOn(1, '06:30')->timezone('Asia/Kolkata');

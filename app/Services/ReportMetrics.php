@@ -48,6 +48,13 @@ class ReportMetrics
             'tasks_completed' => 0.40, 'on_time_pct' => 0.30, 'calls_made' => 0.0,
             'leads_converted' => 0.0, 'attendance_pct' => 0.20, 'daily_reports' => 0.10,
         ],
+        // Telecallers work Lead Generation + Calling only (no Deals), so
+        // they don't own leads through to conversion — weighted toward
+        // call volume instead, not leads_converted.
+        'telecaller' => [
+            'tasks_completed' => 0.20, 'on_time_pct' => 0.15, 'calls_made' => 0.35,
+            'leads_converted' => 0.0, 'attendance_pct' => 0.15, 'daily_reports' => 0.15,
+        ],
     ];
 
     /**
@@ -130,7 +137,7 @@ class ReportMetrics
     public function rankedEmployeePerformance(Carbon $from, Carbon $to): Collection
     {
         $rows = $this->employeePerformance($from, $to);
-        $rankableRoles = [UserRole::Sales->value, UserRole::Support->value, UserRole::Accounts->value, UserRole::Intern->value];
+        $rankableRoles = [UserRole::Sales->value, UserRole::Support->value, UserRole::Accounts->value, UserRole::Intern->value, UserRole::Telecaller->value];
 
         $scored = $rows->map(function (array $row) use ($rows, $rankableRoles) {
             $unranked = [

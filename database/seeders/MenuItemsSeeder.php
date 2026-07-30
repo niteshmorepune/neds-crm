@@ -47,6 +47,7 @@ class MenuItemsSeeder extends Seeder
             ['key' => 'emptask',          'label' => 'Employee Task',    'route' => 'tasks.index',      'icon' => 'check',      'roles' => $all],
             ['key' => 'client-radar',     'label' => 'Client Radar',     'route' => 'client-radar.index', 'icon' => 'radar',    'roles' => [UserRole::Manager]],
             ['key' => 'daily-reports',    'label' => 'Daily Reports',    'route' => 'daily-reports.index', 'icon' => 'clipboard', 'roles' => $all],
+            ['key' => 'quarterly-awards', 'label' => 'Best Employee',    'route' => 'quarterly-awards.index', 'icon' => 'trophy',  'roles' => $all],
             ['key' => 'partners',         'label' => 'Partners',         'route' => 'partners.index',   'icon' => 'users',      'roles' => [UserRole::Manager]],
             ['key' => 'announcements',    'label' => 'Notice Board',     'route' => 'announcements.index', 'icon' => 'megaphone', 'roles' => [UserRole::Manager]],
             ['key' => 'team-nudges',      'label' => 'Team Nudges',      'route' => 'team-nudges.index', 'icon' => 'bell',       'roles' => [UserRole::Manager]],

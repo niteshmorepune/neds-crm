@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\UserRole;
+use App\Models\CallLog;
 use App\Models\Lead;
 use App\Models\User;
 use App\Services\ReportMetrics;
@@ -55,6 +56,21 @@ it('shows a ranking note instead of a fabricated rank when a role has fewer than
         ->and($row['score'])->toBeNull()
         ->and($row['role_group_size'])->toBe(1)
         ->and($row['ranking_note'])->toBe('Not enough peers in this role yet to compare.');
+});
+
+it('ranks Telecallers by calls made, highest first', function () {
+    $dev = User::factory()->role(UserRole::Telecaller)->create(['name' => 'Dev']);
+    $priya = User::factory()->role(UserRole::Telecaller)->create(['name' => 'Priya']);
+
+    CallLog::factory()->count(5)->create(['user_id' => $dev->id, 'called_at' => now()]);
+    CallLog::factory()->count(2)->create(['user_id' => $priya->id, 'called_at' => now()]);
+
+    $rows = $this->metrics->rankedEmployeePerformance(now()->startOfMonth(), now()->endOfMonth());
+    $byName = $rows->keyBy('user');
+
+    expect($byName['Dev']['rank'])->toBe(1)
+        ->and($byName['Dev']['score'])->not->toBeNull()
+        ->and($byName['Priya']['rank'])->toBe(2);
 });
 
 it('never selects a zero-weight metric as the weakest area for that role', function () {

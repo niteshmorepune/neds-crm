@@ -238,6 +238,32 @@ personalize it before sending; nothing goes out automatically.
   day as **Half Day**, not a full day off. Rejecting lets you add a short
   note explaining why.
 
+## Best Employee of the Quarter
+**Best Employee** in the sidebar (visible to everyone — Admin/Manager get the
+full review queue, everyone else sees only their own past approved awards).
+Each financial-year quarter (Apr–Jun, Jul–Sep, Oct–Dec, Jan–Mar), AI reviews
+the same numbers already used for Employee Performance ranking — tasks,
+on-time %, calls, leads converted, attendance, daily reports — and suggests
+a winner per department (Sales/Support/Accounts/Intern/Telecaller) plus one
+company-wide "Best Employee of the Quarter." A department needs at least 2
+eligible people that quarter to get a suggestion — not enough peers means no
+award that quarter, not a fabricated one.
+
+This runs automatically right after quarter close, but nothing is announced
+yet — each suggestion lands as a **Pending review** card with the AI's pick
+and a draft citation, both editable. As Admin/Manager you can:
+- **Approve as-is**, or change the **Winner** dropdown to a different
+  eligible person in that department first (the citation textarea stays
+  editable either way) — Approve commits whatever's in the form.
+- **Reject** if no one should win this quarter.
+
+Approving notifies the winner (bell) and posts the citation to the **Notice
+Board** automatically — no separate step. It's recognition only: a
+certificate PDF (download link appears once approved), no reward amount
+tracked in the CRM. Use **Generate / regenerate** on this page to re-run a
+quarter manually (e.g. after a data correction) — an already-approved award
+for that quarter is never touched by a regenerate.
+
 ## Content collaboration (Partners)
 
 When NEDS works with an external content agency, use the **Content

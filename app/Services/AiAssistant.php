@@ -880,6 +880,82 @@ class AiAssistant
     }
 
     /**
+     * Drafts one certificate citation per Best Employee of the Quarter
+     * candidate — same batched-JSON-call shape as
+     * suggestTeamProductivityGaps(), but matched back by **department**
+     * (not user_id): a person can legitimately be both their department's
+     * winner and the company-wide winner in the same batch, so user_id
+     * alone isn't a safe key here. Never auto-approved or auto-announced —
+     * App\Services\QuarterlyAwardGenerator only ever creates a Pending row;
+     * an Admin/Manager reviews (and can edit) the citation before anything
+     * is issued.
+     *
+     * @param  Collection<int, array<string, mixed>>  $candidates  Rows from rankedEmployeePerformance() (score already non-null), each with an added 'department' key ('company' for the company-wide candidate) and 'department_label'.
+     * @return list<array{department: string, citation: string}>|null
+     */
+    public function draftQuarterlyAwardCitations(Collection $candidates): ?array
+    {
+        if (! Ai::enabled()) {
+            return null;
+        }
+
+        if ($candidates->isEmpty()) {
+            return [];
+        }
+
+        $lines = $candidates->map(function (array $row) {
+            return sprintf(
+                '- department "%s": %s (%s), score %d/100 among role peers this quarter. Tasks completed: %d, on-time %%: %s, calls made: %d, leads converted: %d, attendance %%: %s, daily reports submitted: %d.',
+                $row['department'], $row['user'], $row['role'], $row['score'],
+                $row['tasks_completed'], $row['on_time_pct'] ?? 'n/a', $row['calls_made'],
+                $row['leads_converted'], $row['attendance_pct'] ?? 'n/a', $row['daily_reports'],
+            );
+        })->implode("\n");
+
+        $system = <<<'PROMPT'
+        You write short award citations for a quarterly staff-recognition
+        certificate at a digital-solutions agency in India. For EACH
+        candidate listed, write ONE warm, specific citation (2-3 sentences,
+        about 40-60 words) naming a concrete strength shown by their numbers
+        — never a generic platitude, never a fact not evidenced by the
+        numbers given, never a comparison that names a specific colleague.
+        Address the person by name, third person ("has demonstrated...").
+
+        Respond with ONLY a JSON array, no markdown, no prose:
+        [{"department": "<department string exactly as given>", "citation": "<text>"}]
+        PROMPT;
+
+        $result = $this->client->message(
+            feature: 'quarterly_award_citation',
+            prompt: $lines,
+            system: $system,
+            maxTokens: 900,
+        );
+
+        if ($result === null || ! preg_match('/\[.*\]/s', $result->text, $match)) {
+            return null;
+        }
+
+        $decoded = json_decode($match[0], true);
+
+        if (! is_array($decoded)) {
+            return null;
+        }
+
+        $this->lastUsageId = $result->usageId;
+        $validDepartments = $candidates->pluck('department')->all();
+
+        return collect($decoded)
+            ->filter(fn ($item) => is_array($item) && in_array($item['department'] ?? null, $validDepartments, true) && filled($item['citation'] ?? null))
+            ->map(fn ($item) => [
+                'department' => (string) $item['department'],
+                'citation' => mb_substr(trim((string) $item['citation']), 0, 600),
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
      * A suggested next action for an account manager, based on the risk/
      * opportunity flags ClientRadarService computed for one client. Called
      * on-demand (button click), never in a batch job, to keep AI cost tied
