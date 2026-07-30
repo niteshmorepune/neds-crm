@@ -65,6 +65,21 @@ it('updates and soft deletes a lead', function () {
     $this->assertSoftDeleted($lead);
 });
 
+it('saves the next follow-up time in IST, not UTC', function () {
+    $lead = Lead::factory()->create(['name' => 'Pradeep Ranaware']);
+
+    $this->actingAs($this->admin)
+        ->put(route('leads.update', $lead), [
+            'name' => $lead->name,
+            'source' => $lead->source->value,
+            'status' => LeadStatus::New->value,
+            'next_follow_up_at' => '2026-08-01T13:10',
+        ])
+        ->assertRedirect(route('leads.show', $lead));
+
+    expect($lead->fresh()->next_follow_up_at->toIso8601String())->toBe('2026-08-01T07:40:00+00:00');
+});
+
 it('renders the lead index, create, show and edit pages', function () {
     $lead = Lead::factory()->create();
 

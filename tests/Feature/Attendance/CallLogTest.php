@@ -179,7 +179,12 @@ it('does NOT clear an earlier reminder when the new call fails to reach the clie
     expect($earlier->fresh()->follow_up_at)->not->toBeNull();
 });
 
-it('does not clear a reminder that already fired (notified)', function () {
+it('clears a reminder even after it has already fired (notified)', function () {
+    // A reminder that already fired but was left set (because
+    // follow_up_notified_at wasn't null) used to get stuck showing as
+    // "overdue" forever on the Dashboard/Calling page, even once the
+    // client was reached again — those views don't distinguish
+    // notified from not-yet-notified, only "is follow_up_at set and past".
     $customer = Customer::factory()->create();
     $earlier = CallLog::factory()->create([
         'user_id' => $this->sales->id,
@@ -197,7 +202,7 @@ it('does not clear a reminder that already fired (notified)', function () {
         'called_at' => now()->format('Y-m-d H:i:s'),
     ]);
 
-    expect($earlier->fresh()->follow_up_at)->not->toBeNull();
+    expect($earlier->fresh()->follow_up_at)->toBeNull();
 });
 
 it('does not touch another client\'s pending reminder', function () {

@@ -73,6 +73,21 @@ it('allows updating the value of a Won deal as long as stage is resubmitted unch
         ->and($deal->fresh()->value)->toBe(500000);
 });
 
+it('saves the next follow-up time in IST, not UTC', function () {
+    $deal = Deal::factory()->stage(DealStage::Contacted)->create();
+
+    $this->actingAs($this->admin)
+        ->put(route('deals.update', $deal), [
+            'title' => $deal->title,
+            'stage' => DealStage::Contacted->value,
+            'value' => 1000,
+            'next_follow_up_at' => '2026-08-01T13:10',
+        ])
+        ->assertRedirect(route('deals.show', $deal));
+
+    expect($deal->fresh()->next_follow_up_at->toIso8601String())->toBe('2026-08-01T07:40:00+00:00');
+});
+
 it('blocks a stage change on a terminal deal via the controller', function () {
     $deal = Deal::factory()->stage(DealStage::Won)->create();
 

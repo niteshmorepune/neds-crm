@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\SimilarDealFinder;
 use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 
 class DealController extends Controller
@@ -52,7 +53,9 @@ class DealController extends Controller
             'owner_id' => $data['owner_id'] ?? null,
             'partner_id' => $data['partner_id'] ?? null,
             'value' => Money::toPaise($data['value']),
-            'next_follow_up_at' => $data['next_follow_up_at'] ?? null,
+            'next_follow_up_at' => filled($data['next_follow_up_at'] ?? null)
+                ? Carbon::createFromFormat('Y-m-d\TH:i', $data['next_follow_up_at'], config('app.display_timezone', 'Asia/Kolkata'))->utc()
+                : null,
         ]);
 
         return redirect()->route('deals.show', $deal)->with('status', 'Deal updated.');

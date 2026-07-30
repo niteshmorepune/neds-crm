@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 
 class LeadController extends Controller
@@ -140,6 +141,10 @@ class LeadController extends Controller
     private function payload(array $data): array
     {
         $data['estimated_value'] = Money::toPaise($data['estimated_value'] ?? null);
+
+        $data['next_follow_up_at'] = filled($data['next_follow_up_at'] ?? null)
+            ? Carbon::createFromFormat('Y-m-d\TH:i', $data['next_follow_up_at'], config('app.display_timezone', 'Asia/Kolkata'))->utc()
+            : null;
 
         return $data;
     }

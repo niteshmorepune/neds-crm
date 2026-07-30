@@ -119,11 +119,15 @@ class CallLogController extends Controller
      * any earlier pending reminder set on a previous call to the same
      * record — otherwise a rep who calls back early (or right on schedule)
      * still gets nagged later by a follow-up reminder for contact that's
-     * already happened. Only clears reminders that haven't fired yet
-     * (`follow_up_notified_at` still null); a reminder that already sent
-     * is left alone as a historical record. Scoped to outcomes that mean
-     * the client was actually reached — a NoAnswer/Busy attempt doesn't
-     * resolve anything, the old reminder should still stand.
+     * already happened. Clears regardless of whether the reminder had
+     * already fired (`follow_up_notified_at`) — the Dashboard's "Overdue
+     * follow-ups" widget and the Calling page's follow-up column both
+     * surface any non-null `follow_up_at` in the past with no distinction
+     * for "already notified," so leaving it set once fired left it stuck
+     * showing as overdue forever, even after the client was reached again.
+     * Scoped to outcomes that mean the client was actually reached — a
+     * NoAnswer/Busy attempt doesn't resolve anything, the old reminder
+     * should still stand.
      */
     private function clearSupersededFollowUps(CallLog $call, ?string $type, ?int $id): void
     {
@@ -139,7 +143,6 @@ class CallLogController extends Controller
             ->where('callable_id', $id)
             ->where('id', '!=', $call->id)
             ->whereNotNull('follow_up_at')
-            ->whereNull('follow_up_notified_at')
             ->update(['follow_up_at' => null]);
     }
 
