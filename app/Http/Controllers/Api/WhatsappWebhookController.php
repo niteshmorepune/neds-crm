@@ -22,11 +22,25 @@ class WhatsappWebhookController extends Controller
             'contact_name' => ['nullable', 'string', 'max:255'],
             'message' => ['nullable', 'string'],
             'conversation_id' => ['required', 'string'],
+            'whatsapp_number' => ['nullable', 'string'],
+            'whatsapp_line_label' => ['nullable', 'string'],
         ]);
 
         // Dedup: one CRM ticket per wadesk.in conversation.
         if (Ticket::where('whatsapp_conversation_id', $data['conversation_id'])->exists()) {
             return response()->json(['status' => 'duplicate']);
+        }
+
+        // Any line other than the configured support number is always
+        // pre-sale/lead activity — never a Ticket, even from a known
+        // Customer's phone (owner-confirmed 2026-08-03). A missing
+        // whatsapp_number (older wadesk.in build, or a not-yet-configured
+        // line) defaults to the support-line behavior for backward compatibility.
+        $supportNumber = config('services.wadesk.support_number');
+        $isSupportLine = blank($data['whatsapp_number'] ?? null) || $data['whatsapp_number'] === $supportNumber;
+
+        if (! $isSupportLine) {
+            return $this->handleUnmatchedNumber($data);
         }
 
         $customer = $this->findCustomer($data['phone']);

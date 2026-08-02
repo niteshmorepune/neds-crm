@@ -47,9 +47,22 @@ return [
 
     // wadesk.in — WhatsApp conversation platform (outbound staff replies).
     // WADESK_SERVICE_KEY must match the WADESK_SERVICE_KEY set in wadesk.in's .env.
+    // support_number: digits-only business number (matches wadesk.in's Contact.phone
+    // convention, e.g. 918007733737) for the post-sale support line. An inbound
+    // webhook payload whose whatsapp_number differs from this (or that has no
+    // whatsapp_number at all — an older wadesk.in build, or a not-yet-configured
+    // line) is treated as the support line for backward compatibility; every
+    // OTHER known line is always routed to the Lead flow, never a Ticket.
+    // handoff_template_name: the wadesk.in Template.name of the Meta-approved
+    // "welcome to support" template sent when a Deal is Won (see Deal::booted()).
+    // Null until the template is actually submitted and approved in Meta
+    // Business Manager AND added on wadesk.in's /templates page — the job
+    // no-ops (logs, never throws) while unset.
     'wadesk' => [
         'base_url' => env('WADESK_API_URL', 'https://wadesk.in'),
         'service_key' => env('WADESK_SERVICE_KEY'),
+        'support_number' => env('WADESK_SUPPORT_NUMBER'),
+        'handoff_template_name' => env('WADESK_HANDOFF_TEMPLATE_NAME'),
     ],
 
     // nedsdrishti.in — agency service delivery platform.

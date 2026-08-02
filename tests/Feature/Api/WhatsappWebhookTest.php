@@ -162,3 +162,57 @@ it('does not append a Drishti link when the customer has no drishti_client_id', 
     $ticket = Ticket::where('whatsapp_conversation_id', 'conv_no_drishti')->first();
     expect($ticket->description)->not->toContain('drishti');
 });
+
+it('routes a message on a non-support line to the Lead flow even when the phone matches an existing Customer', function () {
+    config(['services.wadesk.support_number' => '918007733737']);
+    $customer = Customer::factory()->create(['phone' => '919028099919']);
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '919028099919',
+        'contact_name' => 'Ravi Kumar',
+        'message' => 'Hi, tell me about your SEO packages',
+        'conversation_id' => 'conv_marketing_known_customer',
+        'whatsapp_number' => '919112095202',
+        'whatsapp_line_label' => 'Marketing',
+    ], ['Authorization' => 'Bearer test-wa-token'])
+        ->assertOk()
+        ->assertJson(['status' => 'lead_created']);
+
+    expect(Ticket::where('whatsapp_conversation_id', 'conv_marketing_known_customer')->exists())->toBeFalse();
+
+    $lead = Lead::where('whatsapp_conversation_id', 'conv_marketing_known_customer')->first();
+    expect($lead)->not->toBeNull()
+        ->and($lead->phone)->toBe('919028099919');
+});
+
+it('still creates a Ticket when whatsapp_number explicitly matches the configured support line', function () {
+    config(['services.wadesk.support_number' => '918007733737']);
+    $customer = Customer::factory()->create(['phone' => '919028099919']);
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '919028099919',
+        'message' => 'Need help with an invoice',
+        'conversation_id' => 'conv_explicit_support_line',
+        'whatsapp_number' => '918007733737',
+        'whatsapp_line_label' => 'Support',
+    ], ['Authorization' => 'Bearer test-wa-token'])
+        ->assertOk()
+        ->assertJson(['status' => 'created']);
+
+    expect(Ticket::where('whatsapp_conversation_id', 'conv_explicit_support_line')->exists())->toBeTrue();
+});
+
+it('treats a payload with no whatsapp_number field as the support line, for backward compatibility with an older wadesk.in build', function () {
+    config(['services.wadesk.support_number' => '918007733737']);
+    $customer = Customer::factory()->create(['phone' => '919028099919']);
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '919028099919',
+        'message' => 'Need help',
+        'conversation_id' => 'conv_no_line_field',
+    ], ['Authorization' => 'Bearer test-wa-token'])
+        ->assertOk()
+        ->assertJson(['status' => 'created']);
+
+    expect(Ticket::where('whatsapp_conversation_id', 'conv_no_line_field')->exists())->toBeTrue();
+});

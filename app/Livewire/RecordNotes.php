@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Jobs\SendWhatsappLeadReplyJob;
 use App\Livewire\Concerns\RatesAiDrafts;
 use App\Models\Lead;
 use App\Models\Note;
@@ -33,6 +34,9 @@ class RecordNotes extends Component
 
     public bool $visibleToClient = false;
 
+    /** Opt-in only — Lead notes are internal by default, unlike Ticket replies. */
+    public bool $sendViaWhatsapp = false;
+
     // Edit state
     public ?int $editingNoteId = null;
 
@@ -57,6 +61,14 @@ class RecordNotes extends Component
     public function canDraft(): bool
     {
         return Ai::enabled() && $this->canManage && $this->record instanceof Lead;
+    }
+
+    /** Only a Lead that actually has an open WhatsApp thread can be replied to over it. */
+    public function canReplyViaWhatsapp(): bool
+    {
+        return $this->canManage
+            && $this->record instanceof Lead
+            && filled($this->record->whatsapp_conversation_id);
     }
 
     /**
@@ -88,13 +100,20 @@ class RecordNotes extends Component
 
         $this->validate();
 
-        $this->record->notes()->create([
+        $sendViaWhatsapp = $this->canReplyViaWhatsapp() && $this->sendViaWhatsapp;
+
+        $note = $this->record->notes()->create([
             'user_id' => auth()->id(),
             'body' => $this->body,
             'visible_to_client' => $this->showPortalToggle && $this->visibleToClient,
+            'sent_via_whatsapp' => $sendViaWhatsapp,
         ]);
 
-        $this->reset(['body', 'draftUsageId', 'draftFeedback']);
+        if ($sendViaWhatsapp) {
+            SendWhatsappLeadReplyJob::dispatch($note->id);
+        }
+
+        $this->reset(['body', 'draftUsageId', 'draftFeedback', 'sendViaWhatsapp']);
         $this->visibleToClient = $this->showPortalToggle;
     }
 
@@ -153,6 +172,7 @@ class RecordNotes extends Component
         return view('livewire.record-notes', [
             'notes' => $this->record->notes()->with('author')->latest()->get(),
             'canDraft' => $this->canDraft(),
+            'canReplyViaWhatsapp' => $this->canReplyViaWhatsapp(),
         ]);
     }
 }

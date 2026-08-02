@@ -18,6 +18,14 @@
                             <span>Visible to client</span>
                         </label>
                     @endif
+                    @if ($canReplyViaWhatsapp)
+                        <label class="flex items-center gap-1.5 text-sm select-none cursor-pointer
+                               {{ $sendViaWhatsapp ? 'text-green-600' : 'text-gray-400' }}">
+                            <input type="checkbox" wire:model.live="sendViaWhatsapp"
+                                   class="rounded border-gray-300 text-green-600 shadow-sm focus:ring-green-500" />
+                            <span>Also send as WhatsApp reply</span>
+                        </label>
+                    @endif
                 </div>
                 <div class="flex items-center gap-2">
                     @if ($canDraft)
@@ -62,6 +70,9 @@
                         <span>{{ $note->author?->name ?? 'System' }} · {{ $note->created_at->timezone(config('app.display_timezone'))->format('d M Y, g:i A') }}</span>
                         @if ($note->visible_to_client)
                             <span class="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-600">Visible to client</span>
+                        @endif
+                        @if ($note->sent_via_whatsapp)
+                            <span class="inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-600">Sent via WhatsApp</span>
                         @endif
                         @if (($canManage || $canAddNotes) && ($note->user_id === auth()->id() || $canManage))
                             <button type="button" wire:click="startEdit({{ $note->id }})"

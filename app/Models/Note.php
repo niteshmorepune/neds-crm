@@ -16,11 +16,13 @@ class Note extends Model
         'body',
         'visible_to_client',
         'ai_generated',
+        'sent_via_whatsapp',
     ];
 
     protected $casts = [
         'visible_to_client' => 'boolean',
         'ai_generated' => 'boolean',
+        'sent_via_whatsapp' => 'boolean',
     ];
 
     public function author(): BelongsTo

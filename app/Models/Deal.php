@@ -6,6 +6,7 @@ use App\Enums\CustomerStatus;
 use App\Enums\DealStage;
 use App\Enums\UserRole;
 use App\Jobs\ProvisionClientExternallyJob;
+use App\Jobs\SendWhatsappHandoffMessageJob;
 use App\Models\Concerns\LogsActivity;
 use App\Notifications\DealWonNotification;
 use Illuminate\Database\Eloquent\Builder;
@@ -97,6 +98,12 @@ class Deal extends Model
                 // idempotent (skips if drishti_client_id already set) so it is
                 // safe to dispatch even if the deal somehow reaches Won twice.
                 ProvisionClientExternallyJob::dispatch($deal->customer_id);
+
+                // Welcome-to-support WhatsApp handoff — pre-sale communication
+                // happened on the marketing line, post-sale moves to support.
+                // No-ops until a Meta-approved template is configured; see the
+                // job's own docblock.
+                SendWhatsappHandoffMessageJob::dispatch($deal->customer_id);
 
                 // Notify the deal owner + all admin/manager users.
                 $notification = new DealWonNotification($deal);
