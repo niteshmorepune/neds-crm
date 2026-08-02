@@ -61,7 +61,7 @@
         <div class="rounded-lg bg-white shadow-sm">
             <div class="border-b border-gray-200 px-6">
                 <nav class="-mb-px flex gap-6 text-sm font-medium">
-                    @foreach (['services' => 'Services', 'notes' => 'Notes', 'calls' => 'Calls', 'deals' => 'Deals', 'invoices' => 'Invoices', 'tickets' => 'Tickets'] as $key => $label)
+                    @foreach (['services' => 'Services', 'notes' => 'Notes', 'calls' => 'Calls', 'deals' => 'Deals', 'invoices' => 'Invoices', 'tickets' => 'Tickets', 'links' => 'Links'] as $key => $label)
                         <button type="button" @click="tab = '{{ $key }}'"
                                 :class="tab === '{{ $key }}' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
                                 class="border-b-2 py-3">{{ $label }}@if (isset($tabCounts[$key])) ({{ $tabCounts[$key] }})@endif</button>
@@ -166,6 +166,9 @@
                             <li class="py-2 text-gray-400">No tickets yet.</li>
                         @endforelse
                     </ul>
+                </div>
+                <div x-show="tab === 'links'" x-cloak>
+                    <livewire:important-links-manager :customer="$client" :can-manage="$canManage" />
                 </div>
             </div>
         </div>

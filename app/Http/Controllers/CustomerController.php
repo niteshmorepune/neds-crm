@@ -101,7 +101,7 @@ class CustomerController extends Controller
             $client->load('recurringInvoices.invoices');
         }
 
-        $client->loadCount('notes');
+        $client->loadCount(['notes', 'links']);
 
         // Mirrors the tab keys in clients/show.blade.php exactly. "services"
         // matches what _services_tab.blade.php actually lists (recurring
@@ -112,6 +112,7 @@ class CustomerController extends Controller
             'calls' => $client->callLogs->count(),
             'deals' => $client->deals->count(),
             'tickets' => $client->tickets->count(),
+            'links' => $client->links_count,
         ];
 
         if ($canViewInvoices) {
