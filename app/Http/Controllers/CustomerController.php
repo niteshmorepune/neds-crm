@@ -94,16 +94,36 @@ class CustomerController extends Controller
             'recurringInvoices.items',
         ]);
 
-        if ($this->user()->can('viewAny', Invoice::class)) {
+        $canViewInvoices = $this->user()->can('viewAny', Invoice::class);
+
+        if ($canViewInvoices) {
             $client->load('invoices');
             $client->load('recurringInvoices.invoices');
+        }
+
+        $client->loadCount('notes');
+
+        // Mirrors the tab keys in clients/show.blade.php exactly. "services"
+        // matches what _services_tab.blade.php actually lists (recurring
+        // templates minus orphans, plus projects), not a raw relation count.
+        $tabCounts = [
+            'services' => $client->nonOrphanedRecurringInvoices()->count() + $client->projects->count(),
+            'notes' => $client->notes_count,
+            'calls' => $client->callLogs->count(),
+            'deals' => $client->deals->count(),
+            'tickets' => $client->tickets->count(),
+        ];
+
+        if ($canViewInvoices) {
+            $tabCounts['invoices'] = $client->invoices->count();
         }
 
         return view('clients.show', [
             'client' => $client,
             'canManage' => $this->user()->can('manage', $client),
             'canManageMeetings' => $this->user()->can('manageMeetings', $client),
-            'canViewInvoices' => $this->user()->can('viewAny', Invoice::class),
+            'canViewInvoices' => $canViewInvoices,
+            'tabCounts' => $tabCounts,
         ]);
     }
 

@@ -6,8 +6,7 @@
     // deleted, never reactivated) are excluded — they'd otherwise show as a
     // misleading "On Hold" or "Ended" row for something that was retracted,
     // not a real ongoing or concluded service. See RecurringInvoice::isOrphaned().
-    $recurring  = $client->recurringInvoices
-        ->reject(fn ($r) => $r->isOrphaned())
+    $recurring  = $client->nonOrphanedRecurringInvoices()
         ->sortBy(fn ($r) => $r->start_date)
         ->sortBy(fn ($r) => $r->service?->name);
     $projects   = $client->projects->sortBy(fn ($p) => $p->service?->name);

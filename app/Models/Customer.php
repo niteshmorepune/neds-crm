@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Collection;
 
 class Customer extends Model
 {
@@ -158,6 +159,26 @@ class Customer extends Model
     public function recurringInvoices(): HasMany
     {
         return $this->hasMany(RecurringInvoice::class);
+    }
+
+    /** Quick-access links for this client (website, GBP, Drive, socials, payment links…). */
+    public function links(): HasMany
+    {
+        return $this->hasMany(ImportantLink::class);
+    }
+
+    /**
+     * Recurring templates minus orphans (see RecurringInvoice::isOrphaned()) —
+     * the single source of truth for what the Services tab lists/counts, so
+     * the tab's rows and its header count can never drift apart. Requires
+     * recurringInvoices (and, for isOrphaned()'s own queries, each template's
+     * invoices) to already be loaded/available.
+     *
+     * @return Collection<int, RecurringInvoice>
+     */
+    public function nonOrphanedRecurringInvoices(): Collection
+    {
+        return $this->recurringInvoices->reject(fn (RecurringInvoice $r) => $r->isOrphaned());
     }
 
     /**
