@@ -3,12 +3,17 @@
 Welcome to the NEDS CRM. This covers the basics every team member needs.
 
 ## 1. Logging in
+When your account is first created, you'll get a **"Set my password"** email —
+click the link and choose your own password before you log in for the first
+time (the link expires after an hour; if it's expired, use **Forgot your
+password?** on the login page to get a fresh one).
+
 1. Go to **https://crm.niranjanenterprises.co.in**.
-2. Enter the **email** and **temporary password** your administrator gave you.
+2. Enter your **email** and the **password** you set.
 3. Click **Log in**.
 
-If you ever forget your password, an admin can reset it for you from the Users
-screen.
+If you ever forget your password afterwards, click **Forgot your password?**
+on the login page, or ask an admin to reset it for you from the Users screen.
 
 ## 2. First login — set up Two-Factor Authentication (admins & managers)
 For security, **admins and managers must set up an authenticator app** the first
@@ -89,6 +94,18 @@ nudges admin/manager has targeted at your role (or everyone) — things like
   so snoozing isn't a way to make something go away for good.
 - Some reminders clear themselves automatically the moment you do the real
   thing they're asking for (e.g. logging a Ticket) — no click needed for those.
+
+## 4e. Important Links
+**Sidebar → Important Links** is a company-wide list of official links —
+hosting panel, domain registrar, and anything else the team needs quick
+access to. Everyone can view it; only Admin/Manager can add, edit, or
+remove an entry (see the Admin guide for how).
+
+Every **client's own page** also has a **Links** tab — that client's
+website, Google Business Profile, socials, Drive folder, payment links, or
+anything else useful for serving them. Anyone who can open the client's
+page can see these; who can add/edit them follows the same rule as
+everything else on that client's page.
 
 ## 5. Attendance — check in and out
 On the **Dashboard**, use the attendance widget:

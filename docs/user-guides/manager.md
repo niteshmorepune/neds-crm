@@ -16,6 +16,17 @@ Your dashboard shows the whole business at a glance:
 - **Link panels** — quick access to Daily Reports, the Project Dashboard, and the
   Reports below.
 
+## Important Links
+**Important Links** in the sidebar is a company-wide reference list —
+hosting panel, domain registrar, and anything else the team needs quick
+access to. Everyone can view it; you (and Admin) can add, edit, or remove
+entries.
+
+Every client's own page also has a **Links** tab for that specific
+client's website, Google Business Profile, socials, Drive folder, and
+similar — anyone who can open the client's page can see these; editing
+them follows the same access rule as everything else on that page.
+
 ## Reports
 From the **Reports** panel on the dashboard:
 

@@ -606,6 +606,31 @@ link — a `portal_enabled`/`invitation_token` change there is almost always
 the explanation. If there's genuinely no such event, it may be a real bug —
 flag it rather than assuming.
 
+## 17a. New staff member's invitation email — link expired or not received
+
+**Symptom:** a newly-added staff member says the **Set my password** link
+in their welcome email doesn't work, or they never got the email at all.
+
+**This is a different mechanism from the Client Portal link above** — new
+staff accounts reuse the CRM's own standard password-reset link (the same
+one behind **Forgot your password?** on the login page), not a separate
+invitation token. That means:
+- **It expires after 60 minutes.** If the new hire didn't click it soon
+  after the account was created, the link will show an expired/invalid
+  password-reset page.
+- **Fix:** on the login page, have them click **Forgot your password?**
+  and enter their own email — this issues a brand-new link to the same
+  address, no admin action needed.
+
+**If the email never arrived at all:** confirm the email address on their
+**Users → Edit** page is correct and check spam/junk first. If it's
+correct and still missing, the server's outbound mail may be down — the
+same underlying mailer sends invoices, notifications, and every other
+CRM email, so if those are also not arriving, treat it as a mail
+configuration issue (see Section 12's backup-email check for the same
+`.env`/`config:cache` mail settings) rather than something specific to
+this one account.
+
 ---
 
 ## General: when in doubt, run these four commands

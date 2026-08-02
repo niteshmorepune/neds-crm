@@ -29,6 +29,20 @@ This cannot be undone. Use this only when the company record should be wiped
 entirely; consider making a client **Inactive** instead if you may need the
 history later.
 
+## 1a. Important Links — company-wide and per-client quick access
+**Important Links** in the sidebar (everyone can view; add/edit/delete is
+Admin/Manager only) is a company-wide reference list — hosting panel,
+domain registrar, Google Workspace admin, anything the team needs quick
+access to without hunting for it. Add a **label** and a **URL**; there's
+no limit and no categorisation, just a flat list.
+
+Every **client's page** also has its own **Links** tab — that client's
+website, Google Business Profile, socials, Google Drive folder, Google
+Meet link, payment links, or anything else specific to serving them.
+Anyone who can open the client's page can see these; editing them follows
+the same rule as everything else on that page (Admin/Manager always,
+Sales for their own/unassigned clients).
+
 ## 2. Client Radar — at-risk / upsell signals
 A dashboard banner ("N clients need attention") and a **Client Radar** sidebar
 page (Admin/Manager only) flag active clients worth a proactive check-in:
@@ -198,11 +212,18 @@ than the cycle length can cause the reminder to fire on back-to-back days.
 ## 9. Users — add and manage staff
 Public sign-up is disabled, so **you create every staff account**.
 
-- **Users → Add user** → name, email, **role**, and a temporary password.
-  Leave **Active** ticked.
-- Give the person their email + temporary password; they change it on first
-  login. Admins/managers will be guided through 2FA setup.
-- **Edit** a user to change their name, email, role, or reset their password.
+- **Users → Add user** → name, email, and **role**. There's no password
+  field here — as soon as you save, the CRM automatically emails that
+  address a **"Set my password"** link so the new person chooses their own
+  password before they ever log in. Leave **Active** ticked. Admins/
+  managers will be guided through 2FA setup on their first login.
+- If the invitation email doesn't arrive, or the new hire waits too long
+  and the link expires (after 60 minutes), they can request a fresh one
+  themselves via **Forgot your password?** on the login page — see
+  `troubleshooting.md` Section 17a.
+- **Edit** a user to change their name, email, or role, or to set a
+  password for them directly (e.g. if they're unreachable by email) —
+  leave the password field blank to keep their current one.
 - **When someone leaves:** edit them and **untick Active** instead of deleting —
   this blocks their login but keeps their leads, deals and history intact.
 - You **can't** disable, demote, or delete **your own** account (so you can't
