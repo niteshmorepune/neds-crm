@@ -1,9 +1,11 @@
 <?php
 
 use App\Enums\UserRole;
+use App\Mail\UserInvitation;
 use App\Models\ContentPiece;
 use App\Models\User;
 use Database\Seeders\MenuItemsSeeder;
+use Illuminate\Support\Facades\Mail;
 
 beforeEach(function () {
     $this->seed(MenuItemsSeeder::class);
@@ -15,21 +17,22 @@ it('lets an admin reach user management but forbids others', function () {
     $this->actingAs(User::factory()->role(UserRole::Manager)->create())->get(route('users.index'))->assertForbidden();
 });
 
-it('creates a staff user with a role and active status', function () {
+it('creates a staff user with a role and active status, and emails them an invitation', function () {
+    Mail::fake();
+
     $this->actingAs($this->admin)->post(route('users.store'), [
         'name' => 'Priya Sales',
         'email' => 'priya@neds.test',
         'role' => UserRole::Sales->value,
-        'password' => 'password123',
-        'password_confirmation' => 'password123',
         'is_active' => '1',
     ])->assertRedirect(route('users.index'));
 
     $user = User::firstWhere('email', 'priya@neds.test');
     expect($user)->not->toBeNull()
         ->and($user->role)->toBe(UserRole::Sales)
-        ->and($user->is_active)->toBeTrue()
-        ->and(Hash::check('password123', $user->password))->toBeTrue();
+        ->and($user->is_active)->toBeTrue();
+
+    Mail::assertSent(UserInvitation::class, fn ($mail) => $mail->hasTo($user->email) && $mail->user->is($user));
 });
 
 it('can disable a user and the disabled user cannot log in', function () {
@@ -71,8 +74,6 @@ it('assigns additional roles when creating a user', function () {
         'email' => 'priya-support@neds.test',
         'role' => UserRole::Support->value,
         'additional_roles' => [UserRole::Sales->value],
-        'password' => 'password123',
-        'password_confirmation' => 'password123',
         'is_active' => '1',
     ])->assertRedirect(route('users.index'));
 
@@ -103,8 +104,6 @@ it('silently drops an additional role that duplicates the primary role, rather t
         'email' => 'redundant@neds.test',
         'role' => UserRole::Sales->value,
         'additional_roles' => [UserRole::Sales->value, UserRole::Support->value],
-        'password' => 'password123',
-        'password_confirmation' => 'password123',
         'is_active' => '1',
     ])->assertSessionHasNoErrors()->assertRedirect(route('users.index'));
 
@@ -193,5 +192,5 @@ it('shows a friendly error instead of a 500 when deleting a user blocked by a fo
     $this->followingRedirects()
         ->actingAs($this->admin)
         ->delete(route('users.destroy', $staff))
-        ->assertSee("can&#039;t be deleted", false);
+        ->assertSee('can&#039;t be deleted', false);
 });

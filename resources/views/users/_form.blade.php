@@ -45,16 +45,20 @@
         <x-input-error :messages="$errors->get('additional_roles')" class="mt-1" />
     </div>
 
-    <div>
-        <x-input-label for="password" :value="$user->exists ? 'New password (leave blank to keep current)' : 'Password *'" />
-        <x-text-input id="password" name="password" type="password" class="mt-1 block w-full" :required="! $user->exists" autocomplete="new-password" />
-        <x-input-error :messages="$errors->get('password')" class="mt-1" />
-    </div>
+    @if ($user->exists)
+        <div>
+            <x-input-label for="password" value="New password (leave blank to keep current)" />
+            <x-text-input id="password" name="password" type="password" class="mt-1 block w-full" autocomplete="new-password" />
+            <x-input-error :messages="$errors->get('password')" class="mt-1" />
+        </div>
 
-    <div>
-        <x-input-label for="password_confirmation" value="Confirm password" />
-        <x-text-input id="password_confirmation" name="password_confirmation" type="password" class="mt-1 block w-full" :required="! $user->exists" autocomplete="new-password" />
-    </div>
+        <div>
+            <x-input-label for="password_confirmation" value="Confirm password" />
+            <x-text-input id="password_confirmation" name="password_confirmation" type="password" class="mt-1 block w-full" autocomplete="new-password" />
+        </div>
+    @else
+        <p class="text-sm text-gray-500">An invitation email with a "Set my password" link will be sent to this address once the account is created.</p>
+    @endif
 
     <div>
         <x-input-label for="device_user_id" value="Biometric Device User ID" />
