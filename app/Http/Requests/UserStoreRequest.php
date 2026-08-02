@@ -5,7 +5,6 @@ namespace App\Http\Requests;
 use App\Enums\UserRole;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password;
 
 class UserStoreRequest extends FormRequest
 {
@@ -22,7 +21,6 @@ class UserStoreRequest extends FormRequest
             'role' => ['required', Rule::enum(UserRole::class)],
             'additional_roles' => ['nullable', 'array'],
             'additional_roles.*' => [Rule::enum(UserRole::class)],
-            'password' => ['required', 'confirmed', Password::min(8)],
             'is_active' => ['boolean'],
             'device_user_id' => ['nullable', 'string', 'max:20', 'unique:users,device_user_id'],
         ];

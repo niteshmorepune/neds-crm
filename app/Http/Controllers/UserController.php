@@ -5,12 +5,16 @@ namespace App\Http\Controllers;
 use App\Enums\UserRole;
 use App\Http\Requests\UserStoreRequest;
 use App\Http\Requests\UserUpdateRequest;
+use App\Mail\UserInvitation;
 use App\Models\User;
 use App\Services\MenuResolver;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 /**
@@ -44,12 +48,19 @@ class UserController extends Controller
         $data = $request->validated();
         $additionalRoles = $data['additional_roles'] ?? [];
         unset($data['additional_roles']);
-        $data['password'] = Hash::make($data['password']);
+
+        // No password is collected on this form — the account starts with a
+        // random, unusable one and the user sets their own via the invite
+        // email below (same Password-broker token + reset flow Breeze's
+        // "forgot password" already uses, just with invite-specific wording).
+        $data['password'] = Hash::make(Str::random(40));
 
         $user = User::create($data);
         $this->syncAdditionalRoles($user, $additionalRoles);
 
-        return redirect()->route('users.index')->with('status', 'User created.');
+        Mail::to($user->email)->send(new UserInvitation($user, Password::createToken($user)));
+
+        return redirect()->route('users.index')->with('status', 'User created — an invitation email has been sent.');
     }
 
     public function edit(Request $request, User $user): View

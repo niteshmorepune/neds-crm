@@ -321,6 +321,50 @@ it('hides the +GST hint on the services tab for a GST-exempt recurring invoice',
         ->assertDontSee('+GST');
 });
 
+it('shows a record count on each client detail tab', function () {
+    $service = Service::factory()->create();
+    $client = Customer::factory()->create(['company_name' => 'Counted Co']);
+
+    Project::factory()->count(2)->create(['customer_id' => $client->id, 'service_id' => $service->id]);
+    RecurringInvoice::factory()->create(['customer_id' => $client->id, 'service_id' => $service->id, 'is_active' => true]);
+    $client->notes()->create(['user_id' => $this->admin->id, 'body' => 'Note one']);
+    Deal::factory()->count(2)->create(['customer_id' => $client->id]);
+    Ticket::factory()->create(['customer_id' => $client->id]);
+    Invoice::factory()->create(['customer_id' => $client->id]);
+
+    $this->actingAs($this->admin)
+        ->get(route('clients.show', $client))
+        ->assertOk()
+        ->assertSee('Services (3)', false)
+        ->assertSee('Notes (1)', false)
+        ->assertSee('Deals (2)', false)
+        ->assertSee('Tickets (1)', false)
+        ->assertSee('Invoices (1)', false);
+});
+
+it('does not show an invoice count on the client tab to a role without invoice access', function () {
+    $support = User::factory()->role(UserRole::Support)->create();
+    $client = Customer::factory()->create();
+    Invoice::factory()->create(['customer_id' => $client->id]);
+
+    $this->actingAs($support)
+        ->get(route('clients.show', $client))
+        ->assertOk()
+        ->assertDontSee('Invoices (', false);
+});
+
+it('excludes an orphaned recurring invoice from the services tab count', function () {
+    $client = Customer::factory()->create();
+
+    $orphaned = RecurringInvoice::factory()->create(['customer_id' => $client->id, 'is_active' => false]);
+    Invoice::factory()->create(['recurring_invoice_id' => $orphaned->id, 'customer_id' => $client->id])->delete();
+
+    $this->actingAs($this->admin)
+        ->get(route('clients.show', $client))
+        ->assertOk()
+        ->assertSee('Services (0)', false);
+});
+
 it('renders the edit form', function () {
     $client = Customer::factory()->create();
 

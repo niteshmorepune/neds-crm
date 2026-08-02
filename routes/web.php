@@ -15,6 +15,7 @@ use App\Http\Controllers\DealController;
 use App\Http\Controllers\FestivalController;
 use App\Http\Controllers\GoogleConnectionController;
 use App\Http\Controllers\HelpController;
+use App\Http\Controllers\ImportantLinkController;
 use App\Http\Controllers\IncentiveController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LeadController;
@@ -427,6 +428,16 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
      */
     Route::middleware('menu.access:client-radar')->group(function () {
         Route::get('client-radar', [ClientRadarController::class, 'index'])->name('client-radar.index');
+    });
+
+    /*
+     * Important Links — company-wide reference links. Everyone can view;
+     * add/edit/delete is Admin/Manager only (enforced inside
+     * ImportantLinksManager, not a Policy — same convention as Client Radar).
+     * Per-client links live on the client page's own "Links" tab instead.
+     */
+    Route::middleware('menu.access:important-links')->group(function () {
+        Route::get('important-links', [ImportantLinkController::class, 'index'])->name('important-links.index');
     });
 
     /*
