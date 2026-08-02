@@ -347,24 +347,55 @@ The database is **backed up automatically every night at 2 AM** (kept 14 daily +
 backup, follow `docs/backup-restore.md`.
 
 ## 13. WhatsApp integration
-The CRM is connected to **wadesk.in** (your WhatsApp dashboard). When a client
-messages your WhatsApp support number with a **new conversation** (or reopens a
-resolved one), a support ticket is automatically created in the CRM.
+The CRM is connected to **wadesk.in** (your WhatsApp dashboard), which runs
+**two separate numbers**: a **Support** line for existing clients and a
+**Marketing** line for pre-sale enquiries. Which line a message came in on
+decides how the CRM handles it:
 
-- The ticket appears with a green **WhatsApp** badge on the Tickets list.
-- If the client's phone number matches an existing client record, a **ticket**
-  is created and linked to them. If no match is found, a **lead** is created
-  instead (source WhatsApp) — check **Lead Generation**, not Tickets, for
-  enquiries from numbers that aren't clients yet.
+- **Support line** — when a client messages this number with a **new
+  conversation** (or reopens a resolved one), a support ticket is
+  automatically created. If the phone number matches an existing client
+  record, a **ticket** is created and linked to them; if no match is found,
+  a **lead** is created instead (source WhatsApp).
+- **Marketing line** — a message here **always** creates or updates a
+  **lead**, never a ticket, even if the phone number matches an existing
+  client. This is deliberate: the marketing number is for pre-sale traffic,
+  so a client texting it by mistake still shows up where Sales/Telecaller
+  will see it, not silently in Support's queue.
 - Each conversation creates **one ticket** (or one lead) — subsequent
   messages in the same conversation don't create duplicates; for a lead,
   later messages are added as notes on it instead.
-- Staff reply to the client from **wadesk.in** directly. Replies can also be
-  logged as ticket notes in the CRM to keep the record complete.
+- Staff reply to the client from **wadesk.in** directly, or — for a
+  **lead** — from the note box on the lead's own CRM page, using the "Also
+  send as WhatsApp reply" checkbox (see the Sales/Telecaller guides for the
+  staff-facing walkthrough). Ticket replies still go out automatically whenever a non-internal
+  reply is added, same as before.
 
-This integration is configured via `COMPANY_WHATSAPP` and `WHATSAPP_WEBHOOK_TOKEN`
-in the server `.env`. Contact your developer if the integration stops creating
-tickets.
+**Deal-Won handoff message:** the moment a deal is marked **Won**, the CRM
+automatically sends the new client a WhatsApp template message on the
+**Support** number, welcoming them and telling them this is now their
+support channel going forward — the actual handoff from the marketing
+conversation to the support one. This needs a template that's been approved
+both in Meta Business Manager and on wadesk.in's own Templates page; until
+`WADESK_HANDOFF_TEMPLATE_NAME` is set in the server `.env`, this step is
+silently skipped (logged, never blocks the deal being won).
+
+**Managing which staff see which line:** this is configured on **wadesk.in
+itself**, not the CRM — Admin → Agents page has a checkbox per staff member
+for each line, and Admin → Numbers is where the lines themselves (and their
+Meta credentials) are managed. The CRM has no visibility into or control
+over this — if someone should be replying to marketing-line leads but can't
+see the conversation in wadesk.in, that's a wadesk.in Agents-page grant, not
+a CRM permission.
+
+This integration is configured via `WADESK_API_URL`/`WADESK_SERVICE_KEY`
+(outbound replies), `WHATSAPP_WEBHOOK_TOKEN` (inbound), `WADESK_SUPPORT_NUMBER`
+(which line is "Support" for the routing logic above), and
+`WADESK_HANDOFF_TEMPLATE_NAME` (the Deal-Won message) in the server `.env`.
+Contact your developer if the integration stops creating tickets/leads or
+the handoff message stops sending. (`COMPANY_WHATSAPP` is a separate,
+unrelated setting — just the number shown on client-facing WhatsApp buttons
+elsewhere in the app, not part of this integration.)
 
 ## 14. Scheduled maintenance tasks
 The CRM runs `app:dispatch-scheduled-tasks` at **8 AM IST daily** via the cron

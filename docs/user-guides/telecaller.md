@@ -32,6 +32,13 @@ a client/deal, or **delete** a lead — those stay with Sales/Manager/Admin.
 When a lead is genuinely ready to move forward, hand it to the assigned
 Sales rep (shown on the lead) rather than converting it yourself.
 
+**Replying to a lead over WhatsApp:** if a lead came in over WhatsApp (the
+marketing number), you can reply to them without leaving the CRM — open the
+lead, write your note, and tick the **"Also send as WhatsApp reply"**
+checkbox before saving (it only appears when the lead has an open WhatsApp
+conversation). Leave it unchecked for a normal internal note — that's the
+default, so nothing goes to the client unless you explicitly tick it.
+
 ## 4. Calling
 Use **☎ Log a call** (top bar) or **Calling** to record every call you make.
 Pick the **Lead** you called, the **direction**, **outcome**, and any notes —

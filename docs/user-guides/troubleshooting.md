@@ -166,12 +166,28 @@ Compare with what wadesk.in has in its own `.env`. They must be identical.
 After editing either side, run `php artisan config:cache` on the CRM.
 
 **Check 3 — Is the client's phone number in the CRM?**
-The webhook matches the WhatsApp number to a CRM client via phone number. If
-no client matches, the message creates a **lead** (source WhatsApp) instead
-of a ticket — check **Lead Generation**, not Tickets. If this is actually an
-existing client, add/fix their phone number on the client record; the next
-message from them will then create a proper linked ticket (the earlier lead
-stays as-is — convert or delete it manually).
+This only applies to the **Support** number. The webhook matches the
+WhatsApp number to a CRM client via phone number; if no client matches, the
+message creates a **lead** (source WhatsApp) instead of a ticket — check
+**Lead Generation**, not Tickets. If this is actually an existing client,
+add/fix their phone number on the client record; the next message from them
+will then create a proper linked ticket (the earlier lead stays as-is —
+convert or delete it manually).
+
+**Check 4 — Is this actually a Marketing-line message, correctly becoming
+a Lead?**
+Messages on the **Marketing** number always become a Lead, never a Ticket —
+even from an existing client's phone number. This is expected behavior, not
+a bug — check Lead Generation before assuming something is broken. If a
+message that should be Support-line is landing as a Lead instead (or vice
+versa), check `WADESK_SUPPORT_NUMBER` in the CRM's `.env` matches the real
+Support number exactly (digits only, e.g. `918007733737`):
+```
+cd /home/u314035009/neds-crm && grep WADESK_SUPPORT_NUMBER .env
+```
+If it's missing entirely, every line is treated as Support (the CRM's
+backward-compatible default) — which would wrongly turn Marketing-line
+messages into Tickets instead of Leads.
 
 ---
 

@@ -96,9 +96,12 @@ for this unless you are the project's owner.
 on a client profile — that is handled by the Sales team. You can view client and
 contact details but not change them.
 
-**WhatsApp tickets:** if a client messages your WhatsApp support number, the CRM
-automatically creates a ticket with a green **WhatsApp** badge on the tickets
-list. Handle it like any other ticket — the client sees it in their portal too.
+**WhatsApp tickets:** if a client messages the **Support** WhatsApp number
+specifically, the CRM automatically creates a ticket with a green
+**WhatsApp** badge on the tickets list. Handle it like any other ticket —
+the client sees it in their portal too. (There's a separate Marketing
+number for pre-sale enquiries — messages on that one become Leads instead,
+handled by Sales/Telecaller, not Support.)
 
 **Drishti context link:** if the ticket's client is connected to Drishti
 (nedsdrishti.in), a blue **"Open in Drishti →"** bar appears on the ticket

@@ -47,11 +47,20 @@ as you're assigned.
 the lead page shows a **Campaign** line (e.g. "google / cpc /
 seo-pune-2026") so you know which channel it came from before you call.
 
-**WhatsApp leads:** a WhatsApp message from a number that isn't an existing
-client's now creates a lead automatically (source = WhatsApp) instead of
-being dropped. If the same unknown number messages again before you've
-converted them, the CRM adds it as a note on the same lead rather than
-creating a duplicate.
+**WhatsApp leads:** there are two WhatsApp numbers — a Marketing line for
+pre-sale enquiries and a Support line for existing clients. Any message on
+the Marketing line always creates or updates a **lead** (source = WhatsApp),
+even from a number that already belongs to a client — the marketing number
+is pre-sale by definition, so it never gets silently absorbed into Support.
+If the same number messages again before you've converted them, the CRM
+adds it as a note on the same lead rather than creating a duplicate.
+
+**Replying to a lead over WhatsApp:** open the lead and use the note box —
+if the lead has an open WhatsApp conversation, you'll see an **"Also send
+as WhatsApp reply"** checkbox next to it. Leave it unchecked for a normal
+internal note (the default); tick it and the note is also sent to the
+client on WhatsApp, and gets a green "Sent via WhatsApp" badge once sent.
+You don't need to open wadesk.in yourself to reply.
 
 **Meta Ads leads:** a submission on a Facebook or Instagram lead ad creates a
 lead automatically (source = Meta Ads). Any question on the ad form beyond

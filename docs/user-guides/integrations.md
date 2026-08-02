@@ -195,43 +195,67 @@ description — so it's visible in wadesk.in as well.
 
 ## Integration 8 — WhatsApp two-way reply (wadesk.in)
 
-**What it does:** WhatsApp is now a full two-way channel through the CRM.
+**What it does:** WhatsApp is a full two-way channel through the CRM, across
+**two separate numbers** run on wadesk.in — a **Support** line (post-sale,
+existing clients) and a **Marketing** line (pre-sale enquiries). Which line
+a message arrives on decides how the CRM routes it; wadesk.in tells the CRM
+which line via the `whatsapp_number` field on its webhook call.
 
-- **Inbound:** when a customer messages on WhatsApp, wadesk.in calls the CRM
-  webhook, which matches the phone number to a client and opens a **Ticket**
-  (channel = WhatsApp) — deduplicated per wadesk.in conversation, so replies
-  in the same conversation don't create new tickets.
-- **Inbound from an unknown number:** if the phone doesn't match any client,
-  the CRM now creates a **Lead** instead (source = WhatsApp) — so a genuine
-  new-business enquiry over WhatsApp is never silently dropped. It's also
-  deduplicated per conversation: later messages from the same unmatched
-  conversation are added as notes on that lead rather than creating a second
-  one. The lead is auto-assigned to a sales rep the same way any other new
-  lead is (see the AI features section).
-- **Outbound:** when a staff member replies on that ticket in the CRM (and the
-  reply is **not** marked "internal note"), the CRM sends the reply back
-  through wadesk.in so the customer receives it on WhatsApp — the staffer
-  never has to open wadesk.in or WhatsApp directly.
+- **Inbound, Support line:** wadesk.in calls the CRM webhook, which matches
+  the phone number to a client and opens a **Ticket** (channel = WhatsApp) —
+  deduplicated per wadesk.in conversation, so replies in the same
+  conversation don't create new tickets. If the phone doesn't match any
+  client, a **Lead** is created instead (source = WhatsApp), same as before.
+- **Inbound, Marketing line:** **always** creates or updates a **Lead** —
+  never a Ticket, even when the phone number matches an existing client.
+  This is a deliberate routing rule (owner-confirmed 2026-08-03): the
+  marketing number is pre-sale by definition, so an existing client
+  messaging it by mistake still surfaces where Sales/Telecaller will see it.
+- **Deduplication (both lines):** one Ticket or Lead per wadesk.in
+  conversation — later messages in the same conversation are added as notes
+  rather than creating a duplicate. A new Lead is auto-assigned to a sales
+  rep the same way any other new lead is (see the AI features section).
+- **Outbound, Tickets:** when a staff member replies on a WhatsApp ticket in
+  the CRM (and the reply is **not** marked "internal note"), the CRM sends
+  it back through wadesk.in on the Support line automatically.
+- **Outbound, Leads:** Sales/Telecaller/Admin/Manager can reply to a lead
+  over WhatsApp too — the note box on a lead's page has an opt-in **"Also
+  send as WhatsApp reply"** checkbox (unlike Ticket replies, a lead note is
+  internal-only by default; you have to explicitly choose to send it). Only
+  shown when the lead actually has an open WhatsApp conversation to reply
+  on. A sent note gets a green "Sent via WhatsApp" badge in the timeline.
+- **Deal-Won handoff:** the moment a deal moves to **Won**, the CRM
+  automatically sends the new client an approved WhatsApp template on the
+  **Support** line — the actual handoff from the marketing conversation to
+  the support one. Needs `WADESK_HANDOFF_TEMPLATE_NAME` set in `.env` and a
+  matching template approved both in Meta Business Manager and on
+  wadesk.in's Templates page; silently skipped (logged) until both exist.
 
 **What the team sees:**
 - A ticket tagged WhatsApp behaves like any other ticket — reply in the CRM
-  as normal.
-- Internal notes (the "internal" checkbox) are never sent to the customer —
-  use these for team-only context.
-- If the client can't be matched by phone number, a **Lead** is created
-  instead of a ticket (see above) — check the **Lead Generation** list rather
-  than assuming the message was lost. If it's actually an existing client
-  with an out-of-date phone number, fix the number on their client record and
-  ask them to send another WhatsApp message so future replies open a proper
-  ticket.
+  as normal. Internal notes (the "internal" checkbox) are never sent to the
+  customer — use these for team-only context.
+- If a client can't be matched by phone number on the Support line, a
+  **Lead** is created instead of a ticket (see above) — check the **Lead
+  Generation** list rather than assuming the message was lost. If it's
+  actually an existing client with an out-of-date phone number, fix the
+  number on their client record and ask them to send another WhatsApp
+  message so future replies open a proper ticket.
+- Any message on the Marketing line always lands in **Lead Generation**,
+  regardless of who the number belongs to — this is expected, not a bug.
 
 **If a customer says they didn't receive a reply:**
-- Check the ticket wasn't marked as an internal note by mistake.
+- Ticket reply: check it wasn't marked as an internal note by mistake.
+- Lead reply: check the "Also send as WhatsApp reply" checkbox was actually
+  ticked — unlike Ticket replies, a lead note doesn't send by default.
 - Check server `.env` has `WADESK_API_URL` and `WADESK_SERVICE_KEY` set —
   without these the outbound send is silently skipped (logged as a warning,
-  never blocks the ticket reply itself).
+  never blocks the reply itself).
 - wadesk.in outages never break the CRM reply — the message is just not
   forwarded; the staffer may need to resend once wadesk.in is back up.
+- Who can actually see/reply to a conversation on wadesk.in itself (as
+  opposed to whether the CRM sent it) is controlled entirely on wadesk.in's
+  own Agents page, not here — see Section 13 of the admin guide.
 
 ---
 
@@ -318,10 +342,11 @@ All integration events leave a trace in the CRM:
 |---|---|
 | Client profile → Activity tab | Provisioning success/failure, Drishti events, brief creation |
 | Client profile → Invoices tab | Draft invoices created by SMDost brief approvals |
-| Tickets list → WhatsApp badge | Tickets auto-created from WhatsApp conversations |
+| Tickets list → WhatsApp badge | Tickets auto-created from Support-line WhatsApp conversations |
 | Drishti → Posts queue | Content pushed from SMDost |
-| Ticket → replies | Outbound WhatsApp replies sent via wadesk.in |
-| Lead Generation → source filter | Leads auto-created from Website, WhatsApp, and Meta Ads |
+| Ticket → replies | Outbound Support-line WhatsApp replies sent via wadesk.in |
+| Lead Generation → source filter | Leads auto-created from Website, WhatsApp (both lines), and Meta Ads |
+| Lead → notes → green "Sent via WhatsApp" badge | Outbound Marketing-line WhatsApp replies sent from a lead |
 
 If any integration stops working, the most common causes are:
 1. **Server `.env` out of date** — a key (`DRISHTI_SERVICE_KEY`,
