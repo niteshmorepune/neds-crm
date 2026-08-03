@@ -22,6 +22,21 @@
                 <span class="text-xs text-gray-400">· raised {{ $ticket->created_at->timezone(config('app.display_timezone'))->format('d M Y') }}</span>
             </div>
             <p class="text-sm text-gray-700 whitespace-pre-line leading-relaxed">{{ $ticket->description }}</p>
+
+            @if ($ticket->attachments->isNotEmpty())
+                <div class="mt-4 border-t border-gray-100 pt-3">
+                    <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Attachments</h3>
+                    <ul class="space-y-1 text-sm">
+                        @foreach ($ticket->attachments as $attachment)
+                            <li class="flex items-center justify-between">
+                                <a href="{{ route('portal.tickets.attachments.download', [$ticket->id, $attachment->id]) }}"
+                                   class="text-indigo-600 hover:underline">{{ $attachment->original_name }}</a>
+                                <span class="text-xs text-gray-400">{{ $attachment->humanSize() }}</span>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
         </div>
 
         {{-- Conversation --}}

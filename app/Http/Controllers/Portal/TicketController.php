@@ -10,11 +10,19 @@ use App\Services\SlaCalculator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TicketController extends PortalController
 {
+    /**
+     * Allowed portal attachment types — kept deliberately narrower than the
+     * internal (staff) attachment upload, since this is a public-facing form.
+     */
+    private const ATTACHMENT_RULES = ['file', 'max:10240', 'mimes:pdf,doc,docx,xls,xlsx,jpg,jpeg,png,gif,txt,csv,zip'];
+
     public function index(): View
     {
         return view('portal.tickets.index', [
@@ -43,6 +51,8 @@ class TicketController extends PortalController
             'description' => ['required', 'string'],
             'priority' => ['required', Rule::enum(TicketPriority::class)],
             'project_id' => ['nullable', Rule::exists('projects', 'id')],
+            'attachments' => ['nullable', 'array', 'max:5'],
+            'attachments.*' => self::ATTACHMENT_RULES,
         ]);
 
         $priority = TicketPriority::from($data['priority']);
@@ -75,16 +85,37 @@ class TicketController extends PortalController
             'assignee_id' => $assigneeId,
         ]);
 
+        foreach ($request->file('attachments', []) as $file) {
+            $ticket->attachments()->create([
+                'contact_id' => auth('portal')->id(),
+                'disk' => 'local',
+                'path' => $file->store('attachments', 'local'),
+                'original_name' => $file->getClientOriginalName(),
+                'mime_type' => $file->getClientMimeType(),
+                'size' => $file->getSize(),
+            ]);
+        }
+
         return redirect()->route('portal.tickets.show', $ticket->id)->with('status', 'Ticket raised.');
     }
 
     public function show(int $ticket): View
     {
         $ticket = $this->customer()->tickets()
-            ->with(['replies' => fn ($q) => $q->where('is_internal', false), 'replies.author', 'replies.contact', 'satisfactionRating'])
+            ->with(['replies' => fn ($q) => $q->where('is_internal', false), 'replies.author', 'replies.contact', 'satisfactionRating', 'attachments'])
             ->findOrFail($ticket);
 
         return view('portal.tickets.show', ['ticket' => $ticket]);
+    }
+
+    public function downloadAttachment(int $ticket, int $attachment): StreamedResponse
+    {
+        $ticket = $this->customer()->tickets()->findOrFail($ticket);
+        $attachment = $ticket->attachments()->findOrFail($attachment);
+
+        abort_unless(Storage::disk($attachment->disk)->exists($attachment->path), 404);
+
+        return Storage::disk($attachment->disk)->download($attachment->path, $attachment->original_name);
     }
 
     public function reply(Request $request, int $ticket): RedirectResponse

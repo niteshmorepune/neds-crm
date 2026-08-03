@@ -59,7 +59,9 @@
                         @forelse ($ticket->attachments as $attachment)
                             <li class="flex items-center justify-between py-2">
                                 <a href="{{ route('attachments.download', $attachment) }}" class="text-indigo-600 hover:underline">{{ $attachment->original_name }}</a>
-                                <span class="text-xs text-gray-400">{{ $attachment->humanSize() }}</span>
+                                <span class="text-xs text-gray-400">
+                                    {{ $attachment->contact_id ? $attachment->uploaderName().' (client) · ' : '' }}{{ $attachment->humanSize() }}
+                                </span>
                             </li>
                         @empty
                             <li class="py-2 text-gray-400">No attachments.</li>

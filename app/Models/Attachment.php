@@ -13,7 +13,7 @@ class Attachment extends Model
     use HasFactory;
 
     protected $fillable = [
-        'attachable_type', 'attachable_id', 'uploaded_by',
+        'attachable_type', 'attachable_id', 'uploaded_by', 'contact_id',
         'disk', 'path', 'original_name', 'mime_type', 'size',
     ];
 
@@ -30,6 +30,20 @@ class Attachment extends Model
     public function uploader(): BelongsTo
     {
         return $this->belongsTo(User::class, 'uploaded_by');
+    }
+
+    public function contact(): BelongsTo
+    {
+        return $this->belongsTo(Contact::class);
+    }
+
+    /**
+     * Display name for who uploaded the file — an internal user, a portal
+     * contact, or "System".
+     */
+    public function uploaderName(): string
+    {
+        return $this->uploader?->name ?? $this->contact?->name ?? 'System';
     }
 
     /**

@@ -4,6 +4,8 @@ use App\Enums\TicketStatus;
 use App\Models\Contact;
 use App\Models\Customer;
 use App\Models\Ticket;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
     $this->customerA = Customer::factory()->create();
@@ -23,6 +25,73 @@ it('lets a portal contact raise a ticket scoped to their company with an SLA', f
         ->and($ticket->status)->toBe(TicketStatus::Open)
         ->and($ticket->sla_due_at)->not->toBeNull()
         ->and($ticket->created_by)->toBeNull();
+});
+
+it('lets a portal contact attach files when raising a ticket', function () {
+    Storage::fake('local');
+
+    $this->actingAs($this->contactA, 'portal')->post(route('portal.tickets.store'), [
+        'subject' => 'Logo not showing',
+        'description' => 'See attached screenshot',
+        'priority' => 'normal',
+        'attachments' => [
+            UploadedFile::fake()->create('screenshot.png', 500, 'image/png'),
+            UploadedFile::fake()->create('brief.pdf', 200, 'application/pdf'),
+        ],
+    ])->assertRedirect();
+
+    $ticket = Ticket::firstWhere('subject', 'Logo not showing');
+    expect($ticket->attachments)->toHaveCount(2);
+
+    $attachment = $ticket->attachments()->firstWhere('original_name', 'screenshot.png');
+    expect($attachment->contact_id)->toBe($this->contactA->id)
+        ->and($attachment->uploaded_by)->toBeNull()
+        ->and($attachment->uploaderName())->toBe('Asha');
+    Storage::disk('local')->assertExists($attachment->path);
+});
+
+it('rejects a disallowed file type when raising a ticket', function () {
+    Storage::fake('local');
+
+    $this->actingAs($this->contactA, 'portal')->post(route('portal.tickets.store'), [
+        'subject' => 'Bad file',
+        'description' => 'Testing validation',
+        'priority' => 'normal',
+        'attachments' => [UploadedFile::fake()->create('malware.exe', 100, 'application/octet-stream')],
+    ])->assertSessionHasErrors('attachments.0');
+
+    expect(Ticket::firstWhere('subject', 'Bad file'))->toBeNull();
+});
+
+it('lets a portal contact download their own ticket attachment but not another customer\'s', function () {
+    Storage::fake('local');
+
+    $ownTicket = Ticket::factory()->create(['customer_id' => $this->customerA->id]);
+    $ownAttachment = $ownTicket->attachments()->create([
+        'contact_id' => $this->contactA->id,
+        'disk' => 'local',
+        'path' => UploadedFile::fake()->create('mine.pdf', 100)->store('attachments', 'local'),
+        'original_name' => 'mine.pdf',
+        'mime_type' => 'application/pdf',
+        'size' => 100,
+    ]);
+
+    $foreignTicket = Ticket::factory()->create(['customer_id' => $this->customerB->id]);
+    $foreignAttachment = $foreignTicket->attachments()->create([
+        'disk' => 'local',
+        'path' => UploadedFile::fake()->create('theirs.pdf', 100)->store('attachments', 'local'),
+        'original_name' => 'theirs.pdf',
+        'mime_type' => 'application/pdf',
+        'size' => 100,
+    ]);
+
+    $this->actingAs($this->contactA, 'portal')
+        ->get(route('portal.tickets.attachments.download', [$ownTicket->id, $ownAttachment->id]))
+        ->assertOk();
+
+    $this->actingAs($this->contactA, 'portal')
+        ->get(route('portal.tickets.attachments.download', [$foreignTicket->id, $foreignAttachment->id]))
+        ->assertNotFound();
 });
 
 it('records a portal reply as authored by the contact', function () {

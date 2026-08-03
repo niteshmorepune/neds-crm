@@ -7,8 +7,9 @@
     @endif
 
     <div class="max-w-2xl">
-        <form method="POST" action="{{ route('portal.tickets.store') }}"
-              class="rounded-xl bg-white px-6 py-6 shadow-sm ring-1 ring-gray-100 space-y-5">
+        <form method="POST" action="{{ route('portal.tickets.store') }}" enctype="multipart/form-data"
+              class="rounded-xl bg-white px-6 py-6 shadow-sm ring-1 ring-gray-100 space-y-5"
+              x-data="{ fileNames: [] }">
             @csrf
             <div>
                 <x-input-label for="subject" value="Subject *" />
@@ -48,6 +49,21 @@
                           placeholder="Please describe the issue in detail — steps to reproduce, screenshots, etc."
                           required>{{ old('description') }}</textarea>
                 <x-input-error :messages="$errors->get('description')" class="mt-1" />
+            </div>
+            <div>
+                <x-input-label for="attachments" value="Attachments (optional)" />
+                <input id="attachments" name="attachments[]" type="file" multiple
+                       accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif,.txt,.csv,.zip"
+                       class="mt-1 block w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-gray-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-gray-700 hover:file:bg-gray-200"
+                       x-on:change="fileNames = Array.from($event.target.files).map(f => f.name)" />
+                <p class="mt-1 text-xs text-gray-400">Documents, PDFs, or screenshots — up to 5 files, 10 MB each.</p>
+                <ul class="mt-1 text-xs text-gray-500 space-y-0.5" x-show="fileNames.length" style="display:none">
+                    <template x-for="name in fileNames" :key="name">
+                        <li x-text="'\u{1F4CE} ' + name"></li>
+                    </template>
+                </ul>
+                <x-input-error :messages="$errors->get('attachments')" class="mt-1" />
+                <x-input-error :messages="$errors->get('attachments.0')" class="mt-1" />
             </div>
             <div class="flex items-center justify-between gap-3 pt-1">
                 <a href="{{ route('portal.tickets.index') }}" class="text-sm text-gray-500 hover:text-gray-700">Cancel</a>
