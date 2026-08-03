@@ -106,12 +106,18 @@ has set one up.
    this about?"** dropdown will appear — select the relevant project/service so
    your ticket goes straight to the right team member. If you're not sure, leave
    it as "General / Not sure".
-4. Choose a **priority** and click **Submit Ticket** — the NEDS team is notified
+4. Optionally **attach files** — documents (DOC/DOCX), PDFs, images (JPG/PNG),
+   screenshots, spreadsheets, or a ZIP — up to 5 files, 10 MB each. This lets
+   the support team see exactly what you're seeing without asking you to
+   email or WhatsApp the file separately.
+5. Choose a **priority** and click **Submit Ticket** — the NEDS team is notified
    and an SLA timer starts.
-4. You can **reply** to the ticket from the ticket page to continue the
+6. Any files you attached appear as download links at the top of the ticket
+   page, so you can confirm what was submitted.
+7. You can **reply** to the ticket from the ticket page to continue the
    conversation. Replies appear as a chat thread.
-5. Internal NEDS notes are never shown to you — you only see messages meant for you.
-6. Once your ticket is marked **Resolved** or **Closed**, you'll see a **"How
+8. Internal NEDS notes are never shown to you — you only see messages meant for you.
+9. Once your ticket is marked **Resolved** or **Closed**, you'll see a **"How
    did we do?"** prompt on the ticket page — rate it 1–5 stars and optionally
    leave a comment. It's a one-time rating per ticket and entirely optional.
 

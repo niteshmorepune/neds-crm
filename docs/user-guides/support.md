@@ -37,6 +37,12 @@ lead. It only fills the fields above; nothing submits until you click
 **Managing:** use the panel to change **status**, **priority**, or **assignee**,
 attach files, and **Mark resolved** when done (the client is notified).
 
+**Client attachments:** clients can attach files (documents, PDFs, screenshots,
+etc.) when they raise a ticket from the portal. These show up in the same
+**Attachments** section as staff uploads, labelled **"(client)"** so you know
+it came from them — no need to ask the client to email or WhatsApp a file
+separately.
+
 **Filtering:** use the filter bar to narrow by status, priority, or assignee.
 Tick **SLA breached** (shown in red) to instantly see only the open tickets that
 have passed their SLA deadline — useful for prioritising your queue at the start
