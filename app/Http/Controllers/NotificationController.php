@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Deal;
 use App\Models\Invoice;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -23,7 +24,16 @@ class NotificationController extends Controller
             ? collect()
             : Invoice::onlyTrashed()->whereIn('id', $invoiceIds)->pluck('id');
 
-        return view('notifications.index', compact('notifications', 'deletedInvoiceIds'));
+        $dealIds = $notifications->getCollection()
+            ->map(fn ($notification) => $notification->data['deal_id'] ?? null)
+            ->filter()
+            ->unique();
+
+        $deletedDealIds = $dealIds->isEmpty()
+            ? collect()
+            : Deal::onlyTrashed()->whereIn('id', $dealIds)->pluck('id');
+
+        return view('notifications.index', compact('notifications', 'deletedInvoiceIds', 'deletedDealIds'));
     }
 
     public function destroy(Request $request, string $id): RedirectResponse

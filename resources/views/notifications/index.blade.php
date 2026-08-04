@@ -45,11 +45,15 @@
                                 default                       => '🔔',
                             })
                             @php($invoiceDeleted = ! empty($data['invoice_id']) && $deletedInvoiceIds->contains($data['invoice_id']))
+                            @php($dealDeleted = ! empty($data['deal_id']) && $deletedDealIds->contains($data['deal_id']))
                             <p class="text-sm font-medium text-gray-900">
                                 {{ $typeIcon }}
                                 @if ($invoiceDeleted)
                                     <span class="text-gray-500">{{ $data['message'] }}</span>
                                     <span class="ml-1 text-xs italic text-gray-400">(invoice deleted)</span>
+                                @elseif ($dealDeleted)
+                                    <span class="text-gray-500">{{ $data['message'] }}</span>
+                                    <span class="ml-1 text-xs italic text-gray-400">(deal deleted)</span>
                                 @elseif (! empty($data['url']))
                                     <a href="{{ $data['url'] }}" class="text-indigo-600 hover:underline">{{ $data['message'] }}</a>
                                 @else
