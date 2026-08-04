@@ -98,13 +98,25 @@ class HitechAttendanceParser
         return gmdate('Y-m-d', (int) round(($serial - 25569) * 86400));
     }
 
-    /** Hitech formats times as "09 : 01 : 56" — strip the spaces around colons. */
+    /**
+     * Hitech normally formats a device-read punch as "09 : 01 : 56" — strip
+     * the spaces around colons. A punch corrected by hand in the Hitech
+     * software ("Operator" entry/exit type, instead of "Automated Device")
+     * exports without seconds, e.g. "18:28" — assume :00 seconds for that
+     * shape rather than let it fail Carbon's H:i:s parse downstream.
+     */
     private function normaliseTime(?string $value): ?string
     {
         if ($value === null || trim($value) === '') {
             return null;
         }
 
-        return str_replace(' ', '', $value);
+        $value = str_replace(' ', '', $value);
+
+        if (substr_count($value, ':') === 1) {
+            $value .= ':00';
+        }
+
+        return $value;
     }
 }

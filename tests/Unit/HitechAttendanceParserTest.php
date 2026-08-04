@@ -30,6 +30,22 @@ it('leaves exit null for a day with no recorded checkout', function () {
         ->and($rows[0]['exit'])->toBeNull();
 });
 
+it('appends :00 seconds to an operator-corrected time that has none', function () {
+    // 2026-08-04 regression: a punch corrected by hand in Hitech ("Operator"
+    // type, not "Automated Device") exports without seconds, e.g. "18:28"
+    // instead of "18 : 28 : 00" — this broke the downstream H:i:s parse and
+    // silently dropped the whole row. Real example: Kiran Katte, 2026-08-03.
+    $path = buildHitechXlsx([
+        ['date' => '2026-08-03', 'entry' => '09 : 08 : 11', 'exit' => '18:28'],
+    ]);
+
+    $rows = (new HitechAttendanceParser)->parse($path);
+    unlink($path);
+
+    expect($rows[0]['entry'])->toBe('09:08:11')
+        ->and($rows[0]['exit'])->toBe('18:28:00');
+});
+
 it('throws when the file is not a valid xlsx', function () {
     $path = tempnam(sys_get_temp_dir(), 'notxlsx').'.xlsx';
     file_put_contents($path, 'not a zip file');

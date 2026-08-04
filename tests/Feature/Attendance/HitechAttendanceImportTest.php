@@ -107,6 +107,28 @@ it('shows a friendly error instead of a 500 when the uploaded xlsx has malformed
         ->assertSet('step', 1);
 });
 
+it('imports an operator-corrected punch time that has no seconds', function () {
+    // 2026-08-04 regression: real Kiran Katte export had Entry Time
+    // "09 : 08 : 11" (Automated Device) but Exit Time "18:28" (Operator,
+    // hand-corrected, no seconds) — the row was silently skipped entirely
+    // instead of importing both fields.
+    $path = buildHitechXlsx([
+        ['date' => '2026-08-03', 'entry' => '09 : 08 : 11', 'exit' => '18:28'],
+    ]);
+    $upload = UploadedFile::fake()->createWithContent('attendance.xlsx', file_get_contents($path));
+
+    Livewire::actingAs($this->manager)->test(HitechAttendanceImport::class)
+        ->set('userId', $this->staff->id)
+        ->set('file', $upload)
+        ->call('parse')
+        ->call('import');
+
+    $day = Attendance::where('user_id', $this->staff->id)->whereDate('date', '2026-08-03')->first();
+    expect($day)->not->toBeNull()
+        ->and($day->check_in_at->timezone('Asia/Kolkata')->format('H:i:s'))->toBe('09:08:11')
+        ->and($day->check_out_at->timezone('Asia/Kolkata')->format('H:i:s'))->toBe('18:28:00');
+});
+
 it('skips a row with an unparsable punch time instead of crashing the whole import', function () {
     // 2026-08-04 regression: Carbon::createFromFormat() throws when a punch
     // cell doesn't match Hitech's usual "H:i:s" shape (e.g. a missed-punch
