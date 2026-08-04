@@ -123,6 +123,7 @@ class CustomerController extends Controller
             'client' => $client,
             'canManage' => $this->user()->can('manage', $client),
             'canManageMeetings' => $this->user()->can('manageMeetings', $client),
+            'canManageLinks' => $this->user()->can('manageLinks', $client),
             'canViewInvoices' => $canViewInvoices,
             'tabCounts' => $tabCounts,
         ]);

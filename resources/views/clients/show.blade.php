@@ -168,7 +168,7 @@
                     </ul>
                 </div>
                 <div x-show="tab === 'links'" x-cloak>
-                    <livewire:important-links-manager :customer="$client" :can-manage="$canManage" />
+                    <livewire:important-links-manager :customer="$client" :can-manage="$canManageLinks" />
                 </div>
             </div>
         </div>

@@ -84,3 +84,50 @@ it('rejects a non-xlsx upload', function () {
         ->call('parse')
         ->assertHasErrors(['file']);
 });
+
+it('shows a friendly error instead of a 500 when the uploaded xlsx has malformed worksheet XML', function () {
+    // 2026-08-04 regression: SimpleXMLElement throws a plain \Exception (not
+    // RuntimeException) on malformed XML, so a real-world export with an
+    // unexpected internal shape (e.g. a genuine biometric export renamed to
+    // .xlsx, or a corrupted file) crashed with an uncaught 500 instead of a
+    // validation error.
+    $path = tempnam(sys_get_temp_dir(), 'badxlsx').'.xlsx';
+    $zip = new ZipArchive;
+    $zip->open($path, ZipArchive::CREATE);
+    $zip->addFromString('xl/worksheets/sheet1.xml', '<worksheet><sheetData><row><not valid xml');
+    $zip->close();
+    $upload = UploadedFile::fake()->createWithContent('attendance.xlsx', file_get_contents($path));
+    unlink($path);
+
+    Livewire::actingAs($this->manager)->test(HitechAttendanceImport::class)
+        ->set('userId', $this->staff->id)
+        ->set('file', $upload)
+        ->call('parse')
+        ->assertHasErrors(['file'])
+        ->assertSet('step', 1);
+});
+
+it('skips a row with an unparsable punch time instead of crashing the whole import', function () {
+    // 2026-08-04 regression: Carbon::createFromFormat() throws when a punch
+    // cell doesn't match Hitech's usual "H:i:s" shape (e.g. a missed-punch
+    // marker) — import() had no try/catch at all around it, so one bad row
+    // crashed the entire confirmed import with an uncaught 500.
+    $path = buildHitechXlsx([
+        ['date' => '2026-07-04', 'entry' => '09 : 09 : 23', 'exit' => '17 : 47 : 29'],
+        ['date' => '2026-07-05', 'entry' => 'N/A', 'exit' => null],
+    ]);
+    $upload = UploadedFile::fake()->createWithContent('attendance.xlsx', file_get_contents($path));
+
+    Livewire::actingAs($this->manager)->test(HitechAttendanceImport::class)
+        ->set('userId', $this->staff->id)
+        ->set('file', $upload)
+        ->call('parse')
+        ->call('import');
+
+    $day4 = Attendance::where('user_id', $this->staff->id)->whereDate('date', '2026-07-04')->first();
+    expect($day4->check_in_at->timezone('Asia/Kolkata')->format('H:i:s'))->toBe('09:09:23');
+
+    // The bad row is skipped entirely, not saved with a garbage value.
+    $day5 = Attendance::where('user_id', $this->staff->id)->whereDate('date', '2026-07-05')->first();
+    expect($day5)->toBeNull();
+});

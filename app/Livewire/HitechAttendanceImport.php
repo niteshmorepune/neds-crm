@@ -8,10 +8,11 @@ use App\Models\User;
 use App\Support\HitechAttendanceParser;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithFileUploads;
-use RuntimeException;
+use Throwable;
 
 #[Layout('layouts.app')]
 class HitechAttendanceImport extends Component
@@ -47,8 +48,16 @@ class HitechAttendanceImport extends Component
 
         try {
             $rows = (new HitechAttendanceParser)->parse($this->file->getRealPath());
-        } catch (RuntimeException $e) {
-            $this->addError('file', $e->getMessage());
+        } catch (Throwable $e) {
+            // The parser is hand-rolled against one specific export shape, so
+            // anything unexpected (a different sheet layout, malformed XML,
+            // etc.) must not bubble into an uncaught 500 — log it for
+            // diagnosis and surface a friendly, actionable error instead.
+            Log::error('Hitech attendance import: failed to parse uploaded file.', [
+                'user_id' => $this->userId,
+                'exception' => $e->getMessage(),
+            ]);
+            $this->addError('file', 'Could not read this file as a Hitech attendance export. Please check the file and try again.');
 
             return;
         }
@@ -91,6 +100,7 @@ class HitechAttendanceImport extends Component
         $rows = session('hitech_import_rows', []);
         $tz = config('app.display_timezone', 'Asia/Kolkata');
         $imported = 0;
+        $skipped = 0;
 
         foreach ($rows as $row) {
             $attendance = Attendance::where('user_id', $userId)
@@ -104,11 +114,25 @@ class HitechAttendanceImport extends Component
             // Hitech is the authoritative correction pass — overwrite only the
             // fields it actually reports; a blank cell (e.g. not yet punched
             // out when the export was taken) never erases a value we already have.
-            if ($row['entry']) {
-                $attendance->check_in_at = Carbon::createFromFormat('Y-m-d H:i:s', $row['date'].' '.$row['entry'], $tz)->utc();
-            }
-            if ($row['exit']) {
-                $attendance->check_out_at = Carbon::createFromFormat('Y-m-d H:i:s', $row['date'].' '.$row['exit'], $tz)->utc();
+            try {
+                if ($row['entry']) {
+                    $attendance->check_in_at = Carbon::createFromFormat('Y-m-d H:i:s', $row['date'].' '.$row['entry'], $tz)->utc();
+                }
+                if ($row['exit']) {
+                    $attendance->check_out_at = Carbon::createFromFormat('Y-m-d H:i:s', $row['date'].' '.$row['exit'], $tz)->utc();
+                }
+            } catch (Throwable $e) {
+                // A punch time that doesn't match Hitech's usual "H:i:s"
+                // shape (e.g. a missed-punch marker) must not crash the
+                // whole import — skip just this row and keep going.
+                Log::error('Hitech attendance import: could not parse a row\'s time, skipped it.', [
+                    'user_id' => $userId,
+                    'row' => $row,
+                    'exception' => $e->getMessage(),
+                ]);
+                $skipped++;
+
+                continue;
             }
 
             $attendance->save();
@@ -116,7 +140,11 @@ class HitechAttendanceImport extends Component
         }
 
         session()->forget(['hitech_import_rows', 'hitech_import_user_id']);
-        session()->flash('status', "Imported {$imported} day(s) of attendance from the Hitech export.");
+        $status = "Imported {$imported} day(s) of attendance from the Hitech export.";
+        if ($skipped > 0) {
+            $status .= " {$skipped} row(s) had an unreadable time and were skipped.";
+        }
+        session()->flash('status', $status);
         $this->redirect(route('attendance.index', ['user_id' => $userId]), navigate: false);
     }
 

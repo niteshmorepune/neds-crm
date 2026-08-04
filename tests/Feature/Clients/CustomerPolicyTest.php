@@ -130,3 +130,38 @@ it('manageMeetings: excludes accounts, intern, and telecaller', function (UserRo
     'intern' => UserRole::Intern,
     'telecaller' => UserRole::Telecaller,
 ]);
+
+it('manageLinks: lets support create/edit/delete important links even though they cannot manage() contacts', function () {
+    // Same shape as the manageMeetings regression above — Links is a shared
+    // client resource, not sales-owned relationship data, so it's its own
+    // check rather than reusing manage() (which deliberately excludes
+    // Support for contacts/notes).
+    $client = Customer::factory()->create();
+    $support = User::factory()->role(UserRole::Support)->create();
+
+    expect($support->can('manage', $client))->toBeFalse()
+        ->and($support->can('manageLinks', $client))->toBeTrue();
+});
+
+it('manageLinks: lets any Sales rep manage links on any client, not just their own', function (UserRole $role) {
+    $client = Customer::factory()->ownedBy(User::factory()->create()->id)->create();
+    $user = User::factory()->role($role)->create();
+
+    expect($user->can('manageLinks', $client))->toBeTrue();
+})->with([
+    'admin' => UserRole::Admin,
+    'manager' => UserRole::Manager,
+    'sales (non-owning)' => UserRole::Sales,
+    'support' => UserRole::Support,
+]);
+
+it('manageLinks: excludes accounts, intern, and telecaller', function (UserRole $role) {
+    $client = Customer::factory()->create();
+    $user = User::factory()->role($role)->create();
+
+    expect($user->can('manageLinks', $client))->toBeFalse();
+})->with([
+    'accounts' => UserRole::Accounts,
+    'intern' => UserRole::Intern,
+    'telecaller' => UserRole::Telecaller,
+]);

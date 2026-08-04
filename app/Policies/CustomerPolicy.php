@@ -95,6 +95,18 @@ class CustomerPolicy
         return $user->hasRole(UserRole::Admin, UserRole::Manager, UserRole::Sales, UserRole::Support);
     }
 
+    /**
+     * Create/edit/delete Important Links (website, Drive, Meet, social,
+     * etc.) on this client — deliberately its own check, not manage()
+     * (contacts/notes), same reasoning as manageMeetings(): a link is a
+     * shared client resource any of these roles may need to add, not
+     * sales-owned relationship data, so no ownership restriction.
+     */
+    public function manageLinks(User $user, Customer $customer): bool
+    {
+        return $user->hasRole(UserRole::Admin, UserRole::Manager, UserRole::Sales, UserRole::Support);
+    }
+
     private function salesOwnsOrUnassigned(User $user, Customer $customer): bool
     {
         return $customer->owner_id === $user->id || $customer->owner_id === null;

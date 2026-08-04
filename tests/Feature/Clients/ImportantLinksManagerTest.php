@@ -62,12 +62,13 @@ it('deletes a client link', function () {
 });
 
 it('forbids managing a client link without permission', function () {
-    // A sales rep who does not own this client cannot manage its links.
-    $foreignSales = User::factory()->role(UserRole::Sales)->create();
-    $owned = Customer::factory()->ownedBy(User::factory()->role(UserRole::Sales)->create()->id)->create();
+    // manageLinks() is unrestricted for Admin/Manager/Sales/Support (any
+    // client, no ownership check) — Accounts is one of the roles it
+    // deliberately excludes.
+    $accounts = User::factory()->role(UserRole::Accounts)->create();
 
-    Livewire::actingAs($foreignSales)
-        ->test(ImportantLinksManager::class, ['customer' => $owned, 'canManage' => false])
+    Livewire::actingAs($accounts)
+        ->test(ImportantLinksManager::class, ['customer' => $this->customer, 'canManage' => false])
         ->call('newLink')
         ->assertForbidden();
 });
@@ -133,4 +134,17 @@ it('does not mix a global link into a client\'s links tab', function () {
         ->get(route('clients.show', $this->customer))
         ->assertOk()
         ->assertDontSee('Global Only Link');
+});
+
+it('shows the Add link button to a support user on the client detail page', function () {
+    // 2026-08-04 fix: Links previously reused CustomerPolicy::manage(),
+    // which deliberately excludes Support (contacts/notes) — that silently
+    // hid the Add link button for Support too, even though the button on
+    // this page is driven by canManageLinks(), not canManage().
+    $support = User::factory()->role(UserRole::Support)->create();
+
+    $this->actingAs($support)
+        ->get(route('clients.show', $this->customer))
+        ->assertOk()
+        ->assertSee('Add link');
 });

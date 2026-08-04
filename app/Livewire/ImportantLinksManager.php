@@ -121,7 +121,7 @@ class ImportantLinksManager extends Component
     private function authorizeManage(): void
     {
         $allowed = $this->customer
-            ? (bool) auth()->user()?->can('manage', $this->customer)
+            ? (bool) auth()->user()?->can('manageLinks', $this->customer)
             : (bool) auth()->user()?->hasRole(UserRole::Admin, UserRole::Manager);
 
         abort_unless($allowed, 403);
