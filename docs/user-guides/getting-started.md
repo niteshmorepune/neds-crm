@@ -61,7 +61,10 @@ AI** button.
   include: tasks assigned to you, call follow-up reminders, new leads, hot
   leads (AI score ≥ 70), deal won, payment recorded, and upcoming recurring
   invoice due dates. Click a notification to go straight to the record; click
-  **Dismiss** to clear it.
+  **Dismiss** to clear it. If the deal or invoice a notification points to
+  has since been deleted, it shows as plain text with **"(deal deleted)"**
+  or **"(invoice deleted)"** instead of a link — the alert was accurate when
+  it fired, the record just no longer exists.
 - **Your name** (top-right) — Profile and Log out.
 
 ## 4a. Overdue tasks alert

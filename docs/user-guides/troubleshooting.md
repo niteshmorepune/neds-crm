@@ -622,6 +622,31 @@ link — a `portal_enabled`/`invitation_token` change there is almost always
 the explanation. If there's genuinely no such event, it may be a real bug —
 flag it rather than assuming.
 
+---
+
+## 18. A notification click leads to a 404 ("Not Found")
+
+**Symptom:** clicking a bell notification (e.g. "Deal won: ...", "New
+invoice: ...", "Payment recorded: ...") lands on a plain 404 page instead
+of the deal or invoice.
+
+**This is expected behaviour, not a bug**, for a notification older than
+2026-08-04: the deal or invoice it points to was genuinely real when the
+alert fired, but has since been **deleted**. A notification pointing to a
+deal or invoice that's still deleted at the time you open the Notifications
+list (**bell icon → the notifications page**, not the dropdown preview)
+shows as plain text with **"(deal deleted)"** or **"(invoice deleted)"**
+instead of a link, so this shouldn't be reachable going forward — a 404 on
+a notification click from now on is worth flagging as a real bug rather
+than assuming.
+
+**If you want to confirm it before flagging:**
+```
+cd /home/u314035009/neds-crm && php artisan tinker --execute='var_dump(App\Models\Deal::withTrashed()->find(THE_ID));'
+```
+(swap `Deal` for `Invoice` as needed). A non-null result with a `deleted_at`
+timestamp confirms the record was removed after the notification fired.
+
 ## 17a. New staff member's invitation email — link expired or not received
 
 **Symptom:** a newly-added staff member says the **Set my password** link
