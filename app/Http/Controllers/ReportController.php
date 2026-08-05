@@ -106,12 +106,14 @@ class ReportController extends Controller
         $data = $this->aiUsageMetrics->monthly($from, $to);
         $drishti = $this->aiUsageMetrics->drishtiUsage($from, $to);
         $smdost = $this->aiUsageMetrics->smdostUsage($from, $to);
+        $wadesk = $this->aiUsageMetrics->wadeskUsage($from, $to);
 
         return view('reports.ai-usage', [
             'data' => $data,
             'drishti' => $drishti,
             'smdost' => $smdost,
-            'budget' => $this->aiUsageMetrics->budgetStatus($data['estimated_cost_paise'], $drishti['estimated_cost_paise'] ?? null, $smdost['estimated_cost_paise'] ?? null),
+            'wadesk' => $wadesk,
+            'budget' => $this->aiUsageMetrics->budgetStatus($data['estimated_cost_paise'], $drishti['estimated_cost_paise'] ?? null, $smdost['estimated_cost_paise'] ?? null, $wadesk['estimated_cost_paise'] ?? null),
             'from' => $from,
             'to' => $to,
         ]);
@@ -137,8 +139,9 @@ class ReportController extends Controller
         $data = $this->aiUsageMetrics->monthly($from, $to);
         $drishti = $this->aiUsageMetrics->drishtiUsage($from, $to);
         $smdost = $this->aiUsageMetrics->smdostUsage($from, $to);
+        $wadesk = $this->aiUsageMetrics->wadeskUsage($from, $to);
 
-        return $this->csv("ai-usage-{$from->format('Y-m-d')}_to_{$to->format('Y-m-d')}.csv", function ($out) use ($data, $drishti, $smdost) {
+        return $this->csv("ai-usage-{$from->format('Y-m-d')}_to_{$to->format('Y-m-d')}.csv", function ($out) use ($data, $drishti, $smdost, $wadesk) {
             fputcsv($out, ['Feature', 'Calls', 'Input tokens', 'Output tokens', 'Estimated cost (₹)', 'Helpful', 'Not helpful']);
             foreach ($data['by_feature'] as $r) {
                 fputcsv($out, [$r['label'], $r['calls'], $r['input_tokens'], $r['output_tokens'], Money::toRupees($r['estimated_cost_paise']), $r['feedback_up'], $r['feedback_down']]);
@@ -149,6 +152,7 @@ class ReportController extends Controller
             fputcsv($out, ['Cross-app', 'Calls', 'Input tokens', 'Output tokens', 'Estimated cost (₹)']);
             fputcsv($out, ['Drishti', $drishti['calls'] ?? 'n/a', $drishti['input_tokens'] ?? 'n/a', $drishti['output_tokens'] ?? 'n/a', $drishti ? Money::toRupees($drishti['estimated_cost_paise']) : 'unavailable']);
             fputcsv($out, ['SMDost', $smdost['calls'] ?? 'n/a', $smdost['input_tokens'] ?? 'n/a', $smdost['output_tokens'] ?? 'n/a', $smdost ? Money::toRupees($smdost['estimated_cost_paise']) : 'unavailable']);
+            fputcsv($out, ['Wadesk', $wadesk['calls'] ?? 'n/a', $wadesk['input_tokens'] ?? 'n/a', $wadesk['output_tokens'] ?? 'n/a', $wadesk ? Money::toRupees($wadesk['estimated_cost_paise']) : 'unavailable']);
         });
     }
 

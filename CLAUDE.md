@@ -796,3 +796,41 @@ Record every "we chose X because Y" here — this is the project's memory.
      tiles.
   All 8 covered by new/updated Pest tests, full suite (1338, up from
   1319) green, Pint clean.
+- **2026-08-05 — AI Usage Report now includes wadesk.in as a fourth
+  cross-app source (CRM + Drishti + SMDost + Wadesk), reusing the
+  existing pull pattern rather than building anything new.** wadesk.in
+  (the team's WhatsApp dashboard, separate app/repo) shipped its own
+  AI feature this session — an after-hours assistant that auto-replies
+  on the Marketing WhatsApp line using Claude — and the owner created it
+  a dedicated Anthropic API key, separate from this CRM's. Anthropic's
+  own Console already separates cost/usage per key with zero extra work,
+  but the owner asked for it inside this CRM's existing AI Usage Report
+  too, for one combined view. `AiUsageMetrics::drishtiUsage()`/
+  `smdostUsage()` already established the pattern for exactly this: poll
+  the other app's own `GET /api/ai/usage` (`X-Service-Key` auth) and fold
+  the totals into the report/CSV/budget calc, degrading to "Unavailable"
+  if unreachable — so `wadeskUsage()` is a straight third mirror of that
+  same `fetchAppUsage()` helper, reusing the `services.wadesk.base_url`/
+  `service_key` config that already existed (from the Tier 3 WhatsApp
+  integration) with zero new CRM-side config or secrets. `budgetStatus()`
+  gained a 4th optional `$wadeskCostPaise` param; the Blade view's
+  "Cross-app usage" table gained a Wadesk row.
+  **Real gotcha caught while building wadesk's side of this** (wadesk.in
+  had never tracked its own AI usage at all until this feature — its
+  `generateAiReply()` discarded Anthropic's token-usage data from every
+  response): Prisma's `aggregate()` with `_count: true` returns a
+  breakdown object (`{_all, id, feature, ...}`), not a plain number.
+  Forwarding that raw would have made this CRM's `(int) $totals['_count']`
+  cast the whole object down to `1` regardless of real call volume —
+  caught before shipping by checking wadesk's actual generated Prisma
+  types, not assumed from Drishti/SMDost's identical-looking contract.
+  wadesk's endpoint now explicitly flattens to `_count: totals._count._all`
+  before responding. Wadesk's hardcoded per-token pricing ($1/$5 per
+  million for Haiku 4.5, matching this file's own
+  `services.anthropic.pricing`) must be kept in sync by hand across the
+  two repos — there's no shared config between them.
+  Full suite (1448, up from 1424) green except one pre-existing,
+  unrelated failure confirmed on a clean `master` checkout before this
+  work started (`ManagementReportsTest`'s attendance-% test is
+  date-dependent and fails early in any calendar month — not touched by,
+  or related to, this change). Pint clean.

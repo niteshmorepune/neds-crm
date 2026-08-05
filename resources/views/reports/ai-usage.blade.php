@@ -118,6 +118,16 @@
                             <td class="py-2 text-right text-gray-300" colspan="3">Unavailable — check SMDost connection</td>
                         @endif
                     </tr>
+                    <tr>
+                        <td class="py-2 text-gray-700">Wadesk</td>
+                        @if ($wadesk)
+                            <td class="py-2 text-right text-gray-600">{{ $wadesk['calls'] }}</td>
+                            <td class="py-2 text-right text-gray-600">{{ number_format($wadesk['input_tokens'] + $wadesk['output_tokens']) }}</td>
+                            <td class="py-2 text-right font-medium text-gray-900">{{ \App\Support\Money::format($wadesk['estimated_cost_paise']) }}</td>
+                        @else
+                            <td class="py-2 text-right text-gray-300" colspan="3">Unavailable — check Wadesk connection</td>
+                        @endif
+                    </tr>
                 </tbody>
                 <tfoot>
                     <tr class="border-t border-gray-200 font-semibold text-gray-900">
@@ -183,6 +193,6 @@
             </table>
         </div>
 
-        <p class="text-xs text-gray-400">Cost is a rough estimate from a configured ₹-per-token rate, not a bill from Anthropic — useful for spotting trends and unused features, not for accounting. Drishti and SMDost's figures are the same kind of estimate, computed the same way on their own side. Feedback is an optional "Helpful / Not helpful" click a person can leave after actually looking at what a feature produced — most calls will have none, that's normal.</p>
+        <p class="text-xs text-gray-400">Cost is a rough estimate from a configured ₹-per-token rate, not a bill from Anthropic — useful for spotting trends and unused features, not for accounting. Drishti, SMDost, and Wadesk's figures are the same kind of estimate, computed the same way on their own side. Feedback is an optional "Helpful / Not helpful" click a person can leave after actually looking at what a feature produced — most calls will have none, that's normal.</p>
     </div>
 </x-app-layout>

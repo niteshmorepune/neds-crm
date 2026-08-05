@@ -228,6 +228,48 @@ it('returns null SMDost usage gracefully when unconfigured', function () {
     expect(app(AiUsageMetrics::class)->smdostUsage(now()->startOfMonth(), now()->endOfMonth()))->toBeNull();
 });
 
+it('fetches Wadesk AI usage totals via the service-key endpoint and converts USD to paise', function () {
+    config([
+        'services.wadesk.base_url' => 'https://wadesk.in',
+        'services.wadesk.service_key' => 'wadesk-secret',
+        'services.anthropic.usd_to_inr' => 87.0,
+    ]);
+    Http::fake([
+        'wadesk.in/api/ai/usage*' => Http::response([
+            'data' => ['totals' => ['_sum' => ['inputTokens' => 300, 'outputTokens' => 120, 'costUsd' => 0.9], '_count' => 5]],
+        ]),
+    ]);
+
+    $result = app(AiUsageMetrics::class)->wadeskUsage(now()->startOfMonth(), now()->endOfMonth());
+
+    expect($result)->toBe([
+        'calls' => 5,
+        'input_tokens' => 300,
+        'output_tokens' => 120,
+        'estimated_cost_paise' => (int) round(0.9 * 87.0 * 100),
+    ]);
+
+    Http::assertSent(fn ($request) => str_contains($request->url(), 'wadesk.in/api/ai/usage')
+        && $request->hasHeader('X-Service-Key', 'wadesk-secret'));
+});
+
+it('returns null Wadesk usage gracefully when unconfigured', function () {
+    config(['services.wadesk.base_url' => null, 'services.wadesk.service_key' => null]);
+    expect(app(AiUsageMetrics::class)->wadeskUsage(now()->startOfMonth(), now()->endOfMonth()))->toBeNull();
+});
+
+it('shows the AI usage report page even when Wadesk is unreachable', function () {
+    $manager = User::factory()->role(UserRole::Manager)->create();
+    config(['services.wadesk.base_url' => 'https://wadesk.in', 'services.wadesk.service_key' => 'wadesk-secret']);
+    Http::fake(['wadesk.in/*' => Http::response('boom', 500)]);
+
+    $this->actingAs($manager)
+        ->get(route('reports.ai-usage'))
+        ->assertOk()
+        ->assertSee('Wadesk')
+        ->assertSee('Unavailable', false);
+});
+
 it('computes budget percentage from combined CRM + Drishti cost against the configured ceiling', function () {
     AiUsageSetting::current()->update(['monthly_budget_paise' => 10000]);
 
@@ -242,6 +284,14 @@ it('includes SMDost cost in the combined budget total when provided', function (
     $status = app(AiUsageMetrics::class)->budgetStatus(4000, 2000, 1000);
 
     expect($status)->toBe(['combined_cost_paise' => 7000, 'budget_paise' => 10000, 'pct' => 70]);
+});
+
+it('includes Wadesk cost in the combined budget total when provided', function () {
+    AiUsageSetting::current()->update(['monthly_budget_paise' => 10000]);
+
+    $status = app(AiUsageMetrics::class)->budgetStatus(4000, 2000, 1000, 500);
+
+    expect($status)->toBe(['combined_cost_paise' => 7500, 'budget_paise' => 10000, 'pct' => 75]);
 });
 
 it('reports a null percentage when no budget is configured yet', function () {

@@ -134,6 +134,20 @@ class AiUsageMetrics
     }
 
     /**
+     * Same as drishtiUsage()/smdostUsage(), for wadesk.in's own AiUsage
+     * table (its after-hours WhatsApp assistant, added 2026-08-05) — same
+     * GET /api/ai/usage contract, reusing the wadesk config already set up
+     * for outbound calls (services.wadesk.base_url/service_key), so no new
+     * config was needed to add this.
+     *
+     * @return array{calls: int, input_tokens: int, output_tokens: int, estimated_cost_paise: int}|null
+     */
+    public function wadeskUsage(Carbon $from, Carbon $to): ?array
+    {
+        return $this->fetchAppUsage('Wadesk', 'services.wadesk.base_url', 'services.wadesk.service_key', $from, $to);
+    }
+
+    /**
      * @return array{calls: int, input_tokens: int, output_tokens: int, estimated_cost_paise: int}|null
      */
     private function fetchAppUsage(string $appName, string $baseUrlConfigKey, string $serviceKeyConfigKey, Carbon $from, Carbon $to): ?array
@@ -176,17 +190,17 @@ class AiUsageMetrics
     }
 
     /**
-     * Combined CRM + Drishti + SMDost estimated spend against the
-     * admin-configured monthly budget ceiling (AiUsageSetting) — a
+     * Combined CRM + Drishti + SMDost + wadesk.in estimated spend against
+     * the admin-configured monthly budget ceiling (AiUsageSetting) — a
      * self-tracked stand-in for a real vendor "credit balance", since
      * Anthropic doesn't expose one via API. Null budget (0, the default)
      * means no ceiling is set yet.
      *
      * @return array{combined_cost_paise: int, budget_paise: int, pct: int|null}
      */
-    public function budgetStatus(int $crmCostPaise, ?int $drishtiCostPaise, ?int $smdostCostPaise = null): array
+    public function budgetStatus(int $crmCostPaise, ?int $drishtiCostPaise, ?int $smdostCostPaise = null, ?int $wadeskCostPaise = null): array
     {
-        $combined = $crmCostPaise + ($drishtiCostPaise ?? 0) + ($smdostCostPaise ?? 0);
+        $combined = $crmCostPaise + ($drishtiCostPaise ?? 0) + ($smdostCostPaise ?? 0) + ($wadeskCostPaise ?? 0);
         $budget = AiUsageSetting::current()->monthly_budget_paise;
 
         return [
