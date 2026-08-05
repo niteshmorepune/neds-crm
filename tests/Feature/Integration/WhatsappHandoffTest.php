@@ -62,7 +62,8 @@ it('POSTs the normalized phone, support businessNumber, template name, and custo
             && $request['phone'] === '919028099919'
             && $request['businessNumber'] === '918007733737'
             && $request['templateName'] === 'welcome_to_support'
-            && $request['variables'] === ['Acme Retail'];
+            && $request['variables'] === ['Acme Retail']
+            && $request['resolveOtherLines'] === true;
     });
 });
 

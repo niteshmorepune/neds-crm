@@ -67,6 +67,11 @@ class SendWhatsappHandoffMessageJob implements ShouldQueue
                     // Marketing-leaning, so the approved template body
                     // greets the client by (company) name.
                     'variables' => [$customer->company_name],
+                    // Drops this contact's still-open Marketing-line
+                    // conversation out of the Sales queue now that support
+                    // has taken over — see SyncLeadToWadeskJob for the
+                    // Marketing-line side of this handoff.
+                    'resolveOtherLines' => true,
                 ]);
 
             if (! $response->successful()) {

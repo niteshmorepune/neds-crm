@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Enums\LeadStatus;
 use App\Enums\UserRole;
 use App\Jobs\ScoreLead;
+use App\Jobs\SyncLeadToWadeskJob;
 use App\Models\Lead;
 use App\Models\User;
 use App\Notifications\NewLeadNotification;
@@ -30,6 +31,15 @@ class LeadObserver
         $this->autoAssign($lead);
         $this->queueScore($lead);
         $this->notifyNewLead($lead);
+
+        // autoAssign()'s own save() above already fires a nested updated()
+        // call when it finds an assignee, which handles the wadesk.in sync
+        // below via the owner_id check — only handle the leftover case here
+        // (no active Sales user to assign, owner_id still null) so an
+        // unowned lead still gets staged, without double-dispatching.
+        if ($lead->owner_id === null) {
+            $this->syncToWadesk($lead);
+        }
     }
 
     public function updated(Lead $lead): void
@@ -38,6 +48,13 @@ class LeadObserver
         // reach here — only genuine field edits trigger a re-score.
         if ($lead->wasChanged(self::SCORING_FIELDS)) {
             $this->queueScore($lead);
+        }
+
+        // Keep wadesk.in's conversation assignment in sync with reassignment
+        // (covers both autoAssign()'s initial nested save and any later
+        // manual reassignment).
+        if ($lead->wasChanged('owner_id')) {
+            $this->syncToWadesk($lead);
         }
     }
 
@@ -79,6 +96,11 @@ class LeadObserver
         if (Ai::enabled()) {
             ScoreLead::dispatch($lead->id);
         }
+    }
+
+    private function syncToWadesk(Lead $lead): void
+    {
+        SyncLeadToWadeskJob::dispatch($lead->id);
     }
 
     private function notifyNewLead(Lead $lead): void

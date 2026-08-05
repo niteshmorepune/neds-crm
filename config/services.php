@@ -58,10 +58,14 @@ return [
     // Null until the template is actually submitted and approved in Meta
     // Business Manager AND added on wadesk.in's /templates page — the job
     // no-ops (logs, never throws) while unset.
+    // marketing_number: digits-only business number (e.g. 919112095202) for
+    // the pre-sale Marketing line — used by SyncLeadToWadeskJob to stage a
+    // newly created/reassigned Lead in wadesk.in without sending a message.
     'wadesk' => [
         'base_url' => env('WADESK_API_URL', 'https://wadesk.in'),
         'service_key' => env('WADESK_SERVICE_KEY'),
         'support_number' => env('WADESK_SUPPORT_NUMBER'),
+        'marketing_number' => env('WADESK_MARKETING_NUMBER'),
         'handoff_template_name' => env('WADESK_HANDOFF_TEMPLATE_NAME'),
     ],
 

@@ -46,7 +46,7 @@ it('does not dispatch scoring when AI is disabled', function () {
 
     Lead::factory()->create();
 
-    Queue::assertNothingPushed();
+    Queue::assertNotPushed(ScoreLead::class);
 });
 
 it('dispatches scoring on lead create when AI is enabled', function () {
