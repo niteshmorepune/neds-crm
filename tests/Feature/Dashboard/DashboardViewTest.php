@@ -1,5 +1,8 @@
 <?php
 
+use App\Enums\CustomerStatus;
+use App\Enums\LeadStatus;
+use App\Enums\TaskStatus;
 use App\Enums\UserRole;
 use App\Models\Customer;
 use App\Models\Festival;
@@ -105,6 +108,56 @@ it('shows the accounts panel to an accounts user', function () {
     $this->actingAs($accounts)->get(route('dashboard'))->assertOk()
         ->assertSee('Outstanding receivables')
         ->assertSee('Revenue report');
+});
+
+it('links the admin stat cards, task summary, and services panel to their filtered list views', function () {
+    $admin = User::factory()->role(UserRole::Admin)->create();
+
+    $this->actingAs($admin)->get(route('dashboard'))->assertOk()
+        ->assertSee(route('clients.index', ['status' => 'all']))
+        ->assertSee(route('clients.index', ['status' => CustomerStatus::Active->value]))
+        ->assertSee(route('clients.index', ['status' => CustomerStatus::Inactive->value]))
+        ->assertSee(route('leads.index'))
+        ->assertSee(route('tasks.index', ['type' => 'all']))
+        ->assertSee(route('tasks.index', ['type' => 'all', 'pending' => 1]))
+        ->assertSee(route('tasks.index', ['type' => 'all', 'overdue' => 1]))
+        ->assertSee(route('tasks.index', ['type' => 'all', 'status' => TaskStatus::Done->value]))
+        ->assertSee(route('projects.index', ['group' => 'service']));
+});
+
+it('links the sales dashboard tiles to leads/deals views', function () {
+    $sales = User::factory()->role(UserRole::Sales)->create();
+
+    $this->actingAs($sales)->get(route('dashboard'))->assertOk()
+        ->assertSee(route('leads.index', ['follow_up_due' => 1]))
+        ->assertSee(route('deals.index'));
+});
+
+it('links the support dashboard tiles to filtered tickets/tasks views', function () {
+    $support = User::factory()->role(UserRole::Support)->create();
+
+    $this->actingAs($support)->get(route('dashboard'))->assertOk()
+        ->assertSee(route('tickets.index', ['mine' => 1, 'open' => 1]))
+        ->assertSee(route('tickets.index', ['mine' => 1, 'at_risk' => 1]))
+        ->assertSee(route('tasks.index', ['mine' => 1, 'type' => 'all']))
+        ->assertSee(route('tasks.index', ['mine' => 1, 'type' => 'all', 'pending' => 1]))
+        ->assertSee(route('tasks.index', ['mine' => 1, 'type' => 'all', 'overdue' => 1]));
+});
+
+it('links the intern dashboard completed-today tile to the filtered tasks view', function () {
+    $intern = User::factory()->role(UserRole::Intern)->create();
+
+    $this->actingAs($intern)->get(route('dashboard'))->assertOk()
+        ->assertSee(route('tasks.index', ['mine' => 1, 'type' => 'all', 'completed_today' => 1]))
+        ->assertSee(route('tasks.index', ['mine' => 1, 'type' => 'all', 'pending' => 1]));
+});
+
+it('links the telecaller dashboard tiles to filtered leads/calls views', function () {
+    $telecaller = User::factory()->role(UserRole::Telecaller)->create();
+
+    $this->actingAs($telecaller)->get(route('dashboard'))->assertOk()
+        ->assertSee(route('leads.index', ['status' => LeadStatus::New->value]))
+        ->assertSee(route('calls.index', ['pending_followup' => 1]));
 });
 
 it('links the overdue invoices count to the filtered invoices list', function () {

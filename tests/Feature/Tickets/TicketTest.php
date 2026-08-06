@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
 use App\Enums\UserRole;
 use App\Livewire\TicketReplies;
@@ -82,6 +83,32 @@ it('does not escalate when nothing is breached', function () {
 
     $this->artisan('app:check-ticket-sla')->assertSuccessful();
     Mail::assertNothingSent();
+});
+
+it('filters tickets to SLA-at-risk (next 4h or breached) via the at_risk flag', function () {
+    Ticket::factory()->create(['subject' => 'Already breached', 'sla_due_at' => now()->subHour(), 'status' => TicketStatus::Open]);
+    Ticket::factory()->create(['subject' => 'Due soon', 'sla_due_at' => now()->addHours(2), 'status' => TicketStatus::Open]);
+    Ticket::factory()->create(['subject' => 'Comfortably within SLA', 'sla_due_at' => now()->addDays(3), 'status' => TicketStatus::Open]);
+
+    $this->actingAs($this->support)->get(route('tickets.index', ['at_risk' => 1]))
+        ->assertOk()->assertSee('Already breached')->assertSee('Due soon')->assertDontSee('Comfortably within SLA');
+});
+
+it('filters tickets to open-only via the open flag', function () {
+    Ticket::factory()->create(['subject' => 'Still open', 'status' => TicketStatus::Open]);
+    Ticket::factory()->create(['subject' => 'Already closed', 'status' => TicketStatus::Closed]);
+
+    $this->actingAs($this->support)->get(route('tickets.index', ['open' => 1]))
+        ->assertOk()->assertSee('Still open')->assertDontSee('Already closed');
+});
+
+it('combines the open and priority filters for the support dashboard priority drill-down', function () {
+    Ticket::factory()->priority(TicketPriority::Urgent)->create(['subject' => 'Open urgent', 'status' => TicketStatus::Open]);
+    Ticket::factory()->priority(TicketPriority::Urgent)->create(['subject' => 'Closed urgent', 'status' => TicketStatus::Closed]);
+    Ticket::factory()->priority(TicketPriority::Low)->create(['subject' => 'Open low priority', 'status' => TicketStatus::Open]);
+
+    $this->actingAs($this->support)->get(route('tickets.index', ['open' => 1, 'priority' => TicketPriority::Urgent->value]))
+        ->assertOk()->assertSee('Open urgent')->assertDontSee('Closed urgent')->assertDontSee('Open low priority');
 });
 
 it('restricts ticket access by role', function () {

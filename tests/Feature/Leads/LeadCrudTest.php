@@ -32,6 +32,19 @@ it('creates a lead and converts the rupee value to paise', function () {
         ->and($lead->status)->toBe(LeadStatus::New);
 });
 
+it('filters leads to those with a due follow-up via the follow_up_due flag', function () {
+    Lead::factory()->dueFollowUp()->create(['name' => 'Overdue follow-up']);
+    Lead::factory()->create(['name' => 'No follow-up set', 'next_follow_up_at' => null]);
+    Lead::factory()->create(['name' => 'Future follow-up', 'next_follow_up_at' => now()->addDay()]);
+    Lead::factory()->dueFollowUp()->create(['name' => 'Already converted', 'status' => LeadStatus::Converted]);
+
+    $this->actingAs($this->admin)->get(route('leads.index', ['follow_up_due' => 1]))
+        ->assertOk()->assertSee('Overdue follow-up')
+        ->assertDontSee('No follow-up set')
+        ->assertDontSee('Future follow-up')
+        ->assertDontSee('Already converted');
+});
+
 it('requires a name and a valid source', function () {
     $this->actingAs($this->admin)
         ->post(route('leads.store'), ['source' => 'invalid', 'status' => LeadStatus::New->value])

@@ -22,6 +22,7 @@ class CustomerController extends Controller
 
         // Default to Active only; pass status=all to see everyone.
         $statusFilter = $request->input('status', CustomerStatus::Active->value);
+        $sort = in_array($request->input('sort'), ['name', 'oldest', 'location'], true) ? $request->input('sort') : 'newest';
 
         $customers = Customer::query()
             ->visibleTo($request->user())
@@ -37,7 +38,12 @@ class CustomerController extends Controller
             ->when($statusFilter !== 'all', fn ($q) => $q->where('status', $statusFilter))
             ->when($request->filled('owner_id'), fn ($q) => $q->where('owner_id', $request->integer('owner_id')))
             ->when($request->filled('referring_partner_id'), fn ($q) => $q->where('referring_partner_id', $request->integer('referring_partner_id')))
-            ->latest()
+            ->when($request->filled('state'), fn ($q) => $q->where('state', $request->string('state')->value()))
+            ->when($request->filled('city'), fn ($q) => $q->where('city', $request->string('city')->value()))
+            ->when($sort === 'name', fn ($q) => $q->orderBy('company_name'))
+            ->when($sort === 'oldest', fn ($q) => $q->oldest())
+            ->when($sort === 'location', fn ($q) => $q->orderByRaw('state IS NULL, state')->orderByRaw('city IS NULL, city')->orderBy('company_name'))
+            ->when($sort === 'newest', fn ($q) => $q->latest())
             ->paginate(15)
             ->withQueryString();
 
@@ -46,8 +52,14 @@ class CustomerController extends Controller
             'owners' => $this->assignableOwners(),
             'statuses' => CustomerStatus::cases(),
             'statusFilter' => $statusFilter,
+            'sort' => $sort,
             'partners' => Partner::orderBy('name')->get(),
-            'filters' => $request->only(['search', 'status', 'owner_id', 'referring_partner_id']),
+            // Only states/cities actually present on a client, not the full
+            // ~36-entry India state list — a company mostly serving
+            // Maharashtra clients doesn't need every state in the dropdown.
+            'states' => Customer::query()->visibleTo($request->user())->whereNotNull('state')->distinct()->orderBy('state')->pluck('state'),
+            'cities' => Customer::query()->visibleTo($request->user())->whereNotNull('city')->distinct()->orderBy('city')->pluck('city'),
+            'filters' => $request->only(['search', 'status', 'owner_id', 'referring_partner_id', 'state', 'city', 'sort']),
         ]);
     }
 

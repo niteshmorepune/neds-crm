@@ -1,20 +1,20 @@
 @php
-    $card = function (string $label, array $c) {
-        return ['label' => $label, 'value' => $c['value'], 'change' => $c['change']];
+    $card = function (string $label, array $c, string $href) {
+        return ['label' => $label, 'value' => $c['value'], 'change' => $c['change'], 'href' => $href];
     };
     $cards = [
-        $card('Total Clients', $stats['clients_total']),
-        $card('Active Clients', $stats['clients_active']),
-        $card('Inactive Clients', $stats['clients_inactive']),
-        $card('Total Leads', $stats['leads_total']),
-        $card('Tasks Overview', $stats['tasks_total']),
+        $card('Total Clients', $stats['clients_total'], route('clients.index', ['status' => 'all'])),
+        $card('Active Clients', $stats['clients_active'], route('clients.index', ['status' => \App\Enums\CustomerStatus::Active->value])),
+        $card('Inactive Clients', $stats['clients_inactive'], route('clients.index', ['status' => \App\Enums\CustomerStatus::Inactive->value])),
+        $card('Total Leads', $stats['leads_total'], route('leads.index')),
+        $card('Tasks Overview', $stats['tasks_total'], route('tasks.index', ['type' => 'all'])),
     ];
 @endphp
 
 {{-- Row 1: stat cards --}}
 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
     @foreach ($cards as $c)
-        <div class="rounded-lg bg-white p-5 shadow-sm">
+        <a href="{{ $c['href'] }}" class="block rounded-lg bg-white p-5 shadow-sm hover:shadow-md">
             <p class="text-sm text-gray-500">{{ $c['label'] }}</p>
             <p class="mt-2 text-3xl font-semibold text-gray-900">{{ number_format($c['value']) }}</p>
             <p @class([
@@ -24,14 +24,17 @@
             ])>
                 {{ $c['change'] >= 0 ? '▲' : '▼' }} {{ number_format(abs($c['change']), 1) }}% from last month
             </p>
-        </div>
+        </a>
     @endforeach
 </div>
 
 {{-- Row 2: Services Overview donut + Task Summary --}}
 <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
     <div class="rounded-lg bg-white p-6 shadow-sm">
-        <h3 class="text-base font-semibold text-gray-900">Services Overview</h3>
+        <div class="flex items-center justify-between">
+            <h3 class="text-base font-semibold text-gray-900">Services Overview</h3>
+            <a href="{{ route('projects.index', ['group' => 'service']) }}" class="text-sm text-indigo-600 hover:underline">View projects →</a>
+        </div>
         @if ($services['total'] > 0)
             <div class="mt-4 flex flex-col items-center gap-6 sm:flex-row">
                 <div class="relative h-48 w-48 shrink-0">
@@ -62,19 +65,19 @@
         <h3 class="text-base font-semibold text-gray-900">Task Summary</h3>
         @php
             $segments = [
-                ['Assigned', $tasks['assigned'], 'bg-indigo-500', 'text-indigo-600'],
-                ['Pending', $tasks['pending'], 'bg-amber-500', 'text-amber-600'],
-                ['Overdue', $tasks['overdue'], 'bg-red-500', 'text-red-600'],
-                ['Completed', $tasks['completed'], 'bg-green-500', 'text-green-600'],
+                ['Assigned', $tasks['assigned'], 'text-indigo-600', route('tasks.index', ['type' => 'all'])],
+                ['Pending', $tasks['pending'], 'text-amber-600', route('tasks.index', ['type' => 'all', 'pending' => 1])],
+                ['Overdue', $tasks['overdue'], 'text-red-600', route('tasks.index', ['type' => 'all', 'overdue' => 1])],
+                ['Completed', $tasks['completed'], 'text-green-600', route('tasks.index', ['type' => 'all', 'status' => \App\Enums\TaskStatus::Done->value])],
             ];
             $barTotal = max(1, $tasks['pending'] + $tasks['overdue'] + $tasks['completed']);
         @endphp
         <div class="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
-            @foreach ($segments as [$label, $value, $bg, $fg])
-                <div>
+            @foreach ($segments as [$label, $value, $fg, $href])
+                <a href="{{ $href }}" class="block hover:opacity-75">
                     <p class="text-2xl font-semibold {{ $fg }}">{{ number_format($value) }}</p>
                     <p class="text-xs text-gray-500">{{ $label }}</p>
-                </div>
+                </a>
             @endforeach
         </div>
         <div class="mt-5 flex h-2.5 overflow-hidden rounded-full bg-gray-100">

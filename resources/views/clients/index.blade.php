@@ -41,6 +41,27 @@
                     @endforeach
                 </select>
 
+                <select name="state" class="rounded-md border-gray-300 text-sm shadow-sm">
+                    <option value="">All states</option>
+                    @foreach ($states as $state)
+                        <option value="{{ $state }}" @selected(($filters['state'] ?? '') === $state)>{{ $state }}</option>
+                    @endforeach
+                </select>
+
+                <select name="city" class="rounded-md border-gray-300 text-sm shadow-sm">
+                    <option value="">All cities</option>
+                    @foreach ($cities as $city)
+                        <option value="{{ $city }}" @selected(($filters['city'] ?? '') === $city)>{{ $city }}</option>
+                    @endforeach
+                </select>
+
+                <select name="sort" class="rounded-md border-gray-300 text-sm shadow-sm">
+                    <option value="newest" @selected($sort === 'newest')>Newest first</option>
+                    <option value="name" @selected($sort === 'name')>Company name (A–Z)</option>
+                    <option value="oldest" @selected($sort === 'oldest')>Date of entry (oldest first)</option>
+                    <option value="location" @selected($sort === 'location')>Location (State, City)</option>
+                </select>
+
                 <button type="submit" class="rounded-md bg-gray-800 px-3 py-2 text-sm font-medium text-white hover:bg-gray-700">
                     Filter
                 </button>
@@ -66,8 +87,10 @@
                     <tr>
                         <th class="px-4 py-3">Company</th>
                         <th class="px-4 py-3">Primary contact</th>
+                        <th class="px-4 py-3">Location</th>
                         <th class="px-4 py-3">Owner</th>
                         <th class="px-4 py-3">Status</th>
+                        <th class="px-4 py-3">Date of entry</th>
                         <th class="px-4 py-3 text-right">Actions</th>
                     </tr>
                 </thead>
@@ -85,6 +108,9 @@
                             <td class="px-4 py-3 text-gray-600">
                                 {{ $customer->primaryContact?->name ?? '—' }}
                             </td>
+                            <td class="px-4 py-3 text-gray-600">
+                                {{ collect([$customer->city, $customer->state])->filter()->join(', ') ?: '—' }}
+                            </td>
                             <td class="px-4 py-3 text-gray-600">{{ $customer->owner?->name ?? 'Unassigned' }}</td>
                             <td class="px-4 py-3">
                                 <span @class([
@@ -94,6 +120,7 @@
                                     'bg-gray-100 text-gray-600' => $customer->status === \App\Enums\CustomerStatus::Inactive,
                                 ])>{{ $customer->status->label() }}</span>
                             </td>
+                            <td class="px-4 py-3 text-gray-600">{{ $customer->created_at->timezone(config('app.display_timezone', 'Asia/Kolkata'))->format('d M Y') }}</td>
                             <td class="px-4 py-3 text-right">
                                 <a href="{{ route('clients.show', $customer) }}" class="text-gray-500 hover:text-gray-700">View</a>
                                 @can('update', $customer)
@@ -103,7 +130,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-4 py-10 text-center text-gray-400">No clients found.</td>
+                            <td colspan="7" class="px-4 py-10 text-center text-gray-400">No clients found.</td>
                         </tr>
                     @endforelse
                 </tbody>
