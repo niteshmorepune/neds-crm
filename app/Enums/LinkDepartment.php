@@ -14,9 +14,18 @@ enum LinkDepartment: string
     case Support = 'support';
     case Accounts = 'accounts';
     case Admin = 'admin';
+    case Development = 'development';
+    case Design = 'design';
+    case General = 'general';
+    case Operations = 'operations';
+    case Technical = 'technical';
+    case Hr = 'hr';
 
     public function label(): string
     {
-        return ucfirst($this->value);
+        return match ($this) {
+            self::Hr => 'HR',
+            default => ucfirst($this->value),
+        };
     }
 }

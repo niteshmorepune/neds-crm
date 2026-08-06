@@ -34,7 +34,8 @@ history later.
 Admin/Manager only) is a company-wide reference list — hosting panel,
 domain registrar, Google Workspace admin, anything the team needs quick
 access to without hunting for it. Add a **label**, a **URL**, and
-optionally a **Department** (Sales/Support/Accounts/Admin) and a
+optionally a **Department** (Sales/Support/Accounts/Admin/Development/
+Design/General/Operations/Technical/HR) and a
 **Purpose** (Client Portals/Vendor or Tool Logins/Internal Docs/
 Reference) — the list groups by department and can be filtered by either
 field independently, so a growing list stays easy to scan. Both are
