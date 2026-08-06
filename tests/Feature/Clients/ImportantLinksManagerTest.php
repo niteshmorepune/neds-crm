@@ -145,13 +145,13 @@ it('adds a link with a department and purpose', function () {
         ->set('label', 'Support Ticket SLA doc')
         ->set('url', 'https://docs.example.com/sla')
         ->set('department', LinkDepartment::Support->value)
-        ->set('purpose', LinkPurpose::InternalDocs->value)
+        ->set('purpose', LinkPurpose::TeamReference->value)
         ->call('save')
         ->assertHasNoErrors();
 
     $link = ImportantLink::firstWhere('label', 'Support Ticket SLA doc');
     expect($link->department)->toBe(LinkDepartment::Support)
-        ->and($link->purpose)->toBe(LinkPurpose::InternalDocs);
+        ->and($link->purpose)->toBe(LinkPurpose::TeamReference);
 });
 
 it('leaves department and purpose null (Uncategorized) when not set', function () {
@@ -199,29 +199,29 @@ it('filters links by department independently of purpose', function () {
 });
 
 it('filters links by purpose independently of department', function () {
-    ImportantLink::factory()->purpose(LinkPurpose::ClientPortal)->create(['customer_id' => $this->customer->id, 'label' => 'Portal Link']);
-    ImportantLink::factory()->purpose(LinkPurpose::Reference)->create(['customer_id' => $this->customer->id, 'label' => 'Reference Link']);
+    ImportantLink::factory()->purpose(LinkPurpose::ClientSignup)->create(['customer_id' => $this->customer->id, 'label' => 'Signup Link']);
+    ImportantLink::factory()->purpose(LinkPurpose::TeamReference)->create(['customer_id' => $this->customer->id, 'label' => 'Reference Link']);
 
     Livewire::actingAs($this->admin)
         ->test(ImportantLinksManager::class, ['customer' => $this->customer, 'canManage' => true])
-        ->set('filterPurpose', LinkPurpose::ClientPortal->value)
-        ->assertSee('Portal Link')
+        ->set('filterPurpose', LinkPurpose::ClientSignup->value)
+        ->assertSee('Signup Link')
         ->assertDontSee('Reference Link');
 });
 
 it('combines department and purpose filters', function () {
-    ImportantLink::factory()->department(LinkDepartment::Sales)->purpose(LinkPurpose::ClientPortal)->create([
-        'customer_id' => $this->customer->id, 'label' => 'Sales Portal Link',
+    ImportantLink::factory()->department(LinkDepartment::Sales)->purpose(LinkPurpose::ClientSignup)->create([
+        'customer_id' => $this->customer->id, 'label' => 'Sales Signup Link',
     ]);
-    ImportantLink::factory()->department(LinkDepartment::Sales)->purpose(LinkPurpose::Reference)->create([
+    ImportantLink::factory()->department(LinkDepartment::Sales)->purpose(LinkPurpose::TeamReference)->create([
         'customer_id' => $this->customer->id, 'label' => 'Sales Reference Link',
     ]);
 
     Livewire::actingAs($this->admin)
         ->test(ImportantLinksManager::class, ['customer' => $this->customer, 'canManage' => true])
         ->set('filterDepartment', LinkDepartment::Sales->value)
-        ->set('filterPurpose', LinkPurpose::ClientPortal->value)
-        ->assertSee('Sales Portal Link')
+        ->set('filterPurpose', LinkPurpose::ClientSignup->value)
+        ->assertSee('Sales Signup Link')
         ->assertDontSee('Sales Reference Link');
 });
 
@@ -239,14 +239,14 @@ it('groups the link list by department, with Uncategorized last', function () {
 it('populates department and purpose when editing an existing link', function () {
     $link = ImportantLink::factory()
         ->department(LinkDepartment::Accounts)
-        ->purpose(LinkPurpose::VendorLogin)
+        ->purpose(LinkPurpose::InternalToolAccess)
         ->create(['customer_id' => $this->customer->id, 'label' => 'Tally Login']);
 
     Livewire::actingAs($this->admin)
         ->test(ImportantLinksManager::class, ['customer' => $this->customer, 'canManage' => true])
         ->call('edit', $link->id)
         ->assertSet('department', LinkDepartment::Accounts->value)
-        ->assertSet('purpose', LinkPurpose::VendorLogin->value);
+        ->assertSet('purpose', LinkPurpose::InternalToolAccess->value);
 });
 
 it('shows the Add link button to a support user on the client detail page', function () {

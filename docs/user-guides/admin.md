@@ -31,16 +31,28 @@ history later.
 
 ## 1a. Important Links — company-wide and per-client quick access
 **Important Links** in the sidebar (everyone can view; add/edit/delete is
-Admin/Manager only) is a company-wide reference list — hosting panel,
-domain registrar, Google Workspace admin, anything the team needs quick
-access to without hunting for it. Add a **label**, a **URL**, and
-optionally a **Department** (Sales/Support/Accounts/Admin/Development/
-Design/General/Operations/Technical/HR) and a
-**Purpose** (Client Portals/Vendor or Tool Logins/Internal Docs/
-Reference/Scheduling Links) — the list groups by department and can be filtered by either
-field independently, so a growing list stays easy to scan. Both are
-optional; a link left uncategorised just shows under "Uncategorized"
-rather than being guessed at.
+Admin/Manager only) is a company-wide list of links the team reaches for
+constantly — most often to *hand to a client or lead* (a hosting signup
+link when a client asks to buy hosting, a payment-gateway registration
+link when a client wants one set up, a scheduling link to book a call
+with Sales or Support), plus a few genuinely internal ones (our own
+hosting panel login, training videos on Drive). Add a **label**, a
+**URL**, and optionally a **Department** (Sales/Support/Accounts/Admin/
+Development/Design/General/Operations/Technical/HR) and a **Purpose**:
+- **Client Signup Link** — hand this to a client/lead so *they* register
+  or buy something themselves (hosting, a domain, a payment gateway).
+- **Scheduling Link** — book a call/meeting (e.g. Connect with Sales
+  Team, Connect with Support Team).
+- **Team Reference** — internal material the team consults, not shared
+  out (training videos, SOPs, internal docs).
+- **Internal Tool Access** — NEDS's own admin-panel logins for
+  infrastructure the team manages itself (our hosting control panel,
+  domain registrar account, Workspace admin console).
+
+The list groups by department and can be filtered by either field
+independently, so a growing list stays easy to scan. Both are optional;
+a link left uncategorised just shows under "Uncategorized" rather than
+being guessed at.
 
 Every **client's page** also has its own **Links** tab — that client's
 website, Google Business Profile, socials, Google Drive folder, Google
