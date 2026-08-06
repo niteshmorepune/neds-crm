@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Enums\RecurringFrequency;
 use App\Models\Customer;
 use App\Models\Invoice;
+use App\Models\Quotation;
 use App\Models\RecurringInvoice;
 use App\Models\Service;
 use App\Support\Money;
@@ -21,6 +22,8 @@ class RecurringInvoiceBuilder extends Component
     use AuthorizesRequests;
 
     public ?int $recurringId = null;
+
+    public ?int $quotationId = null;
 
     public ?int $customer_id = null;
 
@@ -41,12 +44,13 @@ class RecurringInvoiceBuilder extends Component
     /** @var array<int, array<string, string>> */
     public array $items = [];
 
-    public function mount(?RecurringInvoice $recurring = null): void
+    public function mount(?RecurringInvoice $recurring = null, ?int $quotation_id = null): void
     {
         $this->authorize('create', Invoice::class);
 
         if ($recurring && $recurring->exists) {
             $this->recurringId = $recurring->id;
+            $this->quotationId = $recurring->quotation_id;
             $this->customer_id = $recurring->customer_id;
             $this->service_id = $recurring->service_id;
             $this->frequency = $recurring->frequency->value;
@@ -60,6 +64,30 @@ class RecurringInvoiceBuilder extends Component
                 'quantity' => (string) $i->quantity, 'rate' => (string) Money::toRupees($i->rate),
                 'gst_rate' => (string) $i->gst_rate,
             ])->all();
+        } elseif ($quotationId = $quotation_id ?? (request()->integer('quotation_id') ?: null)) {
+            // Pre-fill from an accepted quotation's recurring-flagged line
+            // items, so the monthly-management portion of a quote doesn't
+            // have to be retyped by hand once the client signs off.
+            $quotation = Quotation::with('items')->findOrFail($quotationId);
+            $this->authorize('view', $quotation);
+
+            $this->quotationId = $quotation->id;
+            $this->customer_id = $quotation->customer_id;
+            $this->is_gst_exempt = $quotation->is_gst_exempt;
+            $this->start_date = now()->startOfMonth()->toDateString();
+
+            $recurringItems = $quotation->items->where('is_recurring', true)->values();
+            if ($recurringItems->isEmpty()) {
+                $this->addItem();
+            } else {
+                $this->items = $recurringItems->map(fn ($item) => [
+                    'description' => $item->description,
+                    'sac_code' => $item->sac_code,
+                    'quantity' => (string) $item->quantity,
+                    'rate' => (string) Money::toRupees($item->rate),
+                    'gst_rate' => (string) $item->gst_rate,
+                ])->all();
+            }
         } else {
             $this->start_date = now()->startOfMonth()->toDateString();
             $this->addItem();
@@ -109,6 +137,7 @@ class RecurringInvoiceBuilder extends Component
 
             $recurring->fill([
                 'customer_id' => $this->customer_id,
+                'quotation_id' => $this->quotationId,
                 'service_id' => $this->service_id,
                 'frequency' => $this->frequency,
                 'start_date' => $this->start_date,

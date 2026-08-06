@@ -67,6 +67,8 @@
             @endcan
         </div>
 
+        @livewire('project-deliverables', ['project' => $project, 'canManage' => $canManage])
+
         {{-- Content Pieces --}}
         <div id="content" class="rounded-lg bg-white p-6 shadow-sm">
             <div class="flex items-center justify-between">

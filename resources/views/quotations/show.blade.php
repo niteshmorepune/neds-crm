@@ -51,6 +51,13 @@
                         @endcan
                     @endif
 
+                    @if ($quotation->status === \App\Enums\QuotationStatus::Accepted && $quotation->hasRecurringItems())
+                        @can('create', App\Models\Invoice::class)
+                            <a href="{{ route('recurring-invoices.create', ['quotation_id' => $quotation->id]) }}"
+                               class="rounded-md bg-purple-600 px-3 py-2 text-sm font-medium text-white hover:bg-purple-500">Create recurring invoice</a>
+                        @endcan
+                    @endif
+
                     @if ($quotation->invoice)
                         <a href="{{ route('invoices.show', $quotation->invoice) }}" class="rounded-md bg-gray-800 px-3 py-2 text-sm font-medium text-white hover:bg-gray-700">View invoice</a>
                     @endif
@@ -112,6 +119,22 @@
 
         @if (in_array($quotation->status, [\App\Enums\QuotationStatus::Accepted, \App\Enums\QuotationStatus::Sent], true))
             <livewire:milestone-manager :quotation="$quotation" :can-manage="auth()->user()->can('convert', $quotation)" />
+        @endif
+
+        @if ($quotation->recurringInvoices->isNotEmpty())
+            <div class="rounded-lg bg-white p-6 shadow-sm">
+                <h2 class="text-sm font-semibold text-gray-900 mb-3">Recurring invoices generated from this quotation</h2>
+                <ul class="divide-y divide-gray-100 text-sm">
+                    @foreach ($quotation->recurringInvoices as $recurring)
+                        <li class="flex items-center justify-between py-2">
+                            <a href="{{ route('recurring-invoices.show', $recurring) }}" class="text-indigo-600 hover:underline">
+                                {{ $recurring->service?->name ?? 'Recurring invoice' }} · {{ $recurring->frequency->label() }}
+                            </a>
+                            <span class="text-gray-500">{{ $recurring->is_active ? 'Active' : 'Paused' }}</span>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
         @endif
 
         @can('delete', $quotation)

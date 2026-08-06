@@ -78,6 +78,11 @@ class Project extends Model
         return $this->hasMany(ContentPiece::class);
     }
 
+    public function deliverables(): HasMany
+    {
+        return $this->hasMany(ProjectDeliverable::class);
+    }
+
     public function notes(): MorphMany
     {
         return $this->morphMany(Note::class, 'notable')->latest();

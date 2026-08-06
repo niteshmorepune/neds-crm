@@ -41,7 +41,7 @@ class QuotationBuilder extends Component
 
     public bool $is_gst_exempt = false;
 
-    /** @var array<int, array{description:string, sac_code:?string, quantity:string, rate:string, gst_rate:string}> */
+    /** @var array<int, array{description:string, sac_code:?string, quantity:string, rate:string, gst_rate:string, is_recurring:bool}> */
     public array $items = [];
 
     public bool $aiEnabled = false;
@@ -85,6 +85,7 @@ class QuotationBuilder extends Component
                 'quantity' => (string) $item->quantity,
                 'rate' => (string) Money::toRupees($item->rate),
                 'gst_rate' => (string) $item->gst_rate,
+                'is_recurring' => $item->is_recurring,
             ])->all();
         } else {
             $this->authorize('create', Quotation::class);
@@ -110,7 +111,7 @@ class QuotationBuilder extends Component
 
     public function addItem(): void
     {
-        $this->items[] = ['description' => '', 'sac_code' => '', 'quantity' => '', 'rate' => '', 'gst_rate' => ''];
+        $this->items[] = ['description' => '', 'sac_code' => '', 'quantity' => '', 'rate' => '', 'gst_rate' => '', 'is_recurring' => false];
     }
 
     public function removeItem(int $index): void
@@ -173,6 +174,7 @@ class QuotationBuilder extends Component
                 'quantity' => (string) $suggestion['quantity'],
                 'rate' => '',
                 'gst_rate' => '',
+                'is_recurring' => false,
             ];
         }
 
@@ -299,6 +301,7 @@ class QuotationBuilder extends Component
                     'gst_rate' => (float) $item['gst_rate'],
                     'amount' => (int) round($quantity * $rate),
                     'sort_order' => $sort,
+                    'is_recurring' => (bool) ($item['is_recurring'] ?? false),
                 ]);
             }
 

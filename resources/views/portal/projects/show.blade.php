@@ -36,6 +36,43 @@
         @endif
     </div>
 
+    {{-- What We Need From You --}}
+    @if ($project->deliverables->isNotEmpty())
+        <div class="mb-5">
+            <h2 class="text-base font-semibold text-gray-900 mb-3">What We Need From You</h2>
+            @foreach ($project->deliverables as $item)
+                <div class="mb-3 rounded-xl bg-white px-5 py-4 shadow-sm ring-1 ring-gray-100">
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <div class="text-sm font-semibold text-gray-900">{{ $item->title }}</div>
+                            @if ($item->instructions)
+                                <p class="mt-1 text-xs text-gray-500 whitespace-pre-line">{{ $item->instructions }}</p>
+                            @endif
+                        </div>
+                        <span class="shrink-0 inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium {{ $item->status->badgeClass() }}">{{ $item->status->label() }}</span>
+                    </div>
+
+                    @if ($item->attachments->isNotEmpty())
+                        <ul class="mt-2 space-y-1">
+                            @foreach ($item->attachments as $attachment)
+                                <li class="text-xs text-gray-500">{{ $attachment->original_name }} · {{ $attachment->humanSize() }}</li>
+                            @endforeach
+                        </ul>
+                    @endif
+
+                    @if ($item->status !== \App\Enums\DeliverableStatus::Received)
+                        <form method="POST" action="{{ route('portal.projects.deliverables.upload', [$project->id, $item->id]) }}" enctype="multipart/form-data" class="mt-3 flex flex-wrap items-center gap-2">
+                            @csrf
+                            <input type="file" name="attachment" required class="block flex-1 min-w-0 text-xs text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-indigo-50 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-indigo-700 hover:file:bg-indigo-100" />
+                            <button class="shrink-0 rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-500">Upload</button>
+                        </form>
+                        @error('attachment') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                    @endif
+                </div>
+            @endforeach
+        </div>
+    @endif
+
     {{-- Your NEDS Team --}}
     @php
         // Assignees are the real service handlers; owner is the account manager.

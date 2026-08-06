@@ -88,6 +88,12 @@ Click a project to see:
   primary point of contact for that service.
 - **Updates from Our Team** — progress notes posted by the NEDS team as work
   moves forward. New updates appear here automatically; you don't need to ask.
+- **What We Need From You** — a checklist of items the NEDS team needs from
+  you to keep the project moving (e.g. your logo, brand content, GST
+  details, domain/hosting access). Each item shows its status — **Pending**,
+  **Submitted** (you've uploaded something and the team is reviewing it), or
+  **Received** (confirmed). Upload a file directly against any item that
+  isn't yet Received; no need to email it separately.
 
 If you have a question about a project, use the **Raise a ticket** link on the
 project page — it keeps everything tracked in one place.
