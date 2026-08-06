@@ -1,5 +1,7 @@
 <?php
 
+use App\Enums\LinkDepartment;
+use App\Enums\LinkPurpose;
 use App\Enums\UserRole;
 use App\Livewire\ImportantLinksManager;
 use App\Models\Customer;
@@ -134,6 +136,117 @@ it('does not mix a global link into a client\'s links tab', function () {
         ->get(route('clients.show', $this->customer))
         ->assertOk()
         ->assertDontSee('Global Only Link');
+});
+
+it('adds a link with a department and purpose', function () {
+    Livewire::actingAs($this->admin)
+        ->test(ImportantLinksManager::class, ['customer' => $this->customer, 'canManage' => true])
+        ->call('newLink')
+        ->set('label', 'Support Ticket SLA doc')
+        ->set('url', 'https://docs.example.com/sla')
+        ->set('department', LinkDepartment::Support->value)
+        ->set('purpose', LinkPurpose::InternalDocs->value)
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $link = ImportantLink::firstWhere('label', 'Support Ticket SLA doc');
+    expect($link->department)->toBe(LinkDepartment::Support)
+        ->and($link->purpose)->toBe(LinkPurpose::InternalDocs);
+});
+
+it('leaves department and purpose null (Uncategorized) when not set', function () {
+    Livewire::actingAs($this->admin)
+        ->test(ImportantLinksManager::class, ['customer' => $this->customer, 'canManage' => true])
+        ->call('newLink')
+        ->set('label', 'No category')
+        ->set('url', 'https://example.com')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $link = ImportantLink::firstWhere('label', 'No category');
+    expect($link->department)->toBeNull()
+        ->and($link->purpose)->toBeNull();
+});
+
+it('rejects a department or purpose value outside the bounded enum', function () {
+    Livewire::actingAs($this->admin)
+        ->test(ImportantLinksManager::class, ['customer' => $this->customer, 'canManage' => true])
+        ->call('newLink')
+        ->set('label', 'Bad category')
+        ->set('url', 'https://example.com')
+        ->set('department', 'marketing')
+        ->set('purpose', 'random')
+        ->call('save')
+        ->assertHasErrors(['department', 'purpose']);
+});
+
+it('an existing link created before this feature stays Uncategorized rather than being backfilled', function () {
+    $link = ImportantLink::factory()->create(['customer_id' => $this->customer->id, 'label' => 'Pre-existing link']);
+
+    expect($link->fresh()->department)->toBeNull()
+        ->and($link->fresh()->purpose)->toBeNull();
+});
+
+it('filters links by department independently of purpose', function () {
+    ImportantLink::factory()->department(LinkDepartment::Sales)->create(['customer_id' => $this->customer->id, 'label' => 'Sales Link']);
+    ImportantLink::factory()->department(LinkDepartment::Support)->create(['customer_id' => $this->customer->id, 'label' => 'Support Link']);
+
+    Livewire::actingAs($this->admin)
+        ->test(ImportantLinksManager::class, ['customer' => $this->customer, 'canManage' => true])
+        ->set('filterDepartment', LinkDepartment::Sales->value)
+        ->assertSee('Sales Link')
+        ->assertDontSee('Support Link');
+});
+
+it('filters links by purpose independently of department', function () {
+    ImportantLink::factory()->purpose(LinkPurpose::ClientPortal)->create(['customer_id' => $this->customer->id, 'label' => 'Portal Link']);
+    ImportantLink::factory()->purpose(LinkPurpose::Reference)->create(['customer_id' => $this->customer->id, 'label' => 'Reference Link']);
+
+    Livewire::actingAs($this->admin)
+        ->test(ImportantLinksManager::class, ['customer' => $this->customer, 'canManage' => true])
+        ->set('filterPurpose', LinkPurpose::ClientPortal->value)
+        ->assertSee('Portal Link')
+        ->assertDontSee('Reference Link');
+});
+
+it('combines department and purpose filters', function () {
+    ImportantLink::factory()->department(LinkDepartment::Sales)->purpose(LinkPurpose::ClientPortal)->create([
+        'customer_id' => $this->customer->id, 'label' => 'Sales Portal Link',
+    ]);
+    ImportantLink::factory()->department(LinkDepartment::Sales)->purpose(LinkPurpose::Reference)->create([
+        'customer_id' => $this->customer->id, 'label' => 'Sales Reference Link',
+    ]);
+
+    Livewire::actingAs($this->admin)
+        ->test(ImportantLinksManager::class, ['customer' => $this->customer, 'canManage' => true])
+        ->set('filterDepartment', LinkDepartment::Sales->value)
+        ->set('filterPurpose', LinkPurpose::ClientPortal->value)
+        ->assertSee('Sales Portal Link')
+        ->assertDontSee('Sales Reference Link');
+});
+
+it('groups the link list by department, with Uncategorized last', function () {
+    ImportantLink::factory()->create(['customer_id' => $this->customer->id, 'label' => 'No Dept Link']);
+    ImportantLink::factory()->department(LinkDepartment::Accounts)->create(['customer_id' => $this->customer->id, 'label' => 'Accounts Link']);
+
+    $html = Livewire::actingAs($this->admin)
+        ->test(ImportantLinksManager::class, ['customer' => $this->customer, 'canManage' => true])
+        ->html();
+
+    expect(strpos($html, 'Accounts'))->toBeLessThan(strpos($html, 'Uncategorized'));
+});
+
+it('populates department and purpose when editing an existing link', function () {
+    $link = ImportantLink::factory()
+        ->department(LinkDepartment::Accounts)
+        ->purpose(LinkPurpose::VendorLogin)
+        ->create(['customer_id' => $this->customer->id, 'label' => 'Tally Login']);
+
+    Livewire::actingAs($this->admin)
+        ->test(ImportantLinksManager::class, ['customer' => $this->customer, 'canManage' => true])
+        ->call('edit', $link->id)
+        ->assertSet('department', LinkDepartment::Accounts->value)
+        ->assertSet('purpose', LinkPurpose::VendorLogin->value);
 });
 
 it('shows the Add link button to a support user on the client detail page', function () {

@@ -102,7 +102,9 @@ nudges admin/manager has targeted at your role (or everyone) — things like
 **Sidebar → Important Links** is a company-wide list of official links —
 hosting panel, domain registrar, and anything else the team needs quick
 access to. Everyone can view it; only Admin/Manager can add, edit, or
-remove an entry (see the Admin guide for how).
+remove an entry (see the Admin guide for how). Links can be grouped by
+department and filtered by department or purpose, so a growing list
+stays easy to scan.
 
 Every **client's own page** also has a **Links** tab — that client's
 website, Google Business Profile, socials, Drive folder, payment links, or

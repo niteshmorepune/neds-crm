@@ -2,11 +2,13 @@
 
 namespace App\Livewire;
 
+use App\Enums\LinkDepartment;
+use App\Enums\LinkPurpose;
 use App\Enums\UserRole;
 use App\Models\Customer;
 use App\Models\ImportantLink;
 use Illuminate\Database\Eloquent\Builder;
-use Livewire\Attributes\Validate;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 
 /**
@@ -28,11 +30,18 @@ class ImportantLinksManager extends Component
 
     public bool $showForm = false;
 
-    #[Validate('required|string|max:255')]
     public string $label = '';
 
-    #[Validate('required|url|max:2048')]
     public string $url = '';
+
+    public ?string $department = null;
+
+    public ?string $purpose = null;
+
+    /** Display-only filters — narrow the rendered list, never the mutation lookups in query(). */
+    public ?string $filterDepartment = null;
+
+    public ?string $filterPurpose = null;
 
     public function mount(?Customer $customer = null, bool $canManage = false): void
     {
@@ -63,13 +72,15 @@ class ImportantLinksManager extends Component
         $this->editingId = $link->id;
         $this->label = $link->label;
         $this->url = $link->url;
+        $this->department = $link->department?->value;
+        $this->purpose = $link->purpose?->value;
         $this->showForm = true;
     }
 
     public function save(): void
     {
         $this->authorizeManage();
-        $validated = $this->validate();
+        $validated = $this->validate($this->rules());
 
         if ($this->editingId) {
             $this->query()->findOrFail($this->editingId)->update($validated);
@@ -100,9 +111,34 @@ class ImportantLinksManager extends Component
 
     public function render()
     {
+        $links = $this->query()
+            ->when($this->filterDepartment, fn ($q) => $q->where('department', $this->filterDepartment))
+            ->when($this->filterPurpose, fn ($q) => $q->where('purpose', $this->filterPurpose))
+            ->orderBy('sort_order')
+            ->orderBy('label')
+            ->get();
+
         return view('livewire.important-links-manager', [
-            'links' => $this->query()->orderBy('sort_order')->orderBy('label')->get(),
+            // Grouped by department for display, alphabetized by label with
+            // "Uncategorized" (null) always last so real categories are what
+            // a viewer sees up top. groupBy() preserves each group's
+            // existing sort_order/label ordering from the query above.
+            'groupedLinks' => $links
+                ->groupBy(fn (ImportantLink $link) => $link->department?->value ?? '')
+                ->sortBy(fn ($group, $key) => $key === '' ? 'zzzz' : LinkDepartment::from($key)->label()),
+            'departments' => LinkDepartment::cases(),
+            'purposes' => LinkPurpose::cases(),
         ]);
+    }
+
+    private function rules(): array
+    {
+        return [
+            'label' => ['required', 'string', 'max:255'],
+            'url' => ['required', 'url', 'max:2048'],
+            'department' => ['nullable', Rule::enum(LinkDepartment::class)],
+            'purpose' => ['nullable', Rule::enum(LinkPurpose::class)],
+        ];
     }
 
     private function query(): Builder
@@ -114,7 +150,7 @@ class ImportantLinksManager extends Component
 
     private function resetForm(): void
     {
-        $this->reset(['editingId', 'showForm', 'label', 'url']);
+        $this->reset(['editingId', 'showForm', 'label', 'url', 'department', 'purpose']);
         $this->resetValidation();
     }
 
