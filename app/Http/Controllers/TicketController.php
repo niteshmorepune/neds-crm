@@ -32,13 +32,18 @@ class TicketController extends Controller
             ->when($request->filled('priority'), fn ($q) => $q->where('priority', $request->input('priority')))
             ->when($request->boolean('mine'), fn ($q) => $q->where('assignee_id', $request->user()->id))
             ->when($request->boolean('breached'), fn ($q) => $q->open()->whereNotNull('sla_due_at')->where('sla_due_at', '<', now()))
+            // Mirrors DashboardMetrics::supportStats()'s $atRisk definition
+            // exactly ("next 4h or already breached") for the Support
+            // dashboard's SLA-at-risk drill-down.
+            ->when($request->boolean('at_risk'), fn ($q) => $q->open()->whereNotNull('sla_due_at')->where('sla_due_at', '<=', now()->addHours(4)))
+            ->when($request->boolean('open'), fn ($q) => $q->open())
             ->latest()
             ->paginate(20)
             ->withQueryString();
 
         return view('tickets.index', $this->formData() + [
             'tickets' => $tickets,
-            'filters' => $request->only(['status', 'priority', 'mine', 'breached']),
+            'filters' => $request->only(['status', 'priority', 'mine', 'breached', 'at_risk', 'open']),
         ]);
     }
 

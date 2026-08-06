@@ -35,13 +35,18 @@ class LeadController extends Controller
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->input('status')))
             ->when($request->filled('service_id'), fn ($q) => $q->where('service_id', $request->integer('service_id')))
             ->when($request->filled('owner_id'), fn ($q) => $q->where('owner_id', $request->integer('owner_id')))
+            // Mirrors DashboardMetrics::salesStats()'s 'followups_due' query
+            // exactly, for the Sales dashboard's "Follow-ups due" drill-down.
+            ->when($request->boolean('follow_up_due'), fn ($q) => $q->where('status', '!=', LeadStatus::Converted->value)
+                ->whereNotNull('next_follow_up_at')
+                ->where('next_follow_up_at', '<=', now()))
             ->latest()
             ->paginate(15)
             ->withQueryString();
 
         return view('leads.index', $this->formData() + [
             'leads' => $leads,
-            'filters' => $request->only(['search', 'source', 'status', 'service_id', 'owner_id']),
+            'filters' => $request->only(['search', 'source', 'status', 'service_id', 'owner_id', 'follow_up_due']),
         ]);
     }
 

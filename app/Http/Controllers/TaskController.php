@@ -48,13 +48,23 @@ class TaskController extends Controller
             ->when($taskType === 'routine', fn ($q) => $q->whereNull('created_by'))
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->input('status')))
             ->when($request->filled('priority'), fn ($q) => $q->where('priority', $request->input('priority')))
+            // Pseudo-statuses used by dashboard drill-down links, since
+            // "pending"/"overdue"/"completed today" aren't single values the
+            // plain `status` filter above can express. Mirror the exact
+            // definitions DashboardMetrics already uses for these counts.
+            ->when($request->boolean('pending'), fn ($q) => $q->where('status', '!=', TaskStatus::Done->value))
+            ->when($request->boolean('overdue'), fn ($q) => $q->where('status', '!=', TaskStatus::Done->value)
+                ->whereNotNull('due_date')
+                ->whereDate('due_date', '<', now()->startOfDay()))
+            ->when($request->boolean('completed_today'), fn ($q) => $q->where('status', TaskStatus::Done->value)
+                ->whereDate('updated_at', now()->startOfDay()))
             ->latest()
             ->paginate(20)
             ->withQueryString();
 
         return view('tasks.index', $this->formData() + [
             'tasks' => $tasks,
-            'filters' => $request->only(['status', 'priority', 'mine', 'assignee']) + ['type' => $taskType],
+            'filters' => $request->only(['status', 'priority', 'mine', 'assignee', 'pending', 'overdue', 'completed_today']) + ['type' => $taskType],
             'teamSummary' => $isManager ? $this->teamTaskSummary() : null,
         ]);
     }

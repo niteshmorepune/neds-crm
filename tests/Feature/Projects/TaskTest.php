@@ -115,6 +115,33 @@ it('shows both task types when "all tasks" is selected', function () {
         ->assertOk()->assertSee('Fix contact form')->assertSee('Google Search Console review');
 });
 
+it('filters tasks to pending (not-done) only via the pending flag', function () {
+    Task::factory()->create(['title' => 'Todo one', 'status' => TaskStatus::Todo, 'created_by' => $this->manager->id]);
+    Task::factory()->create(['title' => 'Done one', 'status' => TaskStatus::Done, 'created_by' => $this->manager->id]);
+
+    $this->actingAs($this->manager)->get(route('tasks.index', ['type' => 'all', 'pending' => 1]))
+        ->assertOk()->assertSee('Todo one')->assertDontSee('Done one');
+});
+
+it('filters tasks to overdue only via the overdue flag', function () {
+    Task::factory()->create(['title' => 'Overdue one', 'status' => TaskStatus::Todo, 'due_date' => now()->subDay(), 'created_by' => $this->manager->id]);
+    Task::factory()->create(['title' => 'Future one', 'status' => TaskStatus::Todo, 'due_date' => now()->addDay(), 'created_by' => $this->manager->id]);
+    Task::factory()->create(['title' => 'Done but overdue', 'status' => TaskStatus::Done, 'due_date' => now()->subDay(), 'created_by' => $this->manager->id]);
+
+    $this->actingAs($this->manager)->get(route('tasks.index', ['type' => 'all', 'overdue' => 1]))
+        ->assertOk()->assertSee('Overdue one')->assertDontSee('Future one')->assertDontSee('Done but overdue');
+});
+
+it('filters tasks to completed today via the completed_today flag', function () {
+    $completedToday = Task::factory()->create(['title' => 'Finished today', 'status' => TaskStatus::Done, 'created_by' => $this->manager->id]);
+    $completedYesterday = Task::factory()->create(['title' => 'Finished yesterday', 'status' => TaskStatus::Done, 'created_by' => $this->manager->id]);
+    $completedYesterday->updated_at = now()->subDay();
+    $completedYesterday->saveQuietly();
+
+    $this->actingAs($this->manager)->get(route('tasks.index', ['type' => 'all', 'completed_today' => 1]))
+        ->assertOk()->assertSee('Finished today')->assertDontSee('Finished yesterday');
+});
+
 it('shows a team workload summary with combined assigned + routine counts, broken down by status and overdue', function () {
     $mohit = User::factory()->create(['name' => 'Mohit Patil']);
     // 2 To Do (1 overdue), 1 In Progress (overdue), 1 Review, 1 Done (routine,
