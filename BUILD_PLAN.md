@@ -133,6 +133,49 @@ Per CLAUDE.md AI section, behind AI_ENABLED flag:
 - Seed realistic demo data; run full Pest suite; fix N+1 queries (install
   Laravel Debugbar locally only).
 
+## Milestone 8 — Dashboard tiles: make every figure clickable
+Owner-requested UI/UX pass (2026-08-06): every stat/count shown on any of the
+6 role dashboards (Admin, Sales, Support, Accounts, Intern, Telecaller) should
+link through to the underlying filtered list, not just sit as a static number.
+- Audit all `resources/views/dashboard/partials/*.blade.php` for tiles that
+  are still plain `<div>`s (Admin Row 1 stat cards — Total/Active/Inactive
+  Clients, Total Leads, Tasks Overview — and the Task Summary segments are
+  confirmed still non-clickable as of this entry; audit the other 5 panels
+  too since they haven't been checked).
+- Wire each to its existing filtered index route (e.g. Total Clients →
+  `clients.index?status=all`, Overdue tasks → `tasks.index?status=overdue`) —
+  most of the target filtered views already exist, this is wiring, not new
+  pages. Only build a new filtered view where one genuinely doesn't exist yet.
+- Follow the precedent already set by the Overdue Invoices / Collected This
+  Month / Total Outstanding tiles (already clickable) for markup/styling.
+
+## Milestone 9 — Client list: sorting & location filter
+- Add a `sort` param to `clients.index` (Company name A–Z, Date of entry,
+  Location) alongside the existing search/status/owner/partner filters —
+  same `->when()` pattern already used in `CustomerController::index()`.
+- Add a City/State filter dropdown (columns already exist on `customers`,
+  just unused in the index today).
+- No schema changes needed for this milestone.
+
+## Milestone 10 — "Who to call today" ranked client list
+- Customer-side companion to the existing `ScoreLead` pattern: a ranked list
+  (dashboard widget + optional dedicated view) surfacing which clients to
+  contact today, ranked by last-contacted date, open follow-ups, and deal
+  stage.
+- Decide plain-rules vs AI-assisted ranking during planning; if AI, gate
+  behind `AI_ENABLED` per CLAUDE.md's AI section and log to `ai_usages` like
+  every other AI feature.
+
+## Milestone 11 — Important Links: department + purpose categorization
+- Add `department` (Sales/Support/Accounts/Admin) and `purpose` (Client
+  portals, Vendor/tool logins, Internal docs, Reference) as bounded fields
+  (enum-backed, not free text — matches this app's bounded-registry
+  convention, e.g. `CrmQueryType`) on `important_links`.
+- Append-only migration; existing links land in an "Uncategorized" bucket
+  for both fields, nothing backfilled/guessed.
+- Group + filter by both fields independently in `ImportantLinksManager`
+  (global page and the per-client Links tab both use this component today).
+
 ## Deployment runbook (Hostinger Business)
 1. In hPanel create MySQL DB + user; note credentials.
 2. Enable SSH if available on the plan; otherwise use hPanel Git deploy or FTP.
