@@ -13,6 +13,7 @@ enum LinkPurpose: string
     case VendorLogin = 'vendor_login';
     case InternalDocs = 'internal_docs';
     case Reference = 'reference';
+    case Scheduling = 'scheduling';
 
     public function label(): string
     {
@@ -21,6 +22,7 @@ enum LinkPurpose: string
             self::VendorLogin => 'Vendor/Tool Logins',
             self::InternalDocs => 'Internal Docs',
             self::Reference => 'Reference',
+            self::Scheduling => 'Scheduling Links',
         };
     }
 }

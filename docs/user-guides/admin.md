@@ -37,7 +37,7 @@ access to without hunting for it. Add a **label**, a **URL**, and
 optionally a **Department** (Sales/Support/Accounts/Admin/Development/
 Design/General/Operations/Technical/HR) and a
 **Purpose** (Client Portals/Vendor or Tool Logins/Internal Docs/
-Reference) — the list groups by department and can be filtered by either
+Reference/Scheduling Links) — the list groups by department and can be filtered by either
 field independently, so a growing list stays easy to scan. Both are
 optional; a link left uncategorised just shows under "Uncategorized"
 rather than being guessed at.
