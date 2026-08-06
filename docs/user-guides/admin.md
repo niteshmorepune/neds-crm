@@ -33,8 +33,13 @@ history later.
 **Important Links** in the sidebar (everyone can view; add/edit/delete is
 Admin/Manager only) is a company-wide reference list — hosting panel,
 domain registrar, Google Workspace admin, anything the team needs quick
-access to without hunting for it. Add a **label** and a **URL**; there's
-no limit and no categorisation, just a flat list.
+access to without hunting for it. Add a **label**, a **URL**, and
+optionally a **Department** (Sales/Support/Accounts/Admin) and a
+**Purpose** (Client Portals/Vendor or Tool Logins/Internal Docs/
+Reference) — the list groups by department and can be filtered by either
+field independently, so a growing list stays easy to scan. Both are
+optional; a link left uncategorised just shows under "Uncategorized"
+rather than being guessed at.
 
 Every **client's page** also has its own **Links** tab — that client's
 website, Google Business Profile, socials, Google Drive folder, Google

@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\LinkDepartment;
+use App\Enums\LinkPurpose;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,6 +15,8 @@ class ImportantLink extends Model
 
     protected $fillable = [
         'customer_id',
+        'department',
+        'purpose',
         'label',
         'url',
         'sort_order',
@@ -21,7 +25,11 @@ class ImportantLink extends Model
 
     protected function casts(): array
     {
-        return ['sort_order' => 'integer'];
+        return [
+            'sort_order' => 'integer',
+            'department' => LinkDepartment::class,
+            'purpose' => LinkPurpose::class,
+        ];
     }
 
     public function customer(): BelongsTo

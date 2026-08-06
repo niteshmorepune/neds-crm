@@ -20,7 +20,9 @@ Your dashboard shows the whole business at a glance:
 **Important Links** in the sidebar is a company-wide reference list —
 hosting panel, domain registrar, and anything else the team needs quick
 access to. Everyone can view it; you (and Admin) can add, edit, or remove
-entries.
+entries. Each entry can optionally be tagged with a department (Sales/
+Support/Accounts/Admin) and a purpose, and the list can be filtered by
+either — useful once it grows past a handful of links.
 
 Every client's own page also has a **Links** tab for that specific
 client's website, Google Business Profile, socials, Drive folder, and
