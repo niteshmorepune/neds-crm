@@ -329,6 +329,27 @@ it('suggests a next action for a flagged client', function () {
     expect(AiUsage::where('feature', 'client_radar_suggestion')->exists())->toBeTrue();
 });
 
+it('suggests a call talking point grounded in the given signals', function () {
+    aiOn();
+    fakeAiText('Ask how the negotiation is progressing and offer to hop on a call this week.');
+    $customer = Customer::factory()->create(['company_name' => 'Acme Corp']);
+
+    $suggestion = app(AiAssistant::class)->suggestCallTalkingPoint($customer, [
+        'last_contact' => ['label' => 'Last Contact', 'detail' => '18 day(s) ago'],
+        'deal_stage' => ['label' => 'Deal Stage', 'detail' => 'Negotiation (75% likelihood)'],
+    ]);
+
+    expect($suggestion)->toContain('negotiation');
+    expect(AiUsage::where('feature', 'call_priority_suggestion')->exists())->toBeTrue();
+});
+
+it('returns null for a call talking point when AI is disabled', function () {
+    $customer = Customer::factory()->create();
+
+    expect(app(AiAssistant::class)->suggestCallTalkingPoint($customer, []))->toBeNull();
+    Http::assertNothingSent();
+});
+
 it('drafts a monthly wins note for a client', function () {
     aiOn();
     fakeAiText('Acme Corp, this month we wrapped up 5 tasks and kept everything running smoothly!');
