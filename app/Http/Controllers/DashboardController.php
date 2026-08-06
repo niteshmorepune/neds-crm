@@ -4,13 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Enums\UserRole;
 use App\Models\Announcement;
+use App\Services\CallPriorityService;
 use App\Services\DashboardMetrics;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function index(Request $request, DashboardMetrics $metrics): View
+    public function index(Request $request, DashboardMetrics $metrics, CallPriorityService $callPriority): View
     {
         $user = $request->user();
         $announcements = Announcement::active()->forStaff()->newestFirst()->get();
@@ -27,7 +28,10 @@ class DashboardController extends Controller
                 'services' => $metrics->servicesOverview(),
                 'tasks' => $metrics->taskSummary(),
             ]],
-            $user->role === UserRole::Sales => ['sales', ['stats' => $metrics->salesStats($user)]],
+            $user->role === UserRole::Sales => ['sales', [
+                'stats' => $metrics->salesStats($user),
+                'callPriority' => $callPriority->rankedClients($user)->all(),
+            ]],
             $user->role === UserRole::Accounts => ['accounts', ['stats' => $metrics->accountsStats()]],
             $user->role === UserRole::Support => ['support', ['stats' => $metrics->supportStats($user)]],
             $user->role === UserRole::Intern => ['intern', ['stats' => $metrics->internStats($user)]],

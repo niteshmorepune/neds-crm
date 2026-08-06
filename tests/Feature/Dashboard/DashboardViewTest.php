@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\UserRole;
+use App\Models\Customer;
 use App\Models\Festival;
 use App\Models\User;
 use Database\Seeders\MenuItemsSeeder;
@@ -84,6 +85,18 @@ it('shows the sales panel to a sales rep', function () {
     $this->actingAs($sales)->get(route('dashboard'))->assertOk()
         ->assertSee('Open pipeline by stage')
         ->assertDontSee('Services Overview');
+});
+
+it('shows the who-to-call-today widget on the sales panel, ranking a neglected client first', function () {
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    $neglected = Customer::factory()->ownedBy($sales->id)->create(['company_name' => 'Neglected Co']);
+    $neglected->forceFill(['created_at' => now()->subDays(25)])->saveQuietly();
+    Customer::factory()->ownedBy($sales->id)->create(['company_name' => 'Fresh Co'])
+        ->forceFill(['created_at' => now()])->saveQuietly();
+
+    $this->actingAs($sales)->get(route('dashboard'))->assertOk()
+        ->assertSee('Who to Call Today')
+        ->assertSeeInOrder(['Neglected Co', 'Fresh Co']);
 });
 
 it('shows the accounts panel to an accounts user', function () {

@@ -29,6 +29,8 @@
     </table>
 </div>
 
+<livewire:call-priority-list :rows="$callPriority" />
+
 <livewire:overdue-follow-ups />
 
 <livewire:my-productivity />

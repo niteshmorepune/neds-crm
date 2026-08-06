@@ -993,6 +993,46 @@ class AiAssistant
     }
 
     /**
+     * A suggested talking point for one row of a Sales rep's "who to call
+     * today" list (CallPriorityService), grounded only in the ranking
+     * signals already computed there (days since contact, follow-up due,
+     * deal stage) — never re-deriving them itself. Same on-demand,
+     * never-batched shape as suggestClientAction(), but not Admin/Manager-
+     * gated: this list only ever shows a rep their own book, so any Sales
+     * rep can trigger it for their own client.
+     *
+     * @param  array<string, array{label: string, detail: string}>  $signals
+     */
+    public function suggestCallTalkingPoint(Customer $customer, array $signals): ?string
+    {
+        if (! Ai::enabled()) {
+            return null;
+        }
+
+        $lines = ['Client: '.$customer->company_name, '', 'Signals:'];
+
+        foreach ($signals as $signal) {
+            $lines[] = "- {$signal['label']}: {$signal['detail']}";
+        }
+
+        $system = <<<'PROMPT'
+        You help a sales rep at a digital-solutions agency in India prepare for
+        a call with an existing client. Based only on the signals given,
+        suggest ONE concrete talking point or opener for the call (e.g. what to
+        check in on, what to ask about, or how to nudge a stalled deal
+        forward). Keep it to 2-3 sentences (about 50 words). Do not invent
+        facts, prices, or client details beyond what's given. Output only the
+        suggestion.
+        PROMPT;
+
+        return $this->trimmed($this->client->message(
+            feature: 'call_priority_suggestion',
+            prompt: implode("\n", $lines),
+            system: $system,
+        ));
+    }
+
+    /**
      * A client-facing recovery message draft for the specific ticket behind
      * a Client Radar "Low Satisfaction" flag — grounded in that ticket's own
      * subject/description/rating, not the generic flag text. Distinct from
