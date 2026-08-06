@@ -206,7 +206,12 @@ form to set the company's monthly/FY target and each rep's monthly target.
    open a **Lead** and click **Send Quotation** (the CRM converts the lead and
    pre-fills the builder for you automatically).
 2. Add **line items** (description, HSN/SAC, quantity, rate). GST is calculated
-   per line (CGST+SGST for Maharashtra clients, IGST otherwise).
+   per line (CGST+SGST for Maharashtra clients, IGST otherwise). If a
+   quotation mixes one-time setup work with an ongoing monthly management fee
+   (a common shape — e.g. a website build plus monthly ads management), tick
+   **Recurring** on the line items that repeat every month. This doesn't
+   change billing by itself — it's what lets **Create recurring invoice**
+   (step 7 below) pre-fill correctly later.
    - **✨ Suggest line items** — when the quotation is linked to a deal that
      has notes, this button drafts a first pass at the description/quantity/
      SAC for each line, grounded only in what's actually in those notes
@@ -234,6 +239,13 @@ form to set the company's monthly/FY target and each rep's monthly target.
    the client's billing address and marks it **Sent**.
 7. When the client agrees, mark the quotation **Accepted**, then **Convert to
    invoice** — accounts takes it from there.
+   - If any line items were ticked **Recurring**, a **Create recurring
+     invoice** button also appears on the accepted quotation. Click it to
+     open a recurring invoice template pre-filled with the client and those
+     recurring line items — pick a service, confirm the start date, and
+     save. The quotation page then shows a link to the recurring template it
+     produced, so the connection between what was quoted and what's now
+     billing monthly stays visible from either side.
 
 All quotations linked to a deal are listed on the deal's page so you can track
 which version the client accepted.

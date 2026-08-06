@@ -12,6 +12,7 @@ class QuotationItem extends Model
 
     protected $fillable = [
         'quotation_id', 'description', 'sac_code', 'quantity', 'rate', 'gst_rate', 'amount', 'sort_order',
+        'is_recurring',
     ];
 
     protected function casts(): array
@@ -22,6 +23,7 @@ class QuotationItem extends Model
             'gst_rate' => 'decimal:2',
             'amount' => 'integer',
             'sort_order' => 'integer',
+            'is_recurring' => 'boolean',
         ];
     }
 

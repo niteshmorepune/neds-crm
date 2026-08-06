@@ -65,6 +65,7 @@
                     <div class="w-28 shrink-0">Rate ₹</div>
                     <div class="w-16 shrink-0">GST %</div>
                     <div class="w-24 shrink-0 text-right">Amount</div>
+                    <div class="w-16 shrink-0 text-center">Recurring</div>
                     <div class="w-5 shrink-0"></div>
                 </div>
 
@@ -92,6 +93,10 @@
                                 <span class="w-24 shrink-0 text-right text-sm text-gray-600 font-medium">
                                     {{ \App\Support\Money::format($t['lines'][$i]['amount'] ?? 0) }}
                                 </span>
+                                <label class="w-16 shrink-0 flex items-center justify-center gap-1 text-xs text-gray-500" title="Bill this item on a recurring (monthly) schedule instead of one-time">
+                                    <input type="checkbox" wire:model="items.{{ $i }}.is_recurring" class="rounded border-gray-300 text-indigo-600 shadow-sm">
+                                    <span class="2xl:hidden">Recurring</span>
+                                </label>
                                 <button wire:click="removeItem({{ $i }})" type="button"
                                         class="w-5 shrink-0 text-red-600 hover:text-red-500 text-lg leading-none text-center">&times;</button>
                             </div>

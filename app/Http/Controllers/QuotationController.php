@@ -42,7 +42,7 @@ class QuotationController extends Controller
     {
         $this->authorize('view', $quotation);
 
-        $quotation->load(['customer', 'items', 'deal', 'invoice']);
+        $quotation->load(['customer', 'items', 'deal', 'invoice', 'recurringInvoices']);
 
         return view('quotations.show', ['quotation' => $quotation]);
     }

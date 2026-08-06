@@ -145,6 +145,12 @@ the invoice each cycle** (every morning the scheduler checks for due templates)
 and emails it to the client automatically. You can pause/resume a template
 anytime.
 
+**Created from a quotation:** if Sales ticked line items **Recurring** on a
+quotation and used **Create recurring invoice** from it, the resulting
+template carries a link back to that quotation — visible on both the
+template's page and the quotation's own page — so you can always trace a
+monthly charge back to what was originally quoted and agreed.
+
 **"Ended" vs. "On Hold" / "Paused" (Invoices → Recurring Invoices list):** this
 describes the *template's own schedule*, not whether its invoice got paid.
 **Ended** means the template had an end date, that date has passed, and it

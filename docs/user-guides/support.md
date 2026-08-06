@@ -98,6 +98,18 @@ evening. This shows as a **Pending Client Update** to the project owner (or an
 admin/manager) for them to review and approve — you don't need to do anything
 for this unless you are the project's owner.
 
+**Client Deliverables checklist:** each project has a **Client Deliverables**
+section for tracking items you're waiting on from the client (logo, brand
+content, GST details, domain/hosting access, etc.). Only the project owner
+or an admin/manager can add items or change their status — add a title and
+optional instructions, and it appears on the client's portal project page
+where they can upload files directly against it. A status of **Submitted**
+means the client has uploaded something for you to review; mark it
+**Received** once you've confirmed it's usable, or leave it as-is to ask for
+a resubmission. If you're assigned to a project but aren't its owner, you
+can still see the checklist and any uploaded files, just not add or change
+items.
+
 **Note on client profiles:** Support staff cannot add, edit, or delete contacts
 on a client profile — that is handled by the Sales team. You can view client and
 contact details but not change them.

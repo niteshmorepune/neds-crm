@@ -16,7 +16,7 @@ class RecurringInvoice extends Model
     use HasFactory, LogsActivity;
 
     protected $fillable = [
-        'customer_id', 'service_id', 'frequency', 'day_of_month',
+        'customer_id', 'quotation_id', 'service_id', 'frequency', 'day_of_month',
         'start_date', 'end_date', 'next_run_on', 'is_active',
         'last_reminder_sent_at', 'renewal_reminder_sent_for', 'discount', 'is_gst_exempt', 'terms',
     ];
@@ -40,6 +40,11 @@ class RecurringInvoice extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function quotation(): BelongsTo
+    {
+        return $this->belongsTo(Quotation::class);
     }
 
     public function service(): BelongsTo

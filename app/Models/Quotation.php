@@ -77,8 +77,18 @@ class Quotation extends Model
         return $this->hasMany(QuotationMilestone::class)->orderBy('sort_order');
     }
 
+    public function recurringInvoices(): HasMany
+    {
+        return $this->hasMany(RecurringInvoice::class);
+    }
+
     public function isEditable(): bool
     {
         return $this->status === QuotationStatus::Draft;
+    }
+
+    public function hasRecurringItems(): bool
+    {
+        return $this->items->contains(fn (QuotationItem $item) => $item->is_recurring);
     }
 }

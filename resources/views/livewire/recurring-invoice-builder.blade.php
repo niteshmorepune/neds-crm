@@ -4,6 +4,14 @@
         <a href="{{ route('recurring-invoices.index') }}" class="text-sm text-gray-500 hover:text-gray-700">Back</a>
     </div>
 
+    @if ($quotationId)
+        <div class="rounded-md bg-indigo-50 border border-indigo-200 px-4 py-3 text-sm text-indigo-800">
+            Pre-filled from
+            <a href="{{ route('quotations.show', $quotationId) }}" class="font-medium underline hover:text-indigo-600">quotation {{ \App\Models\Quotation::find($quotationId)?->number }}</a>
+            — review the details below before saving.
+        </div>
+    @endif
+
     <div class="rounded-lg bg-white p-6 shadow-sm grid grid-cols-1 gap-4 md:grid-cols-3">
         <div>
             <x-input-label value="Client *" />
