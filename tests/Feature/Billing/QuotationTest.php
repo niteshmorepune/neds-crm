@@ -251,6 +251,40 @@ it('renders quotation index, create and show pages', function () {
     $this->actingAs($this->admin)->get(route('quotations.show', $quotation))->assertOk()->assertSee($quotation->number);
 });
 
+it('points the Back link on the create page at the deal it was started from, not the index', function () {
+    $deal = Deal::factory()->create();
+
+    $html = $this->actingAs($this->admin)
+        ->get(route('quotations.create', ['customer_id' => $deal->customer_id, 'deal_id' => $deal->id]))
+        ->assertOk()
+        ->getContent();
+
+    $backLink = 'href="'.route('deals.show', $deal).'" class="text-sm text-gray-500 hover:text-gray-700">Back</a>';
+    expect($html)->toContain($backLink);
+});
+
+it('points the Back link at the index when the create page has no deal context', function () {
+    $html = $this->actingAs($this->admin)
+        ->get(route('quotations.create'))
+        ->assertOk()
+        ->getContent();
+
+    $backLink = 'href="'.route('quotations.index').'" class="text-sm text-gray-500 hover:text-gray-700">Back</a>';
+    expect($html)->toContain($backLink);
+});
+
+it('points the Back link on the edit page at the quotation itself, not the index', function () {
+    $quotation = quotationWithLine();
+
+    $html = $this->actingAs($this->admin)
+        ->get(route('quotations.edit', $quotation))
+        ->assertOk()
+        ->getContent();
+
+    $backLink = 'href="'.route('quotations.show', $quotation).'" class="text-sm text-gray-500 hover:text-gray-700">Back</a>';
+    expect($html)->toContain($backLink);
+});
+
 it('shows a delete button on the quotation show page and deletes it', function () {
     $quotation = quotationWithLine();
 

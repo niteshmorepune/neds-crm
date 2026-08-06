@@ -1,10 +1,23 @@
 <?php // Live GST preview ?>
-@php($t = $this->totals)
+@php
+    $t = $this->totals;
+
+    // Back should return wherever this page was actually reached from, not
+    // always the index: editing goes back to the quotation itself; a fresh
+    // one started from a Deal (deals.show's "+ New Quotation") goes back to
+    // that Deal; only a bare "New Quotation" from the index itself falls
+    // back to the index.
+    $backUrl = match (true) {
+        (bool) $quotationId => route('quotations.show', $quotationId),
+        (bool) $deal_id => route('deals.show', $deal_id),
+        default => route('quotations.index'),
+    };
+@endphp
 
 <div class="max-w-6xl mx-auto space-y-6">
     <div class="flex items-center justify-between">
         <h1 class="text-xl font-semibold text-gray-900">{{ $quotationId ? 'Edit' : 'New' }} Quotation</h1>
-        <a href="{{ route('quotations.index') }}" class="text-sm text-gray-500 hover:text-gray-700">Back</a>
+        <a href="{{ $backUrl }}" class="text-sm text-gray-500 hover:text-gray-700">Back</a>
     </div>
 
     {{-- Totals fixed to lg:w-52 so the form section gets maximum room --}}
