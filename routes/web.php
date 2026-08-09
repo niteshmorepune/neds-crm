@@ -40,6 +40,7 @@ use App\Http\Controllers\QuarterlyAwardController;
 use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\RecurringInvoiceController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\RevenueAtRiskController;
 use App\Http\Controllers\SalesDashboardController;
 use App\Http\Controllers\SalesTargetController;
 use App\Http\Controllers\SearchController;
@@ -537,6 +538,14 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
      */
     Route::middleware('menu.access:project-health')->group(function () {
         Route::get('project-health', [ProjectHealthController::class, 'index'])->name('project-health.index');
+    });
+
+    /*
+     * Revenue at Risk — Tier 2 #10. See RevenueAtRiskMetrics for what this
+     * aggregates (pure aggregation, no new formula decision needed).
+     */
+    Route::middleware('menu.access:revenue-at-risk')->group(function () {
+        Route::get('revenue-at-risk', [RevenueAtRiskController::class, 'index'])->name('revenue-at-risk.index');
     });
 });
 
