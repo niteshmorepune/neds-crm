@@ -6,6 +6,33 @@
             <div class="rounded-md bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-800">{{ session('status') }}</div>
         @endif
 
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            <div class="rounded-lg bg-white p-4 shadow-sm">
+                <p class="text-xs font-medium uppercase tracking-wide text-gray-400">Total Leads</p>
+                <p class="mt-1 text-2xl font-semibold text-gray-900">{{ $statusCounts['total'] }}</p>
+            </div>
+            <div class="rounded-lg bg-white p-4 shadow-sm">
+                <p class="text-xs font-medium uppercase tracking-wide text-gray-400">New</p>
+                <p class="mt-1 text-2xl font-semibold text-blue-700">{{ $statusCounts['new'] }}</p>
+            </div>
+            <div class="rounded-lg bg-white p-4 shadow-sm">
+                <p class="text-xs font-medium uppercase tracking-wide text-gray-400">Contacted</p>
+                <p class="mt-1 text-2xl font-semibold text-yellow-700">{{ $statusCounts['contacted'] }}</p>
+            </div>
+            <div class="rounded-lg bg-white p-4 shadow-sm">
+                <p class="text-xs font-medium uppercase tracking-wide text-gray-400">Qualified</p>
+                <p class="mt-1 text-2xl font-semibold text-yellow-700">{{ $statusCounts['qualified'] }}</p>
+            </div>
+            <div class="rounded-lg bg-white p-4 shadow-sm">
+                <p class="text-xs font-medium uppercase tracking-wide text-gray-400">Converted</p>
+                <p class="mt-1 text-2xl font-semibold text-green-700">{{ $statusCounts['converted'] }}</p>
+            </div>
+            <div class="rounded-lg bg-white p-4 shadow-sm">
+                <p class="text-xs font-medium uppercase tracking-wide text-gray-400">Lost</p>
+                <p class="mt-1 text-2xl font-semibold text-gray-600">{{ $statusCounts['lost'] }}</p>
+            </div>
+        </div>
+
         <div class="flex flex-wrap items-center justify-between gap-3">
             <form method="GET" class="flex flex-wrap items-center gap-2">
                 <input type="text" name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Search name, company, email"
@@ -46,6 +73,7 @@
                         <th class="px-4 py-3">Est. value</th>
                         <th class="px-4 py-3">Owner</th>
                         <th class="px-4 py-3">Status</th>
+                        <th class="px-4 py-3">Latest Note</th>
                         <th class="px-4 py-3 text-right">Actions</th>
                     </tr>
                 </thead>
@@ -72,12 +100,19 @@
                                     'bg-gray-100 text-gray-600' => $lead->status === \App\Enums\LeadStatus::Lost,
                                 ])>{{ $lead->status->label() }}</span>
                             </td>
+                            <td class="px-4 py-3 max-w-xs">
+                                @if ($lead->latestNote)
+                                    <span class="text-gray-600" title="{{ $lead->latestNote->body }}">{{ \Illuminate\Support\Str::limit($lead->latestNote->body, 60) }}</span>
+                                @else
+                                    <span class="text-gray-300">—</span>
+                                @endif
+                            </td>
                             <td class="px-4 py-3 text-right">
                                 <a href="{{ route('leads.show', $lead) }}" class="text-gray-500 hover:text-gray-700">View</a>
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="7" class="px-4 py-10 text-center text-gray-400">No leads found.</td></tr>
+                        <tr><td colspan="8" class="px-4 py-10 text-center text-gray-400">No leads found.</td></tr>
                     @endforelse
                 </tbody>
             </table>

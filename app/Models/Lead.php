@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[ObservedBy(LeadObserver::class)]
@@ -99,6 +100,15 @@ class Lead extends Model
     public function notes(): MorphMany
     {
         return $this->morphMany(Note::class, 'notable')->latest();
+    }
+
+    /**
+     * The single most recent note — eager-loadable without an N+1, for the
+     * Lead Generation list's "Latest Note" column.
+     */
+    public function latestNote(): MorphOne
+    {
+        return $this->morphOne(Note::class, 'notable')->latestOfMany();
     }
 
     public function callLogs(): MorphMany

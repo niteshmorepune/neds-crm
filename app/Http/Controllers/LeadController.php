@@ -25,7 +25,7 @@ class LeadController extends Controller
 
         $leads = Lead::query()
             ->visibleTo($request->user())
-            ->with(['owner', 'service'])
+            ->with(['owner', 'service', 'latestNote'])
             ->when($request->string('search')->trim()->value(), function ($query, $search) {
                 $query->where(fn ($q) => $q->where('name', 'like', "%{$search}%")
                     ->orWhere('company', 'like', "%{$search}%")
@@ -47,7 +47,32 @@ class LeadController extends Controller
         return view('leads.index', $this->formData() + [
             'leads' => $leads,
             'filters' => $request->only(['search', 'source', 'status', 'service_id', 'owner_id', 'follow_up_due']),
+            'statusCounts' => $this->statusCounts($request),
         ]);
+    }
+
+    /**
+     * Lead counts per status for the summary cards — scoped the same way as
+     * the list (role visibility), but deliberately ignores the ad-hoc
+     * search/source/service/owner filters so the cards stay a stable "whole
+     * picture" rather than echoing whatever the list happens to be filtered to.
+     *
+     * @return array<string, int>
+     */
+    private function statusCounts(Request $request): array
+    {
+        $counts = Lead::query()
+            ->visibleTo($request->user())
+            ->selectRaw('status, count(*) as count')
+            ->groupBy('status')
+            ->pluck('count', 'status');
+
+        return [
+            'total' => (int) $counts->sum(),
+            ...collect(LeadStatus::cases())->mapWithKeys(
+                fn (LeadStatus $status) => [$status->value => (int) ($counts[$status->value] ?? 0)]
+            )->all(),
+        ];
     }
 
     public function create(): View

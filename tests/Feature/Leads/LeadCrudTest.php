@@ -6,6 +6,7 @@ use App\Enums\UserRole;
 use App\Models\Lead;
 use App\Models\User;
 use Database\Seeders\MenuItemsSeeder;
+use Illuminate\Support\Str;
 
 beforeEach(function () {
     $this->seed(MenuItemsSeeder::class);
@@ -100,4 +101,45 @@ it('renders the lead index, create, show and edit pages', function () {
     $this->actingAs($this->admin)->get(route('leads.create'))->assertOk()->assertSee('Contact name');
     $this->actingAs($this->admin)->get(route('leads.show', $lead))->assertOk()->assertSee($lead->name);
     $this->actingAs($this->admin)->get(route('leads.edit', $lead))->assertOk()->assertSee('Save Changes');
+});
+
+it('shows summary cards with lead counts per status, unaffected by list filters', function () {
+    Lead::factory()->create(['status' => LeadStatus::New]);
+    Lead::factory()->count(2)->create(['status' => LeadStatus::Contacted]);
+    Lead::factory()->create(['status' => LeadStatus::Qualified]);
+    Lead::factory()->create(['status' => LeadStatus::Converted]);
+    Lead::factory()->count(3)->create(['status' => LeadStatus::Lost]);
+
+    // Filtering the list to just one status must not change the summary cards.
+    $response = $this->actingAs($this->admin)->get(route('leads.index', ['status' => LeadStatus::Lost->value]));
+
+    $response->assertOk()
+        ->assertViewHas('statusCounts', [
+            'total' => 8,
+            'new' => 1,
+            'contacted' => 2,
+            'qualified' => 1,
+            'converted' => 1,
+            'lost' => 3,
+        ]);
+});
+
+it('shows the most recent note in the Latest Note column, truncated with the full text available on hover', function () {
+    $lead = Lead::factory()->create(['name' => 'Ganesh Auto Parts']);
+    $lead->notes()->create(['user_id' => $this->admin->id, 'body' => 'Called, no answer.']);
+    $longNote = str_repeat('Discussed pricing and scope in detail. ', 3);
+    $lead->notes()->create(['user_id' => $this->admin->id, 'body' => $longNote]);
+
+    $response = $this->actingAs($this->admin)->get(route('leads.index'));
+
+    $response->assertOk()
+        ->assertSee(Str::limit($longNote, 60), false)
+        ->assertDontSee('Called, no answer.')
+        ->assertSee($longNote, false);
+});
+
+it('shows a dash in the Latest Note column when a lead has no notes', function () {
+    Lead::factory()->create(['name' => 'No Notes Yet']);
+
+    $this->actingAs($this->admin)->get(route('leads.index'))->assertOk()->assertSee('—');
 });
