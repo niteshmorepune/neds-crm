@@ -7,6 +7,7 @@ use App\Enums\LeadStatus;
 use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
 use App\Http\Controllers\Controller;
+use App\Jobs\ImportWhatsappTicketMedia;
 use App\Models\Customer;
 use App\Models\Lead;
 use App\Models\Ticket;
@@ -24,6 +25,10 @@ class WhatsappWebhookController extends Controller
             'conversation_id' => ['required', 'string'],
             'whatsapp_number' => ['nullable', 'string'],
             'whatsapp_line_label' => ['nullable', 'string'],
+            // Meta media ID for an image/document/audio/video message —
+            // wadesk.in only ever sends the ID, never a downloadable URL.
+            'media_id' => ['nullable', 'string'],
+            'media_type' => ['nullable', 'string'],
         ]);
 
         // Dedup: one CRM ticket per wadesk.in conversation.
@@ -50,16 +55,31 @@ class WhatsappWebhookController extends Controller
         }
 
         $preview = trim($data['message'] ?? '');
-        $subject = 'WhatsApp: '.str($preview)->limit(80, '…');
+        $mediaType = $data['media_type'] ?? null;
 
-        $description = $preview ?: '(media or non-text message)';
+        // A caption-less media message: wadesk.in's own content fallback is
+        // the literal string "[image]"/"[document]"/etc — surfacing that
+        // verbatim as the ticket subject/description reads as a broken
+        // placeholder rather than a real message. Give it a plain-English
+        // label instead; the actual file (once ImportWhatsappTicketMedia
+        // finishes) appears in Attachments below.
+        $isGenericMediaPlaceholder = $mediaType && $preview === "[{$mediaType}]";
+        $label = $isGenericMediaPlaceholder ? ucfirst($mediaType).' received' : $preview;
+
+        $subject = 'WhatsApp: '.str($label)->limit(80, '…');
+
+        $description = match (true) {
+            $isGenericMediaPlaceholder => ucfirst($mediaType).' received — see Attachments below.',
+            $preview !== '' => $preview,
+            default => '(media or non-text message)',
+        };
 
         if ($customer->drishti_client_id) {
             $base = rtrim((string) config('services.drishti.base_url'), '/');
             $description .= "\n\n— Drishti context: {$base}/clients/{$customer->drishti_client_id}";
         }
 
-        Ticket::create([
+        $ticket = Ticket::create([
             'customer_id' => $customer->id,
             'subject' => $subject ?: 'WhatsApp enquiry',
             'description' => $description,
@@ -69,6 +89,15 @@ class WhatsappWebhookController extends Controller
             'whatsapp_conversation_id' => $data['conversation_id'],
             'sla_due_at' => now()->addHours(4),
         ]);
+
+        if (! empty($data['media_id'])) {
+            ImportWhatsappTicketMedia::dispatch(
+                $ticket->id,
+                $data['conversation_id'],
+                $data['media_id'],
+                $mediaType ?? 'file',
+            );
+        }
 
         return response()->json(['status' => 'created']);
     }

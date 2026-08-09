@@ -57,11 +57,19 @@
                     <h2 class="text-base font-semibold text-gray-900">Attachments</h2>
                     <ul class="mt-3 divide-y divide-gray-100 text-sm">
                         @forelse ($ticket->attachments as $attachment)
-                            <li class="flex items-center justify-between py-2">
-                                <a href="{{ route('attachments.download', $attachment) }}" class="text-indigo-600 hover:underline">{{ $attachment->original_name }}</a>
-                                <span class="text-xs text-gray-400">
-                                    {{ $attachment->contact_id ? $attachment->uploaderName().' (client) · ' : '' }}{{ $attachment->humanSize() }}
-                                </span>
+                            <li class="py-2">
+                                <div class="flex items-center justify-between">
+                                    <a href="{{ route('attachments.download', $attachment) }}" class="text-indigo-600 hover:underline">{{ $attachment->original_name }}</a>
+                                    <span class="text-xs text-gray-400">
+                                        {{ $attachment->contact_id ? $attachment->uploaderName().' (client) · ' : '' }}{{ $attachment->humanSize() }}
+                                    </span>
+                                </div>
+                                @if (str_starts_with($attachment->mime_type ?? '', 'image/'))
+                                    <a href="{{ route('attachments.download', $attachment) }}" target="_blank" rel="noopener noreferrer">
+                                        <img src="{{ route('attachments.download', $attachment) }}" alt="{{ $attachment->original_name }}"
+                                             class="mt-2 max-h-64 rounded-md border border-gray-200" />
+                                    </a>
+                                @endif
                             </li>
                         @empty
                             <li class="py-2 text-gray-400">No attachments.</li>

@@ -2,10 +2,12 @@
 
 use App\Enums\LeadSource;
 use App\Enums\UserRole;
+use App\Jobs\ImportWhatsappTicketMedia;
 use App\Models\Customer;
 use App\Models\Lead;
 use App\Models\Ticket;
 use App\Models\User;
+use Illuminate\Support\Facades\Bus;
 
 beforeEach(function () {
     config(['services.whatsapp_webhook.token' => 'test-wa-token']);
@@ -200,6 +202,63 @@ it('still creates a Ticket when whatsapp_number explicitly matches the configure
         ->assertJson(['status' => 'created']);
 
     expect(Ticket::where('whatsapp_conversation_id', 'conv_explicit_support_line')->exists())->toBeTrue();
+});
+
+it('dispatches ImportWhatsappTicketMedia and gives a caption-less media message a friendly subject/description instead of the raw placeholder', function () {
+    Bus::fake();
+    $customer = Customer::factory()->create(['phone' => '919028099919']);
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '919028099919',
+        'message' => '[image]',
+        'conversation_id' => 'conv_media',
+        'media_id' => 'media-xyz',
+        'media_type' => 'image',
+    ], ['Authorization' => 'Bearer test-wa-token'])
+        ->assertOk()
+        ->assertJson(['status' => 'created']);
+
+    $ticket = Ticket::where('whatsapp_conversation_id', 'conv_media')->first();
+    expect($ticket->subject)->toBe('WhatsApp: Image received')
+        ->and($ticket->description)->toContain('Image received — see Attachments below.')
+        ->and($ticket->description)->not->toContain('[image]');
+
+    Bus::assertDispatched(ImportWhatsappTicketMedia::class, function ($job) use ($ticket) {
+        return $job->ticketId === $ticket->id
+            && $job->conversationId === 'conv_media'
+            && $job->mediaId === 'media-xyz'
+            && $job->mediaType === 'image';
+    });
+});
+
+it('does not dispatch ImportWhatsappTicketMedia for a plain text message', function () {
+    Bus::fake();
+    Customer::factory()->create(['phone' => '919028099919']);
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '919028099919',
+        'message' => 'Hello, need help',
+        'conversation_id' => 'conv_text_only',
+    ], ['Authorization' => 'Bearer test-wa-token'])->assertOk();
+
+    Bus::assertNotDispatched(ImportWhatsappTicketMedia::class);
+});
+
+it('keeps a real caption as the subject/description even when the message has media', function () {
+    Bus::fake();
+    Customer::factory()->create(['phone' => '919028099919']);
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '919028099919',
+        'message' => 'Here is the error I am seeing',
+        'conversation_id' => 'conv_media_captioned',
+        'media_id' => 'media-xyz',
+        'media_type' => 'image',
+    ], ['Authorization' => 'Bearer test-wa-token'])->assertOk();
+
+    $ticket = Ticket::where('whatsapp_conversation_id', 'conv_media_captioned')->first();
+    expect($ticket->subject)->toBe('WhatsApp: Here is the error I am seeing')
+        ->and($ticket->description)->toContain('Here is the error I am seeing');
 });
 
 it('treats a payload with no whatsapp_number field as the support line, for backward compatibility with an older wadesk.in build', function () {
