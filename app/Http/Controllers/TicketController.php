@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
+use App\Enums\UserRole;
 use App\Http\Requests\TicketStoreRequest;
 use App\Mail\TicketNotification;
 use App\Models\Customer;
@@ -11,6 +12,7 @@ use App\Models\Service;
 use App\Models\Ticket;
 use App\Models\TicketReply;
 use App\Models\User;
+use App\Notifications\TicketEscalated;
 use App\Services\SlaCalculator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -37,13 +39,14 @@ class TicketController extends Controller
             // dashboard's SLA-at-risk drill-down.
             ->when($request->boolean('at_risk'), fn ($q) => $q->open()->whereNotNull('sla_due_at')->where('sla_due_at', '<=', now()->addHours(4)))
             ->when($request->boolean('open'), fn ($q) => $q->open())
+            ->when($request->boolean('escalated'), fn ($q) => $q->escalated())
             ->latest()
             ->paginate(20)
             ->withQueryString();
 
         return view('tickets.index', $this->formData() + [
             'tickets' => $tickets,
-            'filters' => $request->only(['status', 'priority', 'mine', 'breached', 'at_risk', 'open']),
+            'filters' => $request->only(['status', 'priority', 'mine', 'breached', 'at_risk', 'open', 'escalated']),
         ]);
     }
 
@@ -134,6 +137,29 @@ class TicketController extends Controller
         $this->notifyCustomer($ticket, 'resolved');
 
         return back()->with('status', 'Ticket resolved.');
+    }
+
+    public function escalate(Request $request, Ticket $ticket): RedirectResponse
+    {
+        $this->authorize('update', $ticket);
+
+        $ticket->update(['escalated_at' => now(), 'escalated_by' => $request->user()->id]);
+
+        $recipients = User::withAnyRole(UserRole::Admin, UserRole::Manager)
+            ->where('id', '!=', $request->user()->id)
+            ->get();
+        $recipients->each(fn (User $u) => $u->notify(new TicketEscalated($ticket)));
+
+        return back()->with('status', 'Ticket escalated to managers.');
+    }
+
+    public function clearEscalation(Ticket $ticket): RedirectResponse
+    {
+        $this->authorize('manageEscalation', $ticket);
+
+        $ticket->update(['escalated_at' => null, 'escalated_by' => null]);
+
+        return back()->with('status', 'Escalation cleared.');
     }
 
     public function storeAttachment(Request $request, Ticket $ticket): RedirectResponse

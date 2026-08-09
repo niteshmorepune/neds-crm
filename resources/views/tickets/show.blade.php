@@ -24,6 +24,13 @@
                         <a href="{{ route('tickets.index') }}" class="text-sm text-gray-500 hover:text-gray-700">Back</a>
                     </div>
 
+                    @if ($ticket->isEscalated())
+                        <div class="mt-3 rounded-md bg-orange-50 border border-orange-200 px-3 py-2 text-sm text-orange-800">
+                            🔺 Escalated by {{ $ticket->escalatedBy?->name ?? 'someone' }}
+                            on {{ $ticket->escalated_at->timezone(config('app.display_timezone'))->format('d M Y, g:i A') }}.
+                        </div>
+                    @endif
+
                     @if ($ticket->isSlaBreached())
                         <div class="mt-3 rounded-md bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
                             SLA breached — was due {{ $ticket->sla_due_at->timezone(config('app.display_timezone'))->format('d M Y, g:i A') }}.
@@ -95,6 +102,7 @@
             </div>
 
             {{-- Manage panel --}}
+            <div class="space-y-6">
             @can('update', $ticket)
                 <div class="rounded-lg bg-white p-6 shadow-sm h-fit">
                     <h2 class="text-base font-semibold text-gray-900">Manage</h2>
@@ -134,8 +142,27 @@
                             <button class="w-full rounded-md bg-green-600 px-3 py-2 text-sm font-medium text-white hover:bg-green-500">Mark resolved</button>
                         </form>
                     @endif
+
+                    @if (! $ticket->isEscalated())
+                        <form method="POST" action="{{ route('tickets.escalate', $ticket) }}" class="mt-3">
+                            @csrf
+                            <button class="w-full rounded-md bg-orange-100 px-3 py-2 text-sm font-medium text-orange-800 hover:bg-orange-200">🔺 Escalate to managers</button>
+                        </form>
+                    @endif
                 </div>
             @endcan
+
+            @can('manageEscalation', $ticket)
+                @if ($ticket->isEscalated())
+                    <div class="rounded-lg bg-white p-6 shadow-sm h-fit">
+                        <form method="POST" action="{{ route('tickets.escalate.clear', $ticket) }}">
+                            @csrf @method('DELETE')
+                            <button class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Clear escalation</button>
+                        </form>
+                    </div>
+                @endif
+            @endcan
+            </div>
         </div>
     </div>
 </x-app-layout>

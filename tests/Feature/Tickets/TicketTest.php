@@ -10,8 +10,10 @@ use App\Models\Customer;
 use App\Models\Service;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Notifications\TicketEscalated;
 use Database\Seeders\MenuItemsSeeder;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 
 beforeEach(function () {
@@ -109,6 +111,44 @@ it('combines the open and priority filters for the support dashboard priority dr
 
     $this->actingAs($this->support)->get(route('tickets.index', ['open' => 1, 'priority' => TicketPriority::Urgent->value]))
         ->assertOk()->assertSee('Open urgent')->assertDontSee('Closed urgent')->assertDontSee('Open low priority');
+});
+
+it('escalates a ticket, notifying every manager except the escalator, and lets a manager clear it', function () {
+    Notification::fake();
+    $manager = User::factory()->role(UserRole::Manager)->create();
+    $escalatingManager = User::factory()->role(UserRole::Manager)->create();
+    $ticket = Ticket::factory()->create(['subject' => 'Client very unhappy']);
+
+    $this->actingAs($escalatingManager)->post(route('tickets.escalate', $ticket))->assertRedirect();
+
+    $ticket->refresh();
+    expect($ticket->isEscalated())->toBeTrue()
+        ->and($ticket->escalated_by)->toBe($escalatingManager->id);
+
+    Notification::assertSentTo($manager, TicketEscalated::class);
+    Notification::assertNotSentTo($escalatingManager, TicketEscalated::class);
+
+    $this->actingAs($manager)->delete(route('tickets.escalate.clear', $ticket))->assertRedirect();
+    expect($ticket->refresh()->isEscalated())->toBeFalse();
+});
+
+it('lets a Support user escalate a ticket but not clear the escalation themselves', function () {
+    Notification::fake();
+    User::factory()->role(UserRole::Manager)->create();
+    $ticket = Ticket::factory()->create();
+
+    $this->actingAs($this->support)->post(route('tickets.escalate', $ticket))->assertRedirect();
+    expect($ticket->refresh()->isEscalated())->toBeTrue();
+
+    $this->actingAs($this->support)->delete(route('tickets.escalate.clear', $ticket))->assertForbidden();
+});
+
+it('filters tickets to escalated-only via the escalated flag', function () {
+    Ticket::factory()->create(['subject' => 'Raised to managers', 'escalated_at' => now(), 'escalated_by' => $this->support->id]);
+    Ticket::factory()->create(['subject' => 'Business as usual']);
+
+    $this->actingAs($this->support)->get(route('tickets.index', ['escalated' => 1]))
+        ->assertOk()->assertSee('Raised to managers')->assertDontSee('Business as usual');
 });
 
 it('restricts ticket access by role', function () {

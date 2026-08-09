@@ -74,6 +74,17 @@ it('counts a ticket whose SLA has genuinely breached, not one merely at risk', f
     expect($breaches['count'])->toBe(1);
 });
 
+it('counts escalated tickets, not merely SLA-breached ones', function () {
+    $customer = Customer::factory()->create();
+    Ticket::factory()->create(['customer_id' => $customer->id, 'escalated_at' => now(), 'escalated_by' => $this->manager->id]);
+    Ticket::factory()->create(['customer_id' => $customer->id, 'status' => TicketStatus::Open->value, 'sla_due_at' => now()->subHour()]);
+
+    $response = $this->actingAs($this->manager)->get(route('manager-action-center.index'));
+
+    $escalated = $response->viewData('signals')->firstWhere('key', 'escalated_tickets');
+    expect($escalated['count'])->toBe(1);
+});
+
 it('counts contract renewals due within 30 days using the same scope as the Contract Renewal Dashboard', function () {
     $customer = Customer::factory()->create();
     $template = RecurringInvoice::factory()->create(['customer_id' => $customer->id, 'is_active' => true, 'end_date' => now()->addDays(10), 'frequency' => RecurringFrequency::Monthly->value]);

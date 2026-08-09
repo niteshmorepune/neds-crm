@@ -368,6 +368,8 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
         Route::get('tickets/{ticket}', [TicketController::class, 'show'])->name('tickets.show');
         Route::patch('tickets/{ticket}', [TicketController::class, 'update'])->name('tickets.update');
         Route::post('tickets/{ticket}/resolve', [TicketController::class, 'resolve'])->name('tickets.resolve');
+        Route::post('tickets/{ticket}/escalate', [TicketController::class, 'escalate'])->name('tickets.escalate');
+        Route::delete('tickets/{ticket}/escalate', [TicketController::class, 'clearEscalation'])->name('tickets.escalate.clear');
         Route::post('tickets/{ticket}/attachments', [TicketController::class, 'storeAttachment'])->name('tickets.attachments.store');
     });
 

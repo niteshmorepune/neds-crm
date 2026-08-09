@@ -53,6 +53,7 @@
                                 'payment_promise_broken'      => '🚩',
                                 'smdost_brief_approved'       => '✅',
                                 'leave_request_submitted', 'leave_request_reviewed' => '🌴',
+                                'ticket_escalated'            => '🔺',
                                 'festival_greeting_drafted'   => '🎉',
                                 'monthly_wins_note_drafted'   => '📈',
                                 'lead_nurture_drafted'        => '✨',

@@ -46,6 +46,16 @@ class TicketPolicy
         return $user->hasRole(UserRole::Admin, UserRole::Manager);
     }
 
+    /**
+     * Escalating is open to anyone who can manage the ticket (see update()) —
+     * clearing an escalation is Admin/Manager-only, since they're the ones
+     * a raised escalation is meant to reach, not the person who raised it.
+     */
+    public function manageEscalation(User $user, Ticket $ticket): bool
+    {
+        return $user->hasRole(UserRole::Admin, UserRole::Manager);
+    }
+
     private function supportTeam(User $user): bool
     {
         return $user->hasRole(UserRole::Admin, UserRole::Manager, UserRole::Support);

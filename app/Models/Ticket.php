@@ -22,7 +22,7 @@ class Ticket extends Model
     protected $fillable = [
         'customer_id', 'service_id', 'assignee_id', 'created_by',
         'subject', 'description', 'priority', 'status', 'sla_due_at', 'sla_breach_notified_at', 'resolved_at',
-        'channel', 'whatsapp_conversation_id',
+        'channel', 'whatsapp_conversation_id', 'escalated_at', 'escalated_by',
     ];
 
     protected function casts(): array
@@ -33,6 +33,7 @@ class Ticket extends Model
             'sla_due_at' => 'datetime',
             'sla_breach_notified_at' => 'datetime',
             'resolved_at' => 'datetime',
+            'escalated_at' => 'datetime',
         ];
     }
 
@@ -49,6 +50,11 @@ class Ticket extends Model
     public function assignee(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assignee_id');
+    }
+
+    public function escalatedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'escalated_by');
     }
 
     public function replies(): HasMany
@@ -76,11 +82,21 @@ class Ticket extends Model
             && $this->sla_due_at->isPast();
     }
 
+    public function isEscalated(): bool
+    {
+        return $this->escalated_at !== null;
+    }
+
     public function scopeOpen(Builder $query): Builder
     {
         return $query->whereIn('status', [
             TicketStatus::Open->value, TicketStatus::InProgress->value, TicketStatus::Waiting->value,
         ]);
+    }
+
+    public function scopeEscalated(Builder $query): Builder
+    {
+        return $query->whereNotNull('escalated_at');
     }
 
     /**

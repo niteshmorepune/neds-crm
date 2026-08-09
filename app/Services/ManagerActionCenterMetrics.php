@@ -23,6 +23,12 @@ use Illuminate\Support\Collection;
  * "breached" differently from the page a manager lands on after clicking
  * through.
  *
+ * "Escalated tickets" is the one signal here that isn't pure aggregation of
+ * a pre-existing definition (see Escalation Management's own migration
+ * docblock) — it's still included because, once tickets.escalated_at exists
+ * and TicketController exposes ?escalated=1, this class's job is exactly to
+ * surface that count with a drill-down link, same as every other signal.
+ *
  * "Stagnant deals" was in the original ask but deliberately left out: no
  * reusable stagnation query exists anywhere in the app (only inline inside
  * the SendStagnationAlerts command, which mails owners directly rather than
@@ -73,6 +79,14 @@ class ManagerActionCenterMetrics
                 'count' => $this->slaBreachCount(),
                 'route' => route('tickets.index', ['breached' => 1]),
                 'icon' => '🚨',
+                'color' => 'red',
+            ],
+            [
+                'key' => 'escalated_tickets',
+                'label' => 'Escalated tickets',
+                'count' => Ticket::escalated()->count(),
+                'route' => route('tickets.index', ['escalated' => 1]),
+                'icon' => '🔺',
                 'color' => 'red',
             ],
             [
