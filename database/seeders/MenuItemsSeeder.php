@@ -53,6 +53,7 @@ class MenuItemsSeeder extends Seeder
             ['key' => 'revenue-at-risk',  'label' => 'Revenue at Risk',  'route' => 'revenue-at-risk.index', 'icon' => 'exclamation-triangle', 'roles' => [UserRole::Manager]],
             ['key' => 'client-radar',     'label' => 'Client Radar',     'route' => 'client-radar.index', 'icon' => 'radar',    'roles' => [UserRole::Manager]],
             ['key' => 'employee-360',     'label' => 'Employee 360°',    'route' => 'employees.index',  'icon' => 'identification', 'roles' => [UserRole::Manager]],
+            ['key' => 'manager-calendar', 'label' => 'Manager Calendar', 'route' => 'manager-calendar.index', 'icon' => 'calendar-days', 'roles' => [UserRole::Manager]],
             ['key' => 'daily-reports',    'label' => 'Daily Reports',    'route' => 'daily-reports.index', 'icon' => 'clipboard', 'roles' => $all],
             ['key' => 'quarterly-awards', 'label' => 'Best Employee',    'route' => 'quarterly-awards.index', 'icon' => 'trophy',  'roles' => $all],
             ['key' => 'partners',         'label' => 'Partners',         'route' => 'partners.index',   'icon' => 'users',      'roles' => [UserRole::Manager]],

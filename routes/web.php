@@ -56,6 +56,7 @@ use App\Livewire\ClientImport;
 use App\Livewire\ContractRenewalDashboard;
 use App\Livewire\DealsBoard;
 use App\Livewire\HitechAttendanceImport;
+use App\Livewire\ManagerCalendar;
 use App\Livewire\MenuManager;
 use App\Livewire\QuotationBuilder;
 use App\Livewire\RecurringInvoiceBuilder;
@@ -546,6 +547,14 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
      */
     Route::middleware('menu.access:revenue-at-risk')->group(function () {
         Route::get('revenue-at-risk', [RevenueAtRiskController::class, 'index'])->name('revenue-at-risk.index');
+    });
+
+    /*
+     * Manager Calendar — Tier 3. See ManagerCalendarMetrics for what this
+     * aggregates (meetings, task/project deadlines, approved leave).
+     */
+    Route::middleware('menu.access:manager-calendar')->group(function () {
+        Route::get('manager-calendar', ManagerCalendar::class)->name('manager-calendar.index');
     });
 });
 
