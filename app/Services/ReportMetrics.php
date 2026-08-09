@@ -206,6 +206,53 @@ class ReportMetrics
     }
 
     /**
+     * @var list<string>
+     */
+    private const TREND_METRICS = [
+        'tasks_completed', 'on_time_pct', 'calls_made', 'leads_converted',
+        'attendance_pct', 'daily_reports', 'score',
+    ];
+
+    /**
+     * rankedEmployeePerformance() plus a month-over-month delta per metric
+     * against the immediately preceding calendar month — pure aggregation,
+     * no new data collection or formula (Manager panel doc Tier 2 #12: "the
+     * performance report already covers one selected month... needs the
+     * month-over-month comparison surfaced directly"). Each row's 'trend'
+     * key holds current-minus-previous for every TREND_METRICS entry, null
+     * where either side is null (e.g. a metric with no denominator that
+     * month, or the person wasn't active/ranked in the prior month at all).
+     * Compares against the calendar month immediately before $from,
+     * regardless of how long the [$from, $to] window itself spans, since
+     * "month-over-month" is the doc's own framing.
+     *
+     * @return Collection<int, array<string, mixed>>
+     */
+    public function employeePerformanceTrend(Carbon $from, Carbon $to): Collection
+    {
+        $current = $this->rankedEmployeePerformance($from, $to);
+
+        $priorFrom = $from->copy()->subMonthNoOverflow()->startOfMonth();
+        $priorTo = $priorFrom->copy()->endOfMonth();
+        $prior = $this->rankedEmployeePerformance($priorFrom, $priorTo)->keyBy('user_id');
+
+        return $current->map(function (array $row) use ($prior) {
+            $previous = $prior->get($row['user_id']);
+
+            $row['trend'] = collect(self::TREND_METRICS)->mapWithKeys(function (string $metric) use ($row, $previous) {
+                $currentValue = $row[$metric] ?? null;
+                $previousValue = $previous[$metric] ?? null;
+
+                $delta = ($currentValue !== null && $previousValue !== null) ? $currentValue - $previousValue : null;
+
+                return [$metric => $delta];
+            })->all();
+
+            return $row;
+        });
+    }
+
+    /**
      * Percentile rank (0-100) of $userId's value for $metric among $peers
      * (average-rank method — ties share the midpoint of their span rather
      * than an arbitrary order). Returns null if the person's own value is

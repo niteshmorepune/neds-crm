@@ -36,7 +36,7 @@ class ReportController extends Controller
         [$from, $to] = $this->monthRange($request);
 
         return view('reports.employee-performance', [
-            'rows' => $this->metrics->rankedEmployeePerformance($from, $to),
+            'rows' => $this->metrics->employeePerformanceTrend($from, $to),
             'from' => $from,
             'to' => $to,
         ]);

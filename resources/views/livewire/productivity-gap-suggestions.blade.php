@@ -34,15 +34,16 @@
                         <td colspan="10" class="px-4 py-2 text-xs font-semibold uppercase tracking-wide text-gray-500">{{ $role }}</td>
                     </tr>
                     @foreach ($roleRows as $r)
+                        @php($trend = $r['trend'] ?? [])
                         <tr class="hover:bg-gray-50">
                             <td class="px-4 py-3 font-medium text-gray-900">{{ $r['user'] }}</td>
-                            <td class="px-4 py-3 text-right text-gray-700">{{ $r['tasks_completed'] }}</td>
-                            <td class="px-4 py-3 text-right text-gray-700">{{ $r['on_time_pct'] !== null ? $r['on_time_pct'].'%' : '—' }}</td>
-                            <td class="px-4 py-3 text-right text-gray-700">{{ $r['calls_made'] }}</td>
-                            <td class="px-4 py-3 text-right text-gray-700">{{ $r['leads_converted'] }}</td>
-                            <td class="px-4 py-3 text-right text-gray-700">{{ $r['attendance_pct'] !== null ? $r['attendance_pct'].'%' : '—' }}</td>
-                            <td class="px-4 py-3 text-right text-gray-700">{{ $r['daily_reports'] }}</td>
-                            <td class="px-4 py-3 text-right text-gray-700">{{ $r['score'] !== null ? $r['score'] : '—' }}</td>
+                            <td class="px-4 py-3 text-right text-gray-700">{{ $r['tasks_completed'] }}<x-trend-delta :value="$trend['tasks_completed'] ?? null" /></td>
+                            <td class="px-4 py-3 text-right text-gray-700">{{ $r['on_time_pct'] !== null ? $r['on_time_pct'].'%' : '—' }}<x-trend-delta :value="$trend['on_time_pct'] ?? null" suffix="pt" /></td>
+                            <td class="px-4 py-3 text-right text-gray-700">{{ $r['calls_made'] }}<x-trend-delta :value="$trend['calls_made'] ?? null" /></td>
+                            <td class="px-4 py-3 text-right text-gray-700">{{ $r['leads_converted'] }}<x-trend-delta :value="$trend['leads_converted'] ?? null" /></td>
+                            <td class="px-4 py-3 text-right text-gray-700">{{ $r['attendance_pct'] !== null ? $r['attendance_pct'].'%' : '—' }}<x-trend-delta :value="$trend['attendance_pct'] ?? null" suffix="pt" /></td>
+                            <td class="px-4 py-3 text-right text-gray-700">{{ $r['daily_reports'] }}<x-trend-delta :value="$trend['daily_reports'] ?? null" /></td>
+                            <td class="px-4 py-3 text-right text-gray-700">{{ $r['score'] !== null ? $r['score'] : '—' }}<x-trend-delta :value="$trend['score'] ?? null" /></td>
                             <td class="px-4 py-3 text-right text-gray-700">
                                 @if ($r['rank'] !== null)
                                     #{{ $r['rank'] }} of {{ $r['role_group_size'] }}
