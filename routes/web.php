@@ -12,6 +12,7 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DailyReportController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DealController;
+use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\FestivalController;
 use App\Http\Controllers\GoogleConnectionController;
 use App\Http\Controllers\HelpController;
@@ -288,6 +289,14 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
      */
     Route::middleware('menu.access:subscriptions')->group(function () {
         Route::resource('subscriptions', SubscriptionController::class)->except('show');
+    });
+
+    /*
+     * Expenses — daily office expense tracker (tea, travel, stationery,
+     * internet, fuel, ...). Admin/Manager/Accounts (menu.access:expenses).
+     */
+    Route::middleware('menu.access:expenses')->group(function () {
+        Route::resource('expenses', ExpenseController::class)->except('show');
     });
 
     /*

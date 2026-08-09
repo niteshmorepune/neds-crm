@@ -55,6 +55,7 @@ class MenuItemsSeeder extends Seeder
             ['key' => 'categories',       'label' => 'Services',         'route' => 'services.index',   'icon' => 'tag',        'roles' => [UserRole::Manager]],
             ['key' => 'festivals',        'label' => 'Festivals',        'route' => 'festivals.index',  'icon' => 'calendar',   'roles' => [UserRole::Manager]],
             ['key' => 'subscriptions',    'label' => 'Subscriptions',    'route' => 'subscriptions.index', 'icon' => 'credit-card', 'roles' => []], // admin only
+            ['key' => 'expenses',         'label' => 'Expenses',         'route' => 'expenses.index',   'icon' => 'banknotes',  'roles' => [UserRole::Manager, UserRole::Accounts]],
             ['key' => 'users',            'label' => 'Users',            'route' => 'users.index',      'icon' => 'users',      'roles' => []], // admin only
             ['key' => 'menu-controller',  'label' => 'Menu Controller',  'route' => 'menu-controller',  'icon' => 'sliders',    'roles' => []], // admin only
         ];
