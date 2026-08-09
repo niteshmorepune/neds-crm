@@ -30,17 +30,6 @@
                 </div>
             @endif
 
-            @if (auth()->user()->hasRole(\App\Enums\UserRole::Admin, \App\Enums\UserRole::Manager)
-                    && auth()->user()->ai_weekly_digest && auth()->user()->ai_weekly_digest_date?->isToday())
-                <div class="flex items-start gap-3 border-t border-gray-100 px-4 py-3 sm:px-5">
-                    <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-indigo-50 text-sm">🤖</span>
-                    <div class="min-w-0 flex-1">
-                        <p class="text-xs font-semibold uppercase tracking-wide text-indigo-500">Your week ahead</p>
-                        <p class="text-sm text-indigo-900">{{ auth()->user()->ai_weekly_digest }}</p>
-                    </div>
-                </div>
-            @endif
-
             @php($overdueTaskCount = \App\Models\Task::where('assignee_id', auth()->id())
                 ->where('status', '!=', \App\Enums\TaskStatus::Done->value)
                 ->whereNotNull('due_date')
@@ -106,6 +95,37 @@
                 <a href="{{ route('daily-reports.index') }}" class="shrink-0 rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-500">Daily report</a>
             </div>
         </div>
+
+        {{-- AI Recommendations — Admin/Manager only. Consolidates every
+             "problem → data → recommended action" AI surface that already
+             exists into one place: the weekly owner digest (persisted,
+             shown here directly) plus a link to the team coaching
+             suggestions and productivity gap flags on the Employee
+             Performance report (generated on demand there, not re-run here
+             — this section reads existing data, it never triggers a new AI
+             call itself). Previously the weekly digest sat inside the
+             generic "Today" list, mixed in with unrelated items like
+             festivals and leave approvals. --}}
+        @if (auth()->user()->hasRole(\App\Enums\UserRole::Admin, \App\Enums\UserRole::Manager))
+            <div class="overflow-hidden rounded-lg bg-white shadow-sm">
+                <div class="flex items-center justify-between px-4 py-2.5 sm:px-5">
+                    <h2 class="text-xs font-semibold uppercase tracking-wide text-gray-500">🤖 AI Recommendations</h2>
+                    <a href="{{ route('reports.employee-performance') }}" class="text-xs font-medium text-indigo-600 hover:underline">Team coaching insights →</a>
+                </div>
+
+                @if (auth()->user()->ai_weekly_digest && auth()->user()->ai_weekly_digest_date?->isToday())
+                    <div class="border-t border-gray-100 px-4 py-3 sm:px-5">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-indigo-500">Your week ahead</p>
+                        <p class="mt-1 text-sm text-indigo-900">{{ auth()->user()->ai_weekly_digest }}</p>
+                    </div>
+                @else
+                    <div class="border-t border-gray-100 px-4 py-3 text-sm text-gray-400 sm:px-5">
+                        No new digest yet today — the next one lands Monday morning. Per-employee coaching suggestions and productivity flags are always available on the
+                        <a href="{{ route('reports.employee-performance') }}" class="text-indigo-600 hover:underline">Employee Performance report</a>.
+                    </div>
+                @endif
+            </div>
+        @endif
 
         {{-- Role-specific panel --}}
         @include('dashboard.partials.'.$panel, $panelData)

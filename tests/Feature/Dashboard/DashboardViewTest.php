@@ -72,6 +72,29 @@ it('hides a stale AI weekly digest from a previous week', function () {
     $this->actingAs($manager)->get(route('dashboard'))->assertOk()->assertDontSee('stale synthesis');
 });
 
+it('shows the AI Recommendations section with a link to team coaching insights for a manager', function () {
+    $manager = User::factory()->role(UserRole::Manager)->create();
+
+    $this->actingAs($manager)->get(route('dashboard'))
+        ->assertOk()
+        ->assertSee('AI Recommendations')
+        ->assertSee('Team coaching insights');
+});
+
+it('shows a fallback message in AI Recommendations when no weekly digest is cached yet', function () {
+    $manager = User::factory()->role(UserRole::Manager)->create();
+
+    $this->actingAs($manager)->get(route('dashboard'))
+        ->assertOk()
+        ->assertSee('No new digest yet today');
+});
+
+it('hides the AI Recommendations section entirely from a Sales rep', function () {
+    $sales = User::factory()->role(UserRole::Sales)->create();
+
+    $this->actingAs($sales)->get(route('dashboard'))->assertOk()->assertDontSee('AI Recommendations');
+});
+
 it('shows the company dashboard to an admin', function () {
     $admin = User::factory()->role(UserRole::Admin)->create();
 
