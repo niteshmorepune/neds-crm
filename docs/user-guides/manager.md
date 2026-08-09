@@ -171,6 +171,19 @@ You have access to Leads, Deals, Quotations, Invoices, Projects, Tasks, Tickets,
 Clients, Attendance, Calls and Daily Reports so you can monitor and step in
 anywhere. Use the **search bar** to jump to any record.
 
+**Ticket escalations:** anyone on Support (or Sales, for their own clients)
+can click **🔺 Escalate to managers** on a ticket to flag it for you
+specifically — separate from the automatic SLA-breach email. You get a bell
+notification, the ticket shows an orange "Escalated" badge, and it stays
+that way (visible via the **Tickets → Escalated** filter, or the count on
+your **Action Center**) until you click **Clear escalation** on the
+ticket's page — only Admin/Manager can clear one.
+
+**Quotation approvals:** every new quotation a Sales rep (or anyone) saves
+now needs your approval before **Send to Client** unlocks — see **Central
+Approval Center** below for the queue, or **Approve**/**Reject**/**Request
+changes** directly from the quotation's own page.
+
 **Client 360° summary strip:** every client's profile page now opens with a
 row of tiles — **MRR** (active recurring services), **Next Renewal** (the
 soonest end date among them), and, for roles with invoice access,
@@ -263,6 +276,32 @@ clicking a number always shows you exactly what's in it. **Stagnant deals**
 aren't in this list yet — there's no reusable "hasn't moved" definition
 built for that in the CRM today, only the stagnation *alert emails*
 (see below), which are a different thing.
+
+## Central Approval Center
+Sidebar → **Approval Center** — every pending approval decision across the
+CRM in one place, so you don't have to check Leave Requests, Quotations,
+and each project separately:
+
+- **Leave Requests** — **Approve** or **Reject** (with an optional reason),
+  exactly like the dedicated Leave Approvals page.
+- **Quotations** — new quotations wait here for your decision before they
+  can be sent to a client. **Approve** clears it to send. **Reject** (with
+  an optional reason) or **Request changes** (a reason is required, so the
+  creator knows what to fix) send it back — the creator can edit and click
+  **Resubmit for approval** to put it back in your queue.
+- **Project Updates** — AI-drafted client updates waiting on a project
+  owner's review before they reach the client (edit if needed, then
+  **Approve & Send**, or **Discard**) — the same review you'd see on that
+  project's own page, just surfaced here too.
+
+Only genuinely *pending* items show up — once you act on something, it
+drops off this page and the count at the top updates. Two things the team
+asked about were deliberately left out: **Content** approval already
+happens entirely inside SMDost before it ever reaches this CRM, so there's
+nothing real to approve here; and **Client Requests** isn't a concept that
+exists anywhere in the CRM yet (clients raise **Tickets**, not a separate
+"request") — building that would be a new feature, not something to
+aggregate.
 
 ## Team Workload & Capacity
 Sidebar → **Team Workload** — every active Sales/Support/Accounts/Intern/

@@ -54,6 +54,16 @@ one-time escalation email. The email shows how long overdue the ticket is (e.g.
 the ticket. No repeat emails — resolving the ticket is the way to clear it from
 the breach list.
 
+**Escalating a ticket to managers:** for anything that needs a manager's eyes
+right now — not just an SLA breach — click **🔺 Escalate to managers** in the
+Manage panel on the ticket's page. Every Admin/Manager gets a bell
+notification and the ticket shows an orange "Escalated" badge (on the ticket
+itself and in the Tickets list, where you can also filter to **Escalated**
+only). This is separate from the automatic SLA-breach email above — you
+control it, and it stays escalated until a manager clears it, which only
+they can do (also visible as a count on their **Action Center** page —
+see the manager guide).
+
 ## 2. Calls
 Use **☎ Log a call** (top bar) or **Calling** to record calls you make to
 clients about their tickets or projects. Support doesn't have access to

@@ -258,9 +258,20 @@ form to set the company's monthly/FY target and each rep's monthly target.
    how accounts knows a phase is finished and it's time to raise the next
    invoice.
 5. Save, then **download the PDF** to send to the client.
-6. Open it and click **Send to Client** — this emails the quotation details to
+6. **New quotations need Admin/Manager approval before they can be sent** —
+   every quotation you save starts **Pending approval**, and **Send to
+   Client** stays greyed out until a manager approves it (they're notified
+   automatically, and it also shows up on their **Approval Center** page —
+   see the manager guide). You'll see one of three outcomes on the
+   quotation page:
+   - **Approved** — Send to Client unlocks, nothing else changes.
+   - **Rejected**, with a note explaining why.
+   - **Changes requested**, with a note on what to fix — edit the
+     quotation, then click **Resubmit for approval** to send it back into
+     the queue.
+7. Open it and click **Send to Client** — this emails the quotation details to
    the client's billing address and marks it **Sent**.
-7. When the client agrees, mark the quotation **Accepted**, then **Convert to
+8. When the client agrees, mark the quotation **Accepted**, then **Convert to
    invoice** — accounts takes it from there.
    - If any line items were ticked **Recurring**, a **Create recurring
      invoice** button also appears on the accepted quotation. Click it to
