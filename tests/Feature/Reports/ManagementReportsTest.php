@@ -175,12 +175,42 @@ it('averages the AI score per source, ignoring unscored leads', function () {
     expect(collect($data['by_source'])->firstWhere('label', 'Website')['avg_score'])->toBe(60);
 });
 
+it('carries the raw LeadSource value on each by_source row, for the drill-down link', function () {
+    Lead::factory()->create(['source' => LeadSource::Website, 'created_at' => now()]);
+
+    $data = $this->metrics->leadSourcePerformance(now()->startOfMonth(), now()->endOfMonth());
+
+    expect(collect($data['by_source'])->firstWhere('label', 'Website')['source_value'])->toBe(LeadSource::Website->value);
+});
+
+it('leaves source_value null on by_campaign rows, since no single-field filter matches a UTM combo', function () {
+    Lead::factory()->create([
+        'source' => LeadSource::Website, 'created_at' => now(),
+        'utm_source' => 'google', 'utm_medium' => 'cpc', 'utm_campaign' => 'seo-pune-2026',
+    ]);
+
+    $data = $this->metrics->leadSourcePerformance(now()->startOfMonth(), now()->endOfMonth());
+
+    expect($data['by_campaign'][0]['source_value'])->toBeNull();
+});
+
 it('excludes leads created outside the period', function () {
     Lead::factory()->create(['source' => LeadSource::Website, 'created_at' => now()->subMonths(2)]);
 
     $data = $this->metrics->leadSourcePerformance(now()->startOfMonth(), now()->endOfMonth());
 
     expect($data['total'])->toBe(0);
+});
+
+it('links each By source row on the Lead Source Performance page to Lead Generation filtered by that exact source and month', function () {
+    $manager = User::factory()->role(UserRole::Manager)->create();
+    Lead::factory()->create(['source' => LeadSource::Website, 'created_at' => now()]);
+
+    $response = $this->actingAs($manager)->get(route('reports.lead-sources', ['month' => now()->format('Y-m')]));
+
+    $response->assertOk()->assertSee(
+        route('leads.index', ['source' => LeadSource::Website->value, 'month' => now()->format('Y-m')])
+    );
 });
 
 it('lets a manager view the reports but forbids a sales rep', function () {

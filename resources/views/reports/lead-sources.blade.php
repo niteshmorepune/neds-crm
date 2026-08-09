@@ -13,11 +13,11 @@
         </div>
 
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div class="rounded-lg bg-white p-5 shadow-sm">
+            <a href="{{ route('leads.index', ['month' => $from->format('Y-m')]) }}" class="block rounded-lg bg-white p-5 shadow-sm hover:shadow-md">
                 <p class="text-sm text-gray-500">Leads captured</p>
                 <p class="mt-2 text-2xl font-semibold text-gray-900">{{ $data['total'] }}</p>
                 <p class="text-xs text-gray-400">{{ $from->format('M Y') }}</p>
-            </div>
+            </a>
             <div class="rounded-lg bg-white p-5 shadow-sm">
                 <p class="text-sm text-gray-500">Converted to client</p>
                 <p class="mt-2 text-2xl font-semibold text-indigo-600">{{ $data['converted'] }}</p>
@@ -48,7 +48,9 @@
                 <tbody class="divide-y divide-gray-100">
                     @forelse ($data['by_source'] as $r)
                         <tr>
-                            <td class="py-2 text-gray-700">{{ $r['label'] }}</td>
+                            <td class="py-2 text-gray-700">
+                                <a href="{{ route('leads.index', ['source' => $r['source_value'], 'month' => $from->format('Y-m')]) }}" class="text-indigo-600 hover:underline">{{ $r['label'] }}</a>
+                            </td>
                             <td class="py-2 text-right text-gray-600">{{ $r['total'] }}</td>
                             <td class="py-2 text-right text-gray-600">{{ $r['converted'] }}</td>
                             <td class="py-2 text-right text-gray-600">{{ $r['conversion_rate'] }}%</td>

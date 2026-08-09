@@ -319,8 +319,8 @@ class ReportMetrics
             ->get();
 
         $bySource = $leads
-            ->groupBy(fn (Lead $lead) => $lead->source->label())
-            ->map(fn (Collection $group, string $label) => $this->channelRow($label, $group))
+            ->groupBy(fn (Lead $lead) => $lead->source->value)
+            ->map(fn (Collection $group, string $value) => $this->channelRow($group->first()->source->label(), $group, $value))
             ->sortByDesc('total')
             ->values()
             ->all();
@@ -344,9 +344,12 @@ class ReportMetrics
 
     /**
      * @param  Collection<int, Lead>  $leads
-     * @return array{label: string, total: int, converted: int, conversion_rate: int, won_value: int, avg_score: ?int}
+     * @param  string|null  $sourceValue  The raw LeadSource enum value, so the "By source" table can link each
+     *                                    row to Lead Generation filtered to exactly those leads. Null for a
+     *                                    "By campaign" row — there's no equivalent single-field filter for those.
+     * @return array{label: string, total: int, converted: int, conversion_rate: int, won_value: int, avg_score: ?int, source_value: ?string}
      */
-    private function channelRow(string $label, Collection $leads): array
+    private function channelRow(string $label, Collection $leads, ?string $sourceValue = null): array
     {
         $converted = $leads->whereNotNull('converted_at')->count();
         $scored = $leads->whereNotNull('ai_score');
@@ -358,6 +361,7 @@ class ReportMetrics
             'conversion_rate' => $leads->count() > 0 ? (int) round($converted / $leads->count() * 100) : 0,
             'won_value' => $this->wonValue($leads),
             'avg_score' => $scored->count() > 0 ? (int) round($scored->avg('ai_score')) : null,
+            'source_value' => $sourceValue,
         ];
     }
 

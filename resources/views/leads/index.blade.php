@@ -6,6 +6,13 @@
             <div class="rounded-md bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-800">{{ session('status') }}</div>
         @endif
 
+        @if ($filters['month'] ?? null)
+            <div class="flex items-center justify-between rounded-md bg-indigo-50 border border-indigo-200 px-4 py-3 text-sm text-indigo-800">
+                <span>Showing leads captured in {{ \Illuminate\Support\Carbon::createFromFormat('Y-m', $filters['month'])->format('F Y') }} only.</span>
+                <a href="{{ route('leads.index', array_diff_key($filters, ['month' => null])) }}" class="font-medium hover:underline">Clear →</a>
+            </div>
+        @endif
+
         <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
             <div class="rounded-lg bg-white p-4 shadow-sm">
                 <p class="text-xs font-medium uppercase tracking-wide text-gray-400">Total Leads</p>

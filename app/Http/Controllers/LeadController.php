@@ -23,6 +23,11 @@ class LeadController extends Controller
     {
         $this->authorize('viewAny', Lead::class);
 
+        // Validated once, reused for both the query filter and the view's
+        // "showing leads captured in <month>" banner — the banner must never
+        // try to parse the raw, possibly-malformed request value.
+        $month = $this->validMonth($request);
+
         $leads = Lead::query()
             ->visibleTo($request->user())
             ->with(['owner', 'service', 'latestNote'])
@@ -40,13 +45,17 @@ class LeadController extends Controller
             ->when($request->boolean('follow_up_due'), fn ($q) => $q->where('status', '!=', LeadStatus::Converted->value)
                 ->whereNotNull('next_follow_up_at')
                 ->where('next_follow_up_at', '<=', now()))
+            ->when($month, function ($q) use ($month) {
+                [$year, $monthNum] = explode('-', $month);
+                $q->whereYear('created_at', $year)->whereMonth('created_at', $monthNum);
+            })
             ->latest()
             ->paginate(15)
             ->withQueryString();
 
         return view('leads.index', $this->formData() + [
             'leads' => $leads,
-            'filters' => $request->only(['search', 'source', 'status', 'service_id', 'owner_id', 'follow_up_due']),
+            'filters' => $request->only(['search', 'source', 'status', 'service_id', 'owner_id', 'follow_up_due']) + ['month' => $month],
             'statusCounts' => $this->statusCounts($request),
         ]);
     }
@@ -160,6 +169,21 @@ class LeadController extends Controller
             'customer_id' => $lead->converted_customer_id,
             'deal_id' => $deal?->id,
         ]));
+    }
+
+    /**
+     * 'YYYY-MM' filter for a specific capture month — powers the Lead Source
+     * Performance report's per-source drill-down links, so clicking a row
+     * shows exactly the leads that row counted, not every lead of that
+     * source ever. Returns null (no filter) for anything malformed rather
+     * than erroring, same convention as the Recurring Invoices/Expenses
+     * month filters.
+     */
+    private function validMonth(Request $request): ?string
+    {
+        $month = $request->string('month')->trim()->value();
+
+        return preg_match('/^\d{4}-\d{2}$/', $month) ? $month : null;
     }
 
     /**

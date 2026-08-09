@@ -143,3 +143,21 @@ it('shows a dash in the Latest Note column when a lead has no notes', function (
 
     $this->actingAs($this->admin)->get(route('leads.index'))->assertOk()->assertSee('—');
 });
+
+it('filters the leads list to a specific capture month', function () {
+    Lead::factory()->create(['name' => 'August lead', 'created_at' => '2026-08-05']);
+    Lead::factory()->create(['name' => 'July lead', 'created_at' => '2026-07-05']);
+
+    $this->actingAs($this->admin)->get(route('leads.index', ['month' => '2026-08']))
+        ->assertOk()
+        ->assertSee('August lead')
+        ->assertDontSee('July lead');
+});
+
+it('ignores a malformed month filter on the leads list instead of erroring', function () {
+    Lead::factory()->create(['name' => 'Visible lead']);
+
+    $this->actingAs($this->admin)
+        ->get(route('leads.index', ['month' => 'garbage']))
+        ->assertOk()->assertSee('Visible lead');
+});
