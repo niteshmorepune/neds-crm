@@ -133,6 +133,65 @@ it('sends the correct payload to SMDost', function () {
     });
 });
 
+it('creates an SMDost portal login for the primary contact after successful provisioning', function () {
+    Http::fake([
+        'nedsdrishti.test/api/clients' => Http::response(['data' => ['id' => 'drishti-1']], 201),
+        'nedsdrishti.test/api/users' => Http::response(['data' => ['id' => 'u1']], 201),
+        'smdost.test/api/clients' => Http::response(['id' => 'smd-1'], 201),
+        'smdost.test/api/team' => Http::response(['id' => 'smd-user-1'], 201),
+    ]);
+
+    $customer = Customer::factory()->create();
+    Contact::factory()->create([
+        'customer_id' => $customer->id,
+        'is_primary' => true,
+        'name' => 'Priya Shah',
+        'email' => 'priya@example.com',
+    ]);
+
+    (new ProvisionClientExternallyJob($customer->id))->handle();
+
+    Http::assertSent(function ($request) {
+        return str_contains($request->url(), 'smdost.test/api/team')
+            && $request->data()['email'] === 'priya@example.com'
+            && $request->data()['name'] === 'Priya Shah'
+            && $request->data()['role'] === 'CLIENT'
+            && $request->data()['clientId'] === 'smd-1'
+            && $request->header('X-Service-Key')[0] === 'smdost-secret';
+    });
+});
+
+it('does not attempt to create an SMDost portal login when the customer has no primary contact email', function () {
+    Http::fake([
+        'nedsdrishti.test/api/clients' => Http::response(['data' => ['id' => 'drishti-1']], 201),
+        'smdost.test/api/clients' => Http::response(['id' => 'smd-1'], 201),
+    ]);
+
+    $customer = Customer::factory()->create();
+
+    (new ProvisionClientExternallyJob($customer->id))->handle();
+
+    Http::assertNotSent(fn ($request) => str_contains($request->url(), 'smdost.test/api/team'));
+});
+
+it('does not throw when the SMDost portal-login creation call fails', function () {
+    Http::fake([
+        'nedsdrishti.test/api/clients' => Http::response(['data' => ['id' => 'drishti-1']], 201),
+        'nedsdrishti.test/api/users' => Http::response(['data' => ['id' => 'u1']], 201),
+        'smdost.test/api/clients' => Http::response(['id' => 'smd-1'], 201),
+        'smdost.test/api/team' => Http::response('error', 500),
+    ]);
+
+    $customer = Customer::factory()->create();
+    Contact::factory()->create(['customer_id' => $customer->id, 'is_primary' => true, 'email' => 'x@example.com']);
+
+    expect(fn () => (new ProvisionClientExternallyJob($customer->id))->handle())
+        ->not->toThrow(Throwable::class);
+
+    // Client provisioning itself still succeeded despite the portal-login failure.
+    expect($customer->fresh()->smdost_client_id)->toBe('smd-1');
+});
+
 it('forwards the drishti client id to SMDost so content can be pushed directly', function () {
     Http::fake([
         'nedsdrishti.test/api/clients' => Http::response(['data' => ['id' => 'drishti-abc']], 201),

@@ -179,6 +179,16 @@ class ProvisionClientExternallyJob implements ShouldQueue
 
             $clientId = $response->json('id');
 
+            // Create a CLIENT-role portal user in SMDost so the contact can
+            // log in — mirrors createDrishtiUser() below. Without this, the
+            // client portal's "Open Social Media Dost" SSO link can never
+            // succeed for anyone: SMDost's SSO lookup matches on email
+            // against an existing CLIENT user, and provisioning previously
+            // never created one.
+            if ($clientId && $contact?->email) {
+                $this->createSmdostUser($baseUrl, $serviceKey, $contact, $clientId);
+            }
+
             return $clientId ? (string) $clientId : null;
 
         } catch (\Throwable $e) {
@@ -188,6 +198,27 @@ class ProvisionClientExternallyJob implements ShouldQueue
             ]);
 
             return null;
+        }
+    }
+
+    private function createSmdostUser(string $baseUrl, string $serviceKey, $contact, string $clientId): void
+    {
+        try {
+            // A random initial password — same as createDrishtiUser(). The
+            // client portal's SSO path never checks this password (it looks
+            // the user up by email only), so it only matters if they ever
+            // try SMDost's manual email/password login instead.
+            Http::withHeaders(['X-Service-Key' => $serviceKey])
+                ->timeout(15)
+                ->post("{$baseUrl}/api/team", [
+                    'email' => $contact->email,
+                    'name' => $contact->name,
+                    'role' => 'CLIENT',
+                    'clientId' => $clientId,
+                    'password' => Str::password(16),
+                ]);
+        } catch (\Throwable) {
+            // Non-fatal — client provisioning still succeeded.
         }
     }
 
