@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ProjectStatus;
+use App\Enums\RecurringFrequency;
 use App\Enums\TaskStatus;
 use App\Enums\UserRole;
 use App\Jobs\CreateOnboardingTasks;
@@ -154,5 +155,28 @@ class Project extends Model
     {
         return $this->schedulingContact()?->google_meet_scheduling_link
             ?: (config('company.meet_scheduling_link') ?: null);
+    }
+
+    /**
+     * The billing plan (Monthly/Quarterly/Yearly) this project's service is
+     * subscribed under, for display on the client portal — Project itself
+     * has no plan concept, so this is read from the client's recurring
+     * invoice template for the same service (preferring an active one, since
+     * a client can have an older ended template for a service they've since
+     * moved to a different cadence on). Null for one-off/project-based work
+     * with no recurring billing at all.
+     */
+    public function planFrequency(): ?RecurringFrequency
+    {
+        if ($this->service_id === null) {
+            return null;
+        }
+
+        return RecurringInvoice::where('customer_id', $this->customer_id)
+            ->where('service_id', $this->service_id)
+            ->orderByDesc('is_active')
+            ->latest()
+            ->first()
+            ?->frequency;
     }
 }

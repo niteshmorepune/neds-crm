@@ -33,7 +33,10 @@ class ProjectController extends PortalController
             'deliverables' => fn ($q) => $q->with('attachments')->latest(),
         ]);
 
-        return view('portal.projects.show', ['project' => $project]);
+        return view('portal.projects.show', [
+            'project' => $project,
+            'planFrequency' => $project->planFrequency(),
+        ]);
     }
 
     public function uploadDeliverable(Request $request, int $project, int $deliverable): RedirectResponse

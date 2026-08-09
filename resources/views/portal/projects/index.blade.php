@@ -29,6 +29,9 @@
                             @if ($project->service)
                                 <span>{{ $project->service->name }}</span>
                             @endif
+                            @if ($planFrequency = $project->planFrequency())
+                                <span>{{ $planFrequency->label() }} plan</span>
+                            @endif
                             @php
                                 $handler = $project->assignees->first() ?? $project->owner;
                             @endphp

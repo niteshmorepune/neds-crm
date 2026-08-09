@@ -1,11 +1,14 @@
 <?php
 
 use App\Enums\DeliverableStatus;
+use App\Enums\RecurringFrequency;
 use App\Enums\UserRole;
 use App\Livewire\ProjectDeliverables;
 use App\Models\Contact;
 use App\Models\Customer;
 use App\Models\Project;
+use App\Models\RecurringInvoice;
+use App\Models\Service;
 use App\Models\User;
 use Database\Seeders\MenuItemsSeeder;
 use Illuminate\Http\UploadedFile;
@@ -162,6 +165,59 @@ it('shows the What We Need From You checklist on the portal project page', funct
 
     $this->actingAs($contact, 'portal')->get(route('portal.projects.show', $project))
         ->assertOk()->assertSee('What We Need From You')->assertSee('Company logo')->assertSee('High-res PNG please');
+});
+
+it('shows the service start date and plan type on the portal project page', function () {
+    $service = Service::factory()->create();
+    $customer = Customer::factory()->create();
+    $contact = Contact::factory()->portalUser()->create(['customer_id' => $customer->id]);
+    $project = Project::factory()->create([
+        'customer_id' => $customer->id,
+        'service_id' => $service->id,
+        'start_date' => '2026-01-15',
+    ]);
+    RecurringInvoice::factory()->create([
+        'customer_id' => $customer->id,
+        'service_id' => $service->id,
+        'frequency' => RecurringFrequency::Yearly->value,
+        'is_active' => true,
+    ]);
+
+    $this->actingAs($contact, 'portal')->get(route('portal.projects.show', $project))
+        ->assertOk()
+        ->assertSee('Service started')
+        ->assertSee('15 Jan 2026')
+        ->assertSee('Plan')
+        ->assertSee('Yearly');
+});
+
+it('omits the plan row on the portal project page when the service has no recurring invoice', function () {
+    $service = Service::factory()->create();
+    $customer = Customer::factory()->create();
+    $contact = Contact::factory()->portalUser()->create(['customer_id' => $customer->id]);
+    $project = Project::factory()->create(['customer_id' => $customer->id, 'service_id' => $service->id]);
+
+    $this->actingAs($contact, 'portal')->get(route('portal.projects.show', $project))
+        ->assertOk()->assertDontSee('Plan</dt>', false);
+});
+
+it('prefers the active recurring invoice for plan type over an older ended one on the same service', function () {
+    $service = Service::factory()->create();
+    $customer = Customer::factory()->create();
+    $contact = Contact::factory()->portalUser()->create(['customer_id' => $customer->id]);
+    $project = Project::factory()->create(['customer_id' => $customer->id, 'service_id' => $service->id]);
+    RecurringInvoice::factory()->create([
+        'customer_id' => $customer->id, 'service_id' => $service->id,
+        'frequency' => RecurringFrequency::Monthly->value, 'is_active' => false,
+        'end_date' => now()->subMonth()->toDateString(),
+    ]);
+    RecurringInvoice::factory()->create([
+        'customer_id' => $customer->id, 'service_id' => $service->id,
+        'frequency' => RecurringFrequency::Yearly->value, 'is_active' => true,
+    ]);
+
+    $this->actingAs($contact, 'portal')->get(route('portal.projects.show', $project))
+        ->assertOk()->assertSee('Yearly');
 });
 
 it('lets an authorized internal user download a deliverable attachment but blocks an outsider', function () {

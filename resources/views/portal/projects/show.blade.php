@@ -19,12 +19,18 @@
         </div>
 
         <dl class="grid grid-cols-1 gap-y-2 gap-x-6 text-sm text-gray-600 sm:grid-cols-2">
-            @if ($project->start_date || $project->end_date)
+            @if ($project->start_date)
                 <div class="flex gap-2">
-                    <dt class="text-gray-400 shrink-0">Timeline</dt>
-                    <dd>{{ $project->start_date?->format('d M Y') ?? '—' }}
+                    <dt class="text-gray-400 shrink-0">Service started</dt>
+                    <dd>{{ $project->start_date->format('d M Y') }}
                         @if ($project->end_date) → {{ $project->end_date->format('d M Y') }} @endif
                     </dd>
+                </div>
+            @endif
+            @if ($planFrequency)
+                <div class="flex gap-2">
+                    <dt class="text-gray-400 shrink-0">Plan</dt>
+                    <dd>{{ $planFrequency->label() }}</dd>
                 </div>
             @endif
         </dl>
