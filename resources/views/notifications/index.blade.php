@@ -26,6 +26,20 @@
                                 Was due {{ \Illuminate\Support\Carbon::parse($data['follow_up_at'])->timezone(config('app.display_timezone'))->format('d M Y, g:i A') }}
                                 · {{ $notification->created_at->timezone(config('app.display_timezone'))->diffForHumans() }}
                             </p>
+                        @elseif ($type === 'follow_up_reminder')
+                            <p class="text-sm font-medium text-gray-900">
+                                🔔 Follow-up reminder:
+                                <a href="{{ $data['url'] }}" class="text-indigo-600 hover:underline">
+                                    {{ $data['customer_name'] ?? 'Client removed' }}
+                                </a>
+                            </p>
+                            @if (! empty($data['next_action']))
+                                <p class="mt-0.5 text-xs text-gray-700">{{ $data['next_action'] }}</p>
+                            @endif
+                            <p class="mt-0.5 text-xs text-gray-500">
+                                Was due {{ \Illuminate\Support\Carbon::parse($data['remind_at'])->timezone(config('app.display_timezone'))->format('d M Y, g:i A') }}
+                                · {{ $notification->created_at->timezone(config('app.display_timezone'))->diffForHumans() }}
+                            </p>
                         @elseif (! empty($data['message']))
                             @php($typeIcon = match ($type) {
                                 'new_lead'                    => '🟢',

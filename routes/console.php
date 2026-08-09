@@ -62,6 +62,10 @@ Schedule::command('app:send-recurring-invoice-reminders')->dailyAt('09:00')->tim
 // Call follow-up reminders — check every 5 minutes so notifications fire close to the scheduled time.
 Schedule::command('app:send-call-followup-reminders')->everyFiveMinutes();
 
+// Dashboard follow-up reminders — same cadence, for the Dashboard's own
+// "Follow-up Reminder" widget (App\Models\FollowUpReminder).
+Schedule::command('app:send-dashboard-followup-reminders')->everyFiveMinutes();
+
 // Ticket SLA breach escalation — check hourly during the working day.
 Schedule::command('app:check-ticket-sla')->hourly();
 
