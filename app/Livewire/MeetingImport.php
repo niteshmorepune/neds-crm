@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Enums\MeetingPlatform;
 use App\Enums\MeetingSummaryStatus;
 use App\Jobs\SummarizeMeeting;
 use App\Models\Customer;
@@ -9,9 +10,12 @@ use App\Models\GoogleAccountConnection;
 use App\Models\Meeting;
 use App\Services\GoogleCalendarClient;
 use App\Services\GoogleMeetImportClient;
+use App\Support\Ai;
 use App\Support\GoogleMeet;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 
 /**
@@ -54,10 +58,81 @@ class MeetingImport extends Component
 
     public ?string $error = null;
 
+    public bool $showManualForm = false;
+
+    public string $manualPlatform = '';
+
+    public string $manualTitle = '';
+
+    public string $manualOccurredAt = '';
+
+    public ?int $manualDurationMinutes = null;
+
+    public string $manualNotes = '';
+
     public function mount(Model $record, bool $canManage = false): void
     {
         $this->record = $record;
         $this->canManage = $canManage;
+    }
+
+    /**
+     * Log a meeting the client organized on Zoom/Teams/another platform —
+     * available regardless of whether NEDS's own Google account is
+     * connected, since it doesn't touch that integration at all. Reuses the
+     * same "summarize if AI is enabled" trigger as an imported Google Meet
+     * (importEvent()), so pasted notes get the same Claude summary treatment.
+     */
+    public function openManualForm(): void
+    {
+        abort_unless($this->canManage, 403);
+
+        $this->error = null;
+        $this->manualPlatform = MeetingPlatform::Zoom->value;
+        $this->manualTitle = '';
+        $this->manualOccurredAt = now()->timezone(config('app.display_timezone', 'Asia/Kolkata'))->format('Y-m-d\TH:i');
+        $this->manualDurationMinutes = null;
+        $this->manualNotes = '';
+        $this->showManualForm = true;
+    }
+
+    public function cancelManualForm(): void
+    {
+        $this->showManualForm = false;
+        $this->error = null;
+    }
+
+    public function saveManualMeeting(): void
+    {
+        abort_unless($this->canManage, 403);
+
+        $validated = $this->validate([
+            'manualPlatform' => ['required', Rule::enum(MeetingPlatform::class)->except(MeetingPlatform::GoogleMeet)],
+            'manualTitle' => ['nullable', 'string', 'max:255'],
+            'manualOccurredAt' => ['required', 'date_format:Y-m-d\TH:i'],
+            'manualDurationMinutes' => ['nullable', 'integer', 'min:0'],
+            'manualNotes' => ['nullable', 'string'],
+        ]);
+
+        $platform = MeetingPlatform::from($validated['manualPlatform']);
+        $occurredAt = Carbon::createFromFormat('Y-m-d\TH:i', $validated['manualOccurredAt'], config('app.display_timezone', 'Asia/Kolkata'))->utc();
+
+        $meeting = $this->record->meetings()->create([
+            'user_id' => auth()->id(),
+            'google_event_id' => 'manual-'.Str::uuid(),
+            'platform' => $platform->value,
+            'title' => $validated['manualTitle'] ?: "{$platform->label()} meeting",
+            'occurred_at' => $occurredAt,
+            'duration_minutes' => $validated['manualDurationMinutes'] ?? null,
+            'raw_transcript' => $validated['manualNotes'] ?: null,
+        ]);
+
+        if (filled($meeting->raw_transcript) && Ai::enabled()) {
+            $meeting->forceFill(['ai_summary_status' => MeetingSummaryStatus::Pending])->saveQuietly();
+            SummarizeMeeting::dispatch($meeting->id);
+        }
+
+        $this->showManualForm = false;
     }
 
     public function openScheduler(): void
@@ -203,6 +278,12 @@ class MeetingImport extends Component
 
         $this->error = null;
         $meeting = $this->record->meetings()->findOrFail($meetingId);
+
+        if (! $meeting->isGoogleMeetImport()) {
+            $this->error = 'This meeting was logged manually — there\'s no Google Calendar event to sync.';
+
+            return;
+        }
 
         $connection = GoogleAccountConnection::forCompany();
 

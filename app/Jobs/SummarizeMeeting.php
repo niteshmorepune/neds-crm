@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Enums\MeetingSummaryStatus;
 use App\Models\Meeting;
 use App\Services\AiAssistant;
+use App\Support\Ai;
 use App\Support\GoogleMeet;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -19,6 +20,13 @@ use Illuminate\Queue\SerializesModels;
  * Processing before the call so the UI can poll, and every outcome is
  * absorbed into ai_summary_status rather than surfaced as a failed queue
  * job — an AI outage must never look like a system error.
+ *
+ * A Google-Meet-imported meeting requires GoogleMeet::summaryEnabled() (both
+ * the integration flag AND AI); a manually-logged external meeting
+ * (Zoom/Teams/etc., see MeetingImport::saveManualMeeting()) has nothing to
+ * do with the Google integration, so it only needs Ai::enabled() — gating it
+ * behind GOOGLE_MEET_ENABLED too would fail every manual summary for a shop
+ * that has AI on but hasn't connected a Google account at all.
  */
 class SummarizeMeeting implements ShouldQueue
 {
@@ -34,7 +42,9 @@ class SummarizeMeeting implements ShouldQueue
             return;
         }
 
-        if (! GoogleMeet::summaryEnabled()) {
+        $enabled = $meeting->isGoogleMeetImport() ? GoogleMeet::summaryEnabled() : Ai::enabled();
+
+        if (! $enabled) {
             $meeting->forceFill(['ai_summary_status' => MeetingSummaryStatus::Failed])->saveQuietly();
 
             return;

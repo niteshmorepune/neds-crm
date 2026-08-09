@@ -1,23 +1,31 @@
 <div>
-    @if ($featureEnabled && $canManage)
+    @if ($canManage)
         <div class="mb-4">
-            @if (! $connected)
-                <p class="text-sm text-gray-400">
-                    <a href="{{ route('profile.edit') }}" class="text-indigo-600 hover:underline">Ask an admin to connect NEDS's Google account</a>
-                    to create meetings or import Meet notes here.
-                </p>
-            @elseif (! $showScheduler && ! $showPicker)
+            @if (! $showScheduler && ! $showPicker && ! $showManualForm)
                 <div class="flex flex-wrap items-center gap-2">
-                    <button type="button" wire:click="openScheduler"
-                            class="inline-flex items-center gap-1 rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">
-                        + Create Meeting
-                    </button>
-                    <button type="button" wire:click="loadEvents" wire:loading.attr="disabled" wire:target="loadEvents"
-                            class="inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">
-                        <span wire:loading.remove wire:target="loadEvents">Import Meet Notes</span>
-                        <span wire:loading wire:target="loadEvents">Loading Calendar…</span>
+                    @if ($featureEnabled && $connected)
+                        <button type="button" wire:click="openScheduler"
+                                class="inline-flex items-center gap-1 rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">
+                            + Create Meeting
+                        </button>
+                        <button type="button" wire:click="loadEvents" wire:loading.attr="disabled" wire:target="loadEvents"
+                                class="inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+                            <span wire:loading.remove wire:target="loadEvents">Import Meet Notes</span>
+                            <span wire:loading wire:target="loadEvents">Loading Calendar…</span>
+                        </button>
+                    @endif
+                    <button type="button" wire:click="openManualForm"
+                            class="inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                        + Log External Meeting
                     </button>
                 </div>
+            @endif
+
+            @if ($featureEnabled && ! $connected)
+                <p class="mt-2 text-sm text-gray-400">
+                    <a href="{{ route('profile.edit') }}" class="text-indigo-600 hover:underline">Ask an admin to connect NEDS's Google account</a>
+                    to create meetings or import Meet notes here — or log an external meeting (Zoom, Teams, etc.) using the button above.
+                </p>
             @endif
 
             @if ($error)
@@ -77,6 +85,57 @@
                     </ul>
                 </div>
             @endif
+
+            @if ($showManualForm)
+                <div class="mt-2 rounded-md border border-gray-200 bg-gray-50 p-3">
+                    <div class="mb-2 flex items-center justify-between">
+                        <p class="text-xs font-medium text-gray-500">Log a meeting held on another platform</p>
+                        <button type="button" wire:click="cancelManualForm" class="text-xs text-gray-400 hover:text-gray-600">Cancel</button>
+                    </div>
+                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <div>
+                            <x-input-label for="manualPlatform" value="Platform" />
+                            <select id="manualPlatform" wire:model="manualPlatform" class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm">
+                                @foreach (\App\Enums\MeetingPlatform::cases() as $platform)
+                                    @continue($platform === \App\Enums\MeetingPlatform::GoogleMeet)
+                                    <option value="{{ $platform->value }}">{{ $platform->label() }}</option>
+                                @endforeach
+                            </select>
+                            @error('manualPlatform') <span class="mt-1 block text-xs text-red-600">{{ $message }}</span> @enderror
+                        </div>
+                        <div>
+                            <x-input-label for="manualOccurredAt" value="When" />
+                            <input id="manualOccurredAt" type="datetime-local" wire:model="manualOccurredAt" class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm" />
+                            @error('manualOccurredAt') <span class="mt-1 block text-xs text-red-600">{{ $message }}</span> @enderror
+                        </div>
+                        <div>
+                            <x-input-label for="manualTitle" value="Title (optional)" />
+                            <input id="manualTitle" type="text" wire:model="manualTitle" placeholder="e.g. Quarterly review call"
+                                   class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm" />
+                            @error('manualTitle') <span class="mt-1 block text-xs text-red-600">{{ $message }}</span> @enderror
+                        </div>
+                        <div>
+                            <x-input-label for="manualDurationMinutes" value="Duration (mins, optional)" />
+                            <input id="manualDurationMinutes" type="number" min="0" wire:model="manualDurationMinutes"
+                                   class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm" />
+                            @error('manualDurationMinutes') <span class="mt-1 block text-xs text-red-600">{{ $message }}</span> @enderror
+                        </div>
+                        <div class="sm:col-span-2">
+                            <x-input-label for="manualNotes" value="Notes / summary (optional)" />
+                            <textarea id="manualNotes" wire:model="manualNotes" rows="3" placeholder="Paste notes or a transcript — we'll summarize it automatically if AI is enabled."
+                                      class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm"></textarea>
+                            @error('manualNotes') <span class="mt-1 block text-xs text-red-600">{{ $message }}</span> @enderror
+                        </div>
+                        <div class="sm:col-span-2">
+                            <button type="button" wire:click="saveManualMeeting" wire:loading.attr="disabled" wire:target="saveManualMeeting"
+                                    class="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-500 disabled:opacity-50">
+                                <span wire:loading.remove wire:target="saveManualMeeting">Save meeting</span>
+                                <span wire:loading wire:target="saveManualMeeting">Saving…</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            @endif
         </div>
     @endif
 
@@ -84,7 +143,12 @@
         @forelse ($meetings as $meeting)
             <li class="rounded-md border border-gray-100 p-3">
                 <div class="flex items-center justify-between">
-                    <p class="text-sm font-medium text-gray-800">{{ $meeting->title }}</p>
+                    <p class="text-sm font-medium text-gray-800">
+                        {{ $meeting->title }}
+                        @unless ($meeting->isGoogleMeetImport())
+                            <span class="ml-1 inline-flex rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">{{ $meeting->platform->label() }}</span>
+                        @endunless
+                    </p>
                     <p class="text-xs text-gray-400">
                         {{ $meeting->occurred_at->timezone(config('app.display_timezone'))->format('d M, g:i A') }}
                         @if ($meeting->duration_minutes) · {{ $meeting->duration_minutes }}m @endif
@@ -101,7 +165,7 @@
                     @if ($meeting->drive_transcript_url)
                         <a href="{{ $meeting->drive_transcript_url }}" target="_blank" rel="noopener" class="text-indigo-600 hover:underline">Transcript (Drive)</a>
                     @endif
-                    @if ($canManage && ! $meeting->drive_recording_url && ! $meeting->drive_transcript_url)
+                    @if ($canManage && $meeting->isGoogleMeetImport() && ! $meeting->drive_recording_url && ! $meeting->drive_transcript_url)
                         <button type="button" wire:click="syncRecording({{ $meeting->id }})" wire:loading.attr="disabled" wire:target="syncRecording({{ $meeting->id }})"
                                 class="text-gray-500 hover:text-gray-700 disabled:opacity-50">
                             <span wire:loading.remove wire:target="syncRecording({{ $meeting->id }})">↻ Sync recording &amp; transcript</span>
@@ -111,7 +175,7 @@
                 </div>
                 @if ($meeting->raw_transcript)
                     <details class="mt-2">
-                        <summary class="cursor-pointer text-xs font-medium text-gray-500">View transcript</summary>
+                        <summary class="cursor-pointer text-xs font-medium text-gray-500">{{ $meeting->isGoogleMeetImport() ? 'View transcript' : 'View notes' }}</summary>
                         <p class="mt-1 max-h-48 overflow-y-auto whitespace-pre-wrap text-xs text-gray-600">{{ $meeting->raw_transcript }}</p>
                     </details>
                 @endif

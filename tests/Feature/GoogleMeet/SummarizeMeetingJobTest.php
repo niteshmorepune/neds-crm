@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\MeetingPlatform;
 use App\Enums\MeetingSummaryStatus;
 use App\Jobs\SummarizeMeeting;
 use App\Models\AiUsage;
@@ -83,5 +84,52 @@ it('is a no-op when the meeting no longer exists', function () {
 
     (new SummarizeMeeting(99999))->handle(app(AiAssistant::class));
 
+    Http::assertNothingSent();
+});
+
+it('summarizes a manually-logged meeting from AI alone, even with the Google Meet integration off', function () {
+    config([
+        'services.google_meet.enabled' => false,
+        'services.anthropic.enabled' => true,
+        'services.anthropic.key' => 'sk-test',
+    ]);
+    Http::fake([
+        'api.anthropic.com/*' => Http::response([
+            'content' => [['type' => 'text', 'text' => 'Key points: client wants a proposal.']],
+            'usage' => ['input_tokens' => 50, 'output_tokens' => 20],
+        ]),
+    ]);
+    $meeting = Meeting::factory()->create([
+        'platform' => MeetingPlatform::Zoom->value,
+        'raw_transcript' => 'Client asked for a new proposal.',
+    ]);
+
+    (new SummarizeMeeting($meeting->id))->handle(app(AiAssistant::class));
+
+    expect($meeting->refresh()->ai_summary_status)->toBe(MeetingSummaryStatus::Completed);
+});
+
+it('fails a manually-logged meeting summary when AI itself is disabled, without requiring Google Meet at all', function () {
+    config(['services.google_meet.enabled' => false, 'services.anthropic.enabled' => false]);
+    Http::fake();
+    $meeting = Meeting::factory()->create([
+        'platform' => MeetingPlatform::Zoom->value,
+        'raw_transcript' => 'Client asked for a new proposal.',
+    ]);
+
+    (new SummarizeMeeting($meeting->id))->handle(app(AiAssistant::class));
+
+    expect($meeting->refresh()->ai_summary_status)->toBe(MeetingSummaryStatus::Failed);
+    Http::assertNothingSent();
+});
+
+it('still requires the Google Meet integration flag for a Google-imported meeting, even with AI enabled', function () {
+    config(['services.google_meet.enabled' => false, 'services.anthropic.enabled' => true, 'services.anthropic.key' => 'sk-test']);
+    Http::fake();
+    $meeting = Meeting::factory()->create(['raw_transcript' => 'Client: lets renew the AMC.']);
+
+    (new SummarizeMeeting($meeting->id))->handle(app(AiAssistant::class));
+
+    expect($meeting->refresh()->ai_summary_status)->toBe(MeetingSummaryStatus::Failed);
     Http::assertNothingSent();
 });
