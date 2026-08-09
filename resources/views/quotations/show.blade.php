@@ -9,6 +9,49 @@
             <div class="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">{{ $errors->first() }}</div>
         @endif
 
+        @if ($quotation->needsApproval())
+            <div class="rounded-md border px-4 py-3 text-sm
+                {{ $quotation->approval_status === \App\Enums\QuotationApprovalStatus::Rejected ? 'bg-red-50 border-red-200 text-red-800' : 'bg-amber-50 border-amber-200 text-amber-800' }}">
+                <p class="font-medium">{{ $quotation->approval_status->label() }} — this quotation cannot be sent to the client yet.</p>
+                @if ($quotation->approval_notes)
+                    <p class="mt-1">“{{ $quotation->approval_notes }}”</p>
+                @endif
+                @if ($quotation->approvedBy)
+                    <p class="mt-1 text-xs opacity-75">By {{ $quotation->approvedBy->name }} on {{ $quotation->approved_at->timezone(config('app.display_timezone'))->format('d M Y, g:i A') }}</p>
+                @endif
+
+                <div class="mt-3 flex flex-wrap gap-2">
+                    @can('review', $quotation)
+                        <form method="POST" action="{{ route('quotations.approve', $quotation) }}">
+                            @csrf
+                            <button class="rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-500">Approve</button>
+                        </form>
+                        <form method="POST" action="{{ route('quotations.reject', $quotation) }}">
+                            @csrf
+                            <button class="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-500">Reject</button>
+                        </form>
+                        <button type="button" onclick="document.getElementById('request-changes-form').classList.toggle('hidden')"
+                                class="rounded-md bg-amber-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-400">Request changes</button>
+                    @endcan
+                    @can('update', $quotation)
+                        @if (in_array($quotation->approval_status, [\App\Enums\QuotationApprovalStatus::Rejected, \App\Enums\QuotationApprovalStatus::ChangesRequested], true))
+                            <form method="POST" action="{{ route('quotations.resubmit', $quotation) }}">
+                                @csrf
+                                <button class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Resubmit for approval</button>
+                            </form>
+                        @endif
+                    @endcan
+                </div>
+                @can('review', $quotation)
+                    <form id="request-changes-form" method="POST" action="{{ route('quotations.request-changes', $quotation) }}" class="mt-2 hidden">
+                        @csrf
+                        <input type="text" name="approval_notes" placeholder="What needs to change? (required)" maxlength="500" required class="block w-full max-w-sm rounded-md border-gray-300 text-xs shadow-sm" />
+                        <button class="mt-1 rounded-md border border-amber-300 px-2 py-1 text-xs font-medium text-amber-700 hover:bg-amber-50">Confirm</button>
+                    </form>
+                @endcan
+            </div>
+        @endif
+
         <div class="rounded-lg bg-white p-6 shadow-sm">
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
@@ -21,10 +64,14 @@
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
                     @can('view', $quotation)
-                        <form method="POST" action="{{ route('quotations.send', $quotation) }}">
-                            @csrf
-                            <button class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">Send to Client</button>
-                        </form>
+                        @if ($quotation->needsApproval())
+                            <button type="button" disabled title="Needs approval before it can be sent" class="cursor-not-allowed rounded-md bg-gray-300 px-3 py-2 text-sm font-medium text-gray-500">Send to Client</button>
+                        @else
+                            <form method="POST" action="{{ route('quotations.send', $quotation) }}">
+                                @csrf
+                                <button class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">Send to Client</button>
+                            </form>
+                        @endif
                     @endcan
                     @can('update', $quotation)
                         @if ($quotation->isEditable())

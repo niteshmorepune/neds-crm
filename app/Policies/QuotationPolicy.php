@@ -46,6 +46,15 @@ class QuotationPolicy
         return $this->view($user, $quotation);
     }
 
+    /**
+     * Approve / reject / request changes on a quotation before it's sent.
+     * Admin/Manager only — mirrors LeaveRequestPolicy::review.
+     */
+    public function review(User $user, Quotation $quotation): bool
+    {
+        return $user->hasRole(UserRole::Admin, UserRole::Manager);
+    }
+
     private function salesCanSeeCustomer(User $user, Quotation $quotation): bool
     {
         $ownerId = $quotation->customer?->owner_id;

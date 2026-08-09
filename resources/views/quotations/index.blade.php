@@ -38,7 +38,12 @@
                         <tr class="hover:bg-gray-50">
                             <td class="px-4 py-3"><a href="{{ route('quotations.show', $quotation) }}" class="font-medium text-indigo-600 hover:underline">{{ $quotation->number ?? '—' }}</a></td>
                             <td class="px-4 py-3 text-gray-600">{{ $quotation->customer?->company_name ?? 'Client removed' }}</td>
-                            <td class="px-4 py-3 text-gray-600">{{ $quotation->status->label() }}</td>
+                            <td class="px-4 py-3 text-gray-600">
+                                {{ $quotation->status->label() }}
+                                @if ($quotation->needsApproval())
+                                    <span class="ml-1 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">{{ $quotation->approval_status->label() }}</span>
+                                @endif
+                            </td>
                             <td class="px-4 py-3 text-right text-gray-600">{{ \App\Support\Money::format($quotation->total) }}</td>
                             <td class="px-4 py-3 text-gray-600">{{ $quotation->validity_date?->format('d M Y') ?? '—' }}</td>
                             <td class="px-4 py-3 text-right"><a href="{{ route('quotations.show', $quotation) }}" class="text-gray-500 hover:text-gray-700">View</a></td>

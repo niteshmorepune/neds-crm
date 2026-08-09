@@ -3,10 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Actions\ConvertQuotationToInvoice;
+use App\Enums\QuotationApprovalStatus;
 use App\Enums\QuotationStatus;
 use App\Enums\UserRole;
 use App\Mail\QuotationSent;
 use App\Models\Quotation;
+use App\Models\User;
+use App\Notifications\QuotationNeedsApproval;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
@@ -51,6 +54,10 @@ class QuotationController extends Controller
     {
         $this->authorize('view', $quotation);
 
+        if ($quotation->needsApproval()) {
+            return back()->withErrors(['send' => 'This quotation needs approval before it can be sent. Check the Approval Center or ask a manager to approve it.']);
+        }
+
         $email = $quotation->customer->load('contacts')->billingEmail();
 
         if (! $email) {
@@ -66,6 +73,70 @@ class QuotationController extends Controller
         return back()->with('status', "Quotation sent to {$email}.");
     }
 
+    public function approve(Request $request, Quotation $quotation): RedirectResponse
+    {
+        $this->authorize('review', $quotation);
+
+        $quotation->update([
+            'approval_status' => QuotationApprovalStatus::Approved,
+            'approval_notes' => null,
+            'approved_by' => $request->user()->id,
+            'approved_at' => now(),
+        ]);
+
+        return back()->with('status', 'Quotation approved — it can now be sent.');
+    }
+
+    public function reject(Request $request, Quotation $quotation): RedirectResponse
+    {
+        $this->authorize('review', $quotation);
+
+        $data = $request->validate(['approval_notes' => ['nullable', 'string', 'max:500']]);
+
+        $quotation->update([
+            'approval_status' => QuotationApprovalStatus::Rejected,
+            'approval_notes' => $data['approval_notes'] ?? null,
+            'approved_by' => $request->user()->id,
+            'approved_at' => now(),
+        ]);
+
+        return back()->with('status', 'Quotation rejected.');
+    }
+
+    public function requestChanges(Request $request, Quotation $quotation): RedirectResponse
+    {
+        $this->authorize('review', $quotation);
+
+        $data = $request->validate(['approval_notes' => ['required', 'string', 'max:500']]);
+
+        $quotation->update([
+            'approval_status' => QuotationApprovalStatus::ChangesRequested,
+            'approval_notes' => $data['approval_notes'],
+            'approved_by' => $request->user()->id,
+            'approved_at' => now(),
+        ]);
+
+        return back()->with('status', 'Changes requested — the creator can edit and resubmit.');
+    }
+
+    public function resubmitForApproval(Request $request, Quotation $quotation): RedirectResponse
+    {
+        $this->authorize('update', $quotation);
+        abort_if($quotation->approval_status === QuotationApprovalStatus::Approved, 409);
+
+        $quotation->update([
+            'approval_status' => QuotationApprovalStatus::Pending,
+            'approval_notes' => null,
+            'approved_by' => null,
+            'approved_at' => null,
+        ]);
+
+        User::withAnyRole(UserRole::Admin, UserRole::Manager)->get()
+            ->each(fn (User $u) => $u->notify(new QuotationNeedsApproval($quotation)));
+
+        return back()->with('status', 'Resubmitted for approval.');
+    }
+
     public function transition(Request $request, Quotation $quotation): RedirectResponse
     {
         $this->authorize('view', $quotation);
@@ -78,6 +149,12 @@ class QuotationController extends Controller
 
         if (! $quotation->status->canTransitionTo($target)) {
             return back()->withErrors(['status' => "Cannot move a {$quotation->status->label()} quotation to {$target->label()}."]);
+        }
+
+        // Draft's only transition is to Sent — same approval gate send() enforces,
+        // so this route can't be used to bypass it.
+        if ($quotation->needsApproval()) {
+            return back()->withErrors(['status' => 'This quotation needs approval before it can be sent. Check the Approval Center or ask a manager to approve it.']);
         }
 
         $quotation->update(['status' => $target]);

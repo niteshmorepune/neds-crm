@@ -48,6 +48,7 @@ class MenuItemsSeeder extends Seeder
             ['key' => 'project-updates',  'label' => 'Project Updates',  'route' => 'projects.index',   'icon' => 'briefcase',  'roles' => [UserRole::Manager, UserRole::Sales, UserRole::Support, UserRole::Intern]],
             ['key' => 'emptask',          'label' => 'Employee Task',    'route' => 'tasks.index',      'icon' => 'check',      'roles' => $all],
             ['key' => 'manager-action-center', 'label' => 'Action Center', 'route' => 'manager-action-center.index', 'icon' => 'bolt', 'roles' => [UserRole::Manager]],
+            ['key' => 'approval-center',  'label' => 'Approval Center',  'route' => 'approval-center.index', 'icon' => 'check-badge', 'roles' => [UserRole::Manager]],
             ['key' => 'team-workload',    'label' => 'Team Workload',    'route' => 'team-workload.index', 'icon' => 'scale', 'roles' => [UserRole::Manager]],
             ['key' => 'project-health',   'label' => 'Project Health',   'route' => 'project-health.index', 'icon' => 'heart', 'roles' => [UserRole::Manager]],
             ['key' => 'revenue-at-risk',  'label' => 'Revenue at Risk',  'route' => 'revenue-at-risk.index', 'icon' => 'exclamation-triangle', 'roles' => [UserRole::Manager]],

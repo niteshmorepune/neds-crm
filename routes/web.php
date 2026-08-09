@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AnnouncementController;
+use App\Http\Controllers\ApprovalCenterController;
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\AuditLogController;
@@ -195,6 +196,10 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
         Route::post('quotations/{quotation}/send', [QuotationController::class, 'send'])->name('quotations.send');
         Route::post('quotations/{quotation}/status', [QuotationController::class, 'transition'])->name('quotations.status');
         Route::post('quotations/{quotation}/convert', [QuotationController::class, 'convert'])->name('quotations.convert');
+        Route::post('quotations/{quotation}/approve', [QuotationController::class, 'approve'])->name('quotations.approve');
+        Route::post('quotations/{quotation}/reject', [QuotationController::class, 'reject'])->name('quotations.reject');
+        Route::post('quotations/{quotation}/request-changes', [QuotationController::class, 'requestChanges'])->name('quotations.request-changes');
+        Route::post('quotations/{quotation}/resubmit', [QuotationController::class, 'resubmitForApproval'])->name('quotations.resubmit');
         Route::delete('quotations/{quotation}', [QuotationController::class, 'destroy'])->name('quotations.destroy');
     });
 
@@ -532,6 +537,16 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
      */
     Route::middleware('menu.access:manager-action-center')->group(function () {
         Route::get('manager-action-center', [ManagerActionCenterController::class, 'index'])->name('manager-action-center.index');
+    });
+
+    /*
+     * Central Approval Center — aggregates every genuinely pending approval
+     * workflow that already exists (leave requests, project daily updates,
+     * quotations). See ApprovalCenterMetrics for what's deliberately
+     * excluded (Content, Client requests) and why.
+     */
+    Route::middleware('menu.access:approval-center')->group(function () {
+        Route::get('approval-center', [ApprovalCenterController::class, 'index'])->name('approval-center.index');
     });
 
     /*

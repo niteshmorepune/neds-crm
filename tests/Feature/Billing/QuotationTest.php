@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\QuotationApprovalStatus;
 use App\Enums\QuotationStatus;
 use App\Enums\UserRole;
 use App\Livewire\QuotationBuilder;
@@ -8,8 +9,11 @@ use App\Models\Deal;
 use App\Models\Invoice;
 use App\Models\Quotation;
 use App\Models\User;
+use App\Notifications\QuotationNeedsApproval;
 use Database\Seeders\MenuItemsSeeder;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 
 beforeEach(function () {
@@ -195,7 +199,7 @@ it('hides the draft-scope-of-work button entirely when AI is disabled', function
 });
 
 it('allows valid status transitions and blocks invalid ones', function () {
-    $quotation = quotationWithLine();
+    $quotation = quotationWithLine(['approval_status' => QuotationApprovalStatus::Approved]);
 
     $this->actingAs($this->admin)->post(route('quotations.status', $quotation), ['status' => 'sent']);
     expect($quotation->fresh()->status)->toBe(QuotationStatus::Sent);
@@ -209,6 +213,71 @@ it('allows valid status transitions and blocks invalid ones', function () {
         ->post(route('quotations.status', $draft), ['status' => 'accepted'])
         ->assertSessionHasErrors('status');
     expect($draft->fresh()->status)->toBe(QuotationStatus::Draft);
+});
+
+it('defaults a new quotation to pending approval and notifies admin/manager', function () {
+    Notification::fake();
+    $manager = User::factory()->role(UserRole::Manager)->create();
+
+    $quotation = quotationWithLine();
+
+    expect($quotation->approval_status)->toBe(QuotationApprovalStatus::Pending)
+        ->and($quotation->needsApproval())->toBeTrue();
+
+    Notification::assertSentTo($manager, QuotationNeedsApproval::class);
+});
+
+it('blocks sending or transitioning an unapproved quotation to Sent', function () {
+    Mail::fake();
+    $quotation = quotationWithLine();
+
+    $this->actingAs($this->admin)->post(route('quotations.send', $quotation))->assertSessionHasErrors('send');
+    $this->actingAs($this->admin)->post(route('quotations.status', $quotation), ['status' => 'sent'])->assertSessionHasErrors('status');
+    Mail::assertNothingSent();
+    expect($quotation->fresh()->status)->toBe(QuotationStatus::Draft);
+});
+
+it('lets a manager approve a quotation, unblocking send', function () {
+    Mail::fake();
+    $quotation = quotationWithLine(['customer_id' => Customer::factory()->create(['email' => 'client@x.test'])->id]);
+    $manager = User::factory()->role(UserRole::Manager)->create();
+
+    $this->actingAs($manager)->post(route('quotations.approve', $quotation))->assertRedirect();
+
+    $quotation->refresh();
+    expect($quotation->approval_status)->toBe(QuotationApprovalStatus::Approved)
+        ->and($quotation->approved_by)->toBe($manager->id)
+        ->and($quotation->needsApproval())->toBeFalse();
+
+    $this->actingAs($this->admin)->post(route('quotations.send', $quotation))->assertRedirect();
+    expect($quotation->fresh()->status)->toBe(QuotationStatus::Sent);
+});
+
+it('lets a manager reject or request changes on a quotation, and the creator can resubmit', function () {
+    $quotation = quotationWithLine();
+    $manager = User::factory()->role(UserRole::Manager)->create();
+
+    $this->actingAs($manager)->post(route('quotations.request-changes', $quotation), ['approval_notes' => 'Fix the discount line'])->assertRedirect();
+    expect($quotation->fresh()->approval_status)->toBe(QuotationApprovalStatus::ChangesRequested)
+        ->and($quotation->fresh()->approval_notes)->toBe('Fix the discount line');
+
+    Notification::fake();
+    $this->actingAs($this->admin)->post(route('quotations.resubmit', $quotation))->assertRedirect();
+    expect($quotation->fresh()->approval_status)->toBe(QuotationApprovalStatus::Pending)
+        ->and($quotation->fresh()->approval_notes)->toBeNull();
+    Notification::assertSentTo($manager, QuotationNeedsApproval::class);
+
+    $this->actingAs($manager)->post(route('quotations.reject', $quotation), ['approval_notes' => 'Not viable'])->assertRedirect();
+    expect($quotation->fresh()->approval_status)->toBe(QuotationApprovalStatus::Rejected);
+});
+
+it('forbids a non-manager from reviewing a quotation', function () {
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    $quotation = quotationWithLine();
+
+    $this->actingAs($sales)->post(route('quotations.approve', $quotation))->assertForbidden();
+    $this->actingAs($sales)->post(route('quotations.reject', $quotation))->assertForbidden();
+    $this->actingAs($sales)->post(route('quotations.request-changes', $quotation), ['approval_notes' => 'x'])->assertForbidden();
 });
 
 it('converts an accepted quotation into an invoice with copied items and totals', function () {

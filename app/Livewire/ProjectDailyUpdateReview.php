@@ -47,6 +47,12 @@ class ProjectDailyUpdateReview extends Component
         }
 
         unset($this->editedBody[$noteId]);
+
+        // Lets pages that embed this component alongside other static,
+        // non-Livewire content (e.g. the Approval Center's pending count)
+        // know to refresh — this component's own DOM re-renders itself
+        // regardless, this is purely for surrounding page state.
+        $this->dispatch('approval-center-refresh');
     }
 
     public function discard(int $noteId): void
@@ -58,6 +64,8 @@ class ProjectDailyUpdateReview extends Component
 
         $note->delete();
         unset($this->editedBody[$noteId]);
+
+        $this->dispatch('approval-center-refresh');
     }
 
     private function pendingDrafts()
