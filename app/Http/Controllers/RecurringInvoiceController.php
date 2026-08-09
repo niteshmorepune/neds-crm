@@ -21,14 +21,43 @@ class RecurringInvoiceController extends Controller
 
         $showEnded = $request->boolean('show_ended');
 
+        // 'YYYY-MM' from a <input type="month">. Anything malformed is
+        // treated as no filter rather than erroring.
+        $month = $request->string('month')->trim()->value();
+        if ($month !== '' && ! preg_match('/^\d{4}-\d{2}$/', $month)) {
+            $month = '';
+        }
+
         $recurring = RecurringInvoice::with(['customer', 'service'])
             ->when(! $showEnded, fn ($q) => $q->notEnded())
+            ->when($month, function ($q) use ($month) {
+                [$year, $monthNum] = explode('-', $month);
+                $q->whereHas('invoices', fn ($iq) => $iq->whereYear('issue_date', $year)->whereMonth('issue_date', $monthNum));
+            })
             ->orderByDesc('is_active')
             ->latest()
             ->paginate(15)
             ->withQueryString();
 
-        return view('recurring-invoices.index', ['recurring' => $recurring, 'showEnded' => $showEnded]);
+        // For a month-filtered view, surface that period's actual invoice
+        // (number/status/amount) inline, so the page answers "what was
+        // billed for August 2026" without an extra click per template.
+        $monthlyInvoices = collect();
+        if ($month !== '') {
+            [$year, $monthNum] = explode('-', $month);
+            $monthlyInvoices = Invoice::whereIn('recurring_invoice_id', $recurring->pluck('id'))
+                ->whereYear('issue_date', $year)
+                ->whereMonth('issue_date', $monthNum)
+                ->get()
+                ->keyBy('recurring_invoice_id');
+        }
+
+        return view('recurring-invoices.index', [
+            'recurring' => $recurring,
+            'showEnded' => $showEnded,
+            'month' => $month,
+            'monthlyInvoices' => $monthlyInvoices,
+        ]);
     }
 
     public function show(RecurringInvoice $recurring): View

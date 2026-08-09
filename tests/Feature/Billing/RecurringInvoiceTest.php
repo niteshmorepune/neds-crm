@@ -394,3 +394,43 @@ it('shows Ended templates on the Recurring Invoices list when show_ended=1', fun
         ->assertSee($ended->customer->company_name)
         ->assertSee('Ended');
 });
+
+it('filters the Recurring Invoices list to templates billed in the given month, showing that invoice inline', function () {
+    $this->seed(MenuItemsSeeder::class);
+    $accounts = User::factory()->role(UserRole::Accounts)->create();
+
+    $billedInAugust = recurringWithLine();
+    $augustInvoice = Invoice::factory()->for($billedInAugust->customer)->create([
+        'recurring_invoice_id' => $billedInAugust->id,
+        'issue_date' => '2026-08-05',
+        'status' => InvoiceStatus::Sent->value,
+        'total' => 118000,
+    ]);
+
+    $billedInJuly = recurringWithLine();
+    Invoice::factory()->for($billedInJuly->customer)->create([
+        'recurring_invoice_id' => $billedInJuly->id,
+        'issue_date' => '2026-07-05',
+    ]);
+
+    $neverBilled = recurringWithLine();
+
+    $response = $this->actingAs($accounts)->get(route('recurring-invoices.index', ['month' => '2026-08']));
+
+    $response->assertOk()
+        ->assertSee($billedInAugust->customer->company_name)
+        ->assertSee($augustInvoice->invoice_number)
+        ->assertDontSee($billedInJuly->customer->company_name)
+        ->assertDontSee($neverBilled->customer->company_name);
+});
+
+it('ignores a malformed month filter instead of erroring', function () {
+    $this->seed(MenuItemsSeeder::class);
+    $accounts = User::factory()->role(UserRole::Accounts)->create();
+    $template = recurringWithLine();
+
+    $this->actingAs($accounts)
+        ->get(route('recurring-invoices.index', ['month' => 'not-a-month']))
+        ->assertOk()
+        ->assertSee($template->customer->company_name);
+});
