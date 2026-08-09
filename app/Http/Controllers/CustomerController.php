@@ -10,6 +10,7 @@ use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\Partner;
 use App\Models\User;
+use App\Services\ClientHealthMetrics;
 use App\Services\CollectionsMetrics;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -88,7 +89,7 @@ class CustomerController extends Controller
             ->with('status', 'Client created.');
     }
 
-    public function show(Customer $client, CollectionsMetrics $collections): View
+    public function show(Customer $client, CollectionsMetrics $collections, ClientHealthMetrics $health): View
     {
         $this->authorize('view', $client);
 
@@ -156,6 +157,12 @@ class CustomerController extends Controller
             'canViewInvoices' => $canViewInvoices,
             'tabCounts' => $tabCounts,
             'summary' => $summary,
+            // Only meaningful for an Active client — Client Radar's own
+            // flag detection (no_contact/overdue_invoice/etc.) only applies
+            // to Active customers, same scoping this reuses.
+            'healthScore' => $client->status === CustomerStatus::Active
+                ? $health->scoreForCustomer($client)
+                : null,
         ]);
     }
 

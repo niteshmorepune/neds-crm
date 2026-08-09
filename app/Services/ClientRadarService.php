@@ -30,6 +30,19 @@ class ClientRadarService
      */
     public function flaggedClients(): Collection
     {
+        return $this->allActiveClientFlags()->filter(fn (array $row) => $row['flags'] !== [])->values();
+    }
+
+    /**
+     * Every active client and its flags, unfiltered — Client Radar itself
+     * only wants the flagged subset (see flaggedClients()), but
+     * ClientHealthMetrics needs every active client (including flag-free
+     * ones, which score a clean 100) to compute a company-wide score.
+     *
+     * @return Collection<int, array{customer: Customer, flags: array<string, array{label: string, detail: string, ticket_id?: int}>}>
+     */
+    public function allActiveClientFlags(): Collection
+    {
         $activeServiceCount = Service::active()->count();
 
         return Customer::query()
@@ -39,9 +52,25 @@ class ClientRadarService
             ->map(fn (Customer $customer) => [
                 'customer' => $customer,
                 'flags' => $this->flagsFor($customer, $activeServiceCount),
-            ])
-            ->filter(fn (array $row) => $row['flags'] !== [])
-            ->values();
+            ]);
+    }
+
+    /**
+     * Flags for a single customer, without querying/scoring every other
+     * active client — used by ClientHealthMetrics::scoreForCustomer() for
+     * the Client 360 page, where re-running allActiveClientFlags() just to
+     * find one row would mean loading and flag-computing the entire active
+     * client base on every page load. loadMissing() reuses whatever
+     * relations the caller already eager-loaded (e.g. CustomerController::
+     * show()'s own eager loads) and only queries what's actually missing.
+     *
+     * @return array<string, array{label: string, detail: string, ticket_id?: int}>
+     */
+    public function flagsForCustomer(Customer $customer): array
+    {
+        $customer->loadMissing(['notes', 'callLogs', 'tickets.satisfactionRating', 'invoices', 'projects.service', 'recurringInvoices.service']);
+
+        return $this->flagsFor($customer, Service::active()->count());
     }
 
     /**

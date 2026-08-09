@@ -5,6 +5,7 @@
         <p class="text-sm text-gray-500">
             Active clients flagged for a check-in: no recent contact, declining activity, an overdue invoice, or a
             single-service upsell opportunity. Computed live from CRM data — nothing here is stored or auto-actioned.
+            Sorted by Health Score, worst first.
         </p>
 
         <div class="overflow-hidden overflow-x-auto rounded-lg bg-white shadow-sm">
@@ -12,6 +13,7 @@
                 <thead class="bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
                     <tr>
                         <th class="px-4 py-3">Client</th>
+                        <th class="px-4 py-3">Health Score</th>
                         <th class="px-4 py-3">Owner</th>
                         <th class="px-4 py-3">Signals</th>
                     </tr>
@@ -24,6 +26,14 @@
                                 <a href="{{ route('clients.show', $customer) }}" class="text-indigo-600 hover:underline">
                                     {{ $customer->company_name }}
                                 </a>
+                            </td>
+                            <td class="px-4 py-3">
+                                <span @class([
+                                    'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold tabular-nums',
+                                    'bg-red-100 text-red-700' => $row['score'] < 50,
+                                    'bg-amber-100 text-amber-700' => $row['score'] >= 50 && $row['score'] < 80,
+                                    'bg-green-100 text-green-700' => $row['score'] >= 80,
+                                ])>{{ $row['score'] }}</span>
                             </td>
                             <td class="px-4 py-3 text-gray-500">{{ $customer->owner?->name ?? 'Unassigned' }}</td>
                             <td class="px-4 py-3">
@@ -51,7 +61,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="3" class="px-4 py-10 text-center text-gray-400">No clients need attention right now.</td></tr>
+                        <tr><td colspan="4" class="px-4 py-10 text-center text-gray-400">No clients need attention right now.</td></tr>
                     @endforelse
                 </tbody>
             </table>

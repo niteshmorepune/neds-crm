@@ -19,6 +19,14 @@
                             'bg-green-100 text-green-800' => $client->status === \App\Enums\CustomerStatus::Active,
                             'bg-gray-100 text-gray-600' => $client->status === \App\Enums\CustomerStatus::Inactive,
                         ])>{{ $client->status->label() }}</span>
+                        @if ($healthScore !== null)
+                            <span @class([
+                                'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums',
+                                'bg-red-100 text-red-700' => $healthScore < 50,
+                                'bg-amber-100 text-amber-700' => $healthScore >= 50 && $healthScore < 80,
+                                'bg-green-100 text-green-700' => $healthScore >= 80,
+                            ])>Health {{ $healthScore }}</span>
+                        @endif
                     </div>
                     <dl class="mt-3 grid grid-cols-1 gap-x-8 gap-y-1 text-sm text-gray-600 sm:grid-cols-2">
                         <div><span class="text-gray-400">GSTIN:</span> {{ $client->gstin ?? '—' }}</div>
