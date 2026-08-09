@@ -75,6 +75,11 @@ full transcript text Google Meet already generated for it. If AI is also
 enabled, it gets a short **AI summary** (Key points / Decisions / Action
 items) too, either automatically or via a **Summarize with AI** button.
 
+**Meetings held on Zoom, Microsoft Teams, or elsewhere:** click **+ Log
+External Meeting** on the same Calls tab — works even without a Google
+account connected. Pick the platform, when it happened, and paste in your
+notes or a transcript; it gets the same AI summary treatment if enabled.
+
 ## 3. Projects (Project Updates)
 A **Project** is created from a won deal. Open **Project Updates** to see your
 projects, each with its client, service and tasks.

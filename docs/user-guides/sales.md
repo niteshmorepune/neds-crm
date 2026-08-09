@@ -19,6 +19,14 @@ When you log in you'll see:
   2 Sales staff yet.
 
 ## 1. Leads (Lead Generation)
+The top of the page shows **summary cards** — Total, New, Contacted,
+Qualified, Converted, Lost — a quick read on the pipeline before you scroll
+the list. They reflect everyone's leads regardless of any filter you've
+applied to the list below, so they stay a stable overview. The list itself
+has a **Latest Note** column showing each lead's most recent note (hover
+over a truncated one to read the full text) — no need to open a lead just
+to check what was last said.
+
 1. **Lead Generation → Add Lead**.
 2. Fill in name, company, phone/email, **source**, the **service** they're
    interested in, and an **estimated value**. Assign an **owner** (usually you).
@@ -112,6 +120,17 @@ sequence stops (the CRM assumes you've taken it from here).
   follow-up message based on the lead's details and history. Read it, edit it to
   match your voice, then send it yourself (WhatsApp, email, or call). The AI
   never sends anything automatically.
+
+**Merging duplicate leads:** if the same person or company ended up as two
+leads (a duplicate WhatsApp enquiry, a repeat website form), tick exactly 2
+on the **Lead Generation** list and click **Merge Selected**. On the review
+screen, pick which record survives, then — per field (name, company, phone,
+email, source, service, value, owner, status) — choose which of the two
+leads' values to keep; you don't have to keep everything from the same one.
+All notes, call logs, meetings, and activity history from the other lead
+move onto the survivor, and a note is left recording what was merged in.
+The other lead is then archived (soft-deleted, not gone — recoverable if
+this was a mistake) so it stops cluttering the list.
 
 **Converting a lead:** when it's real business, open the lead and click
 **Convert**. This creates a **Client** and a **Deal** automatically and links
@@ -291,6 +310,13 @@ If AI is also enabled, an imported meeting with a transcript gets a
 after import) — Claude turns the raw transcript into short "Key points /
 Decisions / Action items" notes, visible to anyone who opens that client's
 page. If it fails, a **Retry** link appears in its place.
+
+**Meetings held on Zoom, Microsoft Teams, or anywhere else:** click **+ Log
+External Meeting** on the same Calls tab — this works even if no Google
+account is connected at all, since it's independent of the integration
+above. Pick the platform, when it happened, an optional duration, and paste
+in your notes or a transcript. If AI is enabled, whatever you paste gets
+summarized the same way an imported Google Meet transcript does.
 
 **Monthly wins note (AI, optional):** on the 1st of each month, if AI is enabled
 and one of your clients had tasks completed, tickets resolved, a payment, or

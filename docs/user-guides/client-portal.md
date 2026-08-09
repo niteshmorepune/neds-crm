@@ -82,7 +82,10 @@ the service type and the name of the team member managing it.
 
 Click a project to see:
 - **Status** (Active, On Hold, Completed) and service type
-- **Timeline** — start and end dates
+- **Service started** — the date this service began (and its end date, if
+  it has one)
+- **Plan** — whether you're on a Monthly, Quarterly, or Yearly billing
+  cycle for this service (shown when it's on a recurring plan)
 - **Your NEDS Team** — the team member(s) handling this specific service,
   with their email address so you can contact them directly. The **Lead** is your
   primary point of contact for that service.

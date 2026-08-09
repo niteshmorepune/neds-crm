@@ -216,6 +216,12 @@ the template (it'll show as On Hold); if you're cleaning up a duplicate or
 test template you created by mistake, make sure you click **Delete**, not
 Pause, or it'll still be there.
 
+**Filtering by billing month:** at the top of the **Recurring Invoices**
+list, pick a month to filter templates down to the ones actually billed
+that month — each row then shows that period's invoice number, status, and
+amount inline, so you can quickly answer "what did we bill in August" in
+one place instead of opening each template's own history.
+
 **Viewing generated invoices:** click **Invoices** on any recurring template row
 to open its history — every invoice that has been auto-generated for that
 template, with status, balance, and action buttons.
@@ -243,6 +249,15 @@ you (and admin/manager, plus that client's sales rep) get a 📅 bell
 notification — a nudge to renew the contract or follow up before it lapses.
 Fires once per end date; if the contract is renewed to a later date, you'll be
 notified again once that new date comes within 30 days.
+
+## 3a. Expenses
+**Expenses** in the sidebar tracks daily office spend — tea/refreshments,
+travel, stationery, internet, fuel, rent, utilities, or other. No approval
+step: **Expenses → New Expense**, pick a category, enter the amount and a
+short description, set the date, and save. The list can be filtered by
+month and/or category, with a **Total** tile that reflects whatever's
+currently filtered — leave both blank to see the running total for
+everything.
 
 ## 4. Reports
 - **Account** (in the sidebar) → the **outstanding receivables** report: who owes

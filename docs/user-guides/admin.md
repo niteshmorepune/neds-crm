@@ -227,6 +227,15 @@ otherwise it will keep rolling forward and reminding you indefinitely.
 days for a monthly subscription, not 30) — a lead time close to or longer
 than the cycle length can cause the reminder to fire on back-to-back days.
 
+## 8a. Expenses — daily office spend
+**Expenses** in the sidebar (Admin/Manager/Accounts) tracks day-to-day
+office spend — tea/refreshments, travel, stationery, internet, fuel, rent,
+utilities, or other. Deliberately no approval workflow, matching how
+Subscriptions/Partners already work: **Expenses → New Expense**, pick a
+category, amount, description, and date, and save. The list filters by
+month and/or category with a running **Total** for whatever's currently
+filtered.
+
 ## 9. Users — add and manage staff
 Public sign-up is disabled, so **you create every staff account**.
 

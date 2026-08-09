@@ -98,7 +98,19 @@ nudges admin/manager has targeted at your role (or everyone) — things like
 - Some reminders clear themselves automatically the moment you do the real
   thing they're asking for (e.g. logging a Ticket) — no click needed for those.
 
-## 4e. Important Links
+## 4e. Follow-up Reminders
+Also on your **Dashboard**, below Reminders (Team Nudges), a **Follow-up
+Reminder** widget lets you set a personal reminder against any client — a
+call to make, a report to share, a quotation to send, a deal to chase.
+Click **+ Add follow-up reminder**, pick the client (optional — you can also
+leave it blank for a general reminder), set the date/time and a one-line
+next action, and save. You'll get a bell notification once it's due, and it
+stays listed on your Dashboard (soonest first) until you click **Done**.
+This is separate from a Call Log's own follow-up reminder (see the Sales/
+Support guides) — that one only exists once you've actually logged a call;
+this one is for setting a reminder ahead of time, for anything.
+
+## 4f. Important Links
 **Sidebar → Important Links** is a company-wide list of official links —
 hosting panel, domain registrar, and anything else the team needs quick
 access to. Everyone can view it; only Admin/Manager can add, edit, or
