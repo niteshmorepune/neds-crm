@@ -1,10 +1,12 @@
 <?php
 
 use App\Enums\CustomerStatus;
+use App\Enums\DealStage;
 use App\Enums\LeadStatus;
 use App\Enums\TaskStatus;
 use App\Enums\UserRole;
 use App\Models\Customer;
+use App\Models\Deal;
 use App\Models\Festival;
 use App\Models\User;
 use Database\Seeders\MenuItemsSeeder;
@@ -211,6 +213,50 @@ it('shows total/pending/overdue task counts on the support dashboard', function 
         ->assertSee('Total tasks')
         ->assertSee('Pending tasks')
         ->assertSee('Overdue tasks');
+});
+
+it('filters the sales dashboards Won-this-month figure via the month query param', function () {
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    Deal::factory()->create(['owner_id' => $sales->id, 'stage' => DealStage::Won, 'value' => 500000, 'won_at' => now()->subMonths(2)]);
+
+    $twoMonthsAgo = now()->subMonths(2)->format('Y-m');
+
+    $this->actingAs($sales)->get(route('dashboard', ['month' => $twoMonthsAgo]))
+        ->assertOk()
+        ->assertSee('Won '.now()->subMonths(2)->format('M Y'))
+        ->assertSee('₹5,000.00', false);
+});
+
+it('falls back to the current month on a malformed month param, instead of erroring', function () {
+    $sales = User::factory()->role(UserRole::Sales)->create();
+
+    $this->actingAs($sales)->get(route('dashboard', ['month' => 'not-a-month']))
+        ->assertOk()
+        ->assertSee('Won this month');
+});
+
+it('shows the month-filter quick-jump chips on the sales and accounts dashboards', function () {
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    $accounts = User::factory()->role(UserRole::Accounts)->create();
+
+    $this->actingAs($sales)->get(route('dashboard'))->assertOk()->assertSee('This month');
+    $this->actingAs($accounts)->get(route('dashboard'))->assertOk()->assertSee('This month');
+});
+
+it('does not show a month filter on dashboards with nothing period-scoped to filter', function () {
+    $admin = User::factory()->role(UserRole::Admin)->create();
+    $support = User::factory()->role(UserRole::Support)->create();
+
+    $this->actingAs($admin)->get(route('dashboard'))->assertOk()->assertDontSee('This month');
+    $this->actingAs($support)->get(route('dashboard'))->assertOk()->assertDontSee('This month');
+});
+
+it('ignores an extraneous month param on the admin dashboard without erroring', function () {
+    $admin = User::factory()->role(UserRole::Admin)->create();
+
+    $this->actingAs($admin)->get(route('dashboard', ['month' => now()->subMonth()->format('Y-m')]))
+        ->assertOk()
+        ->assertSee('Total Clients');
 });
 
 it('keeps showing the support panel even when Sales is granted as an additional role', function () {

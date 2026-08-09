@@ -99,6 +99,17 @@ class User extends Authenticatable
     }
 
     /**
+     * Dashboard Customization (show/hide only, no reorder): which of this
+     * user's own dashboard widgets they've hidden. Every widget defaults
+     * visible for everyone — a row here is the only state that exists, no
+     * separate "granted" case like menuOverrides() above.
+     */
+    public function hiddenDashboardWidgets(): HasMany
+    {
+        return $this->hasMany(HiddenDashboardWidget::class);
+    }
+
+    /**
      * Manager/admin internal notes about this employee — feedback, areas of
      * improvement, follow-up actions. Reuses the same generic polymorphic
      * Note model as Lead/Deal/Customer/Project (see App\Livewire\RecordNotes).
@@ -133,6 +144,29 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return $this->hasRole(UserRole::Admin);
+    }
+
+    /**
+     * Which dashboard panel/partial this user's PRIMARY role gets
+     * (`resources/views/dashboard/partials/{panel}.blade.php`) — the exact
+     * mapping `DashboardController::index()` uses, extracted here so
+     * Dashboard Customization's widget catalog (`App\Support\
+     * DashboardWidgets`) and settings controller can resolve the same panel
+     * without a second copy of this match that could drift from the
+     * controller's own. Primary role only, same as everywhere else this
+     * mapping already existed (see CLAUDE.md's decisions log).
+     */
+    public function dashboardPanel(): string
+    {
+        return match (true) {
+            in_array($this->role, [UserRole::Admin, UserRole::Manager], true) => 'admin',
+            $this->role === UserRole::Sales => 'sales',
+            $this->role === UserRole::Accounts => 'accounts',
+            $this->role === UserRole::Support => 'support',
+            $this->role === UserRole::Intern => 'intern',
+            $this->role === UserRole::Telecaller => 'telecaller',
+            default => 'blank',
+        };
     }
 
     /**

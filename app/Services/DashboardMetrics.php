@@ -19,6 +19,7 @@ use App\Models\Service;
 use App\Models\Task;
 use App\Models\Ticket;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 
 /**
  * Read-only aggregates for the dashboards. Each method returns plain arrays
@@ -88,9 +89,18 @@ class DashboardMetrics
         ];
     }
 
-    /** Sales rep dashboard: pipeline by stage, follow-ups due, won this month. */
-    public function salesStats(User $user): array
+    /**
+     * Sales rep dashboard: pipeline by stage, follow-ups due, won in the
+     * given month (defaults to the current month — the Global Dashboard
+     * Filters month picker on the Sales partial). Only 'won_this_month_value'
+     * responds to $month: 'pipeline' (open deals) and 'followups_due' (due
+     * now) are point-in-time snapshots, not period figures, so filtering
+     * them by an arbitrary past/future month wouldn't mean anything.
+     */
+    public function salesStats(User $user, ?Carbon $month = null): array
     {
+        $month ??= now();
+
         $pipeline = Deal::query()
             ->visibleTo($user)
             ->whereNotIn('stage', [DealStage::Won->value, DealStage::Lost->value])
@@ -114,7 +124,7 @@ class DashboardMetrics
             'won_this_month_value' => (int) Deal::query()->visibleTo($user)
                 ->where('stage', DealStage::Won->value)
                 ->whereNotNull('won_at')
-                ->where('won_at', '>=', now()->startOfMonth())
+                ->whereBetween('won_at', [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()])
                 ->sum('value'),
         ];
     }
@@ -128,15 +138,21 @@ class DashboardMetrics
      * query, so this tile and the Receivables Report can never disagree
      * on "how much are we owed" again (see the 2026-07-24 incident in
      * CLAUDE.md's decision log).
+     *
+     * $month (Global Dashboard Filters, defaults to the current month) only
+     * affects 'collected_this_month' — 'outstanding' and 'overdue_count' are
+     * point-in-time snapshots of what's owed right now, not period figures.
      */
-    public function accountsStats(): array
+    public function accountsStats(?Carbon $month = null): array
     {
+        $month ??= now();
+
         $outstanding = (int) $this->collectionsMetrics->outstandingInvoicesQuery()
             ->get()
             ->sum(fn (Invoice $i) => $i->balance());
 
         $collected = (int) Payment::query()
-            ->whereBetween('paid_on', [now()->startOfMonth()->toDateString(), now()->endOfMonth()->toDateString()])
+            ->whereBetween('paid_on', [$month->copy()->startOfMonth()->toDateString(), $month->copy()->endOfMonth()->toDateString()])
             ->sum('amount');
 
         return [

@@ -83,6 +83,27 @@ it('computes sales pipeline value by open stage and won this month', function ()
         ->and(collect($stats['pipeline'])->firstWhere('stage', 'Proposal')['value'])->toBe(500000);
 });
 
+it('filters won_this_month_value to an explicit past month when one is passed', function () {
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    $twoMonthsAgo = now()->subMonths(2);
+    Deal::factory()->create(['owner_id' => $sales->id, 'stage' => DealStage::Won, 'value' => 700000, 'won_at' => $twoMonthsAgo]);
+    Deal::factory()->create(['owner_id' => $sales->id, 'stage' => DealStage::Won, 'value' => 999999]); // won this month, should be excluded
+
+    $stats = $this->metrics->salesStats($sales, $twoMonthsAgo);
+
+    expect($stats['won_this_month_value'])->toBe(700000);
+});
+
+it('does not let won_this_month_value bleed into an adjacent month once a real upper bound exists', function () {
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    Deal::factory()->create(['owner_id' => $sales->id, 'stage' => DealStage::Won, 'value' => 100000, 'won_at' => now()->startOfMonth()]);
+    Deal::factory()->create(['owner_id' => $sales->id, 'stage' => DealStage::Won, 'value' => 200000, 'won_at' => now()->addMonthNoOverflow()->startOfMonth()]);
+
+    $stats = $this->metrics->salesStats($sales, now());
+
+    expect($stats['won_this_month_value'])->toBe(100000);
+});
+
 it('computes accounts outstanding, collections and overdue count', function () {
     $inv = Invoice::factory()->create(['status' => InvoiceStatus::PartiallyPaid, 'total' => 1000000, 'amount_paid' => 400000]);
     Invoice::factory()->create(['status' => InvoiceStatus::Overdue, 'total' => 200000, 'amount_paid' => 0]);
@@ -93,6 +114,27 @@ it('computes accounts outstanding, collections and overdue count', function () {
     expect($stats['outstanding'])->toBe(800000) // 600000 + 200000
         ->and($stats['collected_this_month'])->toBe(400000)
         ->and($stats['overdue_count'])->toBe(1);
+});
+
+it('filters collected_this_month to an explicit past month when one is passed', function () {
+    $inv = Invoice::factory()->create(['status' => InvoiceStatus::PartiallyPaid, 'total' => 1000000, 'amount_paid' => 500000]);
+    $twoMonthsAgo = now()->subMonths(2);
+    Payment::factory()->create(['invoice_id' => $inv->id, 'amount' => 300000, 'paid_on' => $twoMonthsAgo]);
+    Payment::factory()->create(['invoice_id' => $inv->id, 'amount' => 200000, 'paid_on' => now()]); // this month, should be excluded
+
+    $stats = $this->metrics->accountsStats($twoMonthsAgo);
+
+    expect($stats['collected_this_month'])->toBe(300000);
+});
+
+it('does not filter the point-in-time accounts figures (outstanding, overdue_count) by month', function () {
+    Invoice::factory()->create(['status' => InvoiceStatus::Overdue->value, 'total' => 200000, 'amount_paid' => 0]);
+
+    $current = $this->metrics->accountsStats();
+    $pastMonth = $this->metrics->accountsStats(now()->subMonths(3));
+
+    expect($current['outstanding'])->toBe($pastMonth['outstanding'])
+        ->and($current['overdue_count'])->toBe($pastMonth['overdue_count']);
 });
 
 it('returns pending tasks, completed today and active project count for an intern', function () {

@@ -1,7 +1,16 @@
 <x-app-layout>
-    <x-slot name="header">Dashboard</x-slot>
+    <x-slot name="header">
+        <div class="flex items-center justify-between">
+            <span>Dashboard</span>
+            <a href="{{ route('dashboard-widget-settings.edit') }}" class="text-sm font-normal text-indigo-600 hover:underline">⚙ Customize dashboard</a>
+        </div>
+    </x-slot>
 
     <div class="max-w-7xl mx-auto space-y-6">
+        @if (session('status'))
+            <div class="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">{{ session('status') }}</div>
+        @endif
+
         <x-announcement-banner :announcements="$announcements" />
 
         {{-- "Today" panel: every daily-action item and alert renders as one

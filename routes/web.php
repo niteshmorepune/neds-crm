@@ -11,6 +11,7 @@ use App\Http\Controllers\ContentPieceController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DailyReportController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DashboardWidgetSettingsController;
 use App\Http\Controllers\DealController;
 use App\Http\Controllers\EmployeeProfileController;
 use App\Http\Controllers\ExpenseController;
@@ -81,6 +82,12 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Dashboard Customization — self-service, no sidebar item, same
+    // "settings page reachable from where it's used, not menu-listed"
+    // precedent as Profile → Google Account.
+    Route::get('/dashboard/widgets', [DashboardWidgetSettingsController::class, 'edit'])->name('dashboard-widget-settings.edit');
+    Route::put('/dashboard/widgets', [DashboardWidgetSettingsController::class, 'update'])->name('dashboard-widget-settings.update');
 
     /*
      * Two-factor (TOTP) — Milestone 7 PR C2. Enrolment is self-service from the
