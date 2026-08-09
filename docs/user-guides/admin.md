@@ -71,6 +71,15 @@ page (Admin/Manager only) flag active clients worth a proactive check-in:
 - **Overdue Invoice** — the client has at least one overdue invoice.
 - **Growth Opportunity** — the client only uses one of the agency's service
   lines, even though more are active — a natural upsell conversation starter.
+- **Low Satisfaction** — at least one ticket rated 2/5 or below by the client
+  in the last 60 days (clients rate a ticket once it's Resolved/Closed, from
+  the client portal).
+
+Each flagged client also shows a **Health Score** (0–100, list sorted worst
+first): starts at 100, loses 30 for No Contact, 20 for Declining Activity,
+25 for Overdue Invoice, 25 for Low Satisfaction (Growth Opportunity never
+costs points — it's a positive signal). The same score shows as a badge on
+the client's own Client 360 page.
 
 Everything on this page is computed live from existing CRM data — nothing is
 stored or sent automatically. Click **✨ Suggest action** next to a flagged
@@ -78,6 +87,9 @@ client to have Claude draft a short, specific next step (a check-in call, a
 service to pitch, tactfully chasing payment) based only on that client's
 flags. This is generated on demand, one client at a time — not run as a
 batch job — so there's no AI cost unless someone actually looks at a client.
+On a **Low Satisfaction** flag, a second button — **✨ Draft recovery
+message** — writes a client-facing apology grounded in the actual ticket
+that was rated poorly.
 
 ## 2a. Best Employee of the Quarter — quarterly AI-suggested recognition
 **Best Employee** in the sidebar (everyone can see it — Admin/Manager get a
@@ -251,6 +263,13 @@ Public sign-up is disabled, so **you create every staff account**.
 - **Edit** a user to change their name, email, or role, or to set a
   password for them directly (e.g. if they're unreachable by email) —
   leave the password field blank to keep their current one.
+- The **Edit** page also has an **Internal Notes** card — feedback, areas
+  of improvement, follow-up actions — visible only here, never to the
+  employee or anyone outside Users access. This is the same notes feature
+  as **Employee 360°** in the sidebar (Manager guide, Section "Employee
+  360°") — that page reaches the same notes without needing full Users
+  access, alongside the employee's performance, workload, tickets, and
+  attendance in one place.
 - **When someone leaves:** edit them and **untick Active** instead of deleting —
   this blocks their login but keeps their leads, deals and history intact.
 - You **can't** disable, demote, or delete **your own** account (so you can't

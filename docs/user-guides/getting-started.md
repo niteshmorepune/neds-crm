@@ -110,7 +110,17 @@ This is separate from a Call Log's own follow-up reminder (see the Sales/
 Support guides) — that one only exists once you've actually logged a call;
 this one is for setting a reminder ahead of time, for anything.
 
-## 4f. Important Links
+## 4f. Meeting Invitations
+If a colleague schedules a **Google Meet** call (via **Create Meeting** on a
+client or lead's Calls tab — see the Sales/Support guides) and adds you as
+an internal attendee, it shows up as a card on your own **Dashboard** with
+the meeting title, client, time, and organiser, plus **Accept**/**Decline**
+buttons and a direct **Join Google Meet** link. This is separate from the
+real Google Calendar invite the client receives — it's just a CRM-side
+heads-up and RSVP so you don't have to check email to see it, and it only
+shows upcoming meetings, soonest first.
+
+## 4g. Important Links
 **Sidebar → Important Links** is a company-wide list of official links —
 hosting panel, domain registrar, and anything else the team needs quick
 access to. Everyone can view it; only Admin/Manager can add, edit, or

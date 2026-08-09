@@ -200,7 +200,7 @@
       boundary in the system: a role gate, a separate login, or a public link with no
       login at all. That's the CRM's actual shape, not just its menu.</p>
     <div class="statline">
-      <div class="stat"><b>30</b><span>Sidebar modules</span></div>
+      <div class="stat"><b>36</b><span>Sidebar modules</span></div>
       <div class="stat"><b>7</b><span>Reports off the dashboard</span></div>
       <div class="stat"><b>6</b><span>Staff roles</span></div>
       <div class="stat"><b>11</b><span>Client Portal pages</span></div>
@@ -373,6 +373,16 @@
         <div class="chips"><span class="chip">Manager</span><span class="chip">Accounts</span></div>
         <div class="desc">Partner-wise and direct-client receivables, plus milestone-billing readiness.</div>
       </div>
+      <div class="row">
+        <div><div class="label">Contract &amp; Renewals</div><span class="path mono">/contract-renewals</span></div>
+        <div class="chips"><span class="chip">Manager</span><span class="chip">Accounts</span><span class="chip">Sales</span></div>
+        <div class="desc">Contracts renewing in 30/60/90 days with a Not Started → Renewed/Lost status pipeline, and total MRR at stake.</div>
+      </div>
+      <div class="row">
+        <div><div class="label">Revenue at Risk</div><span class="path mono">/revenue-at-risk</span></div>
+        <div class="chips"><span class="chip admin">Admin</span><span class="chip">Manager</span></div>
+        <div class="desc">Overdue receivables, MRR renewing soon, and MRR tied to Client-Radar-flagged clients — three risk buckets in one place.</div>
+      </div>
     </div>
   </section>
 
@@ -440,9 +450,29 @@
         <div class="desc">Calendar driving dashboard reminders and AI-drafted client greeting content.</div>
       </div>
       <div class="row">
+        <div><div class="label">Action Center</div><span class="path mono">/manager-action-center</span></div>
+        <div class="chips"><span class="chip admin">Admin</span><span class="chip">Manager</span></div>
+        <div class="desc">Every "needs attention" signal in one place — overdue tasks, at-risk clients, overdue invoices, SLA breaches, renewals due, pending follow-ups.</div>
+      </div>
+      <div class="row">
+        <div><div class="label">Team Workload</div><span class="path mono">/team-workload</span></div>
+        <div class="chips"><span class="chip admin">Admin</span><span class="chip">Manager</span></div>
+        <div class="desc">Open/overdue task counts per person against their own role's average, with an Overloaded flag.</div>
+      </div>
+      <div class="row">
+        <div><div class="label">Project Health</div><span class="path mono">/project-health</span></div>
+        <div class="chips"><span class="chip admin">Admin</span><span class="chip">Manager</span></div>
+        <div class="desc">Every active/on-hold project scored 🔴🟠🟡🟢 by deadline, completion %, and overdue tasks.</div>
+      </div>
+      <div class="row">
         <div><div class="label">Client Radar</div><span class="path mono">/client-radar</span></div>
         <div class="chips"><span class="chip admin">Admin</span><span class="chip">Manager</span></div>
-        <div class="desc">At-risk and upsell signals across the active client base.</div>
+        <div class="desc">At-risk and upsell signals across the active client base, plus a 0–100 Health Score per client.</div>
+      </div>
+      <div class="row">
+        <div><div class="label">Employee 360°</div><span class="path mono">/employees</span></div>
+        <div class="chips"><span class="chip admin">Admin</span><span class="chip">Manager</span></div>
+        <div class="desc">One page per employee — performance, workload, tickets, attendance, and manager-only notes.</div>
       </div>
       <div class="row">
         <div><div class="label">Notice Board</div><span class="path mono">/announcements</span></div>

@@ -69,11 +69,14 @@ automatically, shown as a separate block under your typed notes on the
 NEDS's Google account (**Profile → Google Account**, admin-only), click
 **Create Meeting** on a client's Calls tab to schedule a real Google Meet
 call — it invites the client's email automatically and shows you the link
-to share directly too. For a call that already happened outside that flow,
-**Import Meet Notes** pulls in the recording link, transcript link, and
-full transcript text Google Meet already generated for it. If AI is also
-enabled, it gets a short **AI summary** (Key points / Decisions / Action
-items) too, either automatically or via a **Summarize with AI** button.
+to share directly too. You can also invite any active colleague as an
+internal attendee from the same scheduler — they get a bell notification
+and an Accept/Decline card on their own Dashboard. For a call that already
+happened outside that flow, **Import Meet Notes** pulls in the recording
+link, transcript link, and full transcript text Google Meet already
+generated for it. If AI is also enabled, it gets a short **AI summary**
+(Key points / Decisions / Action items) too, either automatically or via a
+**Summarize with AI** button.
 
 **Meetings held on Zoom, Microsoft Teams, or elsewhere:** click **+ Log
 External Meeting** on the same Calls tab — works even without a Google

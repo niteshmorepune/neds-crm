@@ -250,6 +250,13 @@ notification — a nudge to renew the contract or follow up before it lapses.
 Fires once per end date; if the contract is renewed to a later date, you'll be
 notified again once that new date comes within 30 days.
 
+**Contract & Renewal Dashboard** (sidebar → **Contract & Renewals**, shared
+with Manager and Sales) — the fuller view behind that bell notification:
+every active contract ending in the next **30, 60, or 90 days**, each with a
+**renewal status** (Not Started → Discussion → Proposal Sent → Negotiation
+→ Renewed/Lost) you or Sales can set, plus an **MRR at stake** total for
+whichever window you're looking at.
+
 ## 3a. Expenses
 **Expenses** in the sidebar tracks daily office spend — tea/refreshments,
 travel, stationery, internet, fuel, rent, utilities, or other. No approval

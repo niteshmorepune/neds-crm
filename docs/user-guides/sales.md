@@ -27,6 +27,10 @@ has a **Latest Note** column showing each lead's most recent note (hover
 over a truncated one to read the full text) — no need to open a lead just
 to check what was last said.
 
+Arriving here from a **Lead Source Performance** report link (Manager
+guide) automatically filters the list to that exact source and month, so
+the number you clicked and the leads you land on always match.
+
 1. **Lead Generation → Add Lead**.
 2. Fill in name, company, phone/email, **source**, the **service** they're
    interested in, and an **estimated value**. Assign an **owner** (usually you).
@@ -275,6 +279,12 @@ your clients and unassigned clients appear in your list — clients owned by oth
 sales reps are not shown. Open a client to see its contacts, notes, calls, deals,
 invoices and tickets in one place.
 
+Every active client's page opens with a **summary strip** — **MRR**, **Next
+Renewal**, **Total Revenue**, and **Outstanding** (clickable, jumps to the
+Invoices tab) — plus a **Health Score** badge (0–100) next to their status,
+worst clients scoring lowest. If a client's score has dropped, that's your
+cue to check what's changed before it becomes a bigger problem.
+
 **Adding clients:** use **Clients → Add** for a single client, or **Clients → Import**
 to upload a CSV file in bulk. Download the template from the Import page — it
 includes columns for address, owner (type a user's name exactly), and tags
@@ -300,16 +310,22 @@ you need to do yourself), open a client or lead's **Calls** tab and click
 **Create Meeting** to schedule a real Google Meet call — pick a time, and
 it invites the client's email automatically and shows you the link to share
 directly too (handy for WhatsApp). No Google account of your own needed.
-**Import Meet Notes** is for a call that already happened outside that
-flow — it pulls in the recording link, transcript link, and full transcript
-text Google Meet already generated, the same way a logged call shows up
-(needs Recording/Transcripts turned on for that call, and a few minutes
-after it ends to finish processing). Both work the same way for Leads too.
-If AI is also enabled, an imported meeting with a transcript gets a
-**Summarize with AI** button (or the summary appears automatically a little
-after import) — Claude turns the raw transcript into short "Key points /
-Decisions / Action items" notes, visible to anyone who opens that client's
-page. If it fails, a **Retry** link appears in its place.
+**Inviting teammates:** the scheduler also lets you pick any active
+colleague to invite internally — they get a bell notification, a card on
+their own Dashboard with **Accept**/**Decline** buttons, and a **Join
+Google Meet** link, all without needing a real Google Calendar invite.
+Each meeting's page shows every invited teammate's current status next to
+the client's name. **Import Meet Notes** is for a call that already
+happened outside that flow — it pulls in the recording link, transcript
+link, and full transcript text Google Meet already generated, the same way
+a logged call shows up (needs Recording/Transcripts turned on for that
+call, and a few minutes after it ends to finish processing). Both work the
+same way for Leads too. If AI is also enabled, an imported meeting with a
+transcript gets a **Summarize with AI** button (or the summary appears
+automatically a little after import) — Claude turns the raw transcript
+into short "Key points / Decisions / Action items" notes, visible to
+anyone who opens that client's page. If it fails, a **Retry** link appears
+in its place.
 
 **Meetings held on Zoom, Microsoft Teams, or anywhere else:** click **+ Log
 External Meeting** on the same Calls tab — this works even if no Google
@@ -336,6 +352,14 @@ click **Approve & Send** — this posts it to the client's portal under "Updates
 from Our Team" *and* emails it to the client's billing contact, in one step.
 Click **Discard** instead if a day's draft isn't worth sharing. Nothing reaches
 the client until you approve it.
+
+## 4a. Contract & Renewal Dashboard
+Sidebar → **Contract & Renewals** (shared with Manager and Accounts) —
+active recurring contracts ending in the next **30, 60, or 90 days**, each
+with a **renewal status** you set: Not Started → Discussion → Proposal
+Sent → Negotiation → Renewed/Lost. Use it to see which of your clients'
+renewals actually have a conversation happening and which are about to
+lapse with nobody talking to the client yet.
 
 ## 5. Incentives
 Sidebar → **Incentives** shows your monthly sales incentive, calculated live

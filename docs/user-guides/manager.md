@@ -8,13 +8,25 @@ every operational module for oversight.
 
 ## The company dashboard
 Your dashboard shows the whole business at a glance:
-- **Stat cards** — Total / Active / Inactive **Clients** and **Tasks Overview**,
-  each with the % change vs last month.
+- **Stat cards** — Total / Active / Inactive **Clients**, **Total Leads**, and
+  **Tasks Overview**, each with the % change vs last month.
 - **Services Overview** — a donut of projects by service line (SEO, GMB, Website,
   Social, Ads…).
 - **Task Summary** — Assigned / Pending / Overdue / Completed.
+- **My Meeting Invitations** — if a colleague has scheduled a Google Meet call
+  and added you as an internal attendee (see **Create Meeting** below), it
+  shows here with **Accept**/**Decline** buttons and a direct **Join Google
+  Meet** link, so you don't have to open the client's page just to see it.
 - **Link panels** — quick access to Daily Reports, the Project Dashboard, and the
   Reports below.
+
+A separate **🤖 AI Recommendations** section (below the daily "Today" list,
+Admin/Manager only) is where the **weekly owner digest** paragraph lives
+(Monday mornings, if AI is enabled) — pipeline, MRR, cash expected, overdue
+receivables, and how many clients Client Radar has flagged, plus a link to
+the Employee Performance report's own coaching suggestions and productivity
+flags. It's a dedicated section now rather than mixed in with daily-habit
+items like leave approvals and festival greetings.
 
 ## Important Links
 **Important Links** in the sidebar is a company-wide reference list —
@@ -85,6 +97,12 @@ panel) — a near-term cash view, blending:
   a reason" rule as the AI Summary above, and same visibility (Admin/Manager
   only; each employee separately sees only their own suggestion, on their
   own Dashboard — see `getting-started.md`).
+- **Trend indicators**: every number column shows a small colored `(+3)` or
+  `(-2)` next to it, comparing the selected month against the one right
+  before it — green for an improvement, red for a drop. A blank means there's
+  nothing to compare (e.g. no attendance records yet last month, or the
+  person joined this month). This is the same underlying figures as the
+  table itself, just diffed month over month — no new data.
 
 **Revenue Report** — for a chosen financial year:
 - income **by month**, **by service**, and **by client**, split **recurring vs
@@ -100,6 +118,10 @@ panel) — a near-term cash view, blending:
   Won, not just leads that converted to a client and are still in the
   pipeline. **Avg AI score** shows if one channel tends to bring in
   higher-quality enquiries. Export CSV.
+- Both the **Leads captured** tile and each **By source** row link straight
+  through to **Lead Generation**, pre-filtered to that exact source and the
+  same month you're looking at — so "how many of these actual leads came
+  in" is one click away instead of a manual filter.
 
 **AI Usage Report** — for a chosen month, which of the CRM's AI features are
 actually being used: calls per feature (lead scoring, draft replies, monthly
@@ -129,6 +151,16 @@ next milestone is marked **Ready to invoice**. Filter by **All clients**,
 **Direct clients**, or one specific partner. Open any partner's page (below)
 to see the same view already scoped to them.
 
+**Contract & Renewal Dashboard** (sidebar → **Contract & Renewals**, shared
+with Accounts and Sales) — the fuller version of the 30-day renewal bell
+notification: active recurring contracts ending in the next **30, 60, or 90
+days** (toggle between the three), each with a **renewal status** you set
+yourself — Not Started → Discussion → Proposal Sent → Negotiation →
+Renewed/Lost — so the team can see at a glance who's actually had the
+renewal conversation and who hasn't. Filter the list by status using the
+colored chips at the top. The **MRR at stake** tile totals the monthly-
+equivalent value of every contract in the selected window.
+
 **Weekly digest history** — see [Email alerts](#email-alerts) below for the
 Monday digest itself; the history page keeps every past week's snapshot
 with trendlines so you can see whether MRR, receivables, and flagged-client
@@ -138,6 +170,13 @@ count are trending up or down, not just this week's figure.
 You have access to Leads, Deals, Quotations, Invoices, Projects, Tasks, Tickets,
 Clients, Attendance, Calls and Daily Reports so you can monitor and step in
 anywhere. Use the **search bar** to jump to any record.
+
+**Client 360° summary strip:** every client's profile page now opens with a
+row of tiles — **MRR** (active recurring services), **Next Renewal** (the
+soonest end date among them), and, for roles with invoice access,
+**Total Revenue** (lifetime) and **Outstanding** (clickable — jumps
+straight to that client's Invoices tab). The Health Score badge next to
+the client's status (see Client Radar above) sits right alongside these.
 
 **Seeing who services which client:** open any client's profile and click the
 **Services** tab. The **Projects** table now has a **Team** column showing the
@@ -158,13 +197,19 @@ NEDS's Google account once (**Profile → Google Account**), anyone on the
 team can click **Create Meeting** on a client or lead's **Calls** tab to
 schedule a real Google Meet call through that same connection — it invites
 the client automatically and shows the link to share directly too, no
-personal Google account needed per staff member. For a call that already
-happened outside that flow, **Import Meet Notes** pulls in the recording
-link, transcript link, and full transcript Google Meet already generated —
-shown the same way a logged call is. If AI is also enabled, an imported
-transcript gets a short **AI summary** (Key points / Decisions / Action
-items), visible to anyone who opens that client or lead's page, including
-you.
+personal Google account needed per staff member. **Inviting teammates:**
+the scheduler also has a multi-select of active staff — anyone you add gets
+a CRM bell notification, a card on their own Dashboard's **My Meeting
+Invitations** widget with **Accept**/**Decline** buttons, and a direct
+**Join Google Meet** link, without needing to be a real Google Calendar
+guest. Each meeting's own page shows every invited teammate's current
+status (Pending/Accepted/Declined) next to the client's own name. For a
+call that already happened outside that flow, **Import Meet Notes** pulls
+in the recording link, transcript link, and full transcript Google Meet
+already generated — shown the same way a logged call is. If AI is also
+enabled, an imported transcript gets a short **AI summary** (Key points /
+Decisions / Action items), visible to anyone who opens that client or
+lead's page, including you.
 
 ## Sales Dashboard
 A company-wide view (Sidebar → **Sales Dashboard**, under Sales Department) —
@@ -205,6 +250,57 @@ locked in until the 1st of the following month, when a scheduled job snapshots
 each rep's just-ended month into a permanent record. That means an old deal
 edited after month-end never changes a past month's payout figure.
 
+## Manager Action Center
+Sidebar → **Action Center** — one page rolling up everything across the CRM
+that needs your attention right now, instead of checking five separate
+pages: overdue tasks (team-wide), clients Client Radar has flagged, overdue
+invoices, tickets whose SLA has actually breached (not just approaching),
+contracts renewing within 30 days, and pending follow-up reminders (listed
+inline, since there's no dedicated page for those yet). Every count links
+straight through to the real page behind it — Tasks, Client Radar, the
+Receivables Report, Tickets, or the Contract & Renewal Dashboard — so
+clicking a number always shows you exactly what's in it. **Stagnant deals**
+aren't in this list yet — there's no reusable "hasn't moved" definition
+built for that in the CRM today, only the stagnation *alert emails*
+(see below), which are a different thing.
+
+## Team Workload & Capacity
+Sidebar → **Team Workload** — every active Sales/Support/Accounts/Intern/
+Telecaller person's open (not-Done) task count and overdue count, grouped
+by role with each role's own average shown at the top of its group. A
+person is flagged **Overloaded** when their open task count is more than
+1.5× their role's average, or they have 3 or more overdue tasks — the
+overdue check exists specifically so a lone person in a role (nobody to
+average against) still gets flagged if they're genuinely behind. Someone
+with zero tasks shows up too — an empty plate is worth knowing about, not
+just an overloaded one. Click a name to see their full task list.
+
+## Project Health Dashboard
+Sidebar → **Project Health** — every active or on-hold project, scored:
+- 🔴 **Red** — the deadline has passed.
+- 🟠 **Orange** — the deadline is within 7 days and completion is under 80%,
+  or the project has any overdue task at all (this one applies even to a
+  project with no deadline set).
+- 🟡 **Yellow** — completion is under 50% and more than half the project's
+  own timeline has already gone by.
+- 🟢 **Green** — everything else, including a project with no deadline set
+  that isn't carrying any overdue tasks.
+
+A project with no tasks logged yet is treated as 0% complete for this
+scoring — deliberately, so a project that's gone quiet doesn't slip through
+for lack of data. Completed projects aren't shown — nothing left to track.
+
+## Revenue at Risk
+Sidebar → **Revenue at Risk** — one page pulling together three figures
+that otherwise live on three separate reports: **overdue receivables**
+(every AR-aging bucket except not-yet-due), **MRR renewing in 30 days**
+(same figure as the Contract & Renewal Dashboard's own tile), and **MRR
+tied to Client-Radar-flagged clients**. The headline total is a plain sum
+of the three and isn't deduplicated — a client can be both overdue on an
+invoice and Client-Radar-flagged at the same time, so it can appear in two
+buckets at once. Click any bucket to see exactly what's behind that
+figure, on the report it came from.
+
 ## Client Radar
 A **Client Radar** sidebar item (and a dashboard banner when clients are
 flagged) surfaces active clients worth a proactive check-in:
@@ -217,15 +313,32 @@ flagged) surfaces active clients worth a proactive check-in:
   in the last 60 days (clients rate a ticket once it's Resolved/Closed, from
   the client portal — see `client-portal.md`).
 
-Everything is computed live from existing data, nothing is stored. Click
-**✨ Suggest action** next to a client to have Claude draft a specific next
-step from that client's flags — generated on demand, per client, so it's
-never run automatically as a batch.
+Each flagged client also shows a **Health Score** (0–100, worst clients
+first): starts at 100, then loses 30 for No Contact, 20 for Declining
+Activity, 25 for Overdue Invoice, and 25 for Low Satisfaction (Growth
+Opportunity is a positive signal, so it never costs points). The same
+score shows as a badge next to the client's status on their own Client 360
+page. Everything is computed live from existing data, nothing is stored.
+Click **✨ Suggest action** next to a client to have Claude draft a specific
+next step from that client's flags — generated on demand, per client, so
+it's never run automatically as a batch.
 
 On a **Low Satisfaction** flag specifically, a second button — **✨ Draft
 recovery message** — writes a client-facing apology grounded in the actual
 ticket that was rated poorly (not just the generic flag). Review and
 personalize it before sending; nothing goes out automatically.
+
+## Employee 360°
+Sidebar → **Employee 360°** — one consolidated page per employee: this
+month's performance (the same score/rank/focus-area the Employee
+Performance report uses), task workload (total/pending/overdue), tickets
+currently assigned to them, their last 14 days of attendance, and a
+**Manager Notes** panel for feedback, areas of improvement, and follow-up
+actions — visible only to Admin/Manager, never to the employee themselves.
+This is the same notes feature as the one on the Users → Edit page
+(`admin.md` Section 9), just reachable without needing full Users access —
+useful if you want to leave a note on someone without also being able to
+change their account/role.
 
 ## Daily reports & attendance
 - **Daily Reports → Team** shows what each person submitted for the selected
