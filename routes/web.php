@@ -23,6 +23,7 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LeadController;
 use App\Http\Controllers\LeadMergeController;
 use App\Http\Controllers\LeaveRequestController;
+use App\Http\Controllers\ManagerActionCenterController;
 use App\Http\Controllers\MyDayController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PartnerController;
@@ -508,6 +509,16 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
     Route::middleware('menu.access:employee-360')->group(function () {
         Route::get('employees', [EmployeeProfileController::class, 'index'])->name('employees.index');
         Route::get('employees/{user}', [EmployeeProfileController::class, 'show'])->name('employees.show');
+    });
+
+    /*
+     * Manager Action Center — aggregates existing "needs attention" signals
+     * (overdue tasks, at-risk clients, overdue invoices, SLA breaches,
+     * contract renewals due soon, pending follow-ups). See
+     * ManagerActionCenterMetrics for what's deliberately excluded.
+     */
+    Route::middleware('menu.access:manager-action-center')->group(function () {
+        Route::get('manager-action-center', [ManagerActionCenterController::class, 'index'])->name('manager-action-center.index');
     });
 });
 

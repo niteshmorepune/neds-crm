@@ -3,13 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Enums\TaskStatus;
-use App\Enums\UserRole;
 use App\Models\Attendance;
 use App\Models\Task;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Services\ReportMetrics;
-use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
@@ -22,26 +20,33 @@ use Illuminate\View\View;
  * is a narrower, read-mostly view (+ notes) newly opened to Manager too —
  * resolves the "Manager access to employee notes" question deferred when
  * Employee Notes was first added to users/edit.blade.php (Admin-only
- * there, unchanged by this). No UserPolicy exists in this app (confirmed
- * before building) — every user-management check is inline abort_unless,
- * so this follows that same convention rather than introducing one just
- * for this feature.
+ * there, unchanged by this).
+ *
+ * No UserPolicy exists in this app, and no inline role check here either —
+ * access is purely menu.access:employee-360 (routes/web.php), same
+ * convention as ClientRadarController/FestivalController/ServiceController
+ * for admin/manager-only pages with no Policy class. Confirmed via
+ * MenuResolver's own doc-comment before relying on it: accessibleKeys()/
+ * canAccess() (real route access) is role-based only — per-user Menu
+ * Controller overrides only ever affect sidebar VISIBILITY, never actual
+ * access (MenuAccessTest covers this: a per-user "granted" override reveals
+ * a hidden item but the route still 403s). So a redundant inline hasRole()
+ * check here wouldn't change who gets in — it would just be a second,
+ * independently-maintained copy of the same role list already in
+ * MenuItemsSeeder, free to quietly drift from it. Deleted rather than kept
+ * "for safety."
  */
 class EmployeeProfileController extends Controller
 {
-    public function index(Request $request): View
+    public function index(): View
     {
-        $this->authorizeViewer($request);
-
         $employees = User::where('is_active', true)->orderBy('name')->get();
 
         return view('employees.index', compact('employees'));
     }
 
-    public function show(Request $request, User $user, ReportMetrics $metrics): View
+    public function show(User $user, ReportMetrics $metrics): View
     {
-        $this->authorizeViewer($request);
-
         $from = now()->startOfMonth();
         $to = now()->endOfMonth();
 
@@ -78,10 +83,5 @@ class EmployeeProfileController extends Controller
             'ticketCounts' => $ticketCounts,
             'attendance' => $attendance,
         ]);
-    }
-
-    private function authorizeViewer(Request $request): void
-    {
-        abort_unless($request->user()->hasRole(UserRole::Admin, UserRole::Manager), 403);
     }
 }
