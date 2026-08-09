@@ -48,6 +48,7 @@ class MenuItemsSeeder extends Seeder
             ['key' => 'project-updates',  'label' => 'Project Updates',  'route' => 'projects.index',   'icon' => 'briefcase',  'roles' => [UserRole::Manager, UserRole::Sales, UserRole::Support, UserRole::Intern]],
             ['key' => 'emptask',          'label' => 'Employee Task',    'route' => 'tasks.index',      'icon' => 'check',      'roles' => $all],
             ['key' => 'manager-action-center', 'label' => 'Action Center', 'route' => 'manager-action-center.index', 'icon' => 'bolt', 'roles' => [UserRole::Manager]],
+            ['key' => 'team-workload',    'label' => 'Team Workload',    'route' => 'team-workload.index', 'icon' => 'scale', 'roles' => [UserRole::Manager]],
             ['key' => 'client-radar',     'label' => 'Client Radar',     'route' => 'client-radar.index', 'icon' => 'radar',    'roles' => [UserRole::Manager]],
             ['key' => 'employee-360',     'label' => 'Employee 360°',    'route' => 'employees.index',  'icon' => 'identification', 'roles' => [UserRole::Manager]],
             ['key' => 'daily-reports',    'label' => 'Daily Reports',    'route' => 'daily-reports.index', 'icon' => 'clipboard', 'roles' => $all],

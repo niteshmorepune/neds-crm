@@ -46,6 +46,7 @@ use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TeamNudgeController;
+use App\Http\Controllers\TeamWorkloadController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\TwoFactorSetupController;
 use App\Http\Controllers\UserController;
@@ -519,6 +520,14 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
      */
     Route::middleware('menu.access:manager-action-center')->group(function () {
         Route::get('manager-action-center', [ManagerActionCenterController::class, 'index'])->name('manager-action-center.index');
+    });
+
+    /*
+     * Team Workload & Capacity — Tier 2 #02. See TaskWorkloadMetrics for
+     * the confirmed "overloaded" formula.
+     */
+    Route::middleware('menu.access:team-workload')->group(function () {
+        Route::get('team-workload', [TeamWorkloadController::class, 'index'])->name('team-workload.index');
     });
 });
 
