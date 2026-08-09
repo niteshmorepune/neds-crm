@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ContractRenewalStatus;
 use App\Enums\InvoiceStatus;
 use App\Enums\RecurringFrequency;
 use App\Models\Concerns\LogsActivity;
@@ -17,7 +18,7 @@ class RecurringInvoice extends Model
 
     protected $fillable = [
         'customer_id', 'quotation_id', 'service_id', 'frequency', 'day_of_month',
-        'start_date', 'end_date', 'next_run_on', 'is_active',
+        'start_date', 'end_date', 'next_run_on', 'is_active', 'renewal_status',
         'last_reminder_sent_at', 'renewal_reminder_sent_for', 'discount', 'is_gst_exempt', 'terms',
     ];
 
@@ -25,6 +26,7 @@ class RecurringInvoice extends Model
     {
         return [
             'frequency' => RecurringFrequency::class,
+            'renewal_status' => ContractRenewalStatus::class,
             'start_date' => 'date',
             'end_date' => 'date',
             'next_run_on' => 'date',
@@ -91,6 +93,36 @@ class RecurringInvoice extends Model
         return $this->is_active
             && $this->end_date !== null
             && $this->next_run_on->gt($this->end_date);
+    }
+
+    /**
+     * This template's own monthly-equivalent value — pre-GST, same formula
+     * as GenerateRecurringInvoices' actual billing amount. Single source of
+     * truth: Customer::monthlyRecurringValue() and
+     * BusinessOverviewMetrics::mrrSnapshot() both call this per-template
+     * instead of re-deriving the formula, so they can never quietly drift
+     * apart. Requires items to already be loaded (avoids an N+1 when called
+     * in a loop over many templates).
+     */
+    public function monthlyEquivalentValue(): int
+    {
+        $cycleAmount = (int) $this->items->sum(fn (RecurringInvoiceItem $item) => (int) round(((float) $item->quantity) * (int) $item->rate));
+        $cycleAmount = max(0, $cycleAmount - (int) $this->discount);
+
+        return (int) round($cycleAmount / $this->frequency->cycleMonths());
+    }
+
+    /**
+     * Active templates with a fixed end_date landing within the next $days
+     * days — the Contract & Renewal Dashboard's due-soon window. Templates
+     * with no end_date (open-ended/ongoing) never need a renewal decision,
+     * so they're excluded rather than shown with a blank date.
+     */
+    public function scopeRenewingWithin(Builder $query, int $days): Builder
+    {
+        return $query->where('is_active', true)
+            ->whereNotNull('end_date')
+            ->whereBetween('end_date', [now()->startOfDay(), now()->addDays($days)->endOfDay()]);
     }
 
     /** Excludes templates that have naturally ended (see hasEnded()) — the main Recurring Invoices list defaults to this to avoid piling up with finished one-cycle templates. */

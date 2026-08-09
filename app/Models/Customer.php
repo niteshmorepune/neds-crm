@@ -183,21 +183,17 @@ class Customer extends Model
     }
 
     /**
-     * This client's own monthly-equivalent recurring value — same formula as
-     * BusinessOverviewMetrics::mrrSnapshot(), scoped to one customer.
-     * Requires recurringInvoices.items to already be loaded (avoids an N+1
-     * on the client show page, which already eager-loads it).
+     * This client's own monthly-equivalent recurring value — sums
+     * RecurringInvoice::monthlyEquivalentValue() (the single source of truth
+     * for this formula) across active templates. Requires
+     * recurringInvoices.items to already be loaded (avoids an N+1 on the
+     * client show page, which already eager-loads it).
      */
     public function monthlyRecurringValue(): int
     {
         return (int) $this->recurringInvoices
             ->where('is_active', true)
-            ->sum(function (RecurringInvoice $template) {
-                $cycleAmount = (int) $template->items->sum(fn ($item) => (int) round(((float) $item->quantity) * (int) $item->rate));
-                $cycleAmount = max(0, $cycleAmount - (int) $template->discount);
-
-                return (int) round($cycleAmount / $template->frequency->cycleMonths());
-            });
+            ->sum(fn (RecurringInvoice $template) => $template->monthlyEquivalentValue());
     }
 
     /**

@@ -42,6 +42,7 @@ class MenuItemsSeeder extends Seeder
             ['key' => 'invoices',         'label' => 'Invoices',         'route' => 'invoices.index',   'icon' => 'receipt',    'roles' => [UserRole::Manager, UserRole::Accounts, UserRole::Sales]],
             ['key' => 'account',          'label' => 'Account',          'route' => 'reports.receivables', 'icon' => 'wallet',  'roles' => [UserRole::Manager, UserRole::Accounts]],
             ['key' => 'collections',      'label' => 'Collections',      'route' => 'reports.collections', 'icon' => 'banknotes', 'roles' => [UserRole::Manager, UserRole::Accounts]],
+            ['key' => 'contract-renewals', 'label' => 'Contract & Renewals', 'route' => 'contract-renewals.index', 'icon' => 'refresh', 'roles' => [UserRole::Manager, UserRole::Accounts, UserRole::Sales]],
             ['key' => 'tickets',          'label' => 'Tickets',          'route' => 'tickets.index',    'icon' => 'lifebuoy',   'roles' => [UserRole::Manager, UserRole::Support, UserRole::Sales]],
             ['key' => 'calling',          'label' => 'Calling',          'route' => 'calls.index',      'icon' => 'phone',      'roles' => [UserRole::Manager, UserRole::Sales, UserRole::Support, UserRole::Telecaller]],
             ['key' => 'project-updates',  'label' => 'Project Updates',  'route' => 'projects.index',   'icon' => 'briefcase',  'roles' => [UserRole::Manager, UserRole::Sales, UserRole::Support, UserRole::Intern]],

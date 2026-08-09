@@ -48,6 +48,7 @@ use App\Http\Controllers\TicketController;
 use App\Http\Controllers\TwoFactorSetupController;
 use App\Http\Controllers\UserController;
 use App\Livewire\ClientImport;
+use App\Livewire\ContractRenewalDashboard;
 use App\Livewire\DealsBoard;
 use App\Livewire\HitechAttendanceImport;
 use App\Livewire\MenuManager;
@@ -182,6 +183,17 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
         Route::post('quotations/{quotation}/status', [QuotationController::class, 'transition'])->name('quotations.status');
         Route::post('quotations/{quotation}/convert', [QuotationController::class, 'convert'])->name('quotations.convert');
         Route::delete('quotations/{quotation}', [QuotationController::class, 'destroy'])->name('quotations.destroy');
+    });
+
+    /*
+     * Contract & Renewal Dashboard — own menu item (contract-renewals),
+     * separate from the invoices/recurring-invoices menu.access gate since
+     * it's a Manager-panel view: viewing follows InvoicePolicy::viewAny
+     * (checked in ContractRenewalDashboard::mount()), same as every other
+     * recurring-invoice screen.
+     */
+    Route::middleware('menu.access:contract-renewals')->group(function () {
+        Route::get('contract-renewals', ContractRenewalDashboard::class)->name('contract-renewals.index');
     });
 
     /*

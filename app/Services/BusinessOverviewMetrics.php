@@ -138,22 +138,14 @@ class BusinessOverviewMetrics
             ->where('is_active', true)
             ->with(['items', 'service', 'customer'])
             ->get()
-            ->map(function (RecurringInvoice $template) {
-                // Same pre-GST formula as GenerateRecurringInvoices: sum of
-                // quantity*rate per item, minus the template discount, floored at 0.
-                $cycleAmount = (int) $template->items->sum(fn ($item) => (int) round(((float) $item->quantity) * (int) $item->rate));
-                $cycleAmount = max(0, $cycleAmount - (int) $template->discount);
-                $cycleMonths = $template->frequency->cycleMonths();
-
-                return [
-                    'customer' => $template->customer?->company_name ?? 'Unknown',
-                    'customer_id' => $template->customer?->id,
-                    'service' => $template->service?->name ?? 'Unspecified',
-                    'frequency' => $template->frequency->label(),
-                    'monthly_equivalent' => (int) round($cycleAmount / $cycleMonths),
-                    'end_date' => $template->end_date,
-                ];
-            });
+            ->map(fn (RecurringInvoice $template) => [
+                'customer' => $template->customer?->company_name ?? 'Unknown',
+                'customer_id' => $template->customer?->id,
+                'service' => $template->service?->name ?? 'Unspecified',
+                'frequency' => $template->frequency->label(),
+                'monthly_equivalent' => $template->monthlyEquivalentValue(),
+                'end_date' => $template->end_date,
+            ]);
 
         $byService = $rows->groupBy('service')
             ->map(fn (Collection $group, string $name) => ['name' => $name, 'monthly_equivalent' => (int) $group->sum('monthly_equivalent')])
