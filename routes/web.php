@@ -12,6 +12,7 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DailyReportController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DealController;
+use App\Http\Controllers\EmployeeProfileController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\FestivalController;
 use App\Http\Controllers\GoogleConnectionController;
@@ -496,6 +497,17 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
      */
     Route::middleware('menu.access:users')->group(function () {
         Route::resource('users', UserController::class)->except(['show']);
+    });
+
+    /*
+     * Employee 360° View — read-mostly employee profile (performance,
+     * workload, tickets, attendance, manager notes). Own menu key
+     * (employee-360), separate from menu.access:users above, so granting
+     * it to Manager doesn't also grant full Users account-management CRUD.
+     */
+    Route::middleware('menu.access:employee-360')->group(function () {
+        Route::get('employees', [EmployeeProfileController::class, 'index'])->name('employees.index');
+        Route::get('employees/{user}', [EmployeeProfileController::class, 'show'])->name('employees.show');
     });
 });
 
