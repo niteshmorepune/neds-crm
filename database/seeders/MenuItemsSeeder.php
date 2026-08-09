@@ -49,6 +49,7 @@ class MenuItemsSeeder extends Seeder
             ['key' => 'emptask',          'label' => 'Employee Task',    'route' => 'tasks.index',      'icon' => 'check',      'roles' => $all],
             ['key' => 'manager-action-center', 'label' => 'Action Center', 'route' => 'manager-action-center.index', 'icon' => 'bolt', 'roles' => [UserRole::Manager]],
             ['key' => 'team-workload',    'label' => 'Team Workload',    'route' => 'team-workload.index', 'icon' => 'scale', 'roles' => [UserRole::Manager]],
+            ['key' => 'project-health',   'label' => 'Project Health',   'route' => 'project-health.index', 'icon' => 'heart', 'roles' => [UserRole::Manager]],
             ['key' => 'client-radar',     'label' => 'Client Radar',     'route' => 'client-radar.index', 'icon' => 'radar',    'roles' => [UserRole::Manager]],
             ['key' => 'employee-360',     'label' => 'Employee 360°',    'route' => 'employees.index',  'icon' => 'identification', 'roles' => [UserRole::Manager]],
             ['key' => 'daily-reports',    'label' => 'Daily Reports',    'route' => 'daily-reports.index', 'icon' => 'clipboard', 'roles' => $all],

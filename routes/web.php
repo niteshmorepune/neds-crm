@@ -35,6 +35,7 @@ use App\Http\Controllers\Portal\SetPasswordController;
 use App\Http\Controllers\Portal\SsoController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\ProjectHealthController;
 use App\Http\Controllers\QuarterlyAwardController;
 use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\RecurringInvoiceController;
@@ -528,6 +529,14 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
      */
     Route::middleware('menu.access:team-workload')->group(function () {
         Route::get('team-workload', [TeamWorkloadController::class, 'index'])->name('team-workload.index');
+    });
+
+    /*
+     * Project Health Dashboard — Tier 2 #03. See ProjectHealthMetrics for
+     * the confirmed 🔴🟠🟡🟢 formula.
+     */
+    Route::middleware('menu.access:project-health')->group(function () {
+        Route::get('project-health', [ProjectHealthController::class, 'index'])->name('project-health.index');
     });
 });
 
