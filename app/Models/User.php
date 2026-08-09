@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Collection;
@@ -95,6 +96,21 @@ class User extends Authenticatable
     public function leads(): HasMany
     {
         return $this->hasMany(Lead::class, 'owner_id');
+    }
+
+    /**
+     * Manager/admin internal notes about this employee — feedback, areas of
+     * improvement, follow-up actions. Reuses the same generic polymorphic
+     * Note model as Lead/Deal/Customer/Project (see App\Livewire\RecordNotes).
+     * Currently only reachable from the Users edit page, which is admin-only
+     * (UserController hard-gates every action on isAdmin()) — Manager access
+     * to employee notes is deferred to whenever the Employee 360° View is
+     * scoped, since that page needs the same admin-vs-manager access
+     * decision made for the whole view, not just this relation.
+     */
+    public function notes(): MorphMany
+    {
+        return $this->morphMany(Note::class, 'notable')->latest();
     }
 
     public function googleAccountConnection(): HasOne

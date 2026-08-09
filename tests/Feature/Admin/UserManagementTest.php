@@ -1,11 +1,13 @@
 <?php
 
 use App\Enums\UserRole;
+use App\Livewire\RecordNotes;
 use App\Mail\UserInvitation;
 use App\Models\ContentPiece;
 use App\Models\User;
 use Database\Seeders\MenuItemsSeeder;
 use Illuminate\Support\Facades\Mail;
+use Livewire\Livewire;
 
 beforeEach(function () {
     $this->seed(MenuItemsSeeder::class);
@@ -174,6 +176,28 @@ it('deletes a user with no related records', function () {
         ->assertRedirect(route('users.index'));
 
     expect(User::find($staff->id))->toBeNull();
+});
+
+it('shows the Internal Notes section on the user edit page for an admin', function () {
+    $staff = User::factory()->role(UserRole::Support)->create();
+
+    $this->actingAs($this->admin)->get(route('users.edit', $staff))
+        ->assertOk()
+        ->assertSee('Internal Notes')
+        ->assertSeeLivewire('record-notes');
+});
+
+it('lets an admin add and see an internal note on an employee', function () {
+    $staff = User::factory()->role(UserRole::Support)->create();
+
+    Livewire::actingAs($this->admin)
+        ->test(RecordNotes::class, ['record' => $staff, 'canManage' => true])
+        ->set('body', 'Strong on tickets this month; slipping on daily reports.')
+        ->call('addNote')
+        ->assertSee('Strong on tickets this month; slipping on daily reports.');
+
+    expect($staff->notes()->count())->toBe(1)
+        ->and($staff->notes()->first()->user_id)->toBe($this->admin->id);
 });
 
 it('shows a friendly error instead of a 500 when deleting a user blocked by a foreign key', function () {
