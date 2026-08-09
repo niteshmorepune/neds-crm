@@ -46,6 +46,18 @@ class LeadPolicy
         return $user->hasRole(UserRole::Admin, UserRole::Manager, UserRole::Sales);
     }
 
+    /**
+     * Merge two duplicate leads into one — same role set as convert(), since
+     * both are lead-lifecycle actions with real, hard-to-reverse consequences
+     * (one lead ends up soft-deleted). Deliberately a class-level ability
+     * (Lead::class, not a specific instance) since the check happens before
+     * either lead in the pair is definitively chosen as primary/duplicate.
+     */
+    public function merge(User $user): bool
+    {
+        return $user->hasRole(UserRole::Admin, UserRole::Manager, UserRole::Sales);
+    }
+
     public function delete(User $user, Lead $lead): bool
     {
         return $user->hasRole(UserRole::Admin, UserRole::Manager);

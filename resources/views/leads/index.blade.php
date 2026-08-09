@@ -63,10 +63,17 @@
             @endcan
         </div>
 
+        @can('merge', \App\Models\Lead::class)
+            <form method="GET" action="{{ route('leads.merge.show') }}" x-data="{ checked: [] }" id="merge-form">
+        @endcan
+
         <div class="overflow-hidden overflow-x-auto rounded-lg bg-white shadow-sm">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
                     <tr>
+                        @can('merge', \App\Models\Lead::class)
+                            <th class="w-8 px-4 py-3"></th>
+                        @endcan
                         <th class="px-4 py-3">Lead</th>
                         <th class="px-4 py-3">Source</th>
                         <th class="px-4 py-3">Service</th>
@@ -80,6 +87,13 @@
                 <tbody class="divide-y divide-gray-100">
                     @forelse ($leads as $lead)
                         <tr class="hover:bg-gray-50">
+                            @can('merge', \App\Models\Lead::class)
+                                <td class="px-4 py-3">
+                                    <input type="checkbox" name="ids[]" value="{{ $lead->id }}" form="merge-form"
+                                           x-model="checked" :disabled="checked.length >= 2 && ! checked.includes('{{ $lead->id }}')"
+                                           class="rounded border-gray-300 text-indigo-600" />
+                                </td>
+                            @endcan
                             <td class="px-4 py-3">
                                 <div class="flex items-center gap-2">
                                     <a href="{{ route('leads.show', $lead) }}" class="font-medium text-indigo-600 hover:underline">{{ $lead->name }}</a>
@@ -112,11 +126,24 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="8" class="px-4 py-10 text-center text-gray-400">No leads found.</td></tr>
+                        @php($colspan = 8)
+                        @can('merge', \App\Models\Lead::class) @php($colspan = 9) @endcan
+                        <tr><td colspan="{{ $colspan }}" class="px-4 py-10 text-center text-gray-400">No leads found.</td></tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
+
+        @can('merge', \App\Models\Lead::class)
+            <div class="flex items-center gap-3">
+                <button type="submit" form="merge-form" :disabled="checked.length !== 2"
+                        class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40">
+                    Merge Selected
+                </button>
+                <p class="text-xs text-gray-400" x-show="checked.length !== 2">Select exactly 2 leads to merge duplicates.</p>
+            </div>
+            </form>
+        @endcan
 
         <div>{{ $leads->links() }}</div>
     </div>
