@@ -75,15 +75,18 @@ class GoogleCalendarClient
     }
 
     /**
-     * Creates a Calendar event with an auto-generated Google Meet link and,
-     * if given, invites one attendee — `sendUpdates=all` so Google emails
-     * them the invite directly. Used by "Create Meeting" so any staff
-     * member can schedule a client/lead call through the company connection
-     * without needing their own Google account.
+     * Creates a Calendar event with an auto-generated Google Meet link and
+     * invites every given attendee — `sendUpdates=all` so Google emails them
+     * the invite directly. Used by "Create Meeting" so any staff member can
+     * schedule a client/lead call through the company connection without
+     * needing their own Google account. $attendeeEmails may include the
+     * client's own email alongside any invited internal team members'
+     * emails — Google treats them identically as Calendar attendees.
      *
+     * @param  list<string>  $attendeeEmails
      * @return array{event_id: string, meet_link: string|null}|null
      */
-    public function createMeetingEvent(GoogleAccountConnection $connection, string $title, ?string $attendeeEmail, Carbon $start, int $durationMinutes = 30): ?array
+    public function createMeetingEvent(GoogleAccountConnection $connection, string $title, array $attendeeEmails, Carbon $start, int $durationMinutes = 30): ?array
     {
         if (! $this->oauth->ensureFreshToken($connection)) {
             return null;
@@ -96,7 +99,7 @@ class GoogleCalendarClient
                     'summary' => $title,
                     'start' => ['dateTime' => $start->toRfc3339String()],
                     'end' => ['dateTime' => $start->copy()->addMinutes($durationMinutes)->toRfc3339String()],
-                    'attendees' => $attendeeEmail ? [['email' => $attendeeEmail]] : [],
+                    'attendees' => collect($attendeeEmails)->filter()->unique()->map(fn (string $email) => ['email' => $email])->values()->all(),
                     'conferenceData' => [
                         'createRequest' => [
                             'requestId' => (string) Str::uuid(),

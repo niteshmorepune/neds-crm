@@ -89,6 +89,8 @@
 
             <livewire:my-follow-up-reminders />
 
+            <livewire:my-meeting-invitations />
+
             <div class="flex items-center gap-3 border-t border-gray-100 px-4 py-3 sm:px-5">
                 <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-emerald-50 text-sm">📝</span>
                 <p class="min-w-0 flex-1 text-sm text-gray-600">End of day? Submit your daily report.</p>

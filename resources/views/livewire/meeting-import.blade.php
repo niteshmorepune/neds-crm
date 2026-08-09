@@ -45,6 +45,17 @@
                         <p class="text-xs font-medium text-gray-500">Create a Meet call — invites {{ $this->attendeeEmail() ?? 'no one (no email on file)' }}</p>
                         <button type="button" wire:click="cancelScheduler" class="text-xs text-gray-400 hover:text-gray-600">Cancel</button>
                     </div>
+
+                    <div class="mb-3">
+                        <p class="mb-1 text-xs font-medium text-gray-500">Invite team members (optional)</p>
+                        <select wire:model="selectedTeamMemberIds" multiple size="4" class="block w-full rounded-md border-gray-300 text-sm shadow-sm">
+                            @foreach ($this->inviteableTeamMembers() as $member)
+                                <option value="{{ $member->id }}">{{ $member->name }}</option>
+                            @endforeach
+                        </select>
+                        <p class="mt-1 text-xs text-gray-400">Ctrl/Cmd-click to select more than one. They'll get a CRM notification and see the meeting on their dashboard — the client invite is unaffected.</p>
+                    </div>
+
                     <div class="flex flex-wrap items-center gap-2">
                         <input type="datetime-local" wire:model="scheduleAt" class="rounded-md border-gray-300 text-sm shadow-sm" />
                         <button type="button" wire:click="createMeeting" wire:loading.attr="disabled" wire:target="createMeeting"
@@ -157,6 +168,19 @@
                 </div>
                 @if (! empty($meeting->attendees))
                     <p class="mt-1 text-xs text-gray-400">With: {{ implode(', ', $meeting->attendees) }}</p>
+                @endif
+                @if ($meeting->participants->isNotEmpty())
+                    <p class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-400">
+                        <span>Team:</span>
+                        @foreach ($meeting->participants as $participant)
+                            <span @class([
+                                'inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-medium',
+                                'bg-emerald-50 text-emerald-700' => $participant->status->value === 'accepted',
+                                'bg-gray-100 text-gray-600' => $participant->status->value === 'pending',
+                                'bg-red-50 text-red-600' => $participant->status->value === 'declined',
+                            ])>{{ $participant->user?->name }} · {{ $participant->status->label() }}</span>
+                        @endforeach
+                    </p>
                 @endif
                 <div class="mt-2 flex items-center gap-3 text-xs">
                     @if ($meeting->drive_recording_url)

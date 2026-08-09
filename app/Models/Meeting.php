@@ -7,6 +7,7 @@ use App\Enums\MeetingSummaryStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Meeting extends Model
@@ -16,6 +17,7 @@ class Meeting extends Model
     protected $fillable = [
         'user_id',
         'google_event_id',
+        'meet_link',
         'platform',
         'title',
         'occurred_at',
@@ -60,5 +62,15 @@ class Meeting extends Model
     public function meetable(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    /**
+     * Internal team members invited alongside the client (see
+     * MeetingImport::createMeeting()) — never the client, who is invited via
+     * the Google Calendar event's own attendee list, not this table.
+     */
+    public function participants(): HasMany
+    {
+        return $this->hasMany(MeetingParticipant::class);
     }
 }

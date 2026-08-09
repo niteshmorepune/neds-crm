@@ -8,12 +8,15 @@ use App\Jobs\SummarizeMeeting;
 use App\Models\Customer;
 use App\Models\GoogleAccountConnection;
 use App\Models\Meeting;
+use App\Models\User;
+use App\Notifications\MeetingInvitation;
 use App\Services\GoogleCalendarClient;
 use App\Services\GoogleMeetImportClient;
 use App\Support\Ai;
 use App\Support\GoogleMeet;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
@@ -53,6 +56,9 @@ class MeetingImport extends Component
     public bool $showScheduler = false;
 
     public string $scheduleAt = '';
+
+    /** @var list<int> */
+    public array $selectedTeamMemberIds = [];
 
     public ?string $createdMeetLink = null;
 
@@ -141,8 +147,25 @@ class MeetingImport extends Component
 
         $this->error = null;
         $this->createdMeetLink = null;
+        $this->selectedTeamMemberIds = [];
         $this->scheduleAt = now()->addMinutes(30)->setTimezone(config('app.display_timezone', 'Asia/Kolkata'))->format('Y-m-d\TH:i');
         $this->showScheduler = true;
+    }
+
+    /**
+     * Active staff, other than whoever's scheduling — the pool to invite as
+     * internal participants. Includes every role deliberately: who needs to
+     * attend a given client call isn't something the CRM can infer from role
+     * alone (e.g. an Accounts person joining a renewal-pricing discussion).
+     *
+     * @return Collection<int, User>
+     */
+    public function inviteableTeamMembers()
+    {
+        return User::where('is_active', true)
+            ->where('id', '!=', auth()->id())
+            ->orderBy('name')
+            ->get(['id', 'name', 'email']);
     }
 
     public function cancelScheduler(): void
@@ -177,7 +200,14 @@ class MeetingImport extends Component
         $title = 'NEDS <> '.($this->record->company_name ?? $this->record->company ?? $this->record->name ?? 'Meeting');
         $attendeeEmail = $this->attendeeEmail();
 
-        $result = $calendar->createMeetingEvent($connection, $title, $attendeeEmail, $start);
+        $teamMembers = User::whereIn('id', $this->selectedTeamMemberIds)->get(['id', 'name', 'email']);
+        $attendeeEmails = collect([$attendeeEmail])
+            ->merge($teamMembers->pluck('email'))
+            ->filter()
+            ->values()
+            ->all();
+
+        $result = $calendar->createMeetingEvent($connection, $title, $attendeeEmails, $start);
 
         if ($result === null) {
             $this->error = "Couldn't create the meeting — please try again.";
@@ -185,13 +215,24 @@ class MeetingImport extends Component
             return;
         }
 
-        $this->record->meetings()->create([
+        $meeting = $this->record->meetings()->create([
             'user_id' => auth()->id(),
             'google_event_id' => $result['event_id'],
+            'meet_link' => $result['meet_link'],
             'title' => $title,
             'occurred_at' => $start,
-            'attendees' => $attendeeEmail ? [$attendeeEmail] : [],
+            'attendees' => $attendeeEmails,
         ]);
+
+        // Client invite is unaffected — Google already emailed them directly
+        // via the Calendar event's own attendee list above. This is purely
+        // the additional internal notice: a CRM notification (so it shows up
+        // without needing a separate WhatsApp/email heads-up) plus a
+        // trackable Accepted/Pending/Declined row per invited team member.
+        foreach ($teamMembers as $member) {
+            $meeting->participants()->create(['user_id' => $member->id]);
+            $member->notify(new MeetingInvitation($meeting));
+        }
 
         $this->createdMeetLink = $result['meet_link'];
         $this->showScheduler = false;
@@ -312,7 +353,7 @@ class MeetingImport extends Component
     public function render()
     {
         return view('livewire.meeting-import', [
-            'meetings' => $this->record->meetings()->with('user:id,name')->get(),
+            'meetings' => $this->record->meetings()->with(['user:id,name', 'participants.user:id,name'])->get(),
             'connected' => (bool) GoogleAccountConnection::forCompany(),
             'featureEnabled' => GoogleMeet::enabled(),
         ]);
