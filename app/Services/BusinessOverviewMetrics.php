@@ -21,16 +21,6 @@ use Illuminate\Support\Collection;
 class BusinessOverviewMetrics
 {
     /**
-     * How many months one billing cycle of a recurring template spans, for
-     * normalizing to a monthly-equivalent MRR figure.
-     */
-    private const CYCLE_MONTHS = [
-        'monthly' => 1,
-        'quarterly' => 3,
-        'yearly' => 12,
-    ];
-
-    /**
      * Per partner: customers referred (via Customer.referring_partner_id) and
      * deals attributed to them (via Deal.partner_id) — two independent links,
      * kept separate rather than conflated. Snapshot as of now.
@@ -153,7 +143,7 @@ class BusinessOverviewMetrics
                 // quantity*rate per item, minus the template discount, floored at 0.
                 $cycleAmount = (int) $template->items->sum(fn ($item) => (int) round(((float) $item->quantity) * (int) $item->rate));
                 $cycleAmount = max(0, $cycleAmount - (int) $template->discount);
-                $cycleMonths = self::CYCLE_MONTHS[$template->frequency->value];
+                $cycleMonths = $template->frequency->cycleMonths();
 
                 return [
                     'customer' => $template->customer?->company_name ?? 'Unknown',

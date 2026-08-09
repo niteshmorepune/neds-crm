@@ -54,6 +54,37 @@
             </div>
         </div>
 
+        {{-- Client 360° summary strip --}}
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div class="rounded-lg bg-white p-4 shadow-sm">
+                <p class="text-xs font-medium uppercase tracking-wide text-gray-400">MRR</p>
+                <p class="mt-1 text-xl font-semibold text-gray-900">{{ \App\Support\Money::format($summary['mrr']) }}</p>
+                <p class="mt-0.5 text-xs text-gray-400">active recurring services</p>
+            </div>
+            <div class="rounded-lg bg-white p-4 shadow-sm">
+                <p class="text-xs font-medium uppercase tracking-wide text-gray-400">Next Renewal</p>
+                <p class="mt-1 text-xl font-semibold text-gray-900">{{ $summary['next_renewal']?->format('d M Y') ?? '—' }}</p>
+                <p class="mt-0.5 text-xs text-gray-400">soonest active template end date</p>
+            </div>
+            @if ($canViewInvoices)
+                <div class="rounded-lg bg-white p-4 shadow-sm">
+                    <p class="text-xs font-medium uppercase tracking-wide text-gray-400">Total Revenue</p>
+                    <p class="mt-1 text-xl font-semibold text-gray-900">{{ \App\Support\Money::format($summary['total_revenue']) }}</p>
+                    <p class="mt-0.5 text-xs text-gray-400">all invoices, lifetime</p>
+                </div>
+                <button type="button" @click="tab = 'invoices'"
+                        class="rounded-lg bg-white p-4 text-left shadow-sm hover:ring-1 hover:ring-indigo-200 transition-shadow">
+                    <p class="text-xs font-medium uppercase tracking-wide text-gray-400">Outstanding</p>
+                    <p @class([
+                        'mt-1 text-xl font-semibold',
+                        'text-red-700' => $summary['outstanding'] > 0,
+                        'text-gray-900' => $summary['outstanding'] === 0,
+                    ])>{{ \App\Support\Money::format($summary['outstanding']) }}</p>
+                    <p class="mt-0.5 text-xs text-indigo-600">view invoices →</p>
+                </button>
+            @endif
+        </div>
+
         {{-- Contacts --}}
         <livewire:contacts-manager :customer="$client" :can-manage="$canManage" />
 

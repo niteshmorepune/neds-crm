@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
 class Customer extends Model
@@ -179,6 +180,40 @@ class Customer extends Model
     public function nonOrphanedRecurringInvoices(): Collection
     {
         return $this->recurringInvoices->reject(fn (RecurringInvoice $r) => $r->isOrphaned());
+    }
+
+    /**
+     * This client's own monthly-equivalent recurring value — same formula as
+     * BusinessOverviewMetrics::mrrSnapshot(), scoped to one customer.
+     * Requires recurringInvoices.items to already be loaded (avoids an N+1
+     * on the client show page, which already eager-loads it).
+     */
+    public function monthlyRecurringValue(): int
+    {
+        return (int) $this->recurringInvoices
+            ->where('is_active', true)
+            ->sum(function (RecurringInvoice $template) {
+                $cycleAmount = (int) $template->items->sum(fn ($item) => (int) round(((float) $item->quantity) * (int) $item->rate));
+                $cycleAmount = max(0, $cycleAmount - (int) $template->discount);
+
+                return (int) round($cycleAmount / $template->frequency->cycleMonths());
+            });
+    }
+
+    /**
+     * The soonest end_date among this client's active recurring templates —
+     * the next renewal/contract-lapse point to watch, same signal
+     * SendContractRenewalReminders already alerts on. Null if none are set
+     * to end. Requires recurringInvoices to already be loaded.
+     */
+    public function nextRenewalDate(): ?Carbon
+    {
+        return $this->recurringInvoices
+            ->where('is_active', true)
+            ->pluck('end_date')
+            ->filter()
+            ->sort()
+            ->first();
     }
 
     /**

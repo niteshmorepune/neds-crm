@@ -10,6 +10,7 @@ use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\Partner;
 use App\Models\User;
+use App\Services\CollectionsMetrics;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -87,7 +88,7 @@ class CustomerController extends Controller
             ->with('status', 'Client created.');
     }
 
-    public function show(Customer $client): View
+    public function show(Customer $client, CollectionsMetrics $collections): View
     {
         $this->authorize('view', $client);
 
@@ -131,6 +132,22 @@ class CustomerController extends Controller
             $tabCounts['invoices'] = $client->invoices->count();
         }
 
+        // Client 360° summary strip. MRR/renewal are visible to everyone who
+        // can see this page (same split the Services tab already uses —
+        // amounts are visible to all, payment-status detail is not); total
+        // revenue and outstanding are invoice-access-gated, and outstanding
+        // reuses CollectionsMetrics::outstandingInvoicesQuery() (the single
+        // source of truth the Receivables Report and Accounts dashboard
+        // already share) so this figure can never quietly disagree with them.
+        $summary = [
+            'mrr' => $client->monthlyRecurringValue(),
+            'next_renewal' => $client->nextRenewalDate(),
+            'total_revenue' => $canViewInvoices ? (int) $client->invoices->sum('total') : null,
+            'outstanding' => $canViewInvoices
+                ? (int) $collections->outstandingInvoicesQuery()->where('customer_id', $client->id)->get()->sum(fn (Invoice $i) => $i->balance())
+                : null,
+        ];
+
         return view('clients.show', [
             'client' => $client,
             'canManage' => $this->user()->can('manage', $client),
@@ -138,6 +155,7 @@ class CustomerController extends Controller
             'canManageLinks' => $this->user()->can('manageLinks', $client),
             'canViewInvoices' => $canViewInvoices,
             'tabCounts' => $tabCounts,
+            'summary' => $summary,
         ]);
     }
 
