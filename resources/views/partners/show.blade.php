@@ -52,6 +52,73 @@
             </div>
         </div>
 
+        @if ($commissionEstimate || $commissionHistory->isNotEmpty())
+            <div class="rounded-lg bg-white p-6 shadow-sm">
+                <div class="flex flex-wrap items-baseline justify-between gap-2">
+                    <h3 class="text-base font-semibold text-gray-900">Commission</h3>
+                    <span class="text-sm text-gray-500">Rate: <span class="font-semibold text-gray-900">{{ rtrim(rtrim(number_format((float) $partner->commission_rate, 2), '0'), '.') }}%</span></span>
+                </div>
+
+                @if ($commissionEstimate)
+                    <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        <div class="rounded-md border border-gray-200 p-3">
+                            <p class="text-xs uppercase tracking-wide text-gray-500">This month's referrals</p>
+                            <p class="mt-1 text-lg font-semibold text-gray-900">{{ \App\Support\Money::format($commissionEstimate['referred_value']) }}</p>
+                        </div>
+                        <div class="rounded-md border border-gray-200 p-3">
+                            <p class="text-xs uppercase tracking-wide text-gray-500">Estimated commission</p>
+                            <p class="mt-1 text-lg font-semibold text-indigo-600">{{ \App\Support\Money::format($commissionEstimate['commission_amount']) }}</p>
+                        </div>
+                        <div class="rounded-md border border-gray-200 p-3">
+                            <p class="text-xs uppercase tracking-wide text-gray-500">Status</p>
+                            <p class="mt-1 text-sm text-gray-500">Live estimate — finalized on the 1st of next month</p>
+                        </div>
+                    </div>
+                @endif
+
+                @if ($commissionHistory->isNotEmpty())
+                    <h4 class="mt-5 text-sm font-medium text-gray-700">Statement history</h4>
+                    <div class="mt-2 overflow-x-auto">
+                        <table class="min-w-full text-sm">
+                            <thead class="text-left text-xs uppercase tracking-wide text-gray-500">
+                                <tr>
+                                    <th class="py-2">Month</th>
+                                    <th class="py-2 text-right">Referred value</th>
+                                    <th class="py-2 text-right">Rate</th>
+                                    <th class="py-2 text-right">Commission</th>
+                                    <th class="py-2 text-right">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                @foreach ($commissionHistory as $statement)
+                                    <tr>
+                                        <td class="py-2 font-medium text-gray-900">{{ $statement->period_start->format('F Y') }}</td>
+                                        <td class="py-2 text-right text-gray-700">{{ \App\Support\Money::format($statement->referred_value) }}</td>
+                                        <td class="py-2 text-right text-gray-700">{{ rtrim(rtrim(number_format((float) $statement->commission_rate, 2), '0'), '.') }}%</td>
+                                        <td class="py-2 text-right font-medium text-gray-900">{{ \App\Support\Money::format($statement->commission_amount) }}</td>
+                                        <td class="py-2 text-right">
+                                            @if ($statement->isPaid())
+                                                <span class="inline-flex rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">Paid {{ $statement->paid_at->format('d M Y') }}</span>
+                                            @else
+                                                @can('update', $partner)
+                                                    <form method="POST" action="{{ route('partners.commission-statements.mark-paid', [$partner, $statement]) }}" class="inline">
+                                                        @csrf
+                                                        <button type="submit" class="rounded-md border border-gray-300 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50">Mark as Paid</button>
+                                                    </form>
+                                                @else
+                                                    <span class="inline-flex rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">Unpaid</span>
+                                                @endcan
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
+            </div>
+        @endif
+
         <div class="rounded-lg bg-white p-6 shadow-sm">
             <div class="flex flex-wrap items-baseline justify-between gap-2">
                 <h3 class="text-base font-semibold text-gray-900">Billed — last 6 months</h3>

@@ -98,6 +98,10 @@ Schedule::command('app:draft-monthly-wins-notes')->monthlyOn(1, '07:45')->timezo
 // ended (marginal-slab incentive + team-pool bonus). Idempotent per user+month.
 Schedule::command('app:finalize-incentives')->monthlyOn(1, '07:50')->timezone('Asia/Kolkata');
 
+// Locks each commission-eligible partner's referral commission for the
+// month that just ended. Idempotent per partner+month.
+Schedule::command('app:finalize-partner-commissions')->monthlyOn(1, '08:00')->timezone('Asia/Kolkata');
+
 // Recurring maintenance tasks — creates project-linked tasks and fires in-app
 // bell notifications to project leads. Runs daily; the command decides internally
 // which templates are due today based on frequency (weekly/biweekly/monthly/quarterly).

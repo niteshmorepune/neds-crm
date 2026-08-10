@@ -287,6 +287,7 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
         Route::resource('partners', PartnerController::class);
         Route::post('partners/{partner}/invite', [PartnerController::class, 'invite'])->name('partners.invite');
         Route::post('partners/{partner}/revoke', [PartnerController::class, 'revoke'])->name('partners.revoke');
+        Route::post('partners/{partner}/commission-statements/{statement}/mark-paid', [PartnerController::class, 'markCommissionPaid'])->name('partners.commission-statements.mark-paid');
     });
 
     /*

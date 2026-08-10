@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers\PartnerPortal;
 
+use App\Services\PartnerCommissionCalculator;
 use Illuminate\View\View;
 
 class HomeController extends PartnerPortalController
 {
-    public function index(): View
+    public function index(PartnerCommissionCalculator $commissionCalculator): View
     {
         $partner = $this->partner();
 
@@ -14,6 +15,10 @@ class HomeController extends PartnerPortalController
             'partner' => $partner,
             'referredCustomers' => $partner->referredCustomers()->orderBy('company_name')->get(),
             'contentPieces' => $partner->contentPieces()->with('project')->latest()->get(),
+            'commissionEstimate' => $partner->hasCommission()
+                ? $commissionCalculator->estimateForPartner($partner, now()->startOfMonth())
+                : null,
+            'commissionHistory' => $partner->commissionStatements()->orderByDesc('period_start')->limit(12)->get(),
         ]);
     }
 }

@@ -19,7 +19,7 @@ class Partner extends Model implements Authenticatable
 {
     use AuthenticatableTrait, HasFactory, LogsActivity;
 
-    protected $fillable = ['name', 'email', 'phone', 'notes'];
+    protected $fillable = ['name', 'email', 'phone', 'notes', 'commission_rate'];
 
     protected $hidden = [
         'password',
@@ -34,6 +34,7 @@ class Partner extends Model implements Authenticatable
             'password' => 'hashed',
             'invited_at' => 'datetime',
             'password_set_at' => 'datetime',
+            'commission_rate' => 'decimal:2',
         ];
     }
 
@@ -45,6 +46,16 @@ class Partner extends Model implements Authenticatable
     public function referredCustomers(): HasMany
     {
         return $this->hasMany(Customer::class, 'referring_partner_id');
+    }
+
+    public function commissionStatements(): HasMany
+    {
+        return $this->hasMany(PartnerCommissionStatement::class);
+    }
+
+    public function hasCommission(): bool
+    {
+        return $this->commission_rate !== null && (float) $this->commission_rate > 0;
     }
 
     /**

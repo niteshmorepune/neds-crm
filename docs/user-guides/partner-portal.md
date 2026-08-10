@@ -12,7 +12,7 @@ track referred clients and submit content directly. This guide is for
    email and password.
 
 ## Your Dashboard
-When you log in you'll see two sections:
+When you log in you'll see:
 
 - **Your Referred Clients** — every client you've referred to NEDS, with
   their current status (Active, Prospect, Inactive).
@@ -20,6 +20,10 @@ When you log in you'll see two sections:
   on with NEDS (title, platform, and which project it belongs to), with its
   current status (e.g. Pending from Agency, Received, Approved, Scheduled,
   Published).
+- **Your Earnings** — only shown if you're on a commission arrangement with
+  NEDS (ask your NEDS point of contact to set this up). Shows this month's
+  referred business and your estimated commission so far, plus a history of
+  past months once they're finalized and whether each has been paid.
 
 ## Uploading content
 Next to any content submission, click **Upload files** to reveal a file
@@ -27,6 +31,14 @@ picker. Select one or more files (images, videos, or PDFs, up to 50 MB each)
 and click **Upload**. The NEDS team is notified and will review your
 submission — if the piece was waiting on you, its status automatically
 moves to **Received**.
+
+## How commission is earned
+Commission is a percentage of the pre-tax value of a deal for a client you
+referred, credited the moment that deal is marked Won by the NEDS team.
+Each month's figures are a live estimate until the 1st of the following
+month, when they're locked in — a locked month's numbers won't change even
+if something about that deal is edited afterward. "Paid" status is updated
+by NEDS once a payout is made; the portal itself doesn't process payments.
 
 ## Security & privacy
 - You can only ever see **your own** referred clients and content pieces.

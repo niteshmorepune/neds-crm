@@ -61,4 +61,45 @@
         </div>
     </div>
 
+    @if ($commissionEstimate || $commissionHistory->isNotEmpty())
+        <div class="mt-6 rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
+            <h3 class="text-base font-semibold text-gray-900">Your Earnings</h3>
+            <p class="mt-1 text-sm text-gray-500">Commission on clients you've referred, earned when their deal is won.</p>
+
+            @if ($commissionEstimate)
+                <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div class="rounded-md border border-gray-200 p-3">
+                        <p class="text-xs uppercase tracking-wide text-gray-500">This month's referrals</p>
+                        <p class="mt-1 text-lg font-semibold text-gray-900">{{ \App\Support\Money::format($commissionEstimate['referred_value']) }}</p>
+                    </div>
+                    <div class="rounded-md border border-gray-200 p-3">
+                        <p class="text-xs uppercase tracking-wide text-gray-500">Estimated commission</p>
+                        <p class="mt-1 text-lg font-semibold text-indigo-600">{{ \App\Support\Money::format($commissionEstimate['commission_amount']) }}</p>
+                    </div>
+                </div>
+            @endif
+
+            @if ($commissionHistory->isNotEmpty())
+                <div class="mt-4 divide-y divide-gray-100">
+                    @foreach ($commissionHistory as $statement)
+                        <div class="flex items-center justify-between py-3">
+                            <div>
+                                <p class="text-sm font-medium text-gray-900">{{ $statement->period_start->format('F Y') }}</p>
+                                <p class="text-xs text-gray-400">{{ \App\Support\Money::format($statement->referred_value) }} referred</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm font-semibold text-gray-900">{{ \App\Support\Money::format($statement->commission_amount) }}</p>
+                                @if ($statement->isPaid())
+                                    <span class="inline-flex rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">Paid {{ $statement->paid_at->format('d M Y') }}</span>
+                                @else
+                                    <span class="inline-flex rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">Unpaid</span>
+                                @endif
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+    @endif
+
 </x-partner-portal-app-layout>

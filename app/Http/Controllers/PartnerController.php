@@ -6,8 +6,11 @@ use App\Http\Requests\StorePartnerRequest;
 use App\Http\Requests\UpdatePartnerRequest;
 use App\Mail\PartnerInvitation;
 use App\Models\Partner;
+use App\Models\PartnerCommissionStatement;
 use App\Services\CollectionsMetrics;
+use App\Services\PartnerCommissionCalculator;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 
 class PartnerController extends Controller
@@ -21,7 +24,7 @@ class PartnerController extends Controller
         return view('partners.index', compact('partners'));
     }
 
-    public function show(Partner $partner, CollectionsMetrics $collectionsMetrics)
+    public function show(Partner $partner, CollectionsMetrics $collectionsMetrics, PartnerCommissionCalculator $commissionCalculator)
     {
         $this->authorize('view', $partner);
 
@@ -29,7 +32,12 @@ class PartnerController extends Controller
         $billed = $collectionsMetrics->billedByClient($partner->id);
         $billedByMonth = $collectionsMetrics->billedByMonth($partner->id);
 
-        return view('partners.show', compact('partner', 'rows', 'billed', 'billedByMonth'));
+        $commissionEstimate = $partner->hasCommission()
+            ? $commissionCalculator->estimateForPartner($partner, now()->startOfMonth())
+            : null;
+        $commissionHistory = $partner->commissionStatements()->orderByDesc('period_start')->limit(12)->get();
+
+        return view('partners.show', compact('partner', 'rows', 'billed', 'billedByMonth', 'commissionEstimate', 'commissionHistory'));
     }
 
     public function create()
@@ -101,5 +109,22 @@ class PartnerController extends Controller
         $partner->revokePortalAccess();
 
         return back()->with('status', 'Partner portal access revoked.');
+    }
+
+    /**
+     * Manual "mark as paid" ledger action — no live payment processing,
+     * per the Tier 1 scoping decision.
+     */
+    public function markCommissionPaid(Request $request, Partner $partner, PartnerCommissionStatement $statement): RedirectResponse
+    {
+        $this->authorize('update', $partner);
+        abort_unless($statement->partner_id === $partner->id, 404);
+
+        $statement->update([
+            'paid_at' => now(),
+            'paid_by' => $request->user()->id,
+        ]);
+
+        return back()->with('status', 'Commission marked as paid.');
     }
 }
