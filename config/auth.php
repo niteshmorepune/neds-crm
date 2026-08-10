@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Contact;
+use App\Models\Partner;
 use App\Models\User;
 
 return [
@@ -49,6 +50,12 @@ return [
             'driver' => 'session',
             'provider' => 'contacts',
         ],
+
+        // Partner portal — authenticates Partners with portal access.
+        'partner' => [
+            'driver' => 'session',
+            'provider' => 'partners',
+        ],
     ],
 
     /*
@@ -77,6 +84,11 @@ return [
         'contacts' => [
             'driver' => 'eloquent',
             'model' => Contact::class,
+        ],
+
+        'partners' => [
+            'driver' => 'eloquent',
+            'model' => Partner::class,
         ],
 
         // 'users' => [

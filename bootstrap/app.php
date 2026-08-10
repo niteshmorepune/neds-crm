@@ -46,10 +46,19 @@ return Application::configure(basePath: dirname(__DIR__))
         // reachable over plain HTTP at the origin even in production.
         $middleware->web(append: [ForceHttps::class]);
 
-        // Unauthenticated portal requests go to the portal login, not /login.
-        $middleware->redirectGuestsTo(fn (Request $request) => $request->is('portal', 'portal/*')
-            ? route('portal.login')
-            : route('login'));
+        // Unauthenticated portal/partner-portal requests go to their own
+        // login page, not /login.
+        $middleware->redirectGuestsTo(function (Request $request) {
+            if ($request->is('portal', 'portal/*')) {
+                return route('portal.login');
+            }
+
+            if ($request->is('partner-portal', 'partner-portal/*')) {
+                return route('partner-portal.login');
+            }
+
+            return route('login');
+        });
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

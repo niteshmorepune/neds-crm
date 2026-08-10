@@ -28,6 +28,7 @@ class HelpController extends Controller
         'intern' => 'Intern',
         'telecaller' => 'Telecaller',
         'client-portal' => 'Client Portal',
+        'partner-portal' => 'Partner Portal',
         'integrations' => 'Integrations',
         'troubleshooting' => 'Troubleshooting',
     ];
@@ -48,8 +49,8 @@ class HelpController extends Controller
             UserRole::Sales => ['getting-started', 'sales'],
             UserRole::Support => ['getting-started', 'support'],
             UserRole::Accounts => ['getting-started', 'accounts'],
-            UserRole::Manager => ['getting-started', 'manager', 'integrations', 'troubleshooting'],
-            UserRole::Admin => ['getting-started', 'admin', 'manager', 'integrations', 'troubleshooting'],
+            UserRole::Manager => ['getting-started', 'manager', 'partner-portal', 'integrations', 'troubleshooting'],
+            UserRole::Admin => ['getting-started', 'admin', 'manager', 'partner-portal', 'integrations', 'troubleshooting'],
             UserRole::Intern => ['getting-started', 'intern'],
             UserRole::Telecaller => ['getting-started', 'telecaller'],
         };

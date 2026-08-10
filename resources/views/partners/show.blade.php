@@ -5,11 +5,21 @@
         @if (session('status'))
             <div class="rounded-md bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-800">{{ session('status') }}</div>
         @endif
+        @if ($errors->any())
+            <div class="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{{ $errors->first() }}</div>
+        @endif
 
         <div class="rounded-lg bg-white p-6 shadow-sm">
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                    <h1 class="text-xl font-semibold text-gray-900">{{ $partner->name }}</h1>
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-xl font-semibold text-gray-900">{{ $partner->name }}</h1>
+                        @if ($partner->portal_enabled)
+                            <span class="inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                                {{ $partner->password_set_at ? 'Portal active' : 'Portal invited' }}
+                            </span>
+                        @endif
+                    </div>
                     <p class="mt-1 text-sm text-gray-500">
                         {{ $partner->email ?? '—' }} · {{ $partner->phone ?? '—' }}
                     </p>
@@ -23,6 +33,19 @@
                         {{ $partner->referredCustomers->count() }} referred client(s)
                     </a>
                     @can('update', $partner)
+                        @if ($partner->portal_enabled)
+                            <form method="POST" action="{{ route('partners.revoke', $partner) }}" onsubmit="return confirm('Revoke partner portal access?')">
+                                @csrf
+                                <button type="submit" class="rounded-md border border-amber-300 bg-white px-3 py-2 text-sm font-medium text-amber-700 hover:bg-amber-50">Revoke portal</button>
+                            </form>
+                        @elseif ($partner->email)
+                            <form method="POST" action="{{ route('partners.invite', $partner) }}">
+                                @csrf
+                                <button type="submit" class="rounded-md border border-emerald-300 bg-white px-3 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50">Invite to portal</button>
+                            </form>
+                        @else
+                            <span class="text-xs italic text-gray-400">Add email to enable portal invite</span>
+                        @endif
                         <a href="{{ route('partners.edit', $partner) }}" class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Edit</a>
                     @endcan
                 </div>

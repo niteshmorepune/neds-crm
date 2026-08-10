@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StorePartnerRequest;
 use App\Http\Requests\UpdatePartnerRequest;
+use App\Mail\PartnerInvitation;
 use App\Models\Partner;
 use App\Services\CollectionsMetrics;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Mail;
 
 class PartnerController extends Controller
 {
@@ -71,5 +74,32 @@ class PartnerController extends Controller
 
         return redirect()->route('partners.index')
             ->with('status', 'Partner removed.');
+    }
+
+    /**
+     * Grant partner portal access and email a set-password invitation.
+     * Mirrors ContactsManager::invite() for the client portal.
+     */
+    public function invite(Partner $partner): RedirectResponse
+    {
+        $this->authorize('update', $partner);
+
+        if (! $partner->email) {
+            return back()->withErrors(['invite' => 'Add an email address before inviting this partner to the portal.']);
+        }
+
+        $token = $partner->inviteToPortal();
+        Mail::to($partner->email)->send(new PartnerInvitation($partner, $token));
+
+        return back()->with('status', 'Partner invited to the portal.');
+    }
+
+    public function revoke(Partner $partner): RedirectResponse
+    {
+        $this->authorize('update', $partner);
+
+        $partner->revokePortalAccess();
+
+        return back()->with('status', 'Partner portal access revoked.');
     }
 }

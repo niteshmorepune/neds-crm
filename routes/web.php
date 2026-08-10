@@ -285,6 +285,8 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
      */
     Route::middleware('menu.access:partners')->group(function () {
         Route::resource('partners', PartnerController::class);
+        Route::post('partners/{partner}/invite', [PartnerController::class, 'invite'])->name('partners.invite');
+        Route::post('partners/{partner}/revoke', [PartnerController::class, 'revoke'])->name('partners.revoke');
     });
 
     /*
@@ -626,6 +628,30 @@ Route::prefix('portal')->name('portal.')->group(function () {
         // SSO bridge — generates a short-lived signed token and redirects the
         // contact to Drishti or SMDost so they log in without a separate password.
         Route::get('sso/{app}', [SsoController::class, 'redirect'])->name('sso');
+    });
+});
+
+/*
+ * Partner Portal — Client Panel/Partner Panel Tier 0. Separate "partner"
+ * guard (Partners). Every authed route is scoped to the logged-in partner
+ * themselves (see PartnerPortalController).
+ */
+Route::prefix('partner-portal')->name('partner-portal.')->group(function () {
+    Route::middleware('guest:partner')->group(function () {
+        Route::get('login', [App\Http\Controllers\PartnerPortal\LoginController::class, 'show'])->name('login');
+        Route::post('login', [App\Http\Controllers\PartnerPortal\LoginController::class, 'login']);
+        Route::get('set-password/{token}', [App\Http\Controllers\PartnerPortal\SetPasswordController::class, 'show'])->name('password.setup');
+        Route::post('set-password/{token}', [App\Http\Controllers\PartnerPortal\SetPasswordController::class, 'store'])->name('password.store');
+        Route::get('forgot-password', [App\Http\Controllers\PartnerPortal\ForgotPasswordController::class, 'show'])->name('password.forgot');
+        Route::post('forgot-password', [App\Http\Controllers\PartnerPortal\ForgotPasswordController::class, 'send'])->name('password.forgot.send');
+        Route::get('reset-password/{token}', [App\Http\Controllers\PartnerPortal\SetPasswordController::class, 'showReset'])->name('password.reset');
+        Route::post('reset-password/{token}', [App\Http\Controllers\PartnerPortal\SetPasswordController::class, 'store'])->name('password.reset.store');
+    });
+
+    Route::middleware('auth:partner')->group(function () {
+        Route::post('logout', [App\Http\Controllers\PartnerPortal\LoginController::class, 'logout'])->name('logout');
+        Route::get('/', [App\Http\Controllers\PartnerPortal\HomeController::class, 'index'])->name('home');
+        Route::post('content-pieces/{contentPiece}/attachments', [App\Http\Controllers\PartnerPortal\ContentPieceController::class, 'upload'])->name('content-pieces.upload');
     });
 });
 
