@@ -120,6 +120,12 @@ new tab — pick a time that works for you and it creates a Google Meet
 invitation automatically. This link only appears once your account manager
 has set one up.
 
+**Requesting a meeting:** every project also has a **Request a Meeting**
+option — click it, pick a preferred date and time, and optionally note what
+you'd like to discuss. Our team is notified immediately; if we have Google
+Calendar connected we'll send you a Meet invite by email right away, and
+otherwise we'll confirm your time directly.
+
 ## Raising a support ticket
 1. Go to **Tickets → New Ticket** (or click the "Raise a ticket" link anywhere
    in the portal).

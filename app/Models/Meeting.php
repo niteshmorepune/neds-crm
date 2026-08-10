@@ -29,6 +29,8 @@ class Meeting extends Model
         'ai_summary_status',
         'ai_summary',
         'ai_summarized_at',
+        'requested_by_client',
+        'client_note',
     ];
 
     protected function casts(): array
@@ -40,6 +42,7 @@ class Meeting extends Model
             'attendees' => 'array',
             'ai_summary_status' => MeetingSummaryStatus::class,
             'ai_summarized_at' => 'datetime',
+            'requested_by_client' => 'boolean',
         ];
     }
 

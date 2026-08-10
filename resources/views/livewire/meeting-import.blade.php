@@ -156,9 +156,11 @@
                 <div class="flex items-center justify-between">
                     <p class="text-sm font-medium text-gray-800">
                         {{ $meeting->title }}
-                        @unless ($meeting->isGoogleMeetImport())
+                        @if ($meeting->requested_by_client)
+                            <span class="ml-1 inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">Requested by client</span>
+                        @elseif (! $meeting->isGoogleMeetImport())
                             <span class="ml-1 inline-flex rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">{{ $meeting->platform->label() }}</span>
-                        @endunless
+                        @endif
                     </p>
                     <p class="text-xs text-gray-400">
                         {{ $meeting->occurred_at->timezone(config('app.display_timezone'))->format('d M, g:i A') }}
@@ -168,6 +170,9 @@
                 </div>
                 @if (! empty($meeting->attendees))
                     <p class="mt-1 text-xs text-gray-400">With: {{ implode(', ', $meeting->attendees) }}</p>
+                @endif
+                @if ($meeting->client_note)
+                    <p class="mt-1 text-xs text-gray-500">Client note: {{ $meeting->client_note }}</p>
                 @endif
                 @if ($meeting->participants->isNotEmpty())
                     <p class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-400">

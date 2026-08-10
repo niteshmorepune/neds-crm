@@ -170,6 +170,39 @@
         </div>
     @endif
 
+    {{-- Request a meeting (in-app) --}}
+    <div class="rounded-xl border border-emerald-100 bg-emerald-50 px-5 py-4 mb-5" x-data="{ requesting: false }">
+        <div class="flex items-start gap-3" x-show="!requesting">
+            <svg class="mt-0.5 shrink-0 text-emerald-500" style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <p class="text-sm text-emerald-800">
+                Prefer to just tell us a time that works for you?
+                <button type="button" @click="requesting = true" class="font-semibold underline hover:text-emerald-600">Request a Meeting</button>
+                and we'll confirm.
+            </p>
+        </div>
+
+        <form method="POST" action="{{ route('portal.projects.request-meeting', $project) }}" x-show="requesting" style="display:none" class="space-y-3">
+            @csrf
+            @error('scheduled_at') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
+            <div>
+                <label for="scheduled_at" class="block text-xs font-medium text-emerald-800 mb-1">Preferred date &amp; time</label>
+                <input type="datetime-local" id="scheduled_at" name="scheduled_at" required
+                       class="block w-full max-w-xs rounded-md border-emerald-200 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500" />
+            </div>
+            <div>
+                <label for="client_note" class="block text-xs font-medium text-emerald-800 mb-1">What would you like to discuss? (optional)</label>
+                <input type="text" id="client_note" name="client_note" maxlength="1000"
+                       class="block w-full rounded-md border-emerald-200 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500" />
+            </div>
+            <div class="flex gap-2">
+                <button type="submit" class="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700">Send Request</button>
+                <button type="button" @click="requesting = false" class="rounded-md border border-emerald-300 px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-100">Cancel</button>
+            </div>
+        </form>
+    </div>
+
     {{-- Raise a ticket callout --}}
     <div class="flex items-start gap-3 rounded-xl border border-indigo-100 bg-indigo-50 px-5 py-4 mb-5">
         <svg class="mt-0.5 shrink-0 text-indigo-500" style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">

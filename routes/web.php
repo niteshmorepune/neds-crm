@@ -617,6 +617,7 @@ Route::prefix('portal')->name('portal.')->group(function () {
         Route::get('projects', [App\Http\Controllers\Portal\ProjectController::class, 'index'])->name('projects.index');
         Route::get('projects/{project}', [App\Http\Controllers\Portal\ProjectController::class, 'show'])->name('projects.show');
         Route::post('projects/{project}/deliverables/{deliverable}/attachments', [App\Http\Controllers\Portal\ProjectController::class, 'uploadDeliverable'])->name('projects.deliverables.upload');
+        Route::post('projects/{project}/request-meeting', [App\Http\Controllers\Portal\ProjectController::class, 'requestMeeting'])->name('projects.request-meeting');
 
         Route::get('tickets', [App\Http\Controllers\Portal\TicketController::class, 'index'])->name('tickets.index');
         Route::get('tickets/create', [App\Http\Controllers\Portal\TicketController::class, 'create'])->name('tickets.create');

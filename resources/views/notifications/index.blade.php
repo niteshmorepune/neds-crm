@@ -56,6 +56,7 @@
                                 'ticket_escalated'            => '🔺',
                                 'quotation_needs_approval'     => '📄',
                                 'quotation_decision_recorded' => '🤝',
+                                'meeting_requested' => '📅',
                                 'festival_greeting_drafted'   => '🎉',
                                 'monthly_wins_note_drafted'   => '📈',
                                 'lead_nurture_drafted'        => '✨',
