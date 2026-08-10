@@ -19,6 +19,7 @@ use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\Project;
 use App\Models\User;
+use App\Notifications\InvoiceSentNotification;
 use App\Notifications\PaymentRecordedNotification;
 use App\Services\CollectionsMetrics;
 use App\Services\InvoiceNumberGenerator;
@@ -295,6 +296,10 @@ class InvoiceController extends Controller
         if ($invoice->status === InvoiceStatus::Draft) {
             $invoice->update(['status' => InvoiceStatus::Sent]);
         }
+
+        $invoice->customer->portalContacts->each(
+            fn ($contact) => $contact->notify(new InvoiceSentNotification($invoice))
+        );
 
         return back()->with('status', "Invoice sent to {$email}.");
     }

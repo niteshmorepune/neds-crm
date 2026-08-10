@@ -9,6 +9,7 @@ use App\Enums\UserRole;
 use App\Mail\QuotationSent;
 use App\Models\Quotation;
 use App\Models\User;
+use App\Notifications\QuotationAwaitingDecision;
 use App\Notifications\QuotationNeedsApproval;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -69,6 +70,10 @@ class QuotationController extends Controller
         if ($quotation->status === QuotationStatus::Draft) {
             $quotation->update(['status' => QuotationStatus::Sent]);
         }
+
+        $quotation->customer->portalContacts->each(
+            fn ($contact) => $contact->notify(new QuotationAwaitingDecision($quotation))
+        );
 
         return back()->with('status', "Quotation sent to {$email}.");
     }

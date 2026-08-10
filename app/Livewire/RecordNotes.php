@@ -6,6 +6,8 @@ use App\Jobs\SendWhatsappLeadReplyJob;
 use App\Livewire\Concerns\RatesAiDrafts;
 use App\Models\Lead;
 use App\Models\Note;
+use App\Models\Project;
+use App\Notifications\ProjectUpdatePosted;
 use App\Services\AiAssistant;
 use App\Support\Ai;
 use Illuminate\Database\Eloquent\Model;
@@ -111,6 +113,14 @@ class RecordNotes extends Component
 
         if ($sendViaWhatsapp) {
             SendWhatsappLeadReplyJob::dispatch($note->id);
+        }
+
+        // Only on creation, not edits — an edited note re-notifying on every
+        // tweak would get spammy for what's usually a wording fix.
+        if ($note->visible_to_client && $this->record instanceof Project) {
+            $this->record->customer->portalContacts->each(
+                fn ($contact) => $contact->notify(new ProjectUpdatePosted($this->record))
+            );
         }
 
         $this->reset(['body', 'draftUsageId', 'draftFeedback', 'sendViaWhatsapp']);

@@ -601,7 +601,12 @@ Route::prefix('portal')->name('portal.')->group(function () {
     Route::middleware('auth:portal')->group(function () {
         Route::post('logout', [LoginController::class, 'logout'])->name('logout');
         Route::get('/', [HomeController::class, 'index'])->name('home');
+        Route::get('notifications', [App\Http\Controllers\Portal\NotificationController::class, 'index'])->name('notifications.index');
+        Route::delete('notifications/{id}', [App\Http\Controllers\Portal\NotificationController::class, 'destroy'])->name('notifications.destroy');
         Route::get('quotations', [App\Http\Controllers\Portal\QuotationController::class, 'index'])->name('quotations.index');
+        Route::get('quotations/{quotation}', [App\Http\Controllers\Portal\QuotationController::class, 'show'])->name('quotations.show');
+        Route::post('quotations/{quotation}/accept', [App\Http\Controllers\Portal\QuotationController::class, 'accept'])->name('quotations.accept');
+        Route::post('quotations/{quotation}/reject', [App\Http\Controllers\Portal\QuotationController::class, 'reject'])->name('quotations.reject');
         Route::get('invoices', [App\Http\Controllers\Portal\InvoiceController::class, 'index'])->name('invoices.index');
         Route::get('invoices/{invoice}', [App\Http\Controllers\Portal\InvoiceController::class, 'show'])->name('invoices.show');
         Route::get('invoices/{invoice}/pdf', [App\Http\Controllers\Portal\InvoiceController::class, 'pdf'])->name('invoices.pdf');

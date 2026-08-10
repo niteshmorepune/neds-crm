@@ -102,6 +102,15 @@ class Customer extends Model
         return $this->hasOne(Contact::class)->where('is_primary', true);
     }
 
+    /**
+     * Contacts who can actually receive a portal notification — enabled
+     * AND with a password set (matches Contact::hasPortalAccess()).
+     */
+    public function portalContacts(): HasMany
+    {
+        return $this->contacts()->where('portal_enabled', true)->whereNotNull('password');
+    }
+
     public function owner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'owner_id');

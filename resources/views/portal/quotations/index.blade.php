@@ -13,10 +13,10 @@
             @endphp
             <div class="rounded-xl bg-white px-5 py-4 shadow-sm ring-1 ring-gray-100">
                 <div class="flex items-start justify-between gap-3">
-                    <div>
-                        <p class="font-semibold text-gray-900 text-sm">{{ $quotation->number ?? '—' }}</p>
+                    <a href="{{ route('portal.quotations.show', $quotation) }}">
+                        <p class="font-semibold text-gray-900 text-sm hover:text-indigo-600">{{ $quotation->number ?? '—' }}</p>
                         <p class="text-xs text-gray-400 mt-0.5">{{ $quotation->created_at->format('d M Y') }}</p>
-                    </div>
+                    </a>
                     <span class="shrink-0 inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium {{ $statusColor }}">
                         {{ $quotation->status->label() }}
                     </span>
@@ -68,7 +68,7 @@
                     @endphp
                     <tr class="hover:bg-gray-50 transition-colors">
                         <td class="px-5 py-3.5">
-                            <span class="font-semibold text-gray-900">{{ $quotation->number ?? '—' }}</span>
+                            <a href="{{ route('portal.quotations.show', $quotation) }}" class="font-semibold text-gray-900 hover:text-indigo-600">{{ $quotation->number ?? '—' }}</a>
                         </td>
                         <td class="px-5 py-3.5 text-gray-500">{{ $quotation->created_at->format('d M Y') }}</td>
                         <td class="px-5 py-3.5">

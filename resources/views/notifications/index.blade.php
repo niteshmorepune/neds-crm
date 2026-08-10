@@ -55,6 +55,7 @@
                                 'leave_request_submitted', 'leave_request_reviewed' => '🌴',
                                 'ticket_escalated'            => '🔺',
                                 'quotation_needs_approval'     => '📄',
+                                'quotation_decision_recorded' => '🤝',
                                 'festival_greeting_drafted'   => '🎉',
                                 'monthly_wins_note_drafted'   => '📈',
                                 'lead_nurture_drafted'        => '✨',

@@ -6,6 +6,7 @@ use App\Jobs\SendWhatsappReplyJob;
 use App\Livewire\Concerns\RatesAiDrafts;
 use App\Mail\TicketNotification;
 use App\Models\Ticket;
+use App\Notifications\TicketReplyPosted;
 use App\Services\AiAssistant;
 use App\Support\Ai;
 use Illuminate\Support\Facades\Mail;
@@ -107,6 +108,12 @@ class TicketReplies extends Component
         // Customer-visible replies notify the client; internal notes do not.
         if (! $reply->is_internal && ($email = $this->ticket->customer->billingEmail())) {
             Mail::to($email)->send(new TicketNotification($this->ticket, 'replied', $reply));
+        }
+
+        if (! $reply->is_internal) {
+            $this->ticket->customer->portalContacts->each(
+                fn ($contact) => $contact->notify(new TicketReplyPosted($this->ticket))
+            );
         }
 
         // Forward to wadesk.in for WhatsApp tickets so the customer receives

@@ -12,16 +12,17 @@ tickets, and stay updated on the work we're doing for you. This guide is for
 
 ## Finding your way around
 The portal has a **left sidebar** (on desktop) or a **hamburger menu** (on mobile)
-with five sections:
+with six sections:
 
 | Section | What's there |
 |---|---|
 | **Dashboard** | Your account summary at a glance — open invoices, active projects, open tickets |
 | **Services** | All your active services and the team member responsible for each one |
-| **Quotations** | Proposals and estimates NEDS has sent you |
+| **Quotations** | Proposals and estimates NEDS has sent you — accept or reject them directly here |
 | **Invoices** | All your invoices with status and PDF download |
 | **Projects** | Status and updates for work NEDS is doing for you |
 | **Tickets** | Your support requests and their conversation history |
+| **Notifications** | Updates on your quotations, invoices, tickets and projects, with an unread count next to the bell |
 
 Your name and company appear at the bottom of the sidebar. Click **Sign out** when
 done.
@@ -60,6 +61,18 @@ Open **Quotations** to see every proposal or estimate NEDS has sent you. Each
 entry shows the quotation number, date, status (Draft / Sent / Accepted /
 Rejected), validity date, and total amount. This section gives you a record of
 all agreed-upon scope and pricing before invoices are raised.
+
+Click a quotation that's **Sent** to see its full line-item breakdown, then:
+- Click **Accept Quotation** to approve it as-is — NEDS is notified immediately
+  and can proceed with an invoice.
+- Click **Reject Quotation** to decline it. You can optionally add a short note
+  explaining why (e.g. "budget cut this quarter") — this helps your account
+  manager follow up appropriately. The note is optional; you can also reject
+  with no note.
+
+Once a quotation is Accepted or Rejected, the decision is final in the portal —
+if you change your mind, contact your account manager. A quotation still in
+Draft status isn't shown for a decision yet; it hasn't been sent to you.
 
 ## Invoices
 All your invoices are listed with:
@@ -129,6 +142,19 @@ has set one up.
 9. Once your ticket is marked **Resolved** or **Closed**, you'll see a **"How
    did we do?"** prompt on the ticket page — rate it 1–5 stars and optionally
    leave a comment. It's a one-time rating per ticket and entirely optional.
+
+## Notifications
+Open **Notifications** (or click the bell icon in the sidebar) to see updates
+relevant to your account:
+- A new quotation is ready for your review
+- A new invoice has been issued
+- The NEDS team replied to one of your tickets
+- A new update was posted on one of your projects
+
+An unread count appears next to **Notifications** in the sidebar. Visiting the
+page marks everything as read. Click any notification to jump straight to the
+quotation, invoice, ticket, or project it's about, or click **Dismiss** to
+remove one you no longer need.
 
 ## Your NEDS Tools
 If your account has access to other NEDS platforms (such as **Drishti** for

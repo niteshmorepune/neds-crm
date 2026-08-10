@@ -31,9 +31,7 @@ class Quotation extends Model
         });
 
         static::created(function (Quotation $quotation) {
-            $ownerId = $quotation->deal_id
-                ? Deal::where('id', $quotation->deal_id)->value('owner_id')
-                : Customer::where('id', $quotation->customer_id)->value('owner_id');
+            $ownerId = $quotation->ownerId();
             if ($ownerId) {
                 User::find($ownerId)?->notify(new NewQuotationNotification($quotation));
             }
@@ -49,7 +47,7 @@ class Quotation extends Model
         'number', 'customer_id', 'deal_id', 'status', 'place_of_supply_state_code',
         'is_intra_state', 'is_gst_exempt', 'subtotal', 'discount', 'taxable_total', 'cgst_total',
         'sgst_total', 'igst_total', 'round_off', 'total', 'terms', 'scope_of_work', 'validity_date',
-        'approval_status', 'approval_notes', 'approved_by', 'approved_at',
+        'approval_status', 'approval_notes', 'approved_by', 'approved_at', 'client_decision_note',
     ];
 
     protected function casts(): array
@@ -133,5 +131,16 @@ class Quotation extends Model
     public function hasRecurringItems(): bool
     {
         return $this->items->contains(fn (QuotationItem $item) => $item->is_recurring);
+    }
+
+    /**
+     * The user to notify about this quotation — the deal owner if it came
+     * from a deal, otherwise the customer's account owner.
+     */
+    public function ownerId(): ?int
+    {
+        return $this->deal_id
+            ? Deal::where('id', $this->deal_id)->value('owner_id')
+            : Customer::where('id', $this->customer_id)->value('owner_id');
     }
 }
