@@ -162,6 +162,9 @@
                     </ul>
                 </div>
                 <div x-show="tab === 'invoices'" x-cloak>
+                    @if ($canViewAdvances)
+                        @include('clients._advances', ['client' => $client])
+                    @endif
                     @if ($canViewInvoices)
                         <ul class="divide-y divide-gray-100 text-sm">
                             @forelse ($client->invoices as $invoice)

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ClientAdvanceStatus;
 use App\Enums\InvoiceStatus;
 use App\Enums\PaymentMode;
 use App\Enums\UserRole;
@@ -13,6 +14,7 @@ use App\Http\Requests\PaymentStoreRequest;
 use App\Http\Requests\PaymentUpdateRequest;
 use App\Mail\InvoiceIssued;
 use App\Mail\PaymentReceived;
+use App\Models\ClientAdvance;
 use App\Models\Customer;
 use App\Models\Deal;
 use App\Models\Invoice;
@@ -256,9 +258,16 @@ class InvoiceController extends Controller
 
         $invoice->load(['customer.contacts', 'items', 'payments.recordedBy', 'quotation']);
 
+        $outstandingAdvances = auth()->user()->can('viewAny', ClientAdvance::class) && $invoice->customer
+            ? $invoice->customer->clientAdvances()
+                ->whereIn('status', [ClientAdvanceStatus::Outstanding, ClientAdvanceStatus::PartiallyApplied])
+                ->get()
+            : collect();
+
         return view('invoices.show', [
             'invoice' => $invoice,
             'modes' => PaymentMode::cases(),
+            'outstandingAdvances' => $outstandingAdvances,
         ]);
     }
 

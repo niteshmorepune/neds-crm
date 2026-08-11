@@ -151,6 +151,11 @@ class Customer extends Model
         return $this->hasMany(Invoice::class);
     }
 
+    public function clientAdvances(): HasMany
+    {
+        return $this->hasMany(ClientAdvance::class);
+    }
+
     public function projects(): HasMany
     {
         return $this->hasMany(Project::class);

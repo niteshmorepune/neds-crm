@@ -44,6 +44,7 @@ class DashboardWidgets
                 'outstanding' => 'Outstanding receivables',
                 'collected_this_month' => 'Collected this month',
                 'overdue_invoices' => 'Overdue invoices',
+                'unapplied_advances' => 'Unapplied client advances',
                 'action_buttons' => 'Report quick links',
                 'my_productivity' => 'Your Productivity This Month',
             ],

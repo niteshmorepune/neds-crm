@@ -6,6 +6,7 @@ use App\Enums\CustomerStatus;
 use App\Enums\UserRole;
 use App\Http\Requests\CustomerStoreRequest;
 use App\Http\Requests\CustomerUpdateRequest;
+use App\Models\ClientAdvance;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\Partner;
@@ -109,10 +110,15 @@ class CustomerController extends Controller
         ]);
 
         $canViewInvoices = $this->user()->can('viewAny', Invoice::class);
+        $canViewAdvances = $this->user()->can('viewAny', ClientAdvance::class);
 
         if ($canViewInvoices) {
             $client->load('invoices');
             $client->load('recurringInvoices.invoices');
+        }
+
+        if ($canViewAdvances) {
+            $client->load('clientAdvances');
         }
 
         $client->loadCount(['notes', 'links']);
@@ -155,6 +161,7 @@ class CustomerController extends Controller
             'canManageMeetings' => $this->user()->can('manageMeetings', $client),
             'canManageLinks' => $this->user()->can('manageLinks', $client),
             'canViewInvoices' => $canViewInvoices,
+            'canViewAdvances' => $canViewAdvances,
             'tabCounts' => $tabCounts,
             'summary' => $summary,
             // Only meaningful for an Active client — Client Radar's own

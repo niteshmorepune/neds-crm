@@ -119,6 +119,9 @@
                                     @if ($payment->tds_amount > 0)
                                         <span class="text-gray-400">(TDS: {{ \App\Support\Money::format($payment->tds_amount) }})</span>
                                     @endif
+                                    @if ($payment->client_advance_id)
+                                        <span class="text-xs italic text-blue-500">(via advance)</span>
+                                    @endif
                                 </span>
                                 <span class="flex items-center gap-2">
                                     <span class="text-gray-400">{{ $payment->paid_on->format('d M Y') }}</span>
@@ -180,6 +183,29 @@
                                 </form>
                             @endif
                         </div>
+                        @if ($outstandingAdvances->isNotEmpty())
+                            <div class="border-t border-gray-100 pt-4">
+                                <h2 class="text-base font-semibold text-gray-900">Apply advance</h2>
+                                <p class="mt-1 text-xs text-gray-500">This client has money on file from an earlier advance — apply it to this invoice instead of waiting for fresh payment.</p>
+                                @foreach ($outstandingAdvances as $advance)
+                                    @php($suggested = min($advance->remaining(), $invoice->balance()) / 100)
+                                    <form method="POST" action="{{ route('invoices.advances.apply', [$invoice, $advance]) }}" class="mt-3 flex flex-wrap items-end gap-2 rounded-md bg-gray-50 p-3">
+                                        @csrf
+                                        <div class="text-xs text-gray-600">
+                                            {{ \App\Support\Money::format($advance->remaining()) }} remaining · received {{ $advance->received_on->format('d M Y') }}{{ $advance->reference ? " · {$advance->reference}" : '' }}
+                                        </div>
+                                        <div class="ml-auto flex items-end gap-2">
+                                            <div>
+                                                <x-input-label :for="'apply_amount_'.$advance->id" value="Amount (₹)" class="text-xs" />
+                                                <x-text-input :id="'apply_amount_'.$advance->id" name="amount" type="number" step="0.01" min="0.01" class="mt-1 block text-sm" :value="$suggested" />
+                                            </div>
+                                            <button type="submit" class="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-500">Apply</button>
+                                        </div>
+                                    </form>
+                                @endforeach
+                            </div>
+                        @endif
+
                         <h2 class="text-base font-semibold text-gray-900">Record payment</h2>
                         <form method="POST" action="{{ route('invoices.payments.store', $invoice) }}" class="mt-4 space-y-3">
                             @csrf
