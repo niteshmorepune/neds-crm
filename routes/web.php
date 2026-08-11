@@ -7,6 +7,7 @@ use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\Auth\TwoFactorChallengeController;
 use App\Http\Controllers\CallLogController;
+use App\Http\Controllers\ClientAdvanceController;
 use App\Http\Controllers\ClientRadarController;
 use App\Http\Controllers\ContentPieceController;
 use App\Http\Controllers\CustomerController;
@@ -137,6 +138,11 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
         })->name('clients.import.template');
         Route::resource('clients', CustomerController::class)
             ->parameters(['clients' => 'client']);
+
+        // Client advances — money received with no quotation/invoice yet.
+        // Policy-gated to accounts team regardless of who can reach this page.
+        Route::post('clients/{client}/advances', [ClientAdvanceController::class, 'store'])->name('advances.store');
+        Route::post('advances/{advance}/cancel', [ClientAdvanceController::class, 'cancel'])->name('advances.cancel');
     });
 
     /*
@@ -241,6 +247,7 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
         Route::post('invoices/{invoice}/assign-number', [InvoiceController::class, 'assignNumber'])->name('invoices.assign-number');
         Route::post('invoices/{invoice}/payments', [InvoiceController::class, 'storePayment'])->name('invoices.payments.store');
         Route::patch('invoices/{invoice}/payments/{payment}', [InvoiceController::class, 'updatePayment'])->name('invoices.payments.update');
+        Route::post('invoices/{invoice}/advances/{advance}/apply', [ClientAdvanceController::class, 'apply'])->name('invoices.advances.apply');
         Route::post('invoices/{invoice}/payment-promise', [InvoiceController::class, 'updatePaymentPromise'])->name('invoices.payment-promise.update');
         Route::delete('invoices/{invoice}', [InvoiceController::class, 'destroy'])->name('invoices.destroy');
     });
@@ -251,6 +258,7 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
     Route::middleware('menu.access:account')->group(function () {
         Route::get('account/receivables', [InvoiceController::class, 'receivables'])->name('reports.receivables');
         Route::get('account/collected', [InvoiceController::class, 'collectedThisMonth'])->name('reports.collected');
+        Route::get('account/advances', [ClientAdvanceController::class, 'index'])->name('reports.advances');
     });
 
     /*

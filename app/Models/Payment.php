@@ -15,7 +15,7 @@ class Payment extends Model
 
     protected $fillable = [
         'invoice_id', 'paid_on', 'mode', 'reference', 'amount', 'tds_amount', 'recorded_by',
-        'gateway_order_id', 'gateway_payment_id',
+        'gateway_order_id', 'gateway_payment_id', 'client_advance_id',
     ];
 
     protected function casts(): array
@@ -36,5 +36,10 @@ class Payment extends Model
     public function recordedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'recorded_by');
+    }
+
+    public function clientAdvance(): BelongsTo
+    {
+        return $this->belongsTo(ClientAdvance::class);
     }
 }

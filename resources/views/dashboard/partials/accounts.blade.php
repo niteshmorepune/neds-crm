@@ -1,7 +1,7 @@
 @php($monthLabel = $month === now()->format('Y-m') ? 'this month' : \Illuminate\Support\Carbon::createFromFormat('Y-m', $month)->format('M Y'))
 
-@if (in_array('outstanding', $visibleWidgets) || in_array('collected_this_month', $visibleWidgets) || in_array('overdue_invoices', $visibleWidgets))
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+@if (in_array('outstanding', $visibleWidgets) || in_array('collected_this_month', $visibleWidgets) || in_array('overdue_invoices', $visibleWidgets) || in_array('unapplied_advances', $visibleWidgets))
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-4">
         @if (in_array('outstanding', $visibleWidgets))
             <a href="{{ route('reports.receivables') }}" class="block rounded-lg bg-white p-5 shadow-sm hover:shadow-md">
                 <p class="text-sm text-gray-500">Outstanding receivables</p>
@@ -28,6 +28,13 @@
                     <a href="{{ route('invoices.index', ['status' => \App\Enums\InvoiceStatus::Overdue->value]) }}" class="text-sm text-indigo-600 hover:underline">View overdue invoices →</a>
                 </div>
             </div>
+        @endif
+        @if (in_array('unapplied_advances', $visibleWidgets))
+            <a href="{{ route('reports.advances') }}" class="block rounded-lg bg-white p-5 shadow-sm hover:shadow-md">
+                <p class="text-sm text-gray-500">Unapplied client advances</p>
+                <p class="mt-2 text-3xl font-semibold text-blue-600">{{ \App\Support\Money::format($stats['unapplied_advances']) }}</p>
+                <p class="mt-3 text-sm text-indigo-600">View advances →</p>
+            </a>
         @endif
     </div>
 @endif

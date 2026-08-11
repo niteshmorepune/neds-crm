@@ -48,6 +48,7 @@
                                 'deal_won'                    => '🏆',
                                 'new_invoice'                 => '🧾',
                                 'payment_recorded'            => '💰',
+                                'client_advance_recorded'     => '🏦',
                                 'recurring_invoice_due_soon'  => '⚠️',
                                 'contract_renewal_due_soon'   => '📅',
                                 'payment_promise_broken'      => '🚩',

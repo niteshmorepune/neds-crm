@@ -16,11 +16,54 @@ You handle **invoices**, **payments**, **recurring billing**, and the
   invoices** below the number to see exactly which ones.
 - **Overdue tasks alert** — if you have any tasks past their due date, a red
   banner appears at the top of the dashboard with a direct link to your task list.
+- **Unapplied client advances** — total money received that hasn't been
+  applied to an invoice yet. Click **View advances** to see every client with
+  money on file. See "Client Advances" below.
 - **Your Productivity This Month** — your rank among other Accounts staff
   this month, an overall score, and your biggest opportunity area. Private
   to you — nobody else sees your rank, and you don't see anyone else's. If
   AI is enabled, click **Get tips to improve** for a specific suggestion
   based on your own numbers.
+
+## Your ideal day-to-day rhythm
+
+**Daily**
+- Check your bell notifications first — 💰 payments recorded by others,
+  🏦 advances recorded with no invoice yet, 🚩 broken payment promises, ⚠️
+  invoices due in 7 days.
+- Work down the **Collections** report — it's built specifically as "who to
+  chase today," combining overdue days, payment-promise status, and
+  milestone-ready-to-invoice flags in one place.
+- Record any payments received that day against the right invoice, same
+  day — the dashboard and receivables reports only stay trustworthy if this
+  doesn't lag.
+- Assign invoice numbers on anything showing the yellow "Pending Invoice #"
+  badge before it's sent.
+
+**Weekly**
+- Review **Recurring Invoices** — confirm the auto-generated cycle actually
+  fired for active retainers, and check anything flagged Not Billed or Ended
+  that shouldn't be.
+- Check the **Contract & Renewal Dashboard** for anything expiring in the
+  next 30/60/90 days.
+- Log the week's **Expenses** if it's been piling up rather than entered daily.
+
+**Monthly**
+- Pull the **Revenue Report** and **Business Overview** for month-end close
+  — income by service/client, recurring vs one-time split, AR aging.
+- Reconcile: does "Collected this month" on the dashboard match what
+  actually landed in the bank? Chase any gap immediately, not at year-end.
+
+**As things happen**
+- Money arrives before there's a quotation or invoice → see **Client
+  Advances** below.
+- Client deducted TDS → enter it in the payment's TDS field, don't just
+  record the lower cash amount.
+- Payment detail typo'd → use **Edit** on that payment (date/mode/reference
+  only — amount/TDS still need delete-and-re-record, since those drive the
+  invoice balance).
+- GST charged wrongly → fixable via Edit only *before* any payment exists;
+  after that, it needs a credit note.
 
 ## 1. Invoices
 **Invoices** lists every invoice. Invoices are **GST-compliant**:
@@ -89,6 +132,47 @@ deliberately, not as a routine correction (for a GST mistake on an
 already-paid invoice, a credit note is usually the right tool instead — see
 above). Deleted invoices and payments are kept internally in case they ever
 need to be recovered, but they no longer show up anywhere in the CRM.
+
+## 1a. Client Advances — money received before a quotation or invoice exists
+Sometimes an advance lands in the bank before a client is even entered as a
+Lead, or before Sales has raised a quotation for an existing client. A
+payment can only ever be recorded against an invoice, so there's nothing to
+attach it to yet — this is what Client Advances is for.
+
+**Recording an advance:** if the client doesn't exist in the CRM at all yet,
+create them directly under **Clients → New Client** — skip Lead entirely,
+since money has already arrived, this is already a real relationship, not a
+prospect. Then open the client's page, go to the **Invoices** tab, and use
+**+ Record Advance** (amount, date, mode, an optional reference/note). This
+does **not** create any GST document — it's an internal record of cash
+received, held until it's applied to a real invoice.
+
+**Applying an advance:** once a real invoice exists for that client (Sales
+raises the quotation, you convert it, or you log/create the invoice as
+usual), open the invoice — if the client has money on file, an **Apply
+advance** section appears above Record Payment. Enter how much of the
+advance to apply (defaults to the full amount, capped automatically at
+whichever is smaller: what's left of the advance or the invoice's
+balance) and click **Apply**. This creates a real payment against the
+invoice — it shows in the payment list with a **(via advance)** note, and
+everything downstream (the invoice balance, Collections, Receivables,
+"Collected this month," the payment-recorded notification) updates exactly
+as if fresh cash had been recorded that day.
+
+**Partial use:** an advance can be applied across more than one invoice, or
+partially now and the rest later — its own status tracks this (**Outstanding**
+→ **Partially Applied** → **Fully Applied**) alongside how much remains.
+
+**Cancelling an advance:** if the money needs to be written off or refunded
+before it's ever applied, open the client's Invoices tab and click **Cancel**
+next to that advance. Only available while nothing has been applied from it
+yet — once even part of it has settled a real invoice, that's now a real
+payment on record and needs a normal correction instead (see "Correcting a
+mistaken payment" below).
+
+**Where to see everything outstanding:** the dashboard's **Unapplied client
+advances** tile links to a list of every client with money on file across
+the whole company.
 
 ## 2. Recording payments
 Open an invoice → **record a payment** (amount, date, mode — UPI / NEFT / cheque

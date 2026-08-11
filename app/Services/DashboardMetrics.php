@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\ClientAdvanceStatus;
 use App\Enums\CustomerStatus;
 use App\Enums\DealStage;
 use App\Enums\InvoiceStatus;
@@ -9,6 +10,7 @@ use App\Enums\LeadStatus;
 use App\Enums\TaskStatus;
 use App\Enums\TicketPriority;
 use App\Models\CallLog;
+use App\Models\ClientAdvance;
 use App\Models\Customer;
 use App\Models\Deal;
 use App\Models\Invoice;
@@ -155,10 +157,16 @@ class DashboardMetrics
             ->whereBetween('paid_on', [$month->copy()->startOfMonth()->toDateString(), $month->copy()->endOfMonth()->toDateString()])
             ->sum('amount');
 
+        $unappliedAdvances = (int) ClientAdvance::query()
+            ->whereIn('status', [ClientAdvanceStatus::Outstanding, ClientAdvanceStatus::PartiallyApplied])
+            ->get()
+            ->sum(fn (ClientAdvance $a) => $a->remaining());
+
         return [
             'outstanding' => max(0, $outstanding),
             'collected_this_month' => $collected,
             'overdue_count' => (int) Invoice::query()->where('status', InvoiceStatus::Overdue->value)->count(),
+            'unapplied_advances' => $unappliedAdvances,
         ];
     }
 
