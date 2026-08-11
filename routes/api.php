@@ -5,12 +5,14 @@ use App\Http\Controllers\Api\DrishtiTrendIdeaBriefController;
 use App\Http\Controllers\Api\DrishtiWebhookController;
 use App\Http\Controllers\Api\LeadCaptureController;
 use App\Http\Controllers\Api\MetaLeadsWebhookController;
+use App\Http\Controllers\Api\RazorpayWebhookController;
 use App\Http\Controllers\Api\SmdostWebhookController;
 use App\Http\Controllers\Api\WhatsappWebhookController;
 use App\Http\Middleware\VerifyBiometricBridgeToken;
 use App\Http\Middleware\VerifyDrishtiWebhookSignature;
 use App\Http\Middleware\VerifyLeadCaptureToken;
 use App\Http\Middleware\VerifyMetaWebhookSignature;
+use App\Http\Middleware\VerifyRazorpayWebhookSignature;
 use App\Http\Middleware\VerifySmdostWebhookToken;
 use App\Http\Middleware\VerifyWhatsappWebhookToken;
 use Illuminate\Support\Facades\Route;
@@ -68,6 +70,19 @@ Route::get('/webhooks/meta-leads', [MetaLeadsWebhookController::class, 'verify']
 Route::post('/webhooks/meta-leads', [MetaLeadsWebhookController::class, 'receive'])
     ->middleware(['throttle:120,1', VerifyMetaWebhookSignature::class])
     ->name('api.webhooks.meta-leads.receive');
+
+// Razorpay → CRM bridge. Client Portal "Pay Now" (online invoice payment).
+// payment.captured events confirm a payment made against an order created by
+// Portal\InvoicePaymentController::order() and record it via a queued job —
+// the reliable/authoritative path alongside the portal's own synchronous
+// verify callback (immediate UX; both share RazorpayPaymentRecorder's
+// gateway_payment_id idempotency guard, so whichever fires first wins).
+// Auth: HMAC-SHA256 (X-Razorpay-Signature header) with RAZORPAY_WEBHOOK_SECRET
+// — a separate webhook subscription/secret from the one already configured
+// for niranjanenterprises.com in the same Razorpay account.
+Route::post('/webhooks/razorpay', [RazorpayWebhookController::class, 'handle'])
+    ->middleware(['throttle:120,1', VerifyRazorpayWebhookSignature::class])
+    ->name('api.webhooks.razorpay');
 
 // Office-LAN bridge (tools/biometric-bridge/check-manual-sync.mjs) polls
 // this once a minute to see if an admin/manager has clicked "Sync now" on

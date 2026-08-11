@@ -83,6 +83,15 @@ All your invoices are listed with:
 
 Click an invoice number to see the full breakdown of line items and payments.
 
+**Paying an invoice online:** if an invoice still has a balance due, you'll
+see a **Pay Now** button on its page. Clicking it opens a secure Razorpay
+payment window where you can pay by card, UPI, netbanking, or wallet — the
+full outstanding balance in one payment (partial online payments aren't
+supported yet; for a partial payment, contact your account manager). Once
+the payment goes through, the invoice updates automatically and you'll get
+an email receipt. If you close the payment window partway through, nothing
+is charged and **Pay Now** is still there to try again.
+
 **Upcoming Billing Schedule:** below the invoice list you'll see a table of your
 active recurring services (monthly retainers, quarterly, or annual contracts)
 showing the service name, billing frequency, and the date your next invoice will
