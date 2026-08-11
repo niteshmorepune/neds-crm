@@ -3,12 +3,38 @@
 use App\Enums\UserRole;
 use App\Models\Deal;
 use App\Models\Invoice;
+use App\Models\Meeting;
 use App\Models\User;
 use App\Notifications\DealWonNotification;
+use App\Notifications\MeetingInvitation;
 use App\Notifications\NewInvoiceNotification;
+use Illuminate\Support\Str;
 
 beforeEach(function () {
     $this->user = User::factory()->role(UserRole::Admin)->create();
+});
+
+it('renders a meeting invitation notification without crashing (2026-08-11 regression: neither message nor url in its data)', function () {
+    $meeting = Meeting::factory()->create(['duration_minutes' => 30]);
+    $this->user->notify(new MeetingInvitation($meeting));
+
+    $this->actingAs($this->user)
+        ->get(route('notifications.index'))
+        ->assertOk()
+        ->assertSee('Meeting invitation');
+});
+
+it('never crashes the notifications page on a notification shape with neither message, url, nor task_title', function () {
+    $this->user->notifications()->create([
+        'id' => (string) Str::uuid(),
+        'type' => 'SomeUnknownType',
+        'data' => ['type' => 'something_new_and_unhandled'],
+        'read_at' => null,
+    ]);
+
+    $this->actingAs($this->user)
+        ->get(route('notifications.index'))
+        ->assertOk();
 });
 
 it('shows a clickable link for a notification pointing to a live invoice', function () {

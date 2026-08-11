@@ -40,6 +40,23 @@
                                 Was due {{ \Illuminate\Support\Carbon::parse($data['remind_at'])->timezone(config('app.display_timezone'))->format('d M Y, g:i A') }}
                                 · {{ $notification->created_at->timezone(config('app.display_timezone'))->diffForHumans() }}
                             </p>
+                        @elseif ($type === 'meeting_invitation')
+                            <p class="text-sm font-medium text-gray-900">
+                                📅 Meeting invitation: {{ $data['client_name'] ?? 'Client removed' }}
+                            </p>
+                            <p class="mt-0.5 text-xs text-gray-700">
+                                Organised by {{ $data['organiser_name'] ?? 'NEDS Team' }}
+                                @if (! empty($data['meet_link']))
+                                    · <a href="{{ $data['meet_link'] }}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline">Join Meet</a>
+                                @endif
+                            </p>
+                            <p class="mt-0.5 text-xs text-gray-500">
+                                @if (! empty($data['occurred_at']))
+                                    {{ \Illuminate\Support\Carbon::parse($data['occurred_at'])->timezone(config('app.display_timezone'))->format('d M Y, g:i A') }}
+                                @endif
+                                @if (! empty($data['duration_minutes'])) · {{ $data['duration_minutes'] }} min @endif
+                                · {{ $notification->created_at->timezone(config('app.display_timezone'))->diffForHumans() }}
+                            </p>
                         @elseif (! empty($data['message']))
                             @php($typeIcon = match ($type) {
                                 'new_lead'                    => '🟢',
@@ -80,15 +97,23 @@
                                 @endif
                             </p>
                             <p class="mt-0.5 text-xs text-gray-500">{{ $notification->created_at->timezone(config('app.display_timezone'))->diffForHumans() }}</p>
-                        @else
+                        @elseif (! empty($data['task_title']))
                             <p class="text-sm font-medium text-gray-900">
-                                Task assigned: <a href="{{ $data['url'] }}" class="text-indigo-600 hover:underline">{{ $data['task_title'] }}</a>
+                                @if (! empty($data['url']))
+                                    Task assigned: <a href="{{ $data['url'] }}" class="text-indigo-600 hover:underline">{{ $data['task_title'] }}</a>
+                                @else
+                                    Task assigned: {{ $data['task_title'] }}
+                                @endif
                             </p>
                             <p class="mt-0.5 text-xs text-gray-500">
-                                @if ($data['project']) {{ $data['project'] }} · @endif
-                                @if ($data['due_date']) Due {{ \Illuminate\Support\Carbon::parse($data['due_date'])->format('d M Y') }} · @endif
+                                @if (! empty($data['project'])) {{ $data['project'] }} · @endif
+                                @if (! empty($data['due_date'])) Due {{ \Illuminate\Support\Carbon::parse($data['due_date'])->format('d M Y') }} · @endif
                                 {{ $notification->created_at->timezone(config('app.display_timezone'))->diffForHumans() }}
                             </p>
+                        @else
+                            {{-- Unrecognised notification shape — never let one bad row take down the whole page. --}}
+                            <p class="text-sm font-medium text-gray-900">🔔 Notification</p>
+                            <p class="mt-0.5 text-xs text-gray-500">{{ $notification->created_at->timezone(config('app.display_timezone'))->diffForHumans() }}</p>
                         @endif
                     </div>
                     <form method="POST" action="{{ route('notifications.destroy', $notification->id) }}" class="shrink-0">
