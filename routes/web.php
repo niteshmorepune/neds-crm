@@ -32,6 +32,7 @@ use App\Http\Controllers\PartnerController;
 use App\Http\Controllers\PartnerUploadController;
 use App\Http\Controllers\Portal\ForgotPasswordController;
 use App\Http\Controllers\Portal\HomeController;
+use App\Http\Controllers\Portal\InvoicePaymentController;
 use App\Http\Controllers\Portal\LoginController;
 use App\Http\Controllers\Portal\SetPasswordController;
 use App\Http\Controllers\Portal\SsoController;
@@ -613,6 +614,8 @@ Route::prefix('portal')->name('portal.')->group(function () {
         Route::get('invoices', [App\Http\Controllers\Portal\InvoiceController::class, 'index'])->name('invoices.index');
         Route::get('invoices/{invoice}', [App\Http\Controllers\Portal\InvoiceController::class, 'show'])->name('invoices.show');
         Route::get('invoices/{invoice}/pdf', [App\Http\Controllers\Portal\InvoiceController::class, 'pdf'])->name('invoices.pdf');
+        Route::post('invoices/{invoice}/pay/order', [InvoicePaymentController::class, 'order'])->name('invoices.pay.order');
+        Route::post('invoices/{invoice}/pay/verify', [InvoicePaymentController::class, 'verify'])->name('invoices.pay.verify');
         Route::get('services', [App\Http\Controllers\Portal\ServiceController::class, 'index'])->name('services.index');
         Route::get('projects', [App\Http\Controllers\Portal\ProjectController::class, 'index'])->name('projects.index');
         Route::get('projects/{project}', [App\Http\Controllers\Portal\ProjectController::class, 'show'])->name('projects.show');

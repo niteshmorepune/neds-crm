@@ -15,6 +15,7 @@ class Payment extends Model
 
     protected $fillable = [
         'invoice_id', 'paid_on', 'mode', 'reference', 'amount', 'tds_amount', 'recorded_by',
+        'gateway_order_id', 'gateway_payment_id',
     ];
 
     protected function casts(): array

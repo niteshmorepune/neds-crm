@@ -172,4 +172,21 @@ return [
         'redirect_uri' => rtrim((string) env('APP_URL'), '/').'/settings/google/callback',
     ],
 
+    /*
+     | Razorpay — online invoice payment (Client Portal "Pay Now"). Same
+     | merchant account/key pair already live on niranjanenterprises.com — a
+     | Razorpay key pair is scoped to the account, not a domain, so it's
+     | shared. webhook_secret is DIFFERENT from the website's: it's the
+     | secret for a second webhook subscription added in the Razorpay
+     | Dashboard (Settings → Webhooks) pointing at this CRM's own
+     | /api/webhooks/razorpay endpoint, so the two integrations' webhook
+     | verification never collides. The "Pay Now" button is hidden entirely
+     | when key_id is empty (e.g. local dev without credentials).
+     */
+    'razorpay' => [
+        'key_id' => env('RAZORPAY_KEY_ID'),
+        'key_secret' => env('RAZORPAY_KEY_SECRET'),
+        'webhook_secret' => env('RAZORPAY_WEBHOOK_SECRET'),
+    ],
+
 ];
