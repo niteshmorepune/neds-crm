@@ -156,6 +156,25 @@
         @endforelse
     </div>
 
+    {{-- Progress Timeline --}}
+    <div class="mb-5">
+        <h2 class="text-base font-semibold text-gray-900 mb-3">Progress Timeline</h2>
+
+        @forelse ($timeline as $event)
+            <div class="mb-3 flex items-start gap-3 rounded-xl bg-white px-5 py-4 shadow-sm ring-1 ring-gray-100">
+                <span class="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-green-500"></span>
+                <div class="flex-1">
+                    <p class="text-sm text-gray-700">{{ $event['label'] }}</p>
+                    <p class="text-xs text-gray-400 mt-0.5">{{ $event['at']->setTimezone('Asia/Kolkata')->format('d M Y, h:i A') }}</p>
+                </div>
+            </div>
+        @empty
+            <div class="rounded-xl bg-white px-5 py-8 text-center shadow-sm ring-1 ring-gray-100">
+                <p class="text-sm text-gray-400">No milestones yet — check back as work progresses.</p>
+            </div>
+        @endforelse
+    </div>
+
     {{-- Schedule a meeting callout --}}
     @if ($schedulingLink = $project->schedulingLink())
         <div class="flex items-start gap-3 rounded-xl border border-emerald-100 bg-emerald-50 px-5 py-4 mb-5">

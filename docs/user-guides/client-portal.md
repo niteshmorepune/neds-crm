@@ -113,6 +113,11 @@ Click a project to see:
   primary point of contact for that service.
 - **Updates from Our Team** — progress notes posted by the NEDS team as work
   moves forward. New updates appear here automatically; you don't need to ask.
+- **Progress Timeline** — a running history of milestones on this project:
+  each time an item you submitted is confirmed received, or the project's
+  overall status changes (e.g. moves to Completed), it's logged here with a
+  date and time. This is separate from Updates from Our Team above — the
+  timeline tracks status changes, not written updates.
 - **What We Need From You** — a checklist of items the NEDS team needs from
   you to keep the project moving (e.g. your logo, brand content, GST
   details, domain/hosting access). Each item shows its status — **Pending**,

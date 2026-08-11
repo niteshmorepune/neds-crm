@@ -4,12 +4,17 @@ namespace App\Http\Controllers\Portal;
 
 use App\Enums\DeliverableStatus;
 use App\Enums\MeetingPlatform;
+use App\Enums\ProjectStatus;
+use App\Models\Activity;
 use App\Models\GoogleAccountConnection;
+use App\Models\Project;
+use App\Models\ProjectDeliverable;
 use App\Notifications\MeetingRequested;
 use App\Services\GoogleCalendarClient;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -42,7 +47,47 @@ class ProjectController extends PortalController
         return view('portal.projects.show', [
             'project' => $project,
             'planFrequency' => $project->planFrequency(),
+            'timeline' => $this->buildTimeline($project),
         ]);
+    }
+
+    /**
+     * Staff-driven progress history for the client-facing timeline: a
+     * deliverable being marked Received, and project status changes.
+     * Deliberately excludes client-initiated events (e.g. the client's own
+     * Pending→Submitted upload) — the client already knows they just did
+     * that — and excludes notes, which already have their own "Updates from
+     * Our Team" section on this page.
+     *
+     * Reads directly from the `activities` table both models already write
+     * to via the LogsActivity trait — no new tracking, just surfacing data
+     * that already exists. Fetch-then-filter in PHP rather than a JSON-column
+     * query since the per-project dataset is small and this avoids
+     * MySQL-vs-SQLite JSON syntax differences between prod and tests.
+     */
+    private function buildTimeline(Project $project): Collection
+    {
+        $deliverableEvents = Activity::where('subject_type', ProjectDeliverable::class)
+            ->whereIn('subject_id', $project->deliverables->pluck('id'))
+            ->where('event', 'updated')
+            ->get()
+            ->filter(fn (Activity $a) => ($a->changes['status'] ?? null) === DeliverableStatus::Received->value)
+            ->map(fn (Activity $a) => [
+                'at' => $a->created_at,
+                'label' => ($project->deliverables->firstWhere('id', $a->subject_id)?->title ?? 'A deliverable').' — marked Received',
+            ]);
+
+        $projectEvents = Activity::where('subject_type', Project::class)
+            ->where('subject_id', $project->id)
+            ->where('event', 'updated')
+            ->get()
+            ->filter(fn (Activity $a) => array_key_exists('status', $a->changes ?? []))
+            ->map(fn (Activity $a) => [
+                'at' => $a->created_at,
+                'label' => 'Project status changed to '.ProjectStatus::from($a->changes['status'])->label(),
+            ]);
+
+        return $deliverableEvents->concat($projectEvents)->sortByDesc('at')->values();
     }
 
     public function uploadDeliverable(Request $request, int $project, int $deliverable): RedirectResponse
