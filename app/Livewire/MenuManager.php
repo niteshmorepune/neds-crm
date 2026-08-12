@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Enums\MenuGroup;
 use App\Enums\UserRole;
 use App\Models\MenuItem;
 use App\Models\User;
@@ -34,6 +35,19 @@ class MenuManager extends Component
     public function mount(): void
     {
         abort_unless(auth()->user()?->isAdmin(), 403);
+    }
+
+    /**
+     * Sidebar section this item collapses under — display only, so no
+     * activities/cache flush needed beyond the usual menu-cache bust.
+     */
+    public function updateGroup(int $menuItemId, string $group): void
+    {
+        $this->guard();
+
+        MenuItem::findOrFail($menuItemId)->update(['group' => $group]);
+
+        $this->flush();
     }
 
     public function toggleRole(int $menuItemId, string $role): void
@@ -86,6 +100,7 @@ class MenuManager extends Component
         return view('livewire.menu-manager', [
             'items' => $items,
             'roles' => $this->roles(),
+            'groups' => MenuGroup::cases(),
             'matrix' => $matrix,
             'users' => User::orderBy('name')->get(['id', 'name', 'role']),
             'overrides' => $overrides,

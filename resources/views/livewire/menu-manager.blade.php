@@ -12,6 +12,7 @@
             <thead class="bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
                 <tr>
                     <th class="px-4 py-3">Menu item</th>
+                    <th class="px-4 py-3">Sidebar section</th>
                     @foreach ($roles as $role)
                         <th class="px-4 py-3 text-center">{{ $role->label() }}</th>
                     @endforeach
@@ -23,6 +24,14 @@
                         <td class="px-4 py-3">
                             <span class="font-medium text-gray-900">{{ $item->label }}</span>
                             <span class="ml-1 text-xs text-gray-400">{{ $item->key }}</span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <select wire:change="updateGroup({{ $item->id }}, $event.target.value)"
+                                    class="rounded-md border-gray-300 text-sm shadow-sm">
+                                @foreach ($groups as $group)
+                                    <option value="{{ $group->value }}" @selected($item->group === $group)>{{ $group->label() }}</option>
+                                @endforeach
+                            </select>
                         </td>
                         @foreach ($roles as $role)
                             <td class="px-4 py-3 text-center">

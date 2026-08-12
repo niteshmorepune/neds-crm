@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Enums\MenuGroup;
 use App\Enums\UserRole;
 use App\Models\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class MenuItem extends Model
 {
@@ -15,6 +17,7 @@ class MenuItem extends Model
     protected $fillable = [
         'key',
         'label',
+        'group',
         'icon',
         'route',
         'sort_order',
@@ -24,7 +27,35 @@ class MenuItem extends Model
     {
         return [
             'sort_order' => 'integer',
+            'group' => MenuGroup::class,
         ];
+    }
+
+    /**
+     * Route-name patterns that should highlight this sidebar item (for
+     * request()->routeIs(...)) — beyond an exact match, most items also
+     * match any route under the same first-segment namespace (e.g.
+     * 'leads.*' for 'leads.index') so a detail/edit page still highlights
+     * its parent. Excluded: a first segment SHARED by multiple unrelated
+     * pages (currently only 'reports', which backs ~12 distinct report
+     * pages but only 2 sidebar items) would wildcard-match each other's
+     * pages too, so those get exact-match only.
+     *
+     * @return list<string>
+     */
+    public function activePatterns(): array
+    {
+        if (! str_contains($this->route, '.')) {
+            return [$this->route];
+        }
+
+        $prefix = Str::before($this->route, '.');
+
+        if (in_array($prefix, ['reports'], true)) {
+            return [$this->route];
+        }
+
+        return [$this->route, "{$prefix}.*"];
     }
 
     /**
