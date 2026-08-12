@@ -8,6 +8,7 @@ Start with **Getting Started**, then read the guide for your role.
 | Guide | Who it's for |
 |---|---|
 | [Getting Started](getting-started.md) | Everyone — login, 2FA, dashboard, Resources, attendance, daily reports |
+| [FAQ](faq.md) | Everyone — "why does it work this way" / "how do I..." questions pulled from real ones the team has asked |
 | [Sales](sales.md) | Sales team — leads, pipeline, quotations, calls |
 | [Support](support.md) | Support team — tickets, projects, tasks |
 | [Accounts](accounts.md) | Accounts team — invoices, payments, recurring billing |
@@ -21,10 +22,10 @@ Start with **Getting Started**, then read the guide for your role.
 | [Troubleshooting](troubleshooting.md) | Admins & Managers — fixing common issues (biometric, SSO, integrations, email) |
 
 In the app, the Help page only lists guides relevant to your role: everyone
-gets Getting Started, each team gets its own guide (Sales/Support/Accounts/
-Intern/Telecaller), and Admin/Manager can see every guide — including
-Client Portal, Partner Portal, Integrations, and Troubleshooting, which no
-other role sees listed.
+gets Getting Started and FAQ, each team gets its own guide (Sales/Support/
+Accounts/Intern/Telecaller), and Admin/Manager can see every guide —
+including Client Portal, Partner Portal, Integrations, and Troubleshooting,
+which no other role sees listed.
 
 > Some AI helpers (lead scoring, "Draft with AI", "Summarize") only appear when
 > an administrator has enabled AI for the workspace. If you don't see them,

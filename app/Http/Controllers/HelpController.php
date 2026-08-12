@@ -21,6 +21,7 @@ class HelpController extends Controller
     /** Slug => title. Acts as the whitelist (prevents path traversal). */
     private const GUIDES = [
         'getting-started' => 'Getting Started',
+        'faq' => 'FAQ',
         'sales' => 'Sales',
         'support' => 'Support',
         'accounts' => 'Accounts',
@@ -35,7 +36,7 @@ class HelpController extends Controller
     ];
 
     /** Guides every role can see, regardless of role-specific restrictions below. */
-    private const OPEN_TO_ALL = ['getting-started'];
+    private const OPEN_TO_ALL = ['getting-started', 'faq'];
 
     /**
      * Guide => the single non-admin/manager role it's written for. Admin and
@@ -77,13 +78,13 @@ class HelpController extends Controller
         );
 
         $recommended = match ($user->role) {
-            UserRole::Sales => ['getting-started', 'sales'],
-            UserRole::Support => ['getting-started', 'support'],
-            UserRole::Accounts => ['getting-started', 'accounts'],
-            UserRole::Manager => ['getting-started', 'manager', 'partner-portal', 'integrations', 'troubleshooting'],
-            UserRole::Admin => ['getting-started', 'admin', 'manager', 'partner-portal', 'integrations', 'troubleshooting'],
-            UserRole::Intern => ['getting-started', 'intern'],
-            UserRole::Telecaller => ['getting-started', 'telecaller'],
+            UserRole::Sales => ['getting-started', 'sales', 'faq'],
+            UserRole::Support => ['getting-started', 'support', 'faq'],
+            UserRole::Accounts => ['getting-started', 'accounts', 'faq'],
+            UserRole::Manager => ['getting-started', 'manager', 'faq', 'partner-portal', 'integrations', 'troubleshooting'],
+            UserRole::Admin => ['getting-started', 'admin', 'manager', 'faq', 'partner-portal', 'integrations', 'troubleshooting'],
+            UserRole::Intern => ['getting-started', 'intern', 'faq'],
+            UserRole::Telecaller => ['getting-started', 'telecaller', 'faq'],
         };
 
         return view('help.index', [

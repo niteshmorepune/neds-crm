@@ -64,6 +64,7 @@ it('only lists guides relevant to the viewer\'s role', function () {
 
     $response = $this->actingAs($sales)->get(route('help'))->assertOk()
         ->assertSee(route('help.show', 'getting-started'), false)
+        ->assertSee(route('help.show', 'faq'), false)
         ->assertSee(route('help.show', 'sales'), false);
 
     foreach (['support', 'accounts', 'admin', 'manager', 'intern', 'telecaller', 'client-portal', 'partner-portal', 'integrations', 'troubleshooting'] as $guide) {
@@ -81,7 +82,38 @@ it('blocks a guide not written for the viewer\'s role', function () {
 
     // still allowed: everyone's guide + their own role's guide
     $this->actingAs($sales)->get(route('help.show', 'getting-started'))->assertOk();
+    $this->actingAs($sales)->get(route('help.show', 'faq'))->assertOk();
     $this->actingAs($sales)->get(route('help.show', 'sales'))->assertOk();
+});
+
+it('lets every role read the FAQ', function () {
+    foreach (UserRole::cases() as $role) {
+        $this->actingAs(User::factory()->role($role)->create())
+            ->get(route('help.show', 'faq'))->assertOk();
+    }
+});
+
+it('resolves the FAQ\'s cross-guide anchor links to real heading ids', function () {
+    $admin = User::factory()->role(UserRole::Admin)->create();
+
+    $links = [
+        'getting-started' => '4d-reminders-team-nudges',
+        'sales' => '5-incentives',
+        'accounts' => '1a-client-advances--money-received-before-a-quotation-or-invoice-exists',
+    ];
+
+    $this->actingAs($admin)->get(route('help.show', 'faq'))->assertOk()
+        ->assertSee(route('help.show', 'getting-started').'#4d-reminders-team-nudges', false)
+        ->assertSee(route('help.show', 'getting-started').'#4g-resources', false)
+        ->assertSee(route('help.show', 'sales').'#5-incentives', false)
+        ->assertSee(route('help.show', 'accounts').'#1a-client-advances--money-received-before-a-quotation-or-invoice-exists', false);
+
+    foreach ($links as $guide => $id) {
+        $this->actingAs($admin)->get(route('help.show', $guide))->assertOk()->assertSee("id=\"{$id}\"", false);
+    }
+
+    $this->actingAs($admin)->get(route('help.show', 'getting-started'))->assertOk()
+        ->assertSee('id="4g-resources"', false);
 });
 
 it('lets admin and manager see every guide, bypassing role restrictions', function () {
