@@ -58,3 +58,47 @@ it('shows a Help link in the top bar', function () {
 
     $this->actingAs($user)->get(route('dashboard'))->assertOk()->assertSee('Help');
 });
+
+it('only lists guides relevant to the viewer\'s role', function () {
+    $sales = User::factory()->role(UserRole::Sales)->create();
+
+    $response = $this->actingAs($sales)->get(route('help'))->assertOk()
+        ->assertSee(route('help.show', 'getting-started'), false)
+        ->assertSee(route('help.show', 'sales'), false);
+
+    foreach (['support', 'accounts', 'admin', 'manager', 'intern', 'telecaller', 'client-portal', 'partner-portal', 'integrations', 'troubleshooting'] as $guide) {
+        $response->assertDontSee(route('help.show', $guide), false);
+    }
+});
+
+it('blocks a guide not written for the viewer\'s role', function () {
+    $sales = User::factory()->role(UserRole::Sales)->create();
+
+    $this->actingAs($sales)->get(route('help.show', 'support'))->assertForbidden();
+    $this->actingAs($sales)->get(route('help.show', 'admin'))->assertForbidden();
+    $this->actingAs($sales)->get(route('help.show', 'troubleshooting'))->assertForbidden();
+    $this->actingAs($sales)->get(route('help.show', 'partner-portal'))->assertForbidden();
+
+    // still allowed: everyone's guide + their own role's guide
+    $this->actingAs($sales)->get(route('help.show', 'getting-started'))->assertOk();
+    $this->actingAs($sales)->get(route('help.show', 'sales'))->assertOk();
+});
+
+it('lets admin and manager see every guide, bypassing role restrictions', function () {
+    $manager = User::factory()->role(UserRole::Manager)->create();
+
+    $response = $this->actingAs($manager)->get(route('help'))->assertOk();
+    foreach (['sales', 'support', 'accounts', 'intern', 'telecaller'] as $guide) {
+        $response->assertSee(route('help.show', $guide), false);
+        $this->actingAs($manager)->get(route('help.show', $guide))->assertOk();
+    }
+});
+
+it('grants an additional role\'s guide access on top of the primary role', function () {
+    $support = User::factory()->role(UserRole::Support)->create();
+    $support->additionalRoles()->create(['role' => UserRole::Sales]);
+
+    $this->actingAs($support)->get(route('help.show', 'support'))->assertOk();
+    $this->actingAs($support)->get(route('help.show', 'sales'))->assertOk();
+    $this->actingAs($support)->get(route('help.show', 'accounts'))->assertForbidden();
+});

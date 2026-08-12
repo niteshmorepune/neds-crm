@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\UserRole;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use League\CommonMark\Environment\Environment;
@@ -33,17 +34,47 @@ class HelpController extends Controller
         'troubleshooting' => 'Troubleshooting',
     ];
 
-    /** Guides restricted to admin / manager only. */
-    private const ADMIN_ONLY = ['troubleshooting', 'integrations'];
+    /** Guides every role can see, regardless of role-specific restrictions below. */
+    private const OPEN_TO_ALL = ['getting-started'];
+
+    /**
+     * Guide => the single non-admin/manager role it's written for. Admin and
+     * Manager always bypass (same convention as HasRoleVisibility elsewhere in
+     * this app), so they aren't listed here. Any guide not in OPEN_TO_ALL or
+     * GUIDE_ROLES (manager, admin, client-portal, partner-portal, integrations,
+     * troubleshooting) is Admin/Manager-only — there's no other role it's
+     * written for.
+     */
+    private const GUIDE_ROLES = [
+        'sales' => UserRole::Sales,
+        'support' => UserRole::Support,
+        'accounts' => UserRole::Accounts,
+        'intern' => UserRole::Intern,
+        'telecaller' => UserRole::Telecaller,
+    ];
+
+    private function accessible(string $guide, User $user): bool
+    {
+        if ($user->hasRole(UserRole::Admin, UserRole::Manager)) {
+            return true;
+        }
+
+        if (in_array($guide, self::OPEN_TO_ALL, true)) {
+            return true;
+        }
+
+        return isset(self::GUIDE_ROLES[$guide]) && $user->hasRole(self::GUIDE_ROLES[$guide]);
+    }
 
     public function index(Request $request): View
     {
         $user = $request->user();
-        $isAdminOrManager = $user->hasRole(UserRole::Admin, UserRole::Manager);
 
-        $guides = $isAdminOrManager
-            ? self::GUIDES
-            : array_diff_key(self::GUIDES, array_flip(self::ADMIN_ONLY));
+        $guides = array_filter(
+            self::GUIDES,
+            fn ($slug) => $this->accessible($slug, $user),
+            ARRAY_FILTER_USE_KEY,
+        );
 
         $recommended = match ($user->role) {
             UserRole::Sales => ['getting-started', 'sales'],
@@ -64,10 +95,7 @@ class HelpController extends Controller
     public function show(Request $request, string $guide): View
     {
         abort_unless(array_key_exists($guide, self::GUIDES), 404);
-
-        if (in_array($guide, self::ADMIN_ONLY, true)) {
-            abort_unless($request->user()->hasRole(UserRole::Admin, UserRole::Manager), 403);
-        }
+        abort_unless($this->accessible($guide, $request->user()), 403);
 
         $path = base_path("docs/user-guides/{$guide}.md");
         abort_unless(is_file($path), 404);
@@ -96,7 +124,11 @@ class HelpController extends Controller
             'title' => self::GUIDES[$guide],
             'current' => $guide,
             'html' => $html,
-            'guides' => self::GUIDES,
+            'guides' => array_filter(
+                self::GUIDES,
+                fn ($slug) => $this->accessible($slug, $request->user()),
+                ARRAY_FILTER_USE_KEY,
+            ),
         ]);
     }
 }

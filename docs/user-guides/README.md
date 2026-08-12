@@ -16,8 +16,15 @@ Start with **Getting Started**, then read the guide for your role.
 | [Intern](intern.md) | Interns — clients (view), assigned projects and tasks, attendance, daily reports |
 | [Telecaller](telecaller.md) | Telecallers — Lead Generation (shared queue) and Calling only |
 | [Client Portal](client-portal.md) | Clients — the read-only customer portal |
+| [Partner Portal](partner-portal.md) | Partners — the referral/content-collaborator portal |
 | [Integrations](integrations.md) | Managers & Admins — Drishti, SMDost, and the 10 automated workflows |
 | [Troubleshooting](troubleshooting.md) | Admins & Managers — fixing common issues (biometric, SSO, integrations, email) |
+
+In the app, the Help page only lists guides relevant to your role: everyone
+gets Getting Started, each team gets its own guide (Sales/Support/Accounts/
+Intern/Telecaller), and Admin/Manager can see every guide — including
+Client Portal, Partner Portal, Integrations, and Troubleshooting, which no
+other role sees listed.
 
 > Some AI helpers (lead scoring, "Draft with AI", "Summarize") only appear when
 > an administrator has enabled AI for the workspace. If you don't see them,
