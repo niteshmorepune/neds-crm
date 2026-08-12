@@ -671,6 +671,7 @@ Route::prefix('partner-portal')->name('partner-portal.')->group(function () {
     Route::middleware('auth:partner')->group(function () {
         Route::post('logout', [App\Http\Controllers\PartnerPortal\LoginController::class, 'logout'])->name('logout');
         Route::get('/', [App\Http\Controllers\PartnerPortal\HomeController::class, 'index'])->name('home');
+        Route::get('faq', [App\Http\Controllers\PartnerPortal\FaqController::class, 'index'])->name('faq');
         Route::post('content-pieces/{contentPiece}/attachments', [App\Http\Controllers\PartnerPortal\ContentPieceController::class, 'upload'])->name('content-pieces.upload');
     });
 });

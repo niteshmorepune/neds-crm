@@ -22,6 +22,8 @@
                 <span class="text-xs font-semibold text-indigo-600 tracking-wide uppercase">Partner Portal</span>
             </a>
             <div class="flex items-center gap-4">
+                <a href="{{ route('partner-portal.faq') }}"
+                   class="text-sm font-medium {{ request()->routeIs('partner-portal.faq') ? 'text-indigo-700' : 'text-gray-600 hover:text-gray-900' }}">FAQ</a>
                 <span class="hidden sm:inline text-sm font-medium text-gray-700">{{ $partner?->name }}</span>
                 <form method="POST" action="{{ route('partner-portal.logout') }}">
                     @csrf

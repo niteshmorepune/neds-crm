@@ -19,6 +19,7 @@ Start with **Getting Started**, then read the guide for your role.
 | [Client Portal](client-portal.md) | Clients — the read-only customer portal |
 | [Client FAQ](faq-client.md) | Clients — sanitized "how do I..." FAQ, live inside the portal itself (**FAQ** in the portal sidebar) — not a staff-shared doc |
 | [Partner Portal](partner-portal.md) | Partners — the referral/content-collaborator portal |
+| [Partner FAQ](faq-partner.md) | Partners — sanitized "how do I..." FAQ, live inside the portal itself (**FAQ** in the header) — not a staff-shared doc |
 | [Integrations](integrations.md) | Managers & Admins — Drishti, SMDost, and the 10 automated workflows |
 | [Troubleshooting](troubleshooting.md) | Admins & Managers — fixing common issues (biometric, SSO, integrations, email) |
 

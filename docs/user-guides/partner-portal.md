@@ -40,6 +40,10 @@ month, when they're locked in — a locked month's numbers won't change even
 if something about that deal is edited afterward. "Paid" status is updated
 by NEDS once a payout is made; the portal itself doesn't process payments.
 
+## FAQ
+Click **FAQ** in the header for quick answers to the questions we hear
+most often — logins, referred clients, uploading content, and commission.
+
 ## Security & privacy
 - You can only ever see **your own** referred clients and content pieces.
 - Use a strong password and don't share your login.
