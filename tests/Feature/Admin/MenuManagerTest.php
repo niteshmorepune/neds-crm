@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\MenuGroup;
 use App\Enums\UserRole;
 use App\Livewire\MenuManager;
 use App\Models\MenuItem;
@@ -51,6 +52,16 @@ it('a per-user override hides a sidebar item without removing access', function 
     expect($visibleKeys)->not->toContain('lead-generation')
         // …but route access is unchanged.
         ->and(app(MenuResolver::class)->canAccess($sales->fresh(), 'lead-generation'))->toBeTrue();
+});
+
+it('moves a menu item to a different sidebar section', function () {
+    $item = MenuItem::where('key', 'invoices')->firstOrFail();
+    expect($item->group)->toBe(MenuGroup::Finance);
+
+    Livewire::actingAs($this->admin)->test(MenuManager::class)
+        ->call('updateGroup', $item->id, MenuGroup::AdminConfig->value);
+
+    expect($item->fresh()->group)->toBe(MenuGroup::AdminConfig);
 });
 
 it('forbids a non-admin from even mounting the component', function () {

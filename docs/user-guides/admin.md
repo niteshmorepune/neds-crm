@@ -374,14 +374,21 @@ the Attendance page, try this first:
    the export was taken).
 
 ## 10. Menu Controller — who sees what
-The **Menu Controller** has two parts:
+The **Menu Controller** has three parts:
+- **Sidebar section** — a dropdown per item picking which collapsible
+  section it appears under in everyone's sidebar (My Work, Sales &
+  Pipeline, Finance, Delivery & Support, Team & Insights, Admin & Config).
+  *Cosmetic only* — purely how the sidebar is organized, it never affects
+  who can reach a module.
 - **Role grid** — which roles can reach each module. *This controls real access.*
 - **Per-user overrides** — show/hide individual sidebar items for one person.
   *Cosmetic only* — it tidies someone's sidebar but does **not** grant or remove
   permission (that's always governed by roles). A banner on the page reminds you
   of this.
 
-Changes apply on the user's next page load.
+Changes apply on the user's next page load. Each sidebar section can be
+collapsed by clicking its heading — this is remembered per browser, not
+synced across devices.
 
 ## 11. Audit Log
 **Audit Log** (admin) shows who created, updated or deleted records, and when.
