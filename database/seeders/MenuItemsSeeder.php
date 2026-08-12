@@ -37,7 +37,11 @@ class MenuItemsSeeder extends Seeder
             ['key' => 'sales-dashboard',  'label' => 'Sales Dashboard',  'route' => 'sales-dashboard.index', 'icon' => 'chart-bar', 'roles' => [UserRole::Manager, UserRole::Sales]],
             ['key' => 'quotations',       'label' => 'Quotations',       'route' => 'quotations.index', 'icon' => 'document',   'roles' => [UserRole::Manager, UserRole::Sales, UserRole::Accounts]],
             ['key' => 'customer',         'label' => 'Clients',          'route' => 'clients.index',    'icon' => 'users',      'roles' => [UserRole::Manager, UserRole::Sales, UserRole::Support, UserRole::Accounts, UserRole::Intern]],
-            ['key' => 'important-links',  'label' => 'Important Links',  'route' => 'important-links.index', 'icon' => 'link',  'roles' => $all],
+            // Label/route repointed to the combined Resources page (Files +
+            // Links tabs) — key deliberately left as 'important-links' since
+            // updateOrCreate() below matches on key; renaming it would
+            // insert a duplicate row and orphan its role assignments.
+            ['key' => 'important-links',  'label' => 'Resources',        'route' => 'resources.index',       'icon' => 'link',  'roles' => $all],
             ['key' => 'incentives',       'label' => 'Incentives',       'route' => 'incentives.index', 'icon' => 'currency-rupee', 'roles' => [UserRole::Manager, UserRole::Sales]],
             ['key' => 'invoices',         'label' => 'Invoices',         'route' => 'invoices.index',   'icon' => 'receipt',    'roles' => [UserRole::Manager, UserRole::Accounts, UserRole::Sales]],
             ['key' => 'account',          'label' => 'Account',          'route' => 'reports.receivables', 'icon' => 'wallet',  'roles' => [UserRole::Manager, UserRole::Accounts]],

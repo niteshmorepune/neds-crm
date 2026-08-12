@@ -38,6 +38,9 @@ class ImportantLinksManager extends Component
 
     public ?string $purpose = null;
 
+    /** @var array<int, string> Roles who may see this link — empty = everyone. */
+    public array $visibleRoles = [];
+
     /** Display-only filters — narrow the rendered list, never the mutation lookups in query(). */
     public ?string $filterDepartment = null;
 
@@ -74,6 +77,7 @@ class ImportantLinksManager extends Component
         $this->url = $link->url;
         $this->department = $link->department?->value;
         $this->purpose = $link->purpose?->value;
+        $this->visibleRoles = $link->visibleRoles->map(fn ($vr) => $vr->role->value)->all();
         $this->showForm = true;
     }
 
@@ -81,20 +85,24 @@ class ImportantLinksManager extends Component
     {
         $this->authorizeManage();
         $validated = $this->validate($this->rules());
+        $roles = $validated['visibleRoles'];
+        unset($validated['visibleRoles']);
 
         if ($this->editingId) {
-            $this->query()->findOrFail($this->editingId)->update($validated);
+            $link = $this->query()->findOrFail($this->editingId);
+            $link->update($validated);
         } else {
             // ->getQuery() in query() returns a plain Builder, so create()
             // won't auto-fill the foreign key the way HasMany::create()
             // would — set customer_id explicitly instead.
-            ImportantLink::create($validated + [
+            $link = ImportantLink::create($validated + [
                 'customer_id' => $this->customer?->id,
                 'created_by' => auth()->id(),
                 'sort_order' => ((int) $this->query()->max('sort_order')) + 1,
             ]);
         }
 
+        $link->syncVisibleRoles($roles);
         $this->resetForm();
     }
 
@@ -111,7 +119,15 @@ class ImportantLinksManager extends Component
 
     public function render()
     {
+        // ->visibleTo() is applied here (the rendered list), not inside
+        // query() — query() also backs edit()/delete() lookups, and a
+        // Sales/Support user who's allowed to manage a client's links
+        // (manageLinks()) may manage a link that isn't role-visible to
+        // them; hiding it from their own list (rather than 404ing an
+        // edit/delete they're otherwise permitted to do) is the intended
+        // behavior. Admin/Manager always see everything regardless.
         $links = $this->query()
+            ->visibleTo(auth()->user())
             ->when($this->filterDepartment, fn ($q) => $q->where('department', $this->filterDepartment))
             ->when($this->filterPurpose, fn ($q) => $q->where('purpose', $this->filterPurpose))
             ->orderBy('sort_order')
@@ -128,6 +144,7 @@ class ImportantLinksManager extends Component
                 ->sortBy(fn ($group, $key) => $key === '' ? 'zzzz' : LinkDepartment::from($key)->label()),
             'departments' => LinkDepartment::cases(),
             'purposes' => LinkPurpose::cases(),
+            'assignableRoles' => collect(UserRole::cases())->reject(fn (UserRole $r) => $r === UserRole::Admin)->values(),
         ]);
     }
 
@@ -138,6 +155,8 @@ class ImportantLinksManager extends Component
             'url' => ['required', 'url', 'max:2048'],
             'department' => ['nullable', Rule::enum(LinkDepartment::class)],
             'purpose' => ['nullable', Rule::enum(LinkPurpose::class)],
+            'visibleRoles' => ['array'],
+            'visibleRoles.*' => [Rule::enum(UserRole::class)],
         ];
     }
 
@@ -150,7 +169,7 @@ class ImportantLinksManager extends Component
 
     private function resetForm(): void
     {
-        $this->reset(['editingId', 'showForm', 'label', 'url', 'department', 'purpose']);
+        $this->reset(['editingId', 'showForm', 'label', 'url', 'department', 'purpose', 'visibleRoles']);
         $this->resetValidation();
     }
 
