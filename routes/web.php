@@ -20,7 +20,6 @@ use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\FestivalController;
 use App\Http\Controllers\GoogleConnectionController;
 use App\Http\Controllers\HelpController;
-use App\Http\Controllers\ImportantLinkController;
 use App\Http\Controllers\IncentiveController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LeadController;
@@ -44,6 +43,7 @@ use App\Http\Controllers\QuarterlyAwardController;
 use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\RecurringInvoiceController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ResourceController;
 use App\Http\Controllers\RevenueAtRiskController;
 use App\Http\Controllers\SalesDashboardController;
 use App\Http\Controllers\SalesTargetController;
@@ -52,6 +52,7 @@ use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TeamNudgeController;
+use App\Http\Controllers\TeamResourceController;
 use App\Http\Controllers\TeamWorkloadController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\TwoFactorSetupController;
@@ -489,13 +490,17 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
     });
 
     /*
-     * Important Links — company-wide reference links. Everyone can view;
-     * add/edit/delete is Admin/Manager only (enforced inside
-     * ImportantLinksManager, not a Policy — same convention as Client Radar).
-     * Per-client links live on the client page's own "Links" tab instead.
+     * Resources — Files (Resource Library) + Links (Important Links) on one
+     * page, two tabs. Everyone can view what their role can see (per-item
+     * visibility enforced by HasRoleVisibility, not this middleware);
+     * add/edit/delete is Admin/Manager only, enforced inside each Livewire
+     * component/Policy. menu.access key deliberately stayed
+     * "important-links" — see MenuItemsSeeder. Per-client links live on the
+     * client page's own "Links" tab instead.
      */
     Route::middleware('menu.access:important-links')->group(function () {
-        Route::get('important-links', [ImportantLinkController::class, 'index'])->name('important-links.index');
+        Route::get('resources', [ResourceController::class, 'index'])->name('resources.index');
+        Route::get('resources/{teamResource}/download', [TeamResourceController::class, 'download'])->name('team-resources.download');
     });
 
     /*

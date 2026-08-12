@@ -120,13 +120,18 @@ real Google Calendar invite the client receives — it's just a CRM-side
 heads-up and RSVP so you don't have to check email to see it, and it only
 shows upcoming meetings, soonest first.
 
-## 4g. Important Links
-**Sidebar → Important Links** is a company-wide list of official links —
-hosting panel, domain registrar, and anything else the team needs quick
-access to. Everyone can view it; only Admin/Manager can add, edit, or
-remove an entry (see the Admin guide for how). Links can be grouped by
-department and filtered by department or purpose, so a growing list
-stays easy to scan.
+## 4g. Resources
+**Sidebar → Resources** has two tabs:
+- **Files** — a shared internal file library (plugin builds, certificates,
+  templates…). Only Admin/Manager can upload, edit, or delete a file (see the
+  Admin guide for how); everyone else sees a read-only list.
+- **Links** — a company-wide list of official links (hosting panel, domain
+  registrar, etc.), grouped and filterable by department/purpose.
+
+Both can be restricted to specific roles when added — a Support-only file or
+an Accounts-only link simply won't appear for anyone outside that role. Leave
+"Visible to" blank to show it to everyone. Per-client links still live on
+each client's own page, unaffected by this page.
 
 Every **client's own page** also has a **Links** tab — that client's
 website, Google Business Profile, socials, Drive folder, payment links, or

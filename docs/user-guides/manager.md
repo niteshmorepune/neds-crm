@@ -28,13 +28,17 @@ the Employee Performance report's own coaching suggestions and productivity
 flags. It's a dedicated section now rather than mixed in with daily-habit
 items like leave approvals and festival greetings.
 
-## Important Links
-**Important Links** in the sidebar is a company-wide reference list —
-hosting panel, domain registrar, and anything else the team needs quick
-access to. Everyone can view it; you (and Admin) can add, edit, or remove
-entries. Each entry can optionally be tagged with a department (Sales/
-Support/Accounts/Admin) and a purpose, and the list can be filtered by
-either — useful once it grows past a handful of links.
+## Resources
+**Resources** in the sidebar has two tabs — **Files** (a shared internal
+file library: plugin builds, certificates, templates) and **Links** (a
+company-wide reference list: hosting panel, domain registrar, and anything
+else the team needs quick access to). Everyone can view what their role can
+see; you (and Admin) can add, edit, or remove entries on either tab. Each
+entry can optionally be tagged with a category/department and, separately,
+restricted to specific roles ("Visible to") — leave that blank to show it to
+everyone, which is the default. You and Admin always see every entry
+regardless of that setting. The lists can be filtered by category/department
+— useful once either grows past a handful of items.
 
 Every client's own page also has a **Links** tab for that specific
 client's website, Google Business Profile, socials, Drive folder, and

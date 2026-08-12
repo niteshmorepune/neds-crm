@@ -123,7 +123,7 @@ it('lets any authenticated user view the global important links page', function 
     $sales = User::factory()->role(UserRole::Sales)->create();
 
     $this->actingAs($sales)
-        ->get(route('important-links.index'))
+        ->get(route('resources.index'))
         ->assertOk()
         ->assertSee('Domain Registrar')
         ->assertDontSee('Add link');
@@ -247,6 +247,66 @@ it('populates department and purpose when editing an existing link', function ()
         ->call('edit', $link->id)
         ->assertSet('department', LinkDepartment::Accounts->value)
         ->assertSet('purpose', LinkPurpose::InternalToolAccess->value);
+});
+
+it('hides a role-restricted link from a user without that role', function () {
+    $link = ImportantLink::factory()->create(['customer_id' => $this->customer->id, 'label' => 'Support Only Link']);
+    $link->syncVisibleRoles([UserRole::Support]);
+
+    $sales = User::factory()->role(UserRole::Sales)->create();
+
+    Livewire::actingAs($sales)
+        ->test(ImportantLinksManager::class, ['customer' => $this->customer, 'canManage' => true])
+        ->assertDontSee('Support Only Link');
+});
+
+it('shows a role-restricted link to a user who holds that role', function () {
+    $link = ImportantLink::factory()->create(['customer_id' => $this->customer->id, 'label' => 'Support Only Link']);
+    $link->syncVisibleRoles([UserRole::Support]);
+
+    $support = User::factory()->role(UserRole::Support)->create();
+
+    Livewire::actingAs($support)
+        ->test(ImportantLinksManager::class, ['customer' => $this->customer, 'canManage' => false])
+        ->assertSee('Support Only Link');
+});
+
+it('always shows a role-restricted link to admin and manager regardless of the restriction', function () {
+    $link = ImportantLink::factory()->create(['customer_id' => $this->customer->id, 'label' => 'Support Only Link']);
+    $link->syncVisibleRoles([UserRole::Support]);
+
+    Livewire::actingAs($this->admin)
+        ->test(ImportantLinksManager::class, ['customer' => $this->customer, 'canManage' => true])
+        ->assertSee('Support Only Link');
+});
+
+it('shows a link with no role restriction to everyone', function () {
+    ImportantLink::factory()->create(['customer_id' => $this->customer->id, 'label' => 'Open Link']);
+
+    $sales = User::factory()->role(UserRole::Sales)->create();
+
+    Livewire::actingAs($sales)
+        ->test(ImportantLinksManager::class, ['customer' => $this->customer, 'canManage' => true])
+        ->assertSee('Open Link');
+});
+
+it('saves visible roles on a new link and restores them when editing', function () {
+    Livewire::actingAs($this->admin)
+        ->test(ImportantLinksManager::class, ['customer' => $this->customer, 'canManage' => true])
+        ->call('newLink')
+        ->set('label', 'Accounts Portal Login')
+        ->set('url', 'https://example.com/accounts')
+        ->set('visibleRoles', [UserRole::Accounts->value])
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $link = ImportantLink::firstWhere('label', 'Accounts Portal Login');
+    expect($link->visibleRoles->pluck('role')->all())->toBe([UserRole::Accounts]);
+
+    Livewire::actingAs($this->admin)
+        ->test(ImportantLinksManager::class, ['customer' => $this->customer, 'canManage' => true])
+        ->call('edit', $link->id)
+        ->assertSet('visibleRoles', [UserRole::Accounts->value]);
 });
 
 it('shows the Add link button to a support user on the client detail page', function () {

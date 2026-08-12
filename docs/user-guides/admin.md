@@ -29,16 +29,27 @@ This cannot be undone. Use this only when the company record should be wiped
 entirely; consider making a client **Inactive** instead if you may need the
 history later.
 
-## 1a. Important Links — company-wide and per-client quick access
-**Important Links** in the sidebar (everyone can view; add/edit/delete is
-Admin/Manager only) is a company-wide list of links the team reaches for
-constantly — most often to *hand to a client or lead* (a hosting signup
-link when a client asks to buy hosting, a payment-gateway registration
-link when a client wants one set up, a scheduling link to book a call
-with Sales or Support), plus a few genuinely internal ones (our own
-hosting panel login, training videos on Drive). Add a **label**, a
-**URL**, and optionally a **Department** (Sales/Support/Accounts/Admin/
-Development/Design/General/Operations/Technical/HR) and a **Purpose**:
+## 1a. Resources — shared files and quick-access links
+**Resources** in the sidebar has two tabs; add/edit/delete on both is
+Admin/Manager only.
+
+**Files** is a shared internal file library — the latest plugin build for
+Support, the GST certificate for Accounts, templates, SOPs, anything the
+team would otherwise hunt for over chat. Add a **title**, the **file**
+itself, and optionally a **Category** (Plugins & Software, Certificates &
+Compliance, Templates & Documents, Policies & SOPs, Other). A file's
+metadata (title/description/category/visibility) can be edited later, but
+the file itself can't be replaced in place — delete it and upload a new
+version instead.
+
+**Links** is a company-wide list of links the team reaches for constantly —
+most often to *hand to a client or lead* (a hosting signup link when a
+client asks to buy hosting, a payment-gateway registration link when a
+client wants one set up, a scheduling link to book a call with Sales or
+Support), plus a few genuinely internal ones (our own hosting panel login,
+training videos on Drive). Add a **label**, a **URL**, and optionally a
+**Department** (Sales/Support/Accounts/Admin/Development/Design/General/
+Operations/Technical/HR) and a **Purpose**:
 - **Client Signup Link** — hand this to a client/lead so *they* register
   or buy something themselves (hosting, a domain, a payment gateway).
 - **Scheduling Link** — book a call/meeting (e.g. Connect with Sales
@@ -49,17 +60,25 @@ Development/Design/General/Operations/Technical/HR) and a **Purpose**:
   infrastructure the team manages itself (our hosting control panel,
   domain registrar account, Workspace admin console).
 
-The list groups by department and can be filtered by either field
-independently, so a growing list stays easy to scan. Both are optional;
-a link left uncategorised just shows under "Uncategorized" rather than
-being guessed at.
+Both tabs' lists group by category/department and can be filtered
+independently, so a growing list stays easy to scan. Categorising is
+optional; an uncategorised item just shows under "Uncategorized" rather
+than being guessed at.
+
+**Visible to** (both tabs) restricts who can see a specific file or link —
+pick one or more roles (e.g. Accounts, Support) and only staff holding one
+of those roles will see it in their list; everyone else won't. Leave it
+blank to show the item to everyone, which is the default and matches every
+existing link's current behaviour. Admin and Manager always see everything,
+restricted or not, so oversight is never affected by this setting.
 
 Every **client's page** also has its own **Links** tab — that client's
 website, Google Business Profile, socials, Google Drive folder, Google
 Meet link, payment links, or anything else specific to serving them.
-Anyone who can open the client's page can see these; editing them follows
-the same rule as everything else on that page (Admin/Manager always,
-Sales for their own/unassigned clients).
+Anyone who can open the client's page can see these (subject to the same
+role restriction if one is set); editing them follows the same rule as
+everything else on that page (Admin/Manager always, Sales for their own/
+unassigned clients).
 
 ## 2. Client Radar — at-risk / upsell signals
 A dashboard banner ("N clients need attention") and a **Client Radar** sidebar
