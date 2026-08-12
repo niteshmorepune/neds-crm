@@ -43,6 +43,19 @@
                 </select>
                 @error('purpose') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
             </div>
+            <div class="md:col-span-2">
+                <x-input-label value="Visible to (leave blank for everyone)" />
+                <div class="mt-1 flex flex-wrap gap-3">
+                    @foreach ($assignableRoles as $role)
+                        <label class="flex items-center gap-1.5 text-sm text-gray-700">
+                            <input type="checkbox" wire:model="visibleRoles" value="{{ $role->value }}"
+                                   class="rounded border-gray-300 text-indigo-600 shadow-sm" />
+                            {{ $role->label() }}
+                        </label>
+                    @endforeach
+                </div>
+                @error('visibleRoles.*') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
+            </div>
             <div class="flex items-center gap-3 md:col-span-2">
                 <x-primary-button wire:click="save" type="button">Save link</x-primary-button>
                 <button wire:click="cancel" type="button" class="text-sm text-gray-500 hover:text-gray-700">Cancel</button>

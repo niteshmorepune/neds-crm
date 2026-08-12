@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\LinkDepartment;
 use App\Enums\LinkPurpose;
+use App\Models\Concerns\HasRoleVisibility;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ImportantLink extends Model
 {
-    use HasFactory;
+    use HasFactory, HasRoleVisibility;
 
     protected $fillable = [
         'customer_id',
@@ -46,5 +47,10 @@ class ImportantLink extends Model
     public function scopeGlobal(Builder $query): Builder
     {
         return $query->whereNull('customer_id');
+    }
+
+    protected function roleVisibilityModel(): string
+    {
+        return ImportantLinkRole::class;
     }
 }

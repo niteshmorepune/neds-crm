@@ -42,7 +42,11 @@ class MenuItemsSeeder extends Seeder
             // "important-links" is a daily reference tool used by everyone,
             // not sales- or finance-specific — grouped with My Work rather
             // than Sales & Pipeline even though it sits here in build order.
-            ['key' => 'important-links',  'label' => 'Important Links',  'group' => MenuGroup::MyWork,          'route' => 'important-links.index', 'icon' => 'link',  'roles' => $all],
+            // Label/route repointed to the combined Resources page (Files +
+            // Links tabs) — key deliberately left as 'important-links' since
+            // updateOrCreate() below matches on key; renaming it would
+            // insert a duplicate row and orphan its role assignments.
+            ['key' => 'important-links',  'label' => 'Resources',        'group' => MenuGroup::MyWork,          'route' => 'resources.index',  'icon' => 'link',  'roles' => $all],
             ['key' => 'incentives',       'label' => 'Incentives',       'group' => MenuGroup::SalesPipeline,   'route' => 'incentives.index', 'icon' => 'currency-rupee', 'roles' => [UserRole::Manager, UserRole::Sales]],
             ['key' => 'invoices',         'label' => 'Invoices',         'group' => MenuGroup::Finance,         'route' => 'invoices.index',   'icon' => 'receipt',    'roles' => [UserRole::Manager, UserRole::Accounts, UserRole::Sales]],
             ['key' => 'account',          'label' => 'Account',          'group' => MenuGroup::Finance,         'route' => 'reports.receivables', 'icon' => 'wallet',  'roles' => [UserRole::Manager, UserRole::Accounts]],
