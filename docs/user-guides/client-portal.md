@@ -23,6 +23,7 @@ with six sections:
 | **Projects** | Status and updates for work NEDS is doing for you |
 | **Tickets** | Your support requests and their conversation history |
 | **Notifications** | Updates on your quotations, invoices, tickets and projects, with an unread count next to the bell |
+| **FAQ** | Quick answers to the questions we hear most often — logins, payments, quotations, projects, tickets |
 
 Your name and company appear at the bottom of the sidebar. Click **Sign out** when
 done.

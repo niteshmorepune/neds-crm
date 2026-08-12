@@ -30,6 +30,7 @@ use App\Http\Controllers\MyDayController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PartnerController;
 use App\Http\Controllers\PartnerUploadController;
+use App\Http\Controllers\Portal\FaqController;
 use App\Http\Controllers\Portal\ForgotPasswordController;
 use App\Http\Controllers\Portal\HomeController;
 use App\Http\Controllers\Portal\InvoicePaymentController;
@@ -630,6 +631,7 @@ Route::prefix('portal')->name('portal.')->group(function () {
         Route::post('invoices/{invoice}/pay/order', [InvoicePaymentController::class, 'order'])->name('invoices.pay.order');
         Route::post('invoices/{invoice}/pay/verify', [InvoicePaymentController::class, 'verify'])->name('invoices.pay.verify');
         Route::get('services', [App\Http\Controllers\Portal\ServiceController::class, 'index'])->name('services.index');
+        Route::get('faq', [FaqController::class, 'index'])->name('faq');
         Route::get('projects', [App\Http\Controllers\Portal\ProjectController::class, 'index'])->name('projects.index');
         Route::get('projects/{project}', [App\Http\Controllers\Portal\ProjectController::class, 'show'])->name('projects.show');
         Route::post('projects/{project}/deliverables/{deliverable}/attachments', [App\Http\Controllers\Portal\ProjectController::class, 'uploadDeliverable'])->name('projects.deliverables.upload');
