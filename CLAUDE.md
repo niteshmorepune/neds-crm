@@ -834,3 +834,68 @@ Record every "we chose X because Y" here — this is the project's memory.
   work started (`ManagementReportsTest`'s attendance-% test is
   date-dependent and fails early in any calendar month — not touched by,
   or related to, this change). Pint clean.
+- **2026-08-12 — Resource Library + role-gated Important Links (#115), and
+  Sidebar grouping + active-highlight fix (#116), both shipped and
+  deployed same session.** Owner asked for a place for Support/Accounts
+  staff to find shared internal files (plugin builds, GST certificates)
+  and for links to be genuinely role-restricted by department, plus
+  separately for the sidebar (38 flat items, no working active-item
+  highlight) to be grouped and fixed. Investigated first: `important_links`
+  + `ImportantLinksManager` already existed with `department`/`purpose`
+  fields that were display-only labels, not actual access restriction —
+  the real gap vs. the ask. Built via `/plan`, confirmed via
+  AskUserQuestion: retrofit real role visibility onto Important Links too
+  (not just new Files), combine Files+Links on one "Resources" page (two
+  tabs) rather than two sidebar entries, fixed `TeamResourceCategory`
+  enum, ship sidebar grouping as its own separate PR.
+  New `App\Models\Concerns\HasRoleVisibility` trait (mirrors
+  `menu_item_role`'s shape via two small pivots, `team_resource_role` and
+  `important_link_role`) shared by the new `TeamResource` model and the
+  retrofitted `ImportantLink` — no visibility rows = visible to everyone
+  (non-breaking default for every existing link), Admin/Manager always
+  bypass, role matching via `allRoles()` (same union rule as the Menu
+  Controller sidebar, not the dashboard-panel's primary-only rule). Menu
+  key deliberately left as `important-links` even though the page moved
+  to "Resources" (`resources.index`) — `MenuItemsSeeder::run()`'s
+  `updateOrCreate` matches by key, so renaming it would have orphaned the
+  existing role-assignment pivot rows into a duplicate row instead of
+  updating in place.
+  Sidebar: new display-only `menu_items.group` column +
+  `App\Enums\MenuGroup` (6 cases, formalizing `MenuItemsSeeder`'s own
+  existing workflow-stage-ordering comment) render as collapsible
+  sections (plain `x-show`/`x-transition` — no `x-collapse` plugin
+  installed — collapse state persisted per-browser via `localStorage`,
+  same pattern as the announcement-banner's dismiss). The active-highlight
+  bug: `request()->routeIs($item->route)` was already present, just
+  exact-match-only, so a lead's detail page never highlighted "Lead
+  Generation." Fixed via `MenuItem::activePatterns()` — exact route name
+  plus a wildcard on the first route-name segment, **except** routes
+  under the shared `reports.` namespace (backs ~12 distinct report pages
+  but only 2 sidebar items, Account/Collections), which get exact-match
+  only so they don't cross-highlight each other or unrelated report
+  pages — a real collision a naive wildcard-everything approach would
+  have hit.
+  Both PRs built/tested/Pint-clean independently (branched off `master`,
+  no shared files, by design), then owner said "merge it" — clarified via
+  AskUserQuestion this meant both. #116 had a genuine merge conflict with
+  #115 (both edited `MenuItemsSeeder.php`) — resolved by hand, full suite
+  re-verified (1850 green) before the final push. Deployed same session
+  (owner said "deploy it"): rebuilt+committed frontend assets first (the
+  sidebar's new `-rotate-90` collapse-chevron utility wasn't used
+  anywhere else in the app, so it was missing from the previously-shipped
+  `public/build` — same class of gotcha as the Help-page one already
+  documented in [[deployment]]), then the standard migrate+reseed+cache
+  sequence, verified against real production data (not just HTTP status)
+  via the scratch-script pattern.
+  **New standing default, confirmed with the owner**: after any shipped
+  change that's genuinely staff-facing (a new page, a moved/renamed
+  feature, a workflow change — not a bug fix, backend refactor, or
+  anything invisible to a user), draft a Notice Board title/body/audience
+  and present it for the owner to paste in via Notice Board → New
+  Announcement, without waiting to be asked. Never post it directly —
+  Notice Board creation goes through the real 2FA-gated admin login,
+  which stays the owner's alone; a direct-database-write attempt to skip
+  that was correctly blocked by the permission system when first tried.
+  Keep the body a single flowing paragraph (no bullets/line breaks — the
+  `<x-announcement-banner>` component renders `body` via plain `{{ }}`
+  escaping, so manual line breaks collapse visually into one run-on line).
