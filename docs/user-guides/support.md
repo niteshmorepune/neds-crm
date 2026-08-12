@@ -14,6 +14,21 @@ You handle **tickets** (client issues) and **projects & tasks** (delivery work).
   AI is enabled, click **Get tips to improve** for a specific suggestion
   based on your own numbers.
 
+## Resources
+**Sidebar → Resources** has two tabs — **Files** and **Links**. You can view
+whatever your role can see on both; adding, editing, or removing entries is
+Admin/Manager only. **Files** is the place to look for things like the
+latest plugin build or theme update package instead of asking around on
+chat — it's tagged by category (Plugins & Software, Certificates &
+Compliance, Templates & Documents, Policies & SOPs, Other) so you can filter
+straight to what you need. Some files are restricted to specific roles
+("Visible to") — if you can't find something you expect, it may not be
+tagged for Support yet; ask Admin/Manager to add it or open it up.
+
+Every **client's own page** also has its own **Links** tab, separate from
+this page — that client's website, Google Business Profile, socials, Drive
+folder, and similar. Anyone who can open the client's page can see these.
+
 ## 1. Tickets
 Tickets come from clients (via their portal) or are raised by staff.
 

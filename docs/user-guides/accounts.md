@@ -25,6 +25,21 @@ You handle **invoices**, **payments**, **recurring billing**, and the
   AI is enabled, click **Get tips to improve** for a specific suggestion
   based on your own numbers.
 
+## Resources
+**Sidebar → Resources** has two tabs — **Files** and **Links**. You can view
+whatever your role can see on both; adding, editing, or removing entries is
+Admin/Manager only. **Files** is worth checking before you dig through old
+email or ask around — the GST certificate, for example, lives here under
+**Certificates & Compliance**, alongside other things like plugin builds,
+templates, and SOPs. Some files are restricted to specific roles ("Visible
+to") — if you can't find something you expect, it may not be tagged for
+Accounts yet; ask Admin/Manager to add it or open it up.
+
+Every **client's own page** also has its own **Links** tab, separate from
+this page — that client's website, Google Business Profile, socials, Drive
+folder, payment links, and similar. Anyone who can open the client's page
+can see these.
+
 ## Your ideal day-to-day rhythm
 
 **Daily**

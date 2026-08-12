@@ -18,6 +18,23 @@ When you log in you'll see:
   numbers. Shows "Not enough peers yet to compare" if there aren't at least
   2 Sales staff yet.
 
+## Resources
+**Sidebar → Resources** has two tabs — **Files** (a shared internal file
+library) and **Links** (a company-wide reference list). You can view
+whatever your role can see on both; adding, editing, or removing entries is
+Admin/Manager only. The **Links** tab is worth checking before you improvise
+over WhatsApp: it often has the exact link you need to hand a client or lead
+— tagged **Client Signup Link** (e.g. a hosting or payment-gateway signup
+link when a client wants to buy one) or **Scheduling Link** (e.g. "Connect
+with Sales Team" to book a call) — rather than you tracking one down or
+copy-pasting an old one from memory. Some items are restricted to specific
+roles ("Visible to") — if something you expect isn't there, it may simply
+not be tagged for Sales; ask Admin/Manager to add or open it up.
+
+Every **client's own page** also has its own **Links** tab, separate from
+this — that client's website, Google Business Profile, socials, Drive
+folder, and similar. Anyone who can open the client's page can see these.
+
 ## 1. Leads (Lead Generation)
 The top of the page shows **summary cards** — Total, New, Contacted,
 Qualified, Converted, Lost — a quick read on the pipeline before you scroll

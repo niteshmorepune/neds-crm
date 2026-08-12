@@ -19,6 +19,14 @@ Do **both** every day: use the **Check In** / **Check Out** buttons on your
 dashboard, **and** punch the biometric machine when you arrive and leave —
 see the Getting Started guide for how the two work together.
 
+## 2a. Resources
+**Sidebar → Resources** has two tabs — **Files** (a shared internal file
+library) and **Links** (a company-wide reference list — hosting signup
+links, scheduling links, and similar you can pass on to a lead). You can
+view whatever's visible to your role on both, but you **cannot** add, edit,
+or delete entries — that's Admin/Manager only. Some items are restricted to
+specific roles, so you may not see everything others do.
+
 ## 3. Lead Generation
 Under **Lead Generation** in the sidebar you can see every lead in the
 system — there's no "my leads only" filter, because leads aren't assigned to

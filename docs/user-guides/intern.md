@@ -32,6 +32,14 @@ sidebar.
 > If you need a correction (e.g. you forgot to punch, or the machine was
 > offline), ask your admin or manager — only they can edit attendance records.
 
+## 2a. Resources
+**Sidebar → Resources** has two tabs — **Files** (a shared internal file
+library — plugin builds, certificates, templates, SOPs) and **Links** (a
+company-wide reference list). You can view whatever's visible to your role
+on both, but you **cannot** add, edit, or delete entries on either tab —
+that's Admin/Manager only. Some items are restricted to specific roles, so
+you may not see everything others do.
+
 ## 3. Clients (read-only)
 Under **Clients** in the sidebar you can browse the full client directory —
 company details, contacts, and their service summary. You can view any client

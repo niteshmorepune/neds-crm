@@ -7,7 +7,7 @@ Start with **Getting Started**, then read the guide for your role.
 
 | Guide | Who it's for |
 |---|---|
-| [Getting Started](getting-started.md) | Everyone — login, 2FA, dashboard, attendance, daily reports |
+| [Getting Started](getting-started.md) | Everyone — login, 2FA, dashboard, Resources, attendance, daily reports |
 | [Sales](sales.md) | Sales team — leads, pipeline, quotations, calls |
 | [Support](support.md) | Support team — tickets, projects, tasks |
 | [Accounts](accounts.md) | Accounts team — invoices, payments, recurring billing |
