@@ -46,9 +46,9 @@
                             </td>
                             <td class="px-4 py-3 text-gray-600">{{ $announcement->audience->label() }}</td>
                             <td class="px-4 py-3 text-gray-600">
-                                {{ $announcement->starts_at->format('d M Y, h:i A') }}
+                                {{ $announcement->starts_at->timezone(config('app.display_timezone', 'Asia/Kolkata'))->format('d M Y, h:i A') }}
                                 &rarr;
-                                {{ $announcement->ends_at?->format('d M Y, h:i A') ?? 'No expiry' }}
+                                {{ $announcement->ends_at?->timezone(config('app.display_timezone', 'Asia/Kolkata'))->format('d M Y, h:i A') ?? 'No expiry' }}
                             </td>
                             <td class="px-4 py-3">
                                 <span class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium {{ $status['classes'] }}">{{ $status['label'] }}</span>

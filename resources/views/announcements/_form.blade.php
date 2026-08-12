@@ -34,14 +34,14 @@
     <div>
         <x-input-label for="starts_at" value="Starts *" />
         <x-text-input id="starts_at" name="starts_at" type="datetime-local" class="mt-1 block w-full"
-            :value="old('starts_at', isset($announcement) ? $announcement->starts_at->format('Y-m-d\TH:i') : now()->format('Y-m-d\TH:i'))" required />
+            :value="old('starts_at', isset($announcement) ? $announcement->starts_at->timezone(config('app.display_timezone', 'Asia/Kolkata'))->format('Y-m-d\TH:i') : now()->timezone(config('app.display_timezone', 'Asia/Kolkata'))->format('Y-m-d\TH:i'))" required />
         <x-input-error :messages="$errors->get('starts_at')" class="mt-1" />
     </div>
 
     <div>
         <x-input-label for="ends_at" value="Ends" />
         <x-text-input id="ends_at" name="ends_at" type="datetime-local" class="mt-1 block w-full"
-            :value="old('ends_at', isset($announcement) && $announcement->ends_at ? $announcement->ends_at->format('Y-m-d\TH:i') : '')" />
+            :value="old('ends_at', isset($announcement) && $announcement->ends_at ? $announcement->ends_at->timezone(config('app.display_timezone', 'Asia/Kolkata'))->format('Y-m-d\TH:i') : '')" />
         <p class="mt-1 text-xs text-gray-400">Leave blank for a standing notice with no expiry.</p>
         <x-input-error :messages="$errors->get('ends_at')" class="mt-1" />
     </div>

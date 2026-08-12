@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Enums\AnnouncementAudience;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
 
 class AnnouncementRequest extends FormRequest
@@ -25,8 +26,24 @@ class AnnouncementRequest extends FormRequest
         ];
     }
 
+    /**
+     * The starts_at/ends_at inputs are `datetime-local` values typed against
+     * Asia/Kolkata (what the admin sees on screen), but app.timezone is UTC —
+     * parse them against the display timezone before they hit the model's
+     * plain `datetime` cast, same fix as MeetingImport::createMeeting().
+     */
     protected function prepareForValidation(): void
     {
-        $this->merge(['is_pinned' => $this->boolean('is_pinned')]);
+        $tz = config('app.display_timezone', 'Asia/Kolkata');
+
+        $this->merge([
+            'is_pinned' => $this->boolean('is_pinned'),
+            'starts_at' => $this->filled('starts_at')
+                ? Carbon::createFromFormat('Y-m-d\TH:i', $this->input('starts_at'), $tz)->utc()->toDateTimeString()
+                : $this->input('starts_at'),
+            'ends_at' => $this->filled('ends_at')
+                ? Carbon::createFromFormat('Y-m-d\TH:i', $this->input('ends_at'), $tz)->utc()->toDateTimeString()
+                : null,
+        ]);
     }
 }
