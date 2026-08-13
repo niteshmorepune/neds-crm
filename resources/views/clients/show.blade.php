@@ -34,6 +34,9 @@
                         <div><span class="text-gray-400">Referred by:</span> {{ $client->referringPartner?->name ?? '—' }}</div>
                         <div><span class="text-gray-400">Email:</span> {{ $client->email ?? '—' }}</div>
                         <div><span class="text-gray-400">Phone:</span> {{ $client->phone ?? '—' }}</div>
+                        @if ($client->alternate_phone)
+                            <div><span class="text-gray-400">Alternate phone:</span> {{ $client->alternate_phone }}</div>
+                        @endif
                         <div><span class="text-gray-400">Website:</span> {{ $client->website ?? '—' }}</div>
                         <div><span class="text-gray-400">State:</span> {{ $client->state ?? '—' }}</div>
                         <div class="sm:col-span-2">

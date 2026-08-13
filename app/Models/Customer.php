@@ -27,6 +27,7 @@ class Customer extends Model
         'gst_exempt',
         'email',
         'phone',
+        'alternate_phone',
         'website',
         'address_line1',
         'address_line2',

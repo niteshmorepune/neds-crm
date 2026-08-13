@@ -70,6 +70,13 @@
         <x-input-error :messages="$errors->get('phone')" class="mt-1" />
     </div>
 
+    <div>
+        <x-input-label for="alternate_phone" value="Alternate phone" />
+        <x-text-input id="alternate_phone" name="alternate_phone" type="text" class="mt-1 block w-full"
+                      :value="old('alternate_phone', $customer->alternate_phone)" />
+        <x-input-error :messages="$errors->get('alternate_phone')" class="mt-1" />
+    </div>
+
     <div class="md:col-span-2">
         <x-input-label for="website" value="Website" />
         <x-text-input id="website" name="website" type="url" class="mt-1 block w-full"

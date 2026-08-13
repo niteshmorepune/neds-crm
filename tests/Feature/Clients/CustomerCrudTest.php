@@ -35,6 +35,31 @@ it('creates a client with valid data and derives the state name', function () {
         ->and($customer->tags)->toBe(['seo', 'retainer']);
 });
 
+it('saves and displays an alternate phone number', function () {
+    $this->actingAs($this->admin)->post(route('clients.store'), [
+        'company_name' => 'Acme Digital Pvt Ltd',
+        'phone' => '9876543210',
+        'alternate_phone' => '9123456780',
+        'country' => 'India',
+        'status' => CustomerStatus::Active->value,
+    ])->assertRedirect();
+
+    $customer = Customer::firstWhere('company_name', 'Acme Digital Pvt Ltd');
+    expect($customer->alternate_phone)->toBe('9123456780');
+
+    $this->actingAs($this->admin)->get(route('clients.show', $customer))
+        ->assertOk()
+        ->assertSee('9123456780');
+});
+
+it('does not show an Alternate phone row on a client when none is set', function () {
+    $customer = Customer::factory()->create(['alternate_phone' => null]);
+
+    $this->actingAs($this->admin)->get(route('clients.show', $customer))
+        ->assertOk()
+        ->assertDontSee('Alternate phone');
+});
+
 it('records the referring partner on a client that was directly imported (no lead/deal history)', function () {
     $partner = Partner::factory()->create(['name' => 'Referral Agency Co']);
     $client = Customer::factory()->create(['referring_partner_id' => null]);
