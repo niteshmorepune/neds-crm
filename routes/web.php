@@ -159,6 +159,7 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
         Route::post('leads/{lead}/convert', [LeadController::class, 'convert'])->name('leads.convert');
         Route::post('leads/{lead}/quotation', [LeadController::class, 'quotation'])->name('leads.quotation');
         Route::post('leads/{lead}/reassign', [LeadController::class, 'reassign'])->name('leads.reassign');
+        Route::post('leads/bulk-reassign', [LeadController::class, 'bulkReassign'])->name('leads.bulk-reassign');
         Route::resource('leads', LeadController::class)->parameters(['leads' => 'lead']);
     });
 

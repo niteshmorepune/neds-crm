@@ -8,6 +8,7 @@ use App\Enums\LeadReassignmentReason;
 use App\Enums\LeadSource;
 use App\Enums\LeadStatus;
 use App\Enums\UserRole;
+use App\Http\Requests\LeadBulkReassignRequest;
 use App\Http\Requests\LeadReassignRequest;
 use App\Http\Requests\LeadStoreRequest;
 use App\Http\Requests\LeadUpdateRequest;
@@ -57,11 +58,45 @@ class LeadController extends Controller
             ->paginate(15)
             ->withQueryString();
 
+        $canBulkReassign = $request->user()->can('bulkReassign', Lead::class);
+        $filterOwnerId = $request->filled('owner_id') ? $request->integer('owner_id') : null;
+
         return view('leads.index', $this->formData() + [
             'leads' => $leads,
             'filters' => $request->only(['search', 'source', 'status', 'service_id', 'owner_id', 'follow_up_due']) + ['month' => $month],
             'statusCounts' => $this->statusCounts($request),
+            'canBulkReassign' => $canBulkReassign,
+            'filterOwner' => $filterOwnerId ? User::find($filterOwnerId) : null,
+            'bulkReassignOpenCount' => ($canBulkReassign && $filterOwnerId)
+                ? Lead::where('owner_id', $filterOwnerId)->whereIn('status', LeadStatus::openValues())->count()
+                : 0,
+            'bulkReassignTargets' => $canBulkReassign
+                ? User::where('is_active', true)->withAnyRole(UserRole::Sales, UserRole::Manager, UserRole::Admin)->orderBy('name')->get(['id', 'name'])
+                : new Collection,
+            'reassignReasons' => LeadReassignmentReason::cases(),
         ]);
+    }
+
+    /**
+     * Moves every OPEN lead owned by one user to another in a single action
+     * — e.g. covering Kiran's leads with Mohit for the day. Admin/Manager
+     * only (LeadPolicy::bulkReassign). Deliberately a plain one-time move,
+     * not a temporary/auto-revert assignment: reassigning back later is the
+     * same manual action in reverse, same as the single-lead Reassign button.
+     * Reuses ReassignLead per lead so both paths log/notify identically.
+     */
+    public function bulkReassign(LeadBulkReassignRequest $request, ReassignLead $action): RedirectResponse
+    {
+        $from = User::findOrFail($request->validated('from_user_id'));
+        $to = User::findOrFail($request->validated('to_user_id'));
+        $reason = LeadReassignmentReason::from($request->validated('reason'));
+
+        $openLeads = $from->leads()->whereIn('status', LeadStatus::openValues())->get();
+
+        $openLeads->each(fn (Lead $lead) => $action->handle($lead, $to, $request->user(), $reason));
+
+        return redirect()->route('leads.index')
+            ->with('status', "Reassigned {$openLeads->count()} open lead(s) from {$from->name} to {$to->name}.");
     }
 
     /**

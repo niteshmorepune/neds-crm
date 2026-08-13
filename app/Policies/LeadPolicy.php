@@ -55,6 +55,18 @@ class LeadPolicy
             || ($user->hasRole(UserRole::Sales) && $lead->owner_id === $user->id);
     }
 
+    /**
+     * Whether this user can move a WHOLE other user's book of open leads in
+     * one action (the "reassign all of Kiran's leads to Mohit" bulk tool on
+     * the Lead Generation list). Deliberately Admin/Manager only — a Sales
+     * user reassigning their own individual leads via reassign() above is a
+     * different, narrower ability than moving someone else's entire book.
+     */
+    public function bulkReassign(User $user): bool
+    {
+        return $user->hasRole(UserRole::Admin, UserRole::Manager);
+    }
+
     public function convert(User $user, Lead $lead): bool
     {
         return $user->hasRole(UserRole::Admin, UserRole::Manager, UserRole::Sales);
