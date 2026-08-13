@@ -79,6 +79,11 @@
         @if ($canBulkReassign && $filterOwner)
             <div class="rounded-lg border border-indigo-200 bg-indigo-50 p-4" x-data>
                 @if ($bulkReassignOpenCount > 0)
+                    @if ($errors->any())
+                        <div class="mb-3 rounded-md bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-800">
+                            {{ $errors->first() }}
+                        </div>
+                    @endif
                     <form method="POST" action="{{ route('leads.bulk-reassign') }}" class="flex flex-wrap items-end gap-3"
                           onsubmit="return confirm('Reassign all {{ $bulkReassignOpenCount }} open lead(s) from {{ $filterOwner->name }}? This can be undone the same way later, but not automatically.')">
                         @csrf
@@ -90,12 +95,12 @@
                             <option value="">—</option>
                             @foreach ($bulkReassignTargets as $target)
                                 @continue($target->id === $filterOwner->id)
-                                <option value="{{ $target->id }}">{{ $target->name }}</option>
+                                <option value="{{ $target->id }}" @selected(old('to_user_id') == $target->id)>{{ $target->name }}</option>
                             @endforeach
                         </select>
                         <select name="reason" class="rounded-md border-gray-300 text-sm shadow-sm" required>
                             @foreach ($reassignReasons as $reasonOption)
-                                <option value="{{ $reasonOption->value }}">{{ $reasonOption->label() }}</option>
+                                <option value="{{ $reasonOption->value }}" @selected(old('reason') === $reasonOption->value)>{{ $reasonOption->label() }}</option>
                             @endforeach
                         </select>
                         <button type="submit" class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">Reassign All</button>

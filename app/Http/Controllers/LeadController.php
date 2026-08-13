@@ -95,7 +95,11 @@ class LeadController extends Controller
 
         $openLeads->each(fn (Lead $lead) => $action->handle($lead, $to, $request->user(), $reason));
 
-        return redirect()->route('leads.index')
+        // Preserve the owner_id filter so the admin lands back on the same
+        // filtered view and can see it now shows zero open leads — the
+        // best confirmation the action actually did something, especially
+        // after this exact "looked like nothing happened" incident.
+        return redirect()->route('leads.index', ['owner_id' => $from->id])
             ->with('status', "Reassigned {$openLeads->count()} open lead(s) from {$from->name} to {$to->name}.");
     }
 

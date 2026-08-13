@@ -121,13 +121,33 @@ it('lets a manager bulk-reassign all of one Sales user\'s open leads to another 
         'from_user_id' => $kiran->id,
         'to_user_id' => $mohit->id,
         'reason' => 'on_leave',
-    ])->assertRedirect(route('leads.index'));
+    ])->assertRedirect(route('leads.index', ['owner_id' => $kiran->id]));
 
     foreach ($open as $lead) {
         expect($lead->fresh()->owner_id)->toBe($mohit->id);
     }
     expect($closed->fresh()->owner_id)->toBe($kiran->id); // closed lead untouched
     Notification::assertSentTimes(LeadReassignedNotification::class, 3);
+});
+
+it('accepts a bulk-reassign target whose SECONDARY role is Sales, even if their primary role is not — 2026-08-13 regression', function () {
+    // Real incident: Mohit's primary role is Support with Sales as an
+    // additional role. The dropdown (built via withAnyRole()) correctly
+    // offered him, but the validation rule originally checked only the raw
+    // `role` column — every attempt silently failed with no visible error.
+    Notification::fake();
+    $manager = User::factory()->role(UserRole::Manager)->create();
+    $kiran = User::factory()->role(UserRole::Sales)->create();
+    $mohit = User::factory()->role(UserRole::Support)->withAdditionalRoles(UserRole::Sales)->create();
+    $lead = Lead::factory()->ownedBy($kiran->id)->create(['status' => LeadStatus::New]);
+
+    $this->actingAs($manager)->post(route('leads.bulk-reassign'), [
+        'from_user_id' => $kiran->id,
+        'to_user_id' => $mohit->id,
+        'reason' => 'on_leave',
+    ])->assertSessionHasNoErrors()->assertRedirect();
+
+    expect($lead->fresh()->owner_id)->toBe($mohit->id);
 });
 
 it('forbids a Sales user from bulk-reassigning someone else\'s leads', function () {
