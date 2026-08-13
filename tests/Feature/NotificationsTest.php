@@ -3,9 +3,11 @@
 use App\Enums\UserRole;
 use App\Models\Deal;
 use App\Models\Invoice;
+use App\Models\Lead;
 use App\Models\Meeting;
 use App\Models\User;
 use App\Notifications\DealWonNotification;
+use App\Notifications\LeadEscalatedToManagerNotification;
 use App\Notifications\MeetingInvitation;
 use App\Notifications\NewInvoiceNotification;
 use Illuminate\Support\Str;
@@ -96,4 +98,32 @@ it('shows a clickable link for a deal-won notification pointing to a live deal',
     $response->assertOk()
         ->assertSee(route('deals.show', $deal), false)
         ->assertDontSee('deal deleted');
+});
+
+it('shows a graceful message instead of a dead link when the notification\'s lead has since been deleted', function () {
+    // 2026-08-13 regression: same shape as the invoice/deal dead-link fixes
+    // above, never extended to Lead — the new speed-to-lead escalation cron
+    // (PR #118) notifies managers about an untouched lead, and if that lead
+    // is deleted afterward (e.g. cleaned up as a duplicate/spam) the stored
+    // link 404s on click.
+    $lead = Lead::factory()->create();
+    $this->user->notify(new LeadEscalatedToManagerNotification($lead));
+    $lead->delete();
+
+    $response = $this->actingAs($this->user)->get(route('notifications.index'));
+
+    $response->assertOk()
+        ->assertSee('lead deleted')
+        ->assertDontSee(route('leads.show', $lead), false);
+});
+
+it('shows a clickable link for a lead-escalated notification pointing to a live lead', function () {
+    $lead = Lead::factory()->create();
+    $this->user->notify(new LeadEscalatedToManagerNotification($lead));
+
+    $response = $this->actingAs($this->user)->get(route('notifications.index'));
+
+    $response->assertOk()
+        ->assertSee(route('leads.show', $lead), false)
+        ->assertDontSee('lead deleted');
 });

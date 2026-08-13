@@ -85,6 +85,7 @@
                             })
                             @php($invoiceDeleted = ! empty($data['invoice_id']) && $deletedInvoiceIds->contains($data['invoice_id']))
                             @php($dealDeleted = ! empty($data['deal_id']) && $deletedDealIds->contains($data['deal_id']))
+                            @php($leadDeleted = ! empty($data['lead_id']) && $deletedLeadIds->contains($data['lead_id']))
                             <p class="text-sm font-medium text-gray-900">
                                 {{ $typeIcon }}
                                 @if ($invoiceDeleted)
@@ -93,6 +94,9 @@
                                 @elseif ($dealDeleted)
                                     <span class="text-gray-500">{{ $data['message'] }}</span>
                                     <span class="ml-1 text-xs italic text-gray-400">(deal deleted)</span>
+                                @elseif ($leadDeleted)
+                                    <span class="text-gray-500">{{ $data['message'] }}</span>
+                                    <span class="ml-1 text-xs italic text-gray-400">(lead deleted)</span>
                                 @elseif (! empty($data['url']))
                                     <a href="{{ $data['url'] }}" class="text-indigo-600 hover:underline">{{ $data['message'] }}</a>
                                 @else
