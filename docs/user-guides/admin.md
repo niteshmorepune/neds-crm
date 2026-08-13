@@ -290,7 +290,13 @@ Public sign-up is disabled, so **you create every staff account**.
   access, alongside the employee's performance, workload, tickets, and
   attendance in one place.
 - **When someone leaves:** edit them and **untick Active** instead of deleting —
-  this blocks their login but keeps their leads, deals and history intact.
+  this blocks their login but keeps their leads, deals and history intact. If
+  they're a Sales user still holding open leads, the form won't let you save
+  until you pick who takes those leads over (a **Hand over open leads to**
+  dropdown appears) — this hands them off through the same Reassign mechanism
+  the sales team uses themselves (see the Sales guide), so the new owner gets
+  notified and a note is left on each lead explaining why it moved. Leave the
+  dropdown on "Leave assigned to [name]" if you'd rather sort it out manually.
 - You **can't** disable, demote, or delete **your own** account (so you can't
   lock yourself out).
 
@@ -583,7 +589,8 @@ needed for any of them:
 the fewest open leads, so nothing sits unowned waiting for someone to notice
 it (this runs regardless of whether AI is enabled — see the AI features
 section for the AI-specific parts: scoring, hot-lead alerts, nurture
-follow-ups).
+follow-ups) — unless a **Lead Assignment Rule** below overrides it for that
+lead's campaign or service.
 
 **Designing a Meta Instant Form so its leads work well in the CRM:** the
 CRM only auto-scores a lead as well as a manually-entered one if the form's
@@ -624,6 +631,31 @@ Facebook Developer App, a new Page, or a rotated token):
    permission) in the server `.env`, then `php artisan config:cache`.
 4. Submit a test lead on the ad form and confirm it appears in **Lead
    Generation** with source **Meta Ads**.
+
+## 16a. Lead Assignment Rules — routing a campaign or service to a specific rep
+By default every new lead auto-assigns to whichever active Sales user
+currently has the fewest open leads. **Lead Assignment Rules** (Admin/
+Manager, sidebar under Admin & Config) let you override that for a specific
+Meta ad campaign or a whole service line — e.g. so a new "CRM & ERP" ad
+campaign always routes to a particular rep instead of drifting to whoever's
+least loaded that week.
+
+- **Match by campaign name** — an exact match against the lead's **Campaign**
+  value (the ad's own name in Meta Ads Manager, or a form's `utm_campaign`).
+  Use this to route one specific ad.
+- **Match by service** — matches any lead tagged with that service, from any
+  source. Use this to route a whole service line rather than one ad — a
+  campaign match always wins over a service match if a lead could match both.
+- Only **active Sales users** can be a rule's target. If a rule's target is
+  later deactivated or moved off Sales, the rule stops applying and new
+  matching leads fall back to the normal least-loaded assignment — it doesn't
+  error or assign to someone ineligible.
+- Only one **active** rule is allowed per campaign/service at a time. To
+  change what a rule matches, delete it and add a new one — only the assigned
+  rep and active status can be edited in place on an existing rule.
+- This only affects **new** leads going forward. To move an already-assigned
+  lead, use Reassign on the lead itself (or the bulk handover on the Users
+  page) — see the Sales guide.
 
 ## 17. AI features (optional)
 Nine AI helpers are built into the CRM, powered by Anthropic's Claude. They are

@@ -22,6 +22,7 @@ use App\Http\Controllers\GoogleConnectionController;
 use App\Http\Controllers\HelpController;
 use App\Http\Controllers\IncentiveController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\LeadAssignmentRuleController;
 use App\Http\Controllers\LeadController;
 use App\Http\Controllers\LeadMergeController;
 use App\Http\Controllers\LeaveRequestController;
@@ -157,6 +158,7 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
         Route::post('leads/merge', [LeadMergeController::class, 'store'])->name('leads.merge.store');
         Route::post('leads/{lead}/convert', [LeadController::class, 'convert'])->name('leads.convert');
         Route::post('leads/{lead}/quotation', [LeadController::class, 'quotation'])->name('leads.quotation');
+        Route::post('leads/{lead}/reassign', [LeadController::class, 'reassign'])->name('leads.reassign');
         Route::resource('leads', LeadController::class)->parameters(['leads' => 'lead']);
     });
 
@@ -469,6 +471,19 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
         Route::post('services', [ServiceController::class, 'store'])->name('services.store');
         Route::put('services/{service}', [ServiceController::class, 'update'])->name('services.update');
         Route::delete('services/{service}', [ServiceController::class, 'destroy'])->name('services.destroy');
+    });
+
+    /*
+     * Lead Assignment Rules — admin/manager config overriding LeadObserver::
+     * autoAssign()'s least-loaded round-robin for a given Meta ad campaign or
+     * service line. Admin/manager via menu.access:lead-assignment-rules
+     * (same no-Policy-class convention as Services/Festivals).
+     */
+    Route::middleware('menu.access:lead-assignment-rules')->group(function () {
+        Route::get('lead-assignment-rules', [LeadAssignmentRuleController::class, 'index'])->name('lead-assignment-rules.index');
+        Route::post('lead-assignment-rules', [LeadAssignmentRuleController::class, 'store'])->name('lead-assignment-rules.store');
+        Route::put('lead-assignment-rules/{leadAssignmentRule}', [LeadAssignmentRuleController::class, 'update'])->name('lead-assignment-rules.update');
+        Route::delete('lead-assignment-rules/{leadAssignmentRule}', [LeadAssignmentRuleController::class, 'destroy'])->name('lead-assignment-rules.destroy');
     });
 
     /*

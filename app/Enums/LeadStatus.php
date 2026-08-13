@@ -27,4 +27,19 @@ enum LeadStatus: string
     {
         return array_column(self::cases(), 'value');
     }
+
+    /**
+     * Status values considered "open" — shared by LeadObserver::autoAssign(),
+     * the bulk lead-handover-on-deactivation flow, and anywhere else that
+     * needs to count leads still actively being worked.
+     *
+     * @return list<string>
+     */
+    public static function openValues(): array
+    {
+        return array_map(
+            fn (self $status) => $status->value,
+            array_values(array_filter(self::cases(), fn (self $status) => $status->isOpen())),
+        );
+    }
 }

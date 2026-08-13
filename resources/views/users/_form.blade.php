@@ -68,12 +68,48 @@
         <x-input-error :messages="$errors->get('device_user_id')" class="mt-1" />
     </div>
 
-    <label class="flex items-center gap-2 text-sm text-gray-700">
-        <input type="checkbox" name="is_active" value="1" class="rounded border-gray-300 text-indigo-600"
-               @checked(old('is_active', $user->is_active ?? true))
-               @disabled($user->exists && $user->id === auth()->id())>
-        Active (can log in)
-    </label>
+    @if ($user->exists && $openLeadsCount > 0)
+        <div x-data="{ activeChecked: {{ old('is_active', $user->is_active) ? 'true' : 'false' }} }">
+            <label class="flex items-center gap-2 text-sm text-gray-700">
+                <input type="checkbox" name="is_active" value="1" x-model="activeChecked" class="rounded border-gray-300 text-indigo-600"
+                       @checked(old('is_active', $user->is_active ?? true))
+                       @disabled($user->exists && $user->id === auth()->id())>
+                Active (can log in)
+            </label>
+
+            <div x-show="!activeChecked" x-cloak class="mt-3 rounded-md border border-amber-200 bg-amber-50 p-4">
+                <p class="text-sm font-medium text-amber-800">{{ $user->name }} currently owns {{ $openLeadsCount }} open lead(s).</p>
+                <p class="mt-1 text-xs text-amber-700">Deactivating won't move them automatically — choose who takes over.</p>
+                <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div>
+                        <x-input-label for="reassign_leads_to" value="Hand over open leads to" />
+                        <select id="reassign_leads_to" name="reassign_leads_to" class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm">
+                            <option value="">— Leave assigned to {{ $user->name }} —</option>
+                            @foreach ($reassignCandidates as $candidate)
+                                <option value="{{ $candidate->id }}" @selected((string) old('reassign_leads_to') === (string) $candidate->id)>{{ $candidate->name }}</option>
+                            @endforeach
+                        </select>
+                        <x-input-error :messages="$errors->get('reassign_leads_to')" class="mt-1" />
+                    </div>
+                    <div>
+                        <x-input-label for="reassign_reason" value="Reason" />
+                        <select id="reassign_reason" name="reassign_reason" class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm">
+                            @foreach (\App\Enums\LeadReassignmentReason::cases() as $reasonOption)
+                                <option value="{{ $reasonOption->value }}" @selected(old('reassign_reason', 'left_company') === $reasonOption->value)>{{ $reasonOption->label() }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @else
+        <label class="flex items-center gap-2 text-sm text-gray-700">
+            <input type="checkbox" name="is_active" value="1" class="rounded border-gray-300 text-indigo-600"
+                   @checked(old('is_active', $user->is_active ?? true))
+                   @disabled($user->exists && $user->id === auth()->id())>
+            Active (can log in)
+        </label>
+    @endif
 
     <div class="flex items-center justify-end gap-3 pt-2">
         <a href="{{ route('users.index') }}" class="text-sm text-gray-500 hover:text-gray-700">Cancel</a>

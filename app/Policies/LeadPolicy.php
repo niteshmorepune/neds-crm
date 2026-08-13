@@ -41,6 +41,20 @@ class LeadPolicy
             || ($user->hasRole(UserRole::Sales) && $lead->owner_id === $user->id);
     }
 
+    /**
+     * Whether this user can reach the "Reassign" action on this lead at all.
+     * Admin/Manager can reassign any lead to anyone (validated by
+     * LeadReassignRequest). Sales can only reassign a lead they currently
+     * own, and only to another active Sales peer (also enforced in
+     * LeadReassignRequest, since the "who can they hand off TO" restriction
+     * depends on the target, not just this lead).
+     */
+    public function reassign(User $user, Lead $lead): bool
+    {
+        return $user->hasRole(UserRole::Admin, UserRole::Manager)
+            || ($user->hasRole(UserRole::Sales) && $lead->owner_id === $user->id);
+    }
+
     public function convert(User $user, Lead $lead): bool
     {
         return $user->hasRole(UserRole::Admin, UserRole::Manager, UserRole::Sales);

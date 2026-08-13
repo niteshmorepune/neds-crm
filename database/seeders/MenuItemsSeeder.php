@@ -70,6 +70,7 @@ class MenuItemsSeeder extends Seeder
             ['key' => 'announcements',    'label' => 'Notice Board',     'group' => MenuGroup::TeamInsights,    'route' => 'announcements.index', 'icon' => 'megaphone', 'roles' => [UserRole::Manager]],
             ['key' => 'team-nudges',      'label' => 'Team Nudges',      'group' => MenuGroup::TeamInsights,    'route' => 'team-nudges.index', 'icon' => 'bell',       'roles' => [UserRole::Manager]],
             ['key' => 'categories',       'label' => 'Services',         'group' => MenuGroup::AdminConfig,     'route' => 'services.index',   'icon' => 'tag',        'roles' => [UserRole::Manager]],
+            ['key' => 'lead-assignment-rules', 'label' => 'Lead Assignment Rules', 'group' => MenuGroup::AdminConfig, 'route' => 'lead-assignment-rules.index', 'icon' => 'funnel', 'roles' => [UserRole::Manager]],
             ['key' => 'festivals',        'label' => 'Festivals',        'group' => MenuGroup::AdminConfig,     'route' => 'festivals.index',  'icon' => 'calendar',   'roles' => [UserRole::Manager]],
             ['key' => 'subscriptions',    'label' => 'Subscriptions',    'group' => MenuGroup::AdminConfig,     'route' => 'subscriptions.index', 'icon' => 'credit-card', 'roles' => []], // admin only
             ['key' => 'expenses',         'label' => 'Expenses',         'group' => MenuGroup::Finance,         'route' => 'expenses.index',   'icon' => 'banknotes',  'roles' => [UserRole::Manager, UserRole::Accounts]],
