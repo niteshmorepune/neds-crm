@@ -175,6 +175,16 @@ You have access to Leads, Deals, Quotations, Invoices, Projects, Tasks, Tickets,
 Clients, Attendance, Calls and Daily Reports so you can monitor and step in
 anywhere. Use the **search bar** to jump to any record.
 
+**Covering someone's leads (a day off, or leaving the team):** on **Lead
+Generation**, filter by **Owner** — a panel appears showing that person's
+open lead count with a one-click **Reassign All** to move every one of
+them to someone else at once, with a reason and a note left on each lead.
+See the Admin guide (Section 16b) for the full walkthrough. The list itself
+also defaults to a **Priority** sort (overdue → due today → Hot-but-
+untouched → everything else) with a "Needs attention today" strip above
+it — same as what Sales/Telecaller see, just showing the whole team's
+picture for you rather than one person's.
+
 **Ticket escalations:** anyone on Support (or Sales, for their own clients)
 can click **🔺 Escalate to managers** on a ticket to flag it for you
 specifically — separate from the automatic SLA-breach email. You get a bell
@@ -625,6 +635,10 @@ As a manager, you receive bell notifications for:
 - 🌴 **Leave request submitted / reviewed** — whenever anyone requests leave,
   you and all other admins/managers are notified with their name and dates.
   You'll also see a banner on your dashboard when there are pending requests.
+- 🚨 **Untouched lead escalation** — if a brand-new lead is still untouched
+  (no note, call, or edit) an hour after it landed with its owner, you're
+  notified — its owner already got their own reminder at 20 minutes. Worth
+  a nudge to the rep, or reassigning it (see below) if they're unavailable.
 
 ## Email alerts
 **Morning digest (9 AM daily)** — your own personalised summary: overdue tasks,

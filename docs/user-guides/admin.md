@@ -584,6 +584,10 @@ needed for any of them:
   — see below for how to design a new ad's Instant Form so its leads score
   and report well, and for the webhook setup steps below if this ever
   needs re-registering (new app, new Page, token rotated).
+  Meta also auto-sends a WhatsApp message on the submitter's behalf right
+  after they submit the form — the CRM recognises this as the same enquiry
+  (matched by phone number) and adds it as a note on the one lead, instead
+  of creating a second lead for the same person.
 
 **All new leads auto-assign** to whichever active Sales user currently has
 the fewest open leads, so nothing sits unowned waiting for someone to notice
@@ -654,8 +658,49 @@ least loaded that week.
   change what a rule matches, delete it and add a new one — only the assigned
   rep and active status can be edited in place on an existing rule.
 - This only affects **new** leads going forward. To move an already-assigned
-  lead, use Reassign on the lead itself (or the bulk handover on the Users
-  page) — see the Sales guide.
+  lead, use Reassign on the lead itself, or **Reassign All** below — see
+  the Sales guide for the single-lead action.
+
+## 16b. Lead Generation productivity — priority sort, Needs Attention, speed-to-lead
+Lead Generation (2026-08-13) got a pass aimed at helping Sales/Telecaller
+close leads faster, and giving you visibility if they don't.
+
+**Priority sort (default):** the list no longer sorts by newest-first —
+it ranks by a composite of AI score, an overdue or due-today follow-up, and
+(for a still-New lead with no follow-up set yet) how long it's sat
+untouched since it came in. An overdue follow-up always outranks
+everything else. Switch to **Newest** via the sort toggle above the list
+if you specifically want chronological order.
+
+**"Needs attention today" strip:** three clickable counts above the list —
+overdue follow-ups, follow-ups due today, and Hot leads (AI score ≥ 70)
+nobody's even set a follow-up on yet. For a Sales viewer this is scoped to
+their own leads (their personal worklist); for Telecaller, Admin, and
+Manager it shows the whole shared picture, matching how those roles
+already see leads. Each count links straight to the filtered list.
+
+**Overdue/Due today badges** now show right on the list, next to the AI
+score badge, so urgency is visible without opening a lead.
+
+**Speed-to-lead reminders:** contacting a lead within minutes rather than
+hours meaningfully improves conversion, so a brand-new lead nobody's
+engaged with (no note, call, or edit) now gets its **owner reminded after
+20 minutes**, and **escalates to you (Admin/Manager) after an hour** if
+it's still untouched — a bell notification either way. Runs automatically
+every 5 minutes (`app:escalate-untouched-leads`); no configuration needed.
+"Engaged with" means any note, logged call, or edit on the lead — adding
+any of those clears it from consideration immediately.
+
+**Reassign All (bulk handover):** filter Lead Generation by **Owner**
+(the filter row) and, if you can reassign (Admin/Manager), a panel appears
+showing how many open leads that person has, with a one-click **Reassign
+All** to move every one of them to someone else at once — e.g. covering a
+colleague's leads for the day. Pick a reason (On leave / Left the company /
+Rebalancing workload / Other); the new owner is notified and a note is left
+on each lead. This is a plain one-time move, not temporary — reassign back
+the same way later, same as the single-lead **Reassign** button (Sales
+guide). This is the same mechanism the Users page's deactivation handover
+(Section 9) uses when a leaving Sales user still owns open leads.
 
 ## 17. AI features (optional)
 Nine AI helpers are built into the CRM, powered by Anthropic's Claude. They are

@@ -35,6 +35,15 @@ telecallers the way they're assigned to Sales reps. Open any lead to:
 - **Update it** — change its status (New → Contacted → Qualified, etc.), add
   a note on what was discussed, set a next follow-up date.
 
+**What to call first:** the list sorts by **Priority** by default (an
+overdue follow-up first, then due today, then a Hot lead nobody's followed
+up on yet, then everything else) — not newest. Switch to **Newest** via
+the toggle above the list if you want plain chronological order. A red
+**Overdue** or amber **Due today** badge shows right on a lead's row. The
+**"Needs attention today"** strip above the list gives one-click counts
+for all three — since your queue is shared, not owned, these cover every
+lead in the system, not just some subset.
+
 You **cannot create a brand-new lead** from scratch, **convert** a lead into
 a client/deal, or **delete** a lead — those stay with Sales/Manager/Admin.
 When a lead is genuinely ready to move forward, hand it to the assigned

@@ -44,6 +44,21 @@ has a **Latest Note** column showing each lead's most recent note (hover
 over a truncated one to read the full text) — no need to open a lead just
 to check what was last said.
 
+**What to work first:** the list sorts by **Priority** by default, not
+newest — an overdue follow-up always comes first, then a follow-up due
+today, then a Hot lead nobody's followed up on yet, then everything else.
+Switch to **Newest** (toggle above the list) if you want plain
+chronological order instead. A red **Overdue** or amber **Due today**
+badge shows right on a lead's row when relevant. Above the list, the
+**"Needs your attention today"** strip gives you three one-click counts —
+overdue, due today, and Hot-but-untouched — scoped to your own leads.
+
+**If you leave a brand-new lead untouched:** the CRM reminds you with a
+bell notification about 20 minutes after a new lead lands with you, if you
+haven't added a note, logged a call, or edited it yet. If it's still
+untouched an hour in, your manager gets notified too — so it's worth a
+quick note or call even just to log "left a voicemail" and clear it.
+
 Arriving here from a **Lead Source Performance** report link (Manager
 guide) automatically filters the list to that exact source and month, so
 the number you clicked and the leads you land on always match.
