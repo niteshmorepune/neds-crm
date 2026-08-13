@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\Lead;
+use App\Support\Phone;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -52,9 +53,8 @@ class SyncLeadToWadeskJob implements ShouldQueue
             return;
         }
 
-        // wadesk.in stores contact phone digits-only, no leading "+" — matches
-        // SendWhatsappHandoffMessageJob's / WhatsappWebhookController's own normalization.
-        $digits = preg_replace('/\D/', '', $lead->phone);
+        // wadesk.in stores contact phone digits-only, no leading "+".
+        $digits = Phone::digits($lead->phone);
 
         try {
             $response = Http::withHeaders(['X-Service-Key' => $serviceKey])

@@ -11,6 +11,7 @@ use App\Jobs\ImportWhatsappTicketMedia;
 use App\Models\Customer;
 use App\Models\Lead;
 use App\Models\Ticket;
+use App\Support\Phone;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -107,10 +108,30 @@ class WhatsappWebhookController extends Controller
      * Lead instead of dropping it. Deduped by conversation_id (mirrors the
      * Ticket dedup above): the first message in a new conversation creates
      * the lead, later messages in the same conversation just add a note.
+     *
+     * Also checked against any OPEN lead with this phone from a DIFFERENT
+     * channel (Lead::findOpenByPhone) — Meta's Lead Ad flow automatically
+     * sends a WhatsApp message on the submitter's behalf right after they
+     * submit the Instant Form, which otherwise lands as a second, separate
+     * lead a few seconds after ImportMetaLead's Meta Ads lead (a real
+     * duplicate-lead pattern found in production 2026-08-13).
      */
     private function handleUnmatchedNumber(array $data): JsonResponse
     {
         $lead = Lead::where('whatsapp_conversation_id', $data['conversation_id'])->first();
+
+        if ($lead === null) {
+            $lead = Lead::findOpenByPhone($data['phone']);
+
+            // Backfill so the NEXT message in this conversation hits the
+            // fast conversation_id check above instead of re-scanning by
+            // phone every time. Only when still unset — a lead already tied
+            // to a different conversation keeps that one untouched (unique
+            // column; this is presumably a second, separate WhatsApp thread).
+            if ($lead !== null && $lead->whatsapp_conversation_id === null) {
+                $lead->update(['whatsapp_conversation_id' => $data['conversation_id']]);
+            }
+        }
 
         if ($lead) {
             if (filled($data['message'] ?? null)) {
@@ -138,12 +159,10 @@ class WhatsappWebhookController extends Controller
 
     private function findCustomer(string $rawPhone): ?Customer
     {
-        // Normalize: digits only (wadesk.in stores without +, e.g. 919028099919)
-        $digits = preg_replace('/\D/', '', $rawPhone);
-        $last10 = strlen($digits) >= 10 ? substr($digits, -10) : $digits;
+        $digits = Phone::digits($rawPhone);
 
         return Customer::where('phone', $digits)->first()
             ?? Customer::where('phone', '+'.$digits)->first()
-            ?? Customer::where('phone', 'LIKE', '%'.$last10)->first();
+            ?? Customer::where('phone', 'LIKE', '%'.Phone::last10($rawPhone))->first();
     }
 }

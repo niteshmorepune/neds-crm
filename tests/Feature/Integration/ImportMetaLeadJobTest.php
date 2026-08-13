@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\LeadSource;
+use App\Enums\LeadStatus;
 use App\Enums\UserRole;
 use App\Jobs\ImportMetaLead;
 use App\Models\Lead;
@@ -286,6 +287,87 @@ it('does not throw when the Graph API is unreachable', function () {
     ImportMetaLead::dispatchSync('lg-1');
 
     expect(Lead::where('meta_leadgen_id', 'lg-1')->exists())->toBeFalse();
+});
+
+it('attaches to an existing open lead with the same phone from a different channel, instead of creating a duplicate', function () {
+    $whatsappLead = Lead::factory()->create([
+        'phone' => '9876543210',
+        'source' => LeadSource::Whatsapp,
+        'service_id' => null,
+        'estimated_value' => null,
+    ]);
+    fakeMetaGraphResponse([
+        ['name' => 'full_name', 'values' => ['Priya Shah']],
+        ['name' => 'phone_number', 'values' => ['9876543210']],
+    ]);
+
+    ImportMetaLead::dispatchSync('lg-1');
+
+    expect(Lead::count())->toBe(1)
+        ->and($whatsappLead->fresh()->meta_leadgen_id)->toBe('lg-1')
+        ->and($whatsappLead->fresh()->source)->toBe(LeadSource::Whatsapp) // attribution unchanged
+        ->and($whatsappLead->notes()->first()->body)->toContain('Also submitted a Meta Ads form');
+});
+
+it('backfills service_id and estimated_value on the matched lead only when it does not already have them', function () {
+    $service = Service::factory()->create(['name' => 'SEO', 'is_active' => true]);
+    $withoutService = Lead::factory()->create(['phone' => '9876543210', 'source' => LeadSource::Whatsapp, 'service_id' => null, 'estimated_value' => null]);
+    fakeMetaGraphResponse([
+        ['name' => 'phone_number', 'values' => ['9876543210']],
+        ['name' => 'which_service', 'values' => ['SEO']],
+        ['name' => 'what_is_your_budget', 'values' => ['25000']],
+    ]);
+
+    ImportMetaLead::dispatchSync('lg-1');
+
+    expect($withoutService->fresh()->service_id)->toBe($service->id)
+        ->and($withoutService->fresh()->estimated_value)->toBe(2500000);
+});
+
+it('does not overwrite an existing lead\'s service_id/estimated_value when matched by phone', function () {
+    $otherService = Service::factory()->create(['name' => 'GMB', 'is_active' => true]);
+    $seoService = Service::factory()->create(['name' => 'SEO', 'is_active' => true]);
+    $alreadyTagged = Lead::factory()->create([
+        'phone' => '9876543210', 'source' => LeadSource::Whatsapp,
+        'service_id' => $otherService->id, 'estimated_value' => 999900,
+    ]);
+    fakeMetaGraphResponse([
+        ['name' => 'phone_number', 'values' => ['9876543210']],
+        ['name' => 'which_service', 'values' => ['SEO']],
+        ['name' => 'what_is_your_budget', 'values' => ['25000']],
+    ]);
+
+    ImportMetaLead::dispatchSync('lg-1');
+
+    expect($alreadyTagged->fresh()->service_id)->toBe($otherService->id)
+        ->and($alreadyTagged->fresh()->service_id)->not->toBe($seoService->id)
+        ->and($alreadyTagged->fresh()->estimated_value)->toBe(999900);
+});
+
+it('does not match a Converted or Lost lead by phone — creates a genuinely new lead instead', function () {
+    Lead::factory()->create(['phone' => '9876543210', 'status' => LeadStatus::Converted]);
+    fakeMetaGraphResponse([
+        ['name' => 'full_name', 'values' => ['Priya Shah']],
+        ['name' => 'phone_number', 'values' => ['9876543210']],
+    ]);
+
+    ImportMetaLead::dispatchSync('lg-1');
+
+    expect(Lead::count())->toBe(2)
+        ->and(Lead::where('meta_leadgen_id', 'lg-1')->exists())->toBeTrue();
+});
+
+it('is idempotent even after matching an existing lead by phone — a redelivered webhook does not add a second note', function () {
+    $whatsappLead = Lead::factory()->create(['phone' => '9876543210', 'source' => LeadSource::Whatsapp]);
+    fakeMetaGraphResponse([
+        ['name' => 'full_name', 'values' => ['Priya Shah']],
+        ['name' => 'phone_number', 'values' => ['9876543210']],
+    ]);
+
+    ImportMetaLead::dispatchSync('lg-1');
+    ImportMetaLead::dispatchSync('lg-1');
+
+    expect($whatsappLead->notes()->count())->toBe(1);
 });
 
 it('auto-assigns and can be scored like any other new lead', function () {

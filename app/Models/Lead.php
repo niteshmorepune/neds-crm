@@ -8,6 +8,7 @@ use App\Enums\LeadStatus;
 use App\Enums\LeadUrgency;
 use App\Models\Concerns\LogsActivity;
 use App\Observers\LeadObserver;
+use App\Support\Phone;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -129,5 +130,30 @@ class Lead extends Model
     public function scopeVisibleTo(Builder $query, User $user): Builder
     {
         return $query;
+    }
+
+    /**
+     * Finds an existing OPEN lead with this phone number, regardless of
+     * source — used by ImportMetaLead and WhatsappWebhookController to stop
+     * the same real-world enquiry (e.g. Meta's automatic "message us on
+     * WhatsApp" follow-up after an Instant Form submit) from creating two
+     * separate leads a few seconds apart. Restricted to open leads: a fresh
+     * submission against an already-Converted/Lost lead reads as a genuine
+     * new enquiry, not a duplicate of an old closed one.
+     */
+    public static function findOpenByPhone(string $rawPhone): ?self
+    {
+        $digits = Phone::digits($rawPhone);
+
+        if ($digits === '') {
+            return null;
+        }
+
+        return static::whereIn('status', LeadStatus::openValues())
+            ->where(fn (Builder $q) => $q->where('phone', $digits)
+                ->orWhere('phone', '+'.$digits)
+                ->orWhere('phone', 'LIKE', '%'.Phone::last10($rawPhone)))
+            ->latest()
+            ->first();
     }
 }

@@ -38,6 +38,12 @@ use Illuminate\Support\Facades\Log;
  * service_id, and a "budget"-keyed answer with a parseable number sets
  * estimated_value. Anything that doesn't match either is preserved as a
  * note, same as before. See matchServiceId()/matchBudget().
+ *
+ * Also cross-checked against Lead::findOpenByPhone() before creating a new
+ * row — Meta's Lead Ad flow auto-sends a WhatsApp message on the
+ * submitter's behalf right after the form submit, which
+ * WhatsappWebhookController would otherwise land as a second, separate lead
+ * a few seconds apart from this one. See attachToExistingLead().
  */
 class ImportMetaLead implements ShouldQueue
 {
@@ -98,6 +104,15 @@ class ImportMetaLead implements ShouldQueue
 
         $adId = $response->json('ad_id');
         $formId = $response->json('form_id');
+        $campaignLabel = $this->fetchCampaignLabel($version, $accessToken, $adId, $formId) ?? $adId ?? $formId;
+
+        $existingLead = filled($fields['phone']) ? Lead::findOpenByPhone($fields['phone']) : null;
+
+        if ($existingLead !== null) {
+            $this->attachToExistingLead($existingLead, $campaignLabel, $serviceId, $estimatedValue, $extra);
+
+            return;
+        }
 
         $lead = Lead::create([
             'name' => $fields['name'] ?: 'Facebook Lead',
@@ -112,13 +127,53 @@ class ImportMetaLead implements ShouldQueue
             'meta_leadgen_id' => $this->leadgenId,
             'utm_source' => 'meta',
             'utm_medium' => 'paid_social',
-            'utm_campaign' => $this->fetchCampaignLabel($version, $accessToken, $adId, $formId) ?? $adId ?? $formId,
+            'utm_campaign' => $campaignLabel,
         ]);
 
         if ($extra !== []) {
             $body = collect($extra)->map(fn ($v, $k) => "{$k}: {$v}")->implode("\n");
             $lead->notes()->create(['user_id' => null, 'body' => "Additional form answers:\n{$body}"]);
         }
+    }
+
+    /**
+     * A different channel already captured this same real-world enquiry as
+     * an open lead (most commonly: Meta's Lead Ad flow auto-sends a WhatsApp
+     * message right after the Instant Form submit, which
+     * WhatsappWebhookController lands as a lead a few seconds before this
+     * job runs) — attach this submission as a note instead of creating a
+     * second lead. Attribution (source/utm_*) deliberately stays with
+     * whichever channel arrived first, so Lead Source Performance reporting
+     * doesn't flip-flop on which duplicate happened to land second; only
+     * service_id/estimated_value are backfilled, and only when the existing
+     * lead doesn't already have them (a WhatsApp-first lead has no way to
+     * capture either on its own, so this is genuinely new signal, not an
+     * overwrite).
+     *
+     * @param  array<string, string>  $extra
+     */
+    private function attachToExistingLead(Lead $lead, ?string $campaignLabel, ?int $serviceId, ?int $estimatedValue, array $extra): void
+    {
+        if ($lead->meta_leadgen_id === null) {
+            $lead->update(['meta_leadgen_id' => $this->leadgenId]);
+        }
+
+        $fill = array_filter([
+            'service_id' => $lead->service_id === null ? $serviceId : null,
+            'estimated_value' => $lead->estimated_value === null ? $estimatedValue : null,
+        ], fn ($v) => $v !== null);
+
+        if ($fill !== []) {
+            $lead->update($fill);
+        }
+
+        $body = 'Also submitted a Meta Ads form'.($campaignLabel ? " (Campaign: {$campaignLabel})" : '').'.';
+
+        if ($extra !== []) {
+            $body .= "\n\nAdditional form answers:\n".collect($extra)->map(fn ($v, $k) => "{$k}: {$v}")->implode("\n");
+        }
+
+        $lead->notes()->create(['user_id' => null, 'body' => $body]);
     }
 
     /**

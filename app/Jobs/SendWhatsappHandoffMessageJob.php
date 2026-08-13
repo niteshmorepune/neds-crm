@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\Customer;
+use App\Support\Phone;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -51,9 +52,8 @@ class SendWhatsappHandoffMessageJob implements ShouldQueue
             return;
         }
 
-        // wadesk.in stores contact phone digits-only, no leading "+" —
-        // matches WhatsappWebhookController::findCustomer's own normalization.
-        $digits = preg_replace('/\D/', '', $customer->phone);
+        // wadesk.in stores contact phone digits-only, no leading "+".
+        $digits = Phone::digits($customer->phone);
 
         try {
             $response = Http::withHeaders(['X-Service-Key' => $serviceKey])

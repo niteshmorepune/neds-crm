@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\LeadSource;
+use App\Enums\LeadStatus;
 use App\Enums\UserRole;
 use App\Jobs\ImportWhatsappTicketMedia;
 use App\Models\Customer;
@@ -128,6 +129,40 @@ it('auto-assigns a WhatsApp-sourced lead the same way as any other new lead', fu
 
     expect(Lead::where('whatsapp_conversation_id', 'conv_autoassign')->first()->owner_id)
         ->toBe($sales->id);
+});
+
+it('attaches a WhatsApp message to an existing open lead with the same phone from a different channel, instead of creating a duplicate', function () {
+    $metaLead = Lead::factory()->create([
+        'phone' => '919999999999',
+        'source' => LeadSource::MetaAds,
+        'whatsapp_conversation_id' => null,
+    ]);
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '919999999999',
+        'message' => 'Hello! I filled out your form and would like to know more.',
+        'conversation_id' => 'conv_meta_followup',
+    ], ['Authorization' => 'Bearer test-wa-token'])
+        ->assertOk()
+        ->assertJson(['status' => 'lead_note_added', 'lead_id' => $metaLead->id]);
+
+    expect(Lead::count())->toBe(1)
+        ->and($metaLead->fresh()->whatsapp_conversation_id)->toBe('conv_meta_followup')
+        ->and($metaLead->fresh()->source)->toBe(LeadSource::MetaAds) // attribution unchanged
+        ->and($metaLead->notes()->first()->body)->toContain('Hello! I filled out your form');
+});
+
+it('does not match a Converted or Lost lead by phone — creates a genuinely new lead instead', function () {
+    Lead::factory()->create(['phone' => '919999999999', 'status' => LeadStatus::Converted]);
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '919999999999',
+        'message' => 'Hi, interested again',
+        'conversation_id' => 'conv_repeat_customer',
+    ], ['Authorization' => 'Bearer test-wa-token'])
+        ->assertJson(['status' => 'lead_created']);
+
+    expect(Lead::count())->toBe(2);
 });
 
 it('rejects requests without the correct token', function () {
