@@ -4,6 +4,7 @@ use App\Enums\LeadSource;
 use App\Enums\LeadStatus;
 use App\Enums\UserRole;
 use App\Jobs\ImportWhatsappTicketMedia;
+use App\Models\Contact;
 use App\Models\Customer;
 use App\Models\Lead;
 use App\Models\Ticket;
@@ -46,6 +47,42 @@ it('matches customer by last 10 digits when CRM stores local number', function (
         ->assertJson(['status' => 'created']);
 
     expect(Ticket::where('whatsapp_conversation_id', 'conv_local_match')->exists())->toBeTrue();
+});
+
+it('creates a ticket when the message comes from a client\'s alternate_phone, not their primary phone', function () {
+    // Real incident (2026-08-13): "Top Fruit Exports" messaged from a
+    // second number recorded only as alternate_phone — this lookup didn't
+    // check it yet, so the message wrongly created a Lead instead of a Ticket.
+    $customer = Customer::factory()->create(['phone' => '9604454564', 'alternate_phone' => '+919270279886']);
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '919270279886',
+        'message' => 'Hello, following up on our order',
+        'conversation_id' => 'conv_alt_phone',
+    ], ['Authorization' => 'Bearer test-wa-token'])
+        ->assertOk()
+        ->assertJson(['status' => 'created']);
+
+    $ticket = Ticket::where('whatsapp_conversation_id', 'conv_alt_phone')->first();
+    expect($ticket)->not->toBeNull()
+        ->and($ticket->customer_id)->toBe($customer->id);
+});
+
+it('creates a ticket when the message comes from an individual Contact\'s phone, not the company-level Customer phone', function () {
+    $customer = Customer::factory()->create(['phone' => '9604454564', 'alternate_phone' => null]);
+    Contact::factory()->for($customer)->create(['phone' => '9270279886']);
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '919270279886',
+        'message' => 'Hi, this is Rakesh from the office',
+        'conversation_id' => 'conv_contact_phone',
+    ], ['Authorization' => 'Bearer test-wa-token'])
+        ->assertOk()
+        ->assertJson(['status' => 'created']);
+
+    $ticket = Ticket::where('whatsapp_conversation_id', 'conv_contact_phone')->first();
+    expect($ticket)->not->toBeNull()
+        ->and($ticket->customer_id)->toBe($customer->id);
 });
 
 it('deduplicates — second call for same conversation_id returns duplicate status', function () {

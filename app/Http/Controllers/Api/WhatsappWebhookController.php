@@ -8,6 +8,7 @@ use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
 use App\Http\Controllers\Controller;
 use App\Jobs\ImportWhatsappTicketMedia;
+use App\Models\Contact;
 use App\Models\Customer;
 use App\Models\Lead;
 use App\Models\Ticket;
@@ -157,12 +158,27 @@ class WhatsappWebhookController extends Controller
         return response()->json(['status' => 'lead_created', 'lead_id' => $lead->id]);
     }
 
+    /**
+     * Checks every place a client's number can legitimately be recorded:
+     * the Customer's own phone, their alternate_phone (2026-08-13 — real
+     * incident: a client messaged from a second number that was only ever
+     * recorded as alternate_phone, and this lookup didn't check it yet, so
+     * the message wrongly created a Lead instead of a Ticket), and finally
+     * an individual Contact's phone (a person at that company, distinct
+     * from the company-level number).
+     */
     private function findCustomer(string $rawPhone): ?Customer
     {
         $digits = Phone::digits($rawPhone);
+        $last10 = Phone::last10($rawPhone);
 
-        return Customer::where('phone', $digits)->first()
+        $customer = Customer::where('phone', $digits)->first()
             ?? Customer::where('phone', '+'.$digits)->first()
-            ?? Customer::where('phone', 'LIKE', '%'.Phone::last10($rawPhone))->first();
+            ?? Customer::where('phone', 'LIKE', '%'.$last10)->first()
+            ?? Customer::where('alternate_phone', $digits)->first()
+            ?? Customer::where('alternate_phone', '+'.$digits)->first()
+            ?? Customer::where('alternate_phone', 'LIKE', '%'.$last10)->first();
+
+        return $customer ?? Contact::where('phone', 'LIKE', '%'.$last10)->first()?->customer;
     }
 }
