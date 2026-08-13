@@ -27,6 +27,7 @@ class Lead extends Model
         'name',
         'company',
         'phone',
+        'alternate_phone',
         'email',
         'source',
         'service_id',

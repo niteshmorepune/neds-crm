@@ -66,6 +66,10 @@ the number you clicked and the leads you land on always match.
 1. **Lead Generation → Add Lead**.
 2. Fill in name, company, phone/email, **source**, the **service** they're
    interested in, and an **estimated value**. Assign an **owner** (usually you).
+   An optional **Alternate phone** field is there too, for a second number
+   (e.g. WhatsApp vs. office line) — it's shown on the lead's page but isn't
+   used for anything automatic (duplicate-detection only checks the main
+   Phone field).
 3. Save. A **score badge** (0–100) appears on the leads list within a minute —
    higher means more promising. Hover over it to see the one-line reason
    (e.g. "Company provided, specific service request, phone available — follow

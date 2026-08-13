@@ -20,6 +20,7 @@ class LeadStoreRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'company' => ['nullable', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:20'],
+            'alternate_phone' => ['nullable', 'string', 'max:20'],
             'email' => ['nullable', 'email', 'max:255'],
             'source' => ['required', Rule::enum(LeadSource::class)],
             'service_id' => ['nullable', Rule::exists('services', 'id')],

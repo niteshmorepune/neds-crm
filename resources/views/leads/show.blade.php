@@ -34,6 +34,9 @@
                         <div><span class="text-gray-400">Status:</span> {{ $lead->status->label() }}</div>
                         <div><span class="text-gray-400">Email:</span> {{ $lead->email ?? '—' }}</div>
                         <div><span class="text-gray-400">Phone:</span> {{ $lead->phone ?? '—' }}</div>
+                        @if ($lead->alternate_phone)
+                            <div><span class="text-gray-400">Alternate phone:</span> {{ $lead->alternate_phone }}</div>
+                        @endif
                         <div><span class="text-gray-400">Source:</span> {{ $lead->source->label() }}</div>
                         @if ($lead->utm_source || $lead->utm_medium || $lead->utm_campaign)
                             <div><span class="text-gray-400">Campaign:</span>
@@ -126,6 +129,26 @@
         <div class="rounded-lg bg-white p-6 shadow-sm">
             <h2 class="mb-4 text-base font-semibold text-gray-900">Notes</h2>
             <livewire:record-notes :record="$lead" :can-manage="$canManage" />
+        </div>
+
+        <div class="rounded-lg bg-white p-6 shadow-sm">
+            <div class="mb-4 flex items-center justify-between">
+                <h2 class="text-base font-semibold text-gray-900">Calls</h2>
+                <a href="{{ route('calls.create', ['lead_id' => $lead->id]) }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">+ Log a call</a>
+            </div>
+            <ul class="divide-y divide-gray-100 text-sm">
+                @forelse ($lead->callLogs as $call)
+                    <li class="py-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-700">{{ $call->direction->label() }} · {{ $call->outcome->label() }}{{ $call->duration_minutes ? " · {$call->duration_minutes}m" : '' }}</span>
+                            <span class="text-xs text-gray-400">{{ $call->called_at->timezone(config('app.display_timezone'))->format('d M, g:i A') }} · {{ $call->user?->name }}</span>
+                        </div>
+                        @if ($call->notes)<p class="mt-1 text-gray-500">{{ $call->notes }}</p>@endif
+                    </li>
+                @empty
+                    <li class="py-2 text-gray-400">No calls logged.</li>
+                @endforelse
+            </ul>
         </div>
 
         <div class="rounded-lg bg-white p-6 shadow-sm">

@@ -204,7 +204,7 @@ class LeadController extends Controller
     {
         $this->authorize('view', $lead);
 
-        $lead->load(['owner', 'service', 'convertedCustomer', 'convertedDeal']);
+        $lead->load(['owner', 'service', 'convertedCustomer', 'convertedDeal', 'callLogs.user']);
 
         $canReassign = $this->user()->can('reassign', $lead);
 

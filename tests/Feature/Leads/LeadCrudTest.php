@@ -33,6 +33,58 @@ it('creates a lead and converts the rupee value to paise', function () {
         ->and($lead->status)->toBe(LeadStatus::New);
 });
 
+it('saves and displays an alternate phone number', function () {
+    $this->actingAs($this->admin)->post(route('leads.store'), [
+        'name' => 'Priya Shah',
+        'phone' => '9876543210',
+        'alternate_phone' => '9123456780',
+        'source' => LeadSource::Referral->value,
+        'status' => LeadStatus::New->value,
+    ])->assertRedirect();
+
+    $lead = Lead::firstWhere('name', 'Priya Shah');
+    expect($lead->alternate_phone)->toBe('9123456780');
+
+    $this->actingAs($this->admin)->get(route('leads.show', $lead))
+        ->assertOk()
+        ->assertSee('9123456780');
+});
+
+it('does not show an Alternate phone row when none is set', function () {
+    $lead = Lead::factory()->create(['alternate_phone' => null]);
+
+    $this->actingAs($this->admin)->get(route('leads.show', $lead))
+        ->assertOk()
+        ->assertDontSee('Alternate phone');
+});
+
+it('shows a logged call on the lead show page', function () {
+    $lead = Lead::factory()->create();
+
+    $this->actingAs($this->admin)->post(route('calls.store'), [
+        'lead_id' => $lead->id,
+        'direction' => 'outgoing',
+        'outcome' => 'connected',
+        'duration_minutes' => 5,
+        'called_at' => now()->format('Y-m-d H:i:s'),
+        'notes' => 'Discussed pricing, will follow up Friday.',
+    ])->assertRedirect(route('leads.show', $lead));
+
+    $this->actingAs($this->admin)->get(route('leads.show', $lead))
+        ->assertOk()
+        ->assertSee('Discussed pricing, will follow up Friday.')
+        ->assertSee('Outgoing')
+        ->assertSee('Connected');
+});
+
+it('shows "No calls logged" on a lead with no call history', function () {
+    $lead = Lead::factory()->create();
+
+    $this->actingAs($this->admin)->get(route('leads.show', $lead))
+        ->assertOk()
+        ->assertSee('No calls logged');
+});
+
 it('filters leads to those with a due follow-up via the follow_up_due flag', function () {
     Lead::factory()->dueFollowUp()->create(['name' => 'Overdue follow-up']);
     Lead::factory()->create(['name' => 'No follow-up set', 'next_follow_up_at' => null]);

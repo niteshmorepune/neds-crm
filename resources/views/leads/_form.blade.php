@@ -27,6 +27,12 @@
     </div>
 
     <div>
+        <x-input-label for="alternate_phone" value="Alternate phone" />
+        <x-text-input id="alternate_phone" name="alternate_phone" type="text" class="mt-1 block w-full" :value="old('alternate_phone', $lead->alternate_phone)" />
+        <x-input-error :messages="$errors->get('alternate_phone')" class="mt-1" />
+    </div>
+
+    <div>
         <x-input-label for="source" value="Source *" />
         <select id="source" name="source" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
             @foreach ($sources as $source)
