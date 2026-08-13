@@ -68,6 +68,8 @@ class Lead extends Model
             'ai_scored_at' => 'datetime',
             'ai_budget_band' => LeadBudgetBand::class,
             'ai_urgency' => LeadUrgency::class,
+            'owner_reminder_sent_at' => 'datetime',
+            'manager_escalated_at' => 'datetime',
         ];
     }
 
@@ -76,6 +78,55 @@ class Lead extends Model
     {
         return $this->ai_score !== null
             && $this->ai_score >= config('services.anthropic.hot_lead_threshold', 70);
+    }
+
+    public function isFollowUpOverdue(): bool
+    {
+        return $this->status->isOpen()
+            && $this->next_follow_up_at !== null
+            && $this->next_follow_up_at->isPast();
+    }
+
+    public function isFollowUpDueToday(): bool
+    {
+        return $this->status->isOpen()
+            && $this->next_follow_up_at !== null
+            && $this->next_follow_up_at->isToday()
+            && $this->next_follow_up_at->isFuture();
+    }
+
+    /**
+     * Composite "what needs my attention" ranking for the Lead Generation
+     * list's default Priority sort — computed in PHP (not raw SQL) so it
+     * stays portable across the MySQL/SQLite split this app already has
+     * between production and the test suite. AI score is the base signal;
+     * an overdue follow-up outweighs everything (someone is waiting on a
+     * promise), a follow-up due today matters less but still more than raw
+     * score, and a still-New lead with no follow-up set yet accrues urgency
+     * the longer it's sat untouched since creation (capped at 10 days so an
+     * ancient, abandoned lead doesn't permanently dominate the top of the list).
+     */
+    public function priorityScore(): int
+    {
+        $score = $this->ai_score ?? 0;
+
+        if (! $this->status->isOpen()) {
+            return $score;
+        }
+
+        if ($this->isFollowUpOverdue()) {
+            return $score + 100;
+        }
+
+        if ($this->isFollowUpDueToday()) {
+            return $score + 50;
+        }
+
+        if ($this->next_follow_up_at === null && $this->status === LeadStatus::New) {
+            $score += min($this->created_at->diffInDays(now()), 10) * 3;
+        }
+
+        return $score;
     }
 
     public function service(): BelongsTo

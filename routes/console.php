@@ -66,6 +66,11 @@ Schedule::command('app:send-call-followup-reminders')->everyFiveMinutes();
 // "Follow-up Reminder" widget (App\Models\FollowUpReminder).
 Schedule::command('app:send-dashboard-followup-reminders')->everyFiveMinutes();
 
+// Speed-to-lead: reminds an owner about a brand-new lead nobody's touched
+// yet (20 min), escalates to Admin/Manager if it's still untouched an hour
+// in. Checked every 5 minutes so reminders land close to the real threshold.
+Schedule::command('app:escalate-untouched-leads')->everyFiveMinutes();
+
 // Ticket SLA breach escalation — check hourly during the working day.
 Schedule::command('app:check-ticket-sla')->hourly();
 

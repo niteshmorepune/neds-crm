@@ -19,6 +19,7 @@ use App\Support\Money;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 
@@ -33,7 +34,7 @@ class LeadController extends Controller
         // try to parse the raw, possibly-malformed request value.
         $month = $this->validMonth($request);
 
-        $leads = Lead::query()
+        $query = Lead::query()
             ->visibleTo($request->user())
             ->with(['owner', 'service', 'latestNote'])
             ->when($request->string('search')->trim()->value(), function ($query, $search) {
@@ -46,25 +47,49 @@ class LeadController extends Controller
             ->when($request->filled('service_id'), fn ($q) => $q->where('service_id', $request->integer('service_id')))
             ->when($request->filled('owner_id'), fn ($q) => $q->where('owner_id', $request->integer('owner_id')))
             // Mirrors DashboardMetrics::salesStats()'s 'followups_due' query
-            // exactly, for the Sales dashboard's "Follow-ups due" drill-down.
+            // exactly, for the Sales dashboard's "Follow-ups due" drill-down
+            // AND this page's own "Needs attention" strip (kept as the same
+            // param rather than folded into `attention` below, so the
+            // existing dashboard link never has to change).
             ->when($request->boolean('follow_up_due'), fn ($q) => $q->where('status', '!=', LeadStatus::Converted->value)
                 ->whereNotNull('next_follow_up_at')
                 ->where('next_follow_up_at', '<=', now()))
+            ->when($request->input('attention') === 'due_today', fn ($q) => $q->whereIn('status', LeadStatus::openValues())
+                ->whereNotNull('next_follow_up_at')
+                ->whereDate('next_follow_up_at', today())
+                ->where('next_follow_up_at', '>', now()))
+            ->when($request->input('attention') === 'hot_untouched', fn ($q) => $q->where('status', LeadStatus::New->value)
+                ->whereNull('next_follow_up_at')
+                ->where('ai_score', '>=', config('services.anthropic.hot_lead_threshold', 70)))
             ->when($month, function ($q) use ($month) {
                 [$year, $monthNum] = explode('-', $month);
                 $q->whereYear('created_at', $year)->whereMonth('created_at', $monthNum);
-            })
-            ->latest()
-            ->paginate(15)
-            ->withQueryString();
+            });
+
+        $sort = $request->input('sort') === 'newest' ? 'newest' : 'priority';
+
+        if ($sort === 'newest') {
+            $leads = $query->latest()->paginate(15)->withQueryString();
+        } else {
+            // Priority can't be expressed as portable SQL across this app's
+            // MySQL-in-production/SQLite-in-tests split (Lead::priorityScore()
+            // uses Carbon, not raw date functions) — fine at this app's scale
+            // (low hundreds of leads), so sort/paginate in PHP instead.
+            $sorted = $query->get()->sortByDesc(fn (Lead $lead) => $lead->priorityScore())->values();
+            $page = max((int) $request->input('page', 1), 1);
+            $leads = (new LengthAwarePaginator($sorted->forPage($page, 15), $sorted->count(), 15, $page, ['path' => $request->url()]))
+                ->withQueryString();
+        }
 
         $canBulkReassign = $request->user()->can('bulkReassign', Lead::class);
         $filterOwnerId = $request->filled('owner_id') ? $request->integer('owner_id') : null;
 
         return view('leads.index', $this->formData() + [
             'leads' => $leads,
-            'filters' => $request->only(['search', 'source', 'status', 'service_id', 'owner_id', 'follow_up_due']) + ['month' => $month],
+            'filters' => $request->only(['search', 'source', 'status', 'service_id', 'owner_id', 'follow_up_due', 'attention', 'sort']) + ['month' => $month],
+            'sort' => $sort,
             'statusCounts' => $this->statusCounts($request),
+            'attentionCounts' => $this->attentionCounts($request),
             'canBulkReassign' => $canBulkReassign,
             'filterOwner' => $filterOwnerId ? User::find($filterOwnerId) : null,
             'bulkReassignOpenCount' => ($canBulkReassign && $filterOwnerId)
@@ -75,6 +100,38 @@ class LeadController extends Controller
                 : new Collection,
             'reassignReasons' => LeadReassignmentReason::cases(),
         ]);
+    }
+
+    /**
+     * "Needs attention today" strip counts — deliberately ignores the ad-hoc
+     * search/source/service filters, same philosophy as statusCounts(), so
+     * the strip stays a stable prompt rather than echoing whatever the list
+     * happens to be filtered to. Scoped to the viewer's own leads when their
+     * PRIMARY role is Sales (this is "my queue, what do I work today"); left
+     * unscoped for Telecaller (shared calling queue, not an owned pipeline —
+     * same distinction LeadPolicy already draws) and for Admin/Manager
+     * (oversight, not personal worklist).
+     *
+     * @return array{overdue: int, due_today: int, hot_untouched: int, scoped_to_own: bool}
+     */
+    private function attentionCounts(Request $request): array
+    {
+        $user = $request->user();
+        $scopedToOwn = $user->role === UserRole::Sales;
+
+        $base = fn () => Lead::query()->visibleTo($user)->when($scopedToOwn, fn ($q) => $q->where('owner_id', $user->id));
+
+        return [
+            'overdue' => (int) $base()->where('status', '!=', LeadStatus::Converted->value)
+                ->whereNotNull('next_follow_up_at')->where('next_follow_up_at', '<=', now())->count(),
+            'due_today' => (int) $base()->whereIn('status', LeadStatus::openValues())
+                ->whereNotNull('next_follow_up_at')->whereDate('next_follow_up_at', today())
+                ->where('next_follow_up_at', '>', now())->count(),
+            'hot_untouched' => (int) $base()->where('status', LeadStatus::New->value)
+                ->whereNull('next_follow_up_at')
+                ->where('ai_score', '>=', config('services.anthropic.hot_lead_threshold', 70))->count(),
+            'scoped_to_own' => $scopedToOwn,
+        ];
     }
 
     /**

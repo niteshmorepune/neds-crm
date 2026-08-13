@@ -61,6 +61,8 @@
                             @php($typeIcon = match ($type) {
                                 'new_lead'                    => '🟢',
                                 'lead_reassigned'              => '🔄',
+                                'lead_owner_reminder'          => '⏱️',
+                                'lead_escalated_untouched'     => '🚨',
                                 'hot_lead'                    => '🔥',
                                 'new_quotation'               => '📄',
                                 'deal_won'                    => '🏆',

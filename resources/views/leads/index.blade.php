@@ -40,6 +40,27 @@
             </div>
         </div>
 
+        <div class="rounded-lg border border-amber-200 bg-amber-50 p-4">
+            <p class="mb-2 text-xs font-medium uppercase tracking-wide text-amber-700">
+                {{ $attentionCounts['scoped_to_own'] ? 'Needs your attention today' : 'Needs attention today' }}
+            </p>
+            <div class="flex flex-wrap gap-3">
+                @php($ownerScope = $attentionCounts['scoped_to_own'] ? ['owner_id' => auth()->id()] : [])
+                <a href="{{ route('leads.index', array_merge($ownerScope, ['follow_up_due' => 1])) }}"
+                   class="rounded-md border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50">
+                    {{ $attentionCounts['overdue'] }} overdue follow-up{{ $attentionCounts['overdue'] === 1 ? '' : 's' }}
+                </a>
+                <a href="{{ route('leads.index', array_merge($ownerScope, ['attention' => 'due_today'])) }}"
+                   class="rounded-md border border-amber-200 bg-white px-3 py-2 text-sm font-medium text-amber-700 hover:bg-amber-100">
+                    {{ $attentionCounts['due_today'] }} due today
+                </a>
+                <a href="{{ route('leads.index', array_merge($ownerScope, ['attention' => 'hot_untouched'])) }}"
+                   class="rounded-md border border-orange-200 bg-white px-3 py-2 text-sm font-medium text-orange-700 hover:bg-orange-50">
+                    🔥 {{ $attentionCounts['hot_untouched'] }} hot, not yet followed up
+                </a>
+            </div>
+        </div>
+
         <div class="flex flex-wrap items-center justify-between gap-3">
             <form method="GET" class="flex flex-wrap items-center gap-2">
                 <input type="text" name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Search name, company, email"
@@ -71,9 +92,19 @@
                 <button type="submit" class="rounded-md bg-gray-800 px-3 py-2 text-sm font-medium text-white hover:bg-gray-700">Filter</button>
             </form>
 
-            @can('create', \App\Models\Lead::class)
-                <a href="{{ route('leads.create') }}" class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">Add Lead</a>
-            @endcan
+            <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2 text-sm">
+                    <span class="text-gray-400">Sort:</span>
+                    <a href="{{ route('leads.index', array_merge(request()->except(['sort', 'page']), ['sort' => 'priority'])) }}"
+                       class="{{ $sort === 'priority' ? 'font-semibold text-indigo-600' : 'text-gray-500 hover:text-gray-700' }}">Priority</a>
+                    <span class="text-gray-300">·</span>
+                    <a href="{{ route('leads.index', array_merge(request()->except(['sort', 'page']), ['sort' => 'newest'])) }}"
+                       class="{{ $sort === 'newest' ? 'font-semibold text-indigo-600' : 'text-gray-500 hover:text-gray-700' }}">Newest</a>
+                </div>
+                @can('create', \App\Models\Lead::class)
+                    <a href="{{ route('leads.create') }}" class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">Add Lead</a>
+                @endcan
+            </div>
         </div>
 
         @if ($canBulkReassign && $filterOwner)
@@ -146,6 +177,11 @@
                                 <div class="flex items-center gap-2">
                                     <a href="{{ route('leads.show', $lead) }}" class="font-medium text-indigo-600 hover:underline">{{ $lead->name }}</a>
                                     <x-lead-score :lead="$lead" />
+                                    @if ($lead->isFollowUpOverdue())
+                                        <span class="inline-flex rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">Overdue</span>
+                                    @elseif ($lead->isFollowUpDueToday())
+                                        <span class="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">Due today</span>
+                                    @endif
                                 </div>
                                 <div class="text-xs text-gray-400">{{ $lead->company ?: '—' }}</div>
                             </td>
