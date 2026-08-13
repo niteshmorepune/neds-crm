@@ -899,3 +899,77 @@ Record every "we chose X because Y" here — this is the project's memory.
   Keep the body a single flowing paragraph (no bullets/line breaks — the
   `<x-announcement-banner>` component renders `body` via plain `{{ }}`
   escaping, so manual line breaks collapse visually into one run-on line).
+- **2026-08-13 — Lead Assignment Rules + Reassign action + deactivation
+  handover, one combined milestone.** Originated from the owner noticing
+  Kiran's leads were visible to other Sales reps — investigated first, not
+  assumed a bug: `Lead::scopeVisibleTo()`/`LeadPolicy::view()` deliberately
+  let every role see every lead (documented, "Keep in sync" comment already
+  present) — a shared-visibility design, not a leak. The real ask underneath
+  was that all new leads (including an upcoming "CRM & ERP" Meta ad) only
+  ever route via `LeadObserver::autoAssign()`'s least-loaded round-robin,
+  with zero way to pin a campaign or service line to a specific rep, plus a
+  separate ask for reps to hand off their own leads when someone's on leave
+  or has left. Confirmed 3 design decisions with the owner via
+  AskUserQuestion before building: rules match on **both** campaign name and
+  service (campaign taking priority when both could apply to the same
+  lead — durable against future campaign renames since a service rule
+  doesn't need re-creating every ad version, while a campaign rule still
+  allows one-ad-specific targeting); "CRM & ERP" folds into the existing
+  **Software Development** service rather than a new 9th service line (no
+  schema/reporting change needed for a first campaign); and to build all
+  three pieces (rules, reassign, deactivation handover) as one PR.
+  New `lead_assignment_rules` table (`utm_campaign` XOR `service_id`,
+  `assigned_user_id`, `active` — exactly one of the two match columns per
+  row, enforced in `LeadAssignmentRuleRequest`, not the schema).
+  `LeadObserver::autoAssign()` now checks `resolveRuleAssignee()` (campaign
+  match, then service match) before its `resolveLeastLoadedSales()`
+  fallback (same query, just extracted) — and **re-checks the rule's target
+  is still an active Sales user at match time**, so a rule whose target was
+  later deactivated or role-changed silently falls through to round-robin
+  instead of assigning to someone ineligible, mirroring the existing
+  active-Sales-only constraint rather than only enforcing it at rule-creation
+  time. New Admin/Manager page (`lead-assignment-rules`, sidebar under Admin
+  & Config, no dedicated Policy class — same no-Policy convention as
+  Services/Festivals) follows Services' own inline-edit-table shape; per the
+  Payment inline-edit precedent (date/mode/reference editable in place,
+  amount needs delete-recreate), only a rule's assigned rep/active status
+  are editable in place — changing what it *matches* needs delete-and-recreate,
+  avoiding a much fussier per-row Alpine toggle for a rarely-changed field.
+  **Real bug caught by a test before shipping**: the update route's
+  uniqueness check originally read `$this->route('lead_assignment_rule')`
+  (snake_case) while the route itself binds `{leadAssignmentRule}`
+  (camelCase, matching this app's existing multi-word-model convention, e.g.
+  `{leaveRequest}`) — the mismatch meant `route()` always returned null, so
+  saving an existing active rule's assigned rep would false-positive against
+  its own uniqueness check. Caught by adding a dedicated in-place-update
+  test, not by inspection.
+  New `App\Actions\ReassignLead` (single mechanism used by both the ad-hoc
+  action and the bulk handover, so they log/notify identically). The
+  reassignment reason is **not** a new column on `leads` — it's appended as
+  a visible Note on the lead's existing timeline, since nothing in the app
+  currently surfaces the `activities` audit trail in any view, and the
+  point of capturing a reason is for the team to actually see it, not just
+  have it exist in an unreachable table. `LeadPolicy::reassign()` gates
+  reachability (Admin/Manager any lead; Sales only a lead they own);
+  `LeadReassignRequest` separately restricts *who Sales can hand off to* —
+  another active Sales peer only, never Admin/Manager, never themselves —
+  since that restriction depends on the target, not just the lead. New
+  `LeadReassignedNotification` deliberately isn't a reuse of
+  `NewLeadNotification` — "New lead: X" would be a misleading, reason-less
+  message for a lead that isn't new.
+  Deactivating a Sales user (`UserController::update()`) who still owns open
+  leads (`LeadStatus::openValues()`, a new static helper extracted from
+  `autoAssign()`'s inline filter — now shared by three call sites instead of
+  redefining "open" separately each time) now **requires** picking a
+  handover target — surfaced as an amber panel on the Edit User form that
+  appears when the Active checkbox is unticked, per the owner's explicit
+  "not a silent no-op" framing. Deliberately validated as a hard requirement
+  (`UserUpdateRequest::withValidator`), not just a suggestion — nothing
+  before this closed the gap where a departed rep's open leads sat silently
+  under an inactive owner with no prompt to move them, unlike every other
+  soft-deleted/deactivated-record convention already in this app that
+  either relabels or reassigns rather than leaving a dangling reference.
+  Full suite (1888, up from 1850) green, Pint clean, migrated against local
+  MySQL and smoke-tested end-to-end via curl (rule create+list, Reassign
+  button rendering for a lead's owner) rather than assumed from passing
+  tests alone.

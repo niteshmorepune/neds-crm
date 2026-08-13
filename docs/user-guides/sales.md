@@ -70,7 +70,20 @@ form or an unmatched WhatsApp number), the CRM automatically assigns it to
 whichever active Sales user currently has the fewest open leads — so leads
 never sit unowned waiting for someone to notice them. This runs whether or
 not AI is enabled. You'll get the usual "New lead" bell notification as soon
-as you're assigned.
+as you're assigned. An admin/manager-configured routing rule can override
+this for a specific campaign or service (Admin guide) — you'll still get the
+same "New lead" notification either way.
+
+**Reassigning a lead (going on leave, rebalancing, or handing off a client):**
+open a lead you own and click **Reassign** near the top. Pick another active
+Sales team member and a reason (On leave / Left the company / Rebalancing
+workload / Other), then confirm. The new owner gets a bell notification, and
+a note is left on the lead recording who it moved from/to and why — visible
+to anyone who opens it later. You can only hand a lead off to another Sales
+peer this way, not to a Manager/Admin. If you're leaving the company
+entirely, an admin can hand over **all** your open leads at once when they
+deactivate your account (Admin guide, Section 9) — you don't need to
+reassign each one yourself first.
 
 **Campaign source:** if a website lead came in through a tracked ad or link,
 the lead page shows a **Campaign** line (e.g. "google / cpc /

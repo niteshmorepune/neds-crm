@@ -3,15 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Actions\ConvertLead;
+use App\Actions\ReassignLead;
+use App\Enums\LeadReassignmentReason;
 use App\Enums\LeadSource;
 use App\Enums\LeadStatus;
 use App\Enums\UserRole;
+use App\Http\Requests\LeadReassignRequest;
 use App\Http\Requests\LeadStoreRequest;
 use App\Http\Requests\LeadUpdateRequest;
 use App\Models\Lead;
 use App\Models\Service;
 use App\Models\User;
 use App\Support\Money;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -106,12 +110,50 @@ class LeadController extends Controller
 
         $lead->load(['owner', 'service', 'convertedCustomer', 'convertedDeal']);
 
+        $canReassign = $this->user()->can('reassign', $lead);
+
         return view('leads.show', [
             'lead' => $lead,
             'canManage' => $this->user()->can('update', $lead),
             'canManageMeetings' => $this->user()->can('manageMeetings', $lead),
             'canConvert' => $this->user()->can('convert', $lead) && $lead->status !== LeadStatus::Converted,
+            'canReassign' => $canReassign,
+            'reassignTargets' => $canReassign ? $this->reassignTargets($this->user()) : new Collection,
+            'reassignReasons' => LeadReassignmentReason::cases(),
         ]);
+    }
+
+    public function reassign(LeadReassignRequest $request, Lead $lead, ReassignLead $action): RedirectResponse
+    {
+        $to = User::findOrFail($request->validated('to_user_id'));
+        $reason = LeadReassignmentReason::from($request->validated('reason'));
+
+        $action->handle($lead, $to, $request->user(), $reason);
+
+        return redirect()->route('leads.show', $lead)->with('status', "Lead reassigned to {$to->name}.");
+    }
+
+    /**
+     * Admin/Manager can hand a lead to any active Sales/Manager/Admin user
+     * (mirrors the Edit form's owner pool, active-only). A Sales user can
+     * only hand off to another active Sales peer — never themselves.
+     *
+     * @return Collection<int, User>
+     */
+    private function reassignTargets(User $user): Collection
+    {
+        if ($user->hasRole(UserRole::Admin, UserRole::Manager)) {
+            return User::where('is_active', true)
+                ->withAnyRole(UserRole::Sales, UserRole::Manager, UserRole::Admin)
+                ->orderBy('name')
+                ->get(['id', 'name']);
+        }
+
+        return User::where('is_active', true)
+            ->where('role', UserRole::Sales->value)
+            ->where('id', '!=', $user->id)
+            ->orderBy('name')
+            ->get(['id', 'name']);
     }
 
     public function edit(Lead $lead): View

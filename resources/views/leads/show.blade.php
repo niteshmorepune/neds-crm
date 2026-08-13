@@ -84,11 +84,43 @@
                                     onclick="return confirm('Convert this lead into a client and deal?')">Convert</button>
                         </form>
                     @endif
+                    @if ($canReassign)
+                        <button type="button" x-data @click="$dispatch('open-reassign')" class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Reassign</button>
+                    @endif
                     @can('update', $lead)
                         <a href="{{ route('leads.edit', $lead) }}" class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">Edit</a>
                     @endcan
                 </div>
             </div>
+
+            @if ($canReassign)
+                <div x-data="{ open: false }" x-on:open-reassign.window="open = true" x-show="open" x-cloak class="mt-4 rounded-md border border-gray-200 bg-gray-50 p-4">
+                    <form method="POST" action="{{ route('leads.reassign', $lead) }}" class="flex flex-wrap items-end gap-3">
+                        @csrf
+                        <div>
+                            <x-input-label for="to_user_id" value="Hand off to" />
+                            <select id="to_user_id" name="to_user_id" class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm" required>
+                                <option value="">—</option>
+                                @foreach ($reassignTargets as $target)
+                                    <option value="{{ $target->id }}">{{ $target->name }}</option>
+                                @endforeach
+                            </select>
+                            <x-input-error :messages="$errors->get('to_user_id')" class="mt-1" />
+                        </div>
+                        <div>
+                            <x-input-label for="reason" value="Reason" />
+                            <select id="reason" name="reason" class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm" required>
+                                @foreach ($reassignReasons as $reasonOption)
+                                    <option value="{{ $reasonOption->value }}">{{ $reasonOption->label() }}</option>
+                                @endforeach
+                            </select>
+                            <x-input-error :messages="$errors->get('reason')" class="mt-1" />
+                        </div>
+                        <x-primary-button>Confirm reassign</x-primary-button>
+                        <button type="button" @click="open = false" class="text-sm text-gray-500 hover:text-gray-700">Cancel</button>
+                    </form>
+                </div>
+            @endif
         </div>
 
         <div class="rounded-lg bg-white p-6 shadow-sm">

@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\ReassignLead;
+use App\Enums\LeadReassignmentReason;
+use App\Enums\LeadStatus;
 use App\Enums\UserRole;
 use App\Http\Requests\UserStoreRequest;
 use App\Http\Requests\UserUpdateRequest;
@@ -70,16 +73,27 @@ class UserController extends Controller
         return view('users.edit', [
             'user' => $user,
             'roles' => UserRole::cases(),
+            'openLeadsCount' => $user->leads()->whereIn('status', LeadStatus::openValues())->count(),
+            'reassignCandidates' => User::where('is_active', true)
+                ->where('role', UserRole::Sales->value)
+                ->where('id', '!=', $user->id)
+                ->orderBy('name')
+                ->get(['id', 'name']),
         ]);
     }
 
-    public function update(UserUpdateRequest $request, User $user, MenuResolver $menu): RedirectResponse
+    public function update(UserUpdateRequest $request, User $user, MenuResolver $menu, ReassignLead $reassignLead): RedirectResponse
     {
         $data = $request->validated();
         $additionalRoles = $data['additional_roles'] ?? [];
         unset($data['additional_roles']);
 
+        $reassignLeadsToId = $data['reassign_leads_to'] ?? null;
+        $reassignReason = LeadReassignmentReason::tryFrom($data['reassign_reason'] ?? '') ?? LeadReassignmentReason::LeftCompany;
+        unset($data['reassign_leads_to'], $data['reassign_reason']);
+
         $roleChanging = isset($data['role']) && $data['role'] !== $user->role->value;
+        $wasActive = $user->is_active;
 
         // An admin can't demote or disable their own account.
         if ($user->id === $request->user()->id) {
@@ -96,8 +110,19 @@ class UserController extends Controller
 
         $existingAdditionalRoles = $user->additionalRoles->map(fn ($assignment) => $assignment->role->value)->sort()->values()->all();
 
+        // Captured before update() — once owner_id changes below, $user->leads() would shrink mid-loop.
+        $becomingInactive = $wasActive && ! $data['is_active'];
+        $openLeads = $becomingInactive && $reassignLeadsToId
+            ? $user->leads()->whereIn('status', LeadStatus::openValues())->get()
+            : collect();
+
         $user->update($data);
         $this->syncAdditionalRoles($user, $additionalRoles);
+
+        if ($openLeads->isNotEmpty()) {
+            $to = User::findOrFail($reassignLeadsToId);
+            $openLeads->each(fn ($lead) => $reassignLead->handle($lead, $to, $request->user(), $reassignReason));
+        }
 
         // Additional roles now expand real menu access (MenuResolver::accessibleKeys()
         // checks the role_user pivot), so a change there needs the same cache
@@ -108,7 +133,11 @@ class UserController extends Controller
             $menu->flush();
         }
 
-        return redirect()->route('users.index')->with('status', 'User updated.');
+        $status = $openLeads->isNotEmpty()
+            ? "User updated. {$openLeads->count()} open lead(s) handed over."
+            : 'User updated.';
+
+        return redirect()->route('users.index')->with('status', $status);
     }
 
     public function destroy(Request $request, User $user): RedirectResponse
