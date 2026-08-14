@@ -144,3 +144,37 @@ it('record-notes: drafting is offered for leads but not deals', function () {
     expect(Livewire::test(RecordNotes::class, ['record' => $lead, 'canManage' => true])->instance()->canDraft())->toBeTrue();
     expect(Livewire::test(RecordNotes::class, ['record' => $deal, 'canManage' => true])->instance()->canDraft())->toBeFalse();
 });
+
+it('lead: summarize fills the panel and can be rated, dismissed', function () {
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    $lead = withAi(fn () => Lead::factory()->create());
+    fakeReply('- Asked about GMB pricing over WhatsApp. - Quoted ₹12,000/mo.');
+
+    $component = Livewire::actingAs($sales)
+        ->test(RecordNotes::class, ['record' => $lead, 'canManage' => true])
+        ->call('summarize')
+        ->assertSet('summary', '- Asked about GMB pricing over WhatsApp. - Quoted ₹12,000/mo.')
+        ->assertSee('AI summary');
+
+    $component->call('rateSummary', 'up')->assertSet('summaryFeedback', 'up');
+    expect(AiUsage::where('feature', 'summarize_lead')->value('feedback'))->toBe('up');
+
+    $component->call('dismissSummary')->assertSet('summary', null)->assertSet('summaryFeedback', null);
+});
+
+it('record-notes: summarize is offered for leads but not deals', function () {
+    $lead = withAi(fn () => Lead::factory()->create());
+    $deal = withAi(fn () => Deal::factory()->create());
+
+    expect(Livewire::test(RecordNotes::class, ['record' => $lead, 'canManage' => true])->instance()->canSummarize())->toBeTrue();
+    expect(Livewire::test(RecordNotes::class, ['record' => $deal, 'canManage' => true])->instance()->canSummarize())->toBeFalse();
+});
+
+it('record-notes: summarize button is hidden when AI is off', function () {
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    $lead = Lead::factory()->create();
+
+    Livewire::actingAs($sales)
+        ->test(RecordNotes::class, ['record' => $lead, 'canManage' => true])
+        ->assertDontSee('Summarize');
+});

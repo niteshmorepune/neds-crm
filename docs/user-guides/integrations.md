@@ -212,9 +212,22 @@ which line via the `whatsapp_number` field on its webhook call.
   marketing number is pre-sale by definition, so an existing client
   messaging it by mistake still surfaces where Sales/Telecaller will see it.
 - **Deduplication (both lines):** one Ticket or Lead per wadesk.in
-  conversation — later messages in the same conversation are added as notes
-  rather than creating a duplicate. A new Lead is auto-assigned to a sales
-  rep the same way any other new lead is (see the AI features section).
+  conversation — later messages in the same conversation are added as
+  replies/notes rather than creating a duplicate. A new Lead is
+  auto-assigned to a sales rep the same way any other new lead is (see the
+  AI features section).
+- **Full conversation capture, both directions:** wadesk.in notifies the CRM
+  of **every** message in a conversation, not just its opening one — this
+  includes a later reply from the customer, a staffer replying directly from
+  wadesk.in's own inbox (not just from the CRM), and wadesk.in's AI
+  after-hours assistant. On a Ticket this appears as a normal reply in the
+  thread, correctly attributed ("Client" for the customer, the actual
+  staffer's name, or "AI Assistant (WhatsApp)"), and a customer messaging
+  again on a Resolved/Closed ticket reopens it automatically. On a Lead it
+  appears as a note, prefixed `[Sent via WhatsApp by …]` for an outbound
+  message so it's clear who said what. A reply the CRM itself sent is never
+  echoed back as a duplicate — wadesk.in knows not to re-notify its own
+  service-key sends.
 - **Outbound, Tickets:** when a staff member replies on a WhatsApp ticket in
   the CRM (and the reply is **not** marked "internal note"), the CRM sends
   it back through wadesk.in on the Support line automatically.

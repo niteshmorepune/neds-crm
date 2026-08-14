@@ -1019,3 +1019,77 @@ Record every "we chose X because Y" here — this is the project's memory.
   there, a pre-existing real gap (the var was used in `config/services.php`
   and production but never documented in `.env.example`), found while
   editing the adjacent block.
+- **2026-08-14 — Wadesk.in full conversation capture: every WhatsApp message,
+  both directions, lands on the matching Ticket/Lead — not just a
+  conversation's opening message.** Owner asked for wadesk.in chat messages
+  to summarize onto the matching Lead/Client as notes, so the full
+  communication journey is visible on one page. Investigated the real gap
+  first, not assumed: `WhatsappWebhookController` only ever fired for the
+  *first* message of a new/reopened wadesk.in conversation — a Ticket's
+  every later message (both directions) was silently dropped (the dedup
+  check returned `'duplicate'` and did nothing), and a Lead only captured
+  later *inbound* messages as raw notes, never what a staffer typed back
+  directly in wadesk.in's own UI (only a reply sent *from* the CRM ever
+  reached wadesk.in — the reverse direction never existed). Fixed on both
+  sides of the integration (this repo + `D:\Projects\Whatsapp Dashboard`,
+  the wadesk.in/`whatsapp-dashboard` repo):
+  - **wadesk.in side**: new `src/lib/crm-notify.ts` (extracted from the
+    inline fetch the inbound webhook used to do) is now called on every
+    inbound customer message (moved to fire after the message is actually
+    saved, using its own row id — not Meta's `metaMessageId` — as the
+    idempotency key), every human agent reply sent from `/api/send`
+    (skipped for a CRM-originated service-key send — see below), and every
+    AI after-hours auto-reply (`ai-assistant.ts`). Payload gained
+    `message_id`/`direction`/`sender_type`/`sender_name` — all new fields,
+    only ever sent by this updated build.
+  - **CRM side (`WhatsappWebhookController`)**: every one of the four new
+    fields is optional, defaulting to exactly what an *older* wadesk.in
+    build already sends (`direction` → `inbound`, `sender_type` →
+    `customer`, no `message_id`) — deliberately backward compatible, so
+    deploying the CRM first (before wadesk.in) never breaks real inbound
+    traffic in the gap between the two deploys, and the richer behavior
+    below only activates once wadesk.in's own new build is live, no CRM
+    redeploy needed. `sender_type: 'crm'` is a no-op early return — the CRM
+    already recorded that message itself the moment it sent it, so an echo
+    of its own send is discarded, not double-logged (in practice wadesk.in
+    doesn't even bother calling for its own CRM-originated sends, but the
+    CRM handles it defensively either way). A `message_id`-tagged call
+    dedupes via a new `wadesk_message_logs` table (pure idempotency ledger,
+    unique `wadesk_message_id`, nothing else reads it) — a legacy call with
+    no `message_id` keeps the *exact* pre-existing "second call for an
+    existing ticket → `'duplicate'`, do nothing" behavior, since an older
+    wadesk.in build never genuinely calls twice for an open conversation
+    (only for a literal retried delivery), so that old contract is provably
+    still correct for the calls that still use it.
+  - **Ticket**: when a conversation already has a Ticket, a new message
+    (once carrying `message_id`) becomes a `TicketReply` instead of being
+    dropped — new nullable `ticket_replies.whatsapp_direction`
+    (`inbound`/`outbound`) and `external_sender_name` columns (a WhatsApp
+    sender has no CRM `user_id` and no portal `Contact` row to fall back
+    on). `TicketReply::isFromCustomer()`/`authorName()` extended to use
+    these — which means `AiAssistant::summarizeTicket()` and the existing
+    Ticket "Summarize thread" button correctly pick up the fuller history
+    with **zero changes to either**, since both already branched on
+    `isFromCustomer()`. A customer messaging again on a Resolved/Closed
+    ticket now reopens it; a staff/AI outbound message never does.
+  - **Lead**: `Note` gets no new column (a much more widely shared model,
+    not worth a schema change for one channel) — an outbound message is
+    instead prefixed `[Sent via WhatsApp by {name}]` /
+    `[Sent via WhatsApp by AI Assistant (auto-reply)]` on the note body
+    itself, keeping the existing inbound note format (no prefix) exactly as
+    it was.
+  - **New**: `AiAssistant::summarizeLead()` + a "Summarize" button on
+    `RecordNotes` (gated `$record instanceof Lead`, mirrors
+    `canDraft()`/`canReplyViaWhatsapp()`'s existing instanceof-gating
+    pattern in that same shared component) — a Lead had no equivalent to
+    the Ticket/Customer "Summarize" button before this, and now that its
+    notes timeline is the actual full WhatsApp conversation (both
+    directions), summarizing it is the direct answer to the owner's original
+    ask. New `summarize_lead` feature key in `AiUsageMetrics::label()` so it
+    shows up in the AI Usage Report like every other AI feature.
+  30 new/updated Pest tests in `tests/Feature/Api/WhatsappWebhookTest.php`
+  (all 20 pre-existing tests pass completely unchanged, confirming backward
+  compatibility) plus `AiAssistantTest`/`AiAssistLivewireTest`. Full suite
+  1964 green (up from 1949), Pint clean. wadesk.in side: `npx tsc --noEmit`,
+  `npm run lint`, and `npm run build` all clean (that repo has no test
+  suite — see its own CLAUDE.md).

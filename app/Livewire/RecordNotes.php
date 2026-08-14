@@ -50,6 +50,13 @@ class RecordNotes extends Component
 
     public ?string $draftFeedback = null;
 
+    /** Ephemeral AI summary shown in a dismissible panel (never persisted). */
+    public ?string $summary = null;
+
+    public ?int $summaryUsageId = null;
+
+    public ?string $summaryFeedback = null;
+
     public function mount(Model $record, bool $canManage = false, bool $canAddNotes = false, bool $showPortalToggle = false): void
     {
         $this->record = $record;
@@ -74,6 +81,18 @@ class RecordNotes extends Component
     }
 
     /**
+     * Summarizing the notes timeline is offered on leads only — a Customer's
+     * timeline is better summarized via its own dedicated "Client summary"
+     * (AiAssistant::summarizeCustomer(), which also pulls in calls/tickets),
+     * and other RecordNotes-embedding models (Deal, Project, …) don't have a
+     * comparable "communication journey" concern this was built for.
+     */
+    public function canSummarize(): bool
+    {
+        return Ai::enabled() && $this->record instanceof Lead;
+    }
+
+    /**
      * Draft a follow-up message into the note box. Editable; nothing is sent.
      */
     public function draftFollowUp(AiAssistant $assistant): void
@@ -94,6 +113,29 @@ class RecordNotes extends Component
     {
         $this->recordAiFeedback($this->draftUsageId, $direction);
         $this->draftFeedback = $direction;
+    }
+
+    public function summarize(AiAssistant $assistant): void
+    {
+        abort_unless($this->canSummarize() && auth()->user()?->can('view', $this->record), 403);
+
+        $this->summaryFeedback = null;
+        $this->summary = $assistant->summarizeLead($this->record)
+            ?? 'Could not generate a summary right now. Please try again.';
+        $this->summaryUsageId = $assistant->lastUsageId;
+    }
+
+    public function rateSummary(string $direction): void
+    {
+        $this->recordAiFeedback($this->summaryUsageId, $direction);
+        $this->summaryFeedback = $direction;
+    }
+
+    public function dismissSummary(): void
+    {
+        $this->summary = null;
+        $this->summaryUsageId = null;
+        $this->summaryFeedback = null;
     }
 
     public function addNote(): void
@@ -183,6 +225,7 @@ class RecordNotes extends Component
             'notes' => $this->record->notes()->with('author')->latest()->get(),
             'canDraft' => $this->canDraft(),
             'canReplyViaWhatsapp' => $this->canReplyViaWhatsapp(),
+            'canSummarize' => $this->canSummarize(),
         ]);
     }
 }

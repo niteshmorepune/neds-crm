@@ -229,6 +229,7 @@ class AiUsageMetrics
             'summarize_ticket' => 'Ticket Summary',
             'summarize_meeting' => 'Meeting Summary',
             'summarize_customer' => 'Client Summary',
+            'summarize_lead' => 'Lead Summary',
             'team_performance_summary' => 'Team Performance Summary',
             'team_productivity_gaps' => 'Team Productivity Suggestions',
             'productivity_improvement_suggestion' => 'Productivity Improvement Suggestion',

@@ -12,7 +12,9 @@ use App\Models\Contact;
 use App\Models\Customer;
 use App\Models\Lead;
 use App\Models\Ticket;
+use App\Models\WadeskMessageLog;
 use App\Support\Phone;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -31,11 +33,55 @@ class WhatsappWebhookController extends Controller
             // wadesk.in only ever sends the ID, never a downloadable URL.
             'media_id' => ['nullable', 'string'],
             'media_type' => ['nullable', 'string'],
+            // The four fields below are only sent by a wadesk.in build that
+            // notifies the CRM on EVERY message, not just a new/reopened
+            // conversation's opening one (see [[project-progress]]/
+            // [[backlog]]) — all optional, defaulting to the shape an older
+            // wadesk.in build already sends, so this endpoint stays backward
+            // compatible across an out-of-order deploy of the two apps.
+            'message_id' => ['nullable', 'string'],
+            'direction' => ['nullable', 'string', 'in:inbound,outbound'],
+            'sender_type' => ['nullable', 'string', 'in:customer,agent,ai,crm'],
+            'sender_name' => ['nullable', 'string', 'max:255'],
         ]);
 
-        // Dedup: one CRM ticket per wadesk.in conversation.
-        if (Ticket::where('whatsapp_conversation_id', $data['conversation_id'])->exists()) {
-            return response()->json(['status' => 'duplicate']);
+        $direction = $data['direction'] ?? 'inbound';
+        $senderType = $data['sender_type'] ?? 'customer';
+
+        // wadesk.in echoing back a message the CRM itself just sent (a staff
+        // reply via SendWhatsappReplyJob/SendWhatsappLeadReplyJob, or the
+        // Deal-Won/Visibility-Audit template jobs) — already recorded here at
+        // send time, so there is nothing new to do with it.
+        if ($senderType === 'crm') {
+            return response()->json(['status' => 'ignored', 'reason' => 'own_send']);
+        }
+
+        // A build that tags every call with a real message_id lets us dedupe
+        // a retried webhook delivery precisely, at the individual-message
+        // level. An older build (or a legacy call with no message_id) falls
+        // back to the pre-existing, coarser conversation-level dedup below.
+        $messageId = $data['message_id'] ?? null;
+
+        if ($messageId !== null) {
+            try {
+                WadeskMessageLog::create(['wadesk_message_id' => $messageId]);
+            } catch (QueryException $e) {
+                return response()->json(['status' => 'duplicate']);
+            }
+        }
+
+        $existingTicket = Ticket::where('whatsapp_conversation_id', $data['conversation_id'])->first();
+
+        if ($existingTicket) {
+            // No message_id: an older wadesk.in build, which never calls this
+            // webhook a second time for an already-open conversation — so a
+            // repeat call here is a retried delivery of the SAME message,
+            // not a genuinely new one. Preserve the original behavior exactly.
+            if ($messageId === null) {
+                return response()->json(['status' => 'duplicate']);
+            }
+
+            return $this->appendTicketReply($existingTicket, $data, $direction, $senderType);
         }
 
         // Any line other than the configured support number is always
@@ -47,13 +93,13 @@ class WhatsappWebhookController extends Controller
         $isSupportLine = blank($data['whatsapp_number'] ?? null) || $data['whatsapp_number'] === $supportNumber;
 
         if (! $isSupportLine) {
-            return $this->handleUnmatchedNumber($data);
+            return $this->handleUnmatchedNumber($data, $direction, $senderType);
         }
 
         $customer = $this->findCustomer($data['phone']);
 
         if (! $customer) {
-            return $this->handleUnmatchedNumber($data);
+            return $this->handleUnmatchedNumber($data, $direction, $senderType);
         }
 
         $preview = trim($data['message'] ?? '');
@@ -105,6 +151,52 @@ class WhatsappWebhookController extends Controller
     }
 
     /**
+     * The conversation already has a Ticket — add this message as a
+     * TicketReply instead of creating a second ticket (only reachable when
+     * wadesk.in sent a message_id; see handle()). Covers both directions: a
+     * later message from the actual customer, and a reply a staffer or the
+     * AI after-hours assistant sent directly from wadesk.in's own UI (as
+     * opposed to from the CRM, which is filtered out before this is ever
+     * reached).
+     */
+    private function appendTicketReply(Ticket $ticket, array $data, string $direction, string $senderType): JsonResponse
+    {
+        $message = trim($data['message'] ?? '');
+        $mediaType = $data['media_type'] ?? null;
+        $isGenericMediaPlaceholder = $mediaType && $message === "[{$mediaType}]";
+
+        $body = match (true) {
+            $isGenericMediaPlaceholder => ucfirst($mediaType).' received — see Attachments below.',
+            $message !== '' => $message,
+            default => '(media or non-text message)',
+        };
+
+        $ticket->replies()->create([
+            'body' => $body,
+            'is_internal' => false,
+            'whatsapp_direction' => $direction,
+            'external_sender_name' => $this->externalSenderName($data, $direction, $senderType),
+        ]);
+
+        // A customer messaging again on a thread staff had already
+        // wrapped up is a real reopening of the issue, not a stray note.
+        if ($direction === 'inbound' && in_array($ticket->status, [TicketStatus::Resolved, TicketStatus::Closed], true)) {
+            $ticket->update(['status' => TicketStatus::Open]);
+        }
+
+        if (! empty($data['media_id']) && $direction === 'inbound') {
+            ImportWhatsappTicketMedia::dispatch(
+                $ticket->id,
+                $data['conversation_id'],
+                $data['media_id'],
+                $mediaType ?? 'file',
+            );
+        }
+
+        return response()->json(['status' => 'reply_added', 'ticket_id' => $ticket->id]);
+    }
+
+    /**
      * No CRM customer matches this phone number — capture the inquiry as a
      * Lead instead of dropping it. Deduped by conversation_id (mirrors the
      * Ticket dedup above): the first message in a new conversation creates
@@ -117,7 +209,7 @@ class WhatsappWebhookController extends Controller
      * lead a few seconds after ImportMetaLead's Meta Ads lead (a real
      * duplicate-lead pattern found in production 2026-08-13).
      */
-    private function handleUnmatchedNumber(array $data): JsonResponse
+    private function handleUnmatchedNumber(array $data, string $direction, string $senderType): JsonResponse
     {
         $lead = Lead::where('whatsapp_conversation_id', $data['conversation_id'])->first();
 
@@ -136,7 +228,10 @@ class WhatsappWebhookController extends Controller
 
         if ($lead) {
             if (filled($data['message'] ?? null)) {
-                $lead->notes()->create(['user_id' => null, 'body' => $data['message']]);
+                $lead->notes()->create([
+                    'user_id' => null,
+                    'body' => $this->noteBody($data['message'], $direction, $senderType, $data['sender_name'] ?? null),
+                ]);
             }
 
             return response()->json(['status' => 'lead_note_added', 'lead_id' => $lead->id]);
@@ -152,10 +247,40 @@ class WhatsappWebhookController extends Controller
         ]);
 
         if (filled($data['message'] ?? null)) {
-            $lead->notes()->create(['user_id' => null, 'body' => $data['message']]);
+            $lead->notes()->create([
+                'user_id' => null,
+                'body' => $this->noteBody($data['message'], $direction, $senderType, $data['sender_name'] ?? null),
+            ]);
         }
 
         return response()->json(['status' => 'lead_created', 'lead_id' => $lead->id]);
+    }
+
+    /**
+     * A Note has no direction/author field of its own (unlike TicketReply,
+     * which got new columns for this) — a WhatsApp outbound message is
+     * distinguished by a short prefix on the body instead, so the timeline
+     * still reads clearly without a schema change to a much more widely
+     * shared model.
+     */
+    private function noteBody(string $message, string $direction, string $senderType, ?string $senderName): string
+    {
+        if ($direction === 'inbound') {
+            return $message;
+        }
+
+        $label = $senderType === 'ai' ? 'AI Assistant (auto-reply)' : ($senderName ?: 'Staff');
+
+        return "[Sent via WhatsApp by {$label}]\n{$message}";
+    }
+
+    private function externalSenderName(array $data, string $direction, string $senderType): string
+    {
+        if ($direction === 'inbound') {
+            return ($data['contact_name'] ?? null) ?: 'Customer';
+        }
+
+        return $senderType === 'ai' ? 'AI Assistant (WhatsApp)' : (($data['sender_name'] ?? null) ?: 'Support agent');
     }
 
     /**

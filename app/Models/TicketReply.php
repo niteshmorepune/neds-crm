@@ -13,7 +13,10 @@ class TicketReply extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['ticket_id', 'user_id', 'contact_id', 'body', 'is_internal'];
+    protected $fillable = [
+        'ticket_id', 'user_id', 'contact_id', 'body', 'is_internal',
+        'whatsapp_direction', 'external_sender_name',
+    ];
 
     protected function casts(): array
     {
@@ -37,15 +40,22 @@ class TicketReply extends Model
 
     /**
      * Display name for the reply author — an internal user, a portal contact,
-     * or "System".
+     * a WhatsApp-only sender who has neither (see external_sender_name), or
+     * "System".
      */
     public function authorName(): string
     {
-        return $this->author?->name ?? $this->contact?->name ?? 'System';
+        return $this->author?->name ?? $this->external_sender_name ?? $this->contact?->name ?? 'System';
     }
 
+    /**
+     * True for a portal-contact reply OR an inbound WhatsApp message from
+     * the actual customer (whatsapp_direction='inbound') — the latter has no
+     * portal Contact row, just the phone number's contact name, captured in
+     * external_sender_name instead.
+     */
     public function isFromCustomer(): bool
     {
-        return $this->contact_id !== null;
+        return $this->contact_id !== null || $this->whatsapp_direction === 'inbound';
     }
 }
