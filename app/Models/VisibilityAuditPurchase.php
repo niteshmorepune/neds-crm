@@ -23,6 +23,8 @@ class VisibilityAuditPurchase extends Model
         'payer_name',
         'payer_phone',
         'payer_email',
+        'gbp_url',
+        'website_url',
         'lead_id',
     ];
 

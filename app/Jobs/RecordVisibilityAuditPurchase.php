@@ -48,6 +48,8 @@ class RecordVisibilityAuditPurchase implements ShouldQueue
         public ?string $phone,
         public ?string $email,
         public ?string $name,
+        public ?string $gbpUrl = null,
+        public ?string $websiteUrl = null,
     ) {}
 
     public function handle(): void
@@ -67,6 +69,8 @@ class RecordVisibilityAuditPurchase implements ShouldQueue
                 'payer_name' => $this->name,
                 'payer_phone' => $this->phone,
                 'payer_email' => $this->email,
+                'gbp_url' => $this->gbpUrl,
+                'website_url' => $this->websiteUrl,
             ]);
         } catch (QueryException $e) {
             // Duplicate webhook delivery raced our existence check above.
@@ -133,7 +137,20 @@ class RecordVisibilityAuditPurchase implements ShouldQueue
         $amount = number_format($this->amountPaise / 100);
         $label = $tier?->label() ?? 'a Visibility Audit';
 
-        return "Paid ₹{$amount} for {$label} via the Visibility Audit offer page (Razorpay payment {$this->paymentId}).";
+        $body = "Paid ₹{$amount} for {$label} via the Visibility Audit offer page (Razorpay payment {$this->paymentId}).";
+
+        $wantsGbp = in_array($tier, [VisibilityAuditTier::Gbp, VisibilityAuditTier::Both], true);
+        $wantsWebsite = in_array($tier, [VisibilityAuditTier::Website, VisibilityAuditTier::Both], true);
+
+        if ($wantsGbp) {
+            $body .= "\nGBP profile: ".($this->gbpUrl ?: 'NOT PROVIDED — follow up with the customer to get this before starting the audit.');
+        }
+
+        if ($wantsWebsite) {
+            $body .= "\nWebsite: ".($this->websiteUrl ?: 'NOT PROVIDED — follow up with the customer to get this before starting the audit.');
+        }
+
+        return $body;
     }
 
     /**

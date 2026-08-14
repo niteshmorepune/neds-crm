@@ -75,7 +75,9 @@ it('attaches a note to an existing open lead matched by phone, for a GBP audit',
         'service_id' => null,
     ]);
 
-    visibilityAuditWebhook(visibilityAuditPayload())
+    visibilityAuditWebhook(visibilityAuditPayload([
+        'notes' => ['Google Business Profile Link' => 'https://maps.google.com/?cid=123'],
+    ]))
         ->assertOk()
         ->assertJson(['status' => 'ok']);
 
@@ -83,7 +85,8 @@ it('attaches a note to an existing open lead matched by phone, for a GBP audit',
     expect($lead->service_id)->toBe($service->id)
         ->and($lead->notes()->count())->toBe(1)
         ->and($lead->notes()->first()->body)->toContain('₹120')
-        ->and($lead->notes()->first()->body)->toContain('GBP Audit');
+        ->and($lead->notes()->first()->body)->toContain('GBP Audit')
+        ->and($lead->notes()->first()->body)->toContain('https://maps.google.com/?cid=123');
 
     expect(Lead::count())->toBe(1);
 
@@ -91,30 +94,58 @@ it('attaches a note to an existing open lead matched by phone, for a GBP audit',
     expect($purchase)->not->toBeNull()
         ->and($purchase->lead_id)->toBe($lead->id)
         ->and($purchase->tier->value)->toBe('gbp')
-        ->and($purchase->amount_paise)->toBe(12000);
+        ->and($purchase->amount_paise)->toBe(12000)
+        ->and($purchase->gbp_url)->toBe('https://maps.google.com/?cid=123');
 });
 
-it('creates a new lead when no existing open lead matches the phone', function () {
-    visibilityAuditWebhook(visibilityAuditPayload(['amount' => 24000]))
-        ->assertOk();
+it('flags a missing GBP link in the note instead of silently omitting it', function () {
+    Lead::factory()->create(['phone' => '9876543210', 'status' => LeadStatus::New]);
+
+    visibilityAuditWebhook(visibilityAuditPayload())->assertOk();
+
+    $note = Lead::where('phone', '9876543210')->first()->notes()->first()->body;
+    expect($note)->toContain('GBP profile: NOT PROVIDED');
+});
+
+it('creates a new lead when no existing open lead matches the phone, capturing the website URL', function () {
+    visibilityAuditWebhook(visibilityAuditPayload([
+        'amount' => 24000,
+        'notes' => ['Website URL' => 'https://shahtraders.example.com'],
+    ]))->assertOk();
 
     $lead = Lead::where('phone', '+919876543210')->first();
     expect($lead)->not->toBeNull()
         ->and($lead->email)->toBe('priya@shah.test')
         ->and($lead->source)->toBe(LeadSource::Other)
         ->and($lead->utm_source)->toBe('visibility-audit-offer')
-        ->and($lead->notes()->first()->body)->toContain('Website Audit');
+        ->and($lead->notes()->first()->body)->toContain('Website Audit')
+        ->and($lead->notes()->first()->body)->toContain('https://shahtraders.example.com');
+
+    $purchase = VisibilityAuditPurchase::where('razorpay_payment_id', 'pay_va_test1')->first();
+    expect($purchase->website_url)->toBe('https://shahtraders.example.com');
 });
 
-it('resolves the "both" tier and does not guess a single service', function () {
+it('resolves the "both" tier, captures both URLs, and does not guess a single service', function () {
     Service::factory()->create(['name' => 'GMB']);
     Service::factory()->create(['name' => 'Website Design & Development']);
 
-    visibilityAuditWebhook(visibilityAuditPayload(['amount' => 36000]))->assertOk();
+    visibilityAuditWebhook(visibilityAuditPayload([
+        'amount' => 36000,
+        'notes' => [
+            'Google Business Profile Link' => 'https://maps.google.com/?cid=123',
+            'Website URL' => 'https://shahtraders.example.com',
+        ],
+    ]))->assertOk();
 
     $lead = Lead::where('phone', '+919876543210')->first();
     expect($lead->service_id)->toBeNull()
-        ->and($lead->notes()->first()->body)->toContain('GBP + Website Audit');
+        ->and($lead->notes()->first()->body)->toContain('GBP + Website Audit')
+        ->and($lead->notes()->first()->body)->toContain('https://maps.google.com/?cid=123')
+        ->and($lead->notes()->first()->body)->toContain('https://shahtraders.example.com');
+
+    $purchase = VisibilityAuditPurchase::where('razorpay_payment_id', 'pay_va_test1')->first();
+    expect($purchase->gbp_url)->toBe('https://maps.google.com/?cid=123')
+        ->and($purchase->website_url)->toBe('https://shahtraders.example.com');
 });
 
 it('records the purchase even when the amount matches no known tier', function () {
