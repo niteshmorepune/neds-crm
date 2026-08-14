@@ -77,6 +77,10 @@ class RecordVisibilityAuditPurchase implements ShouldQueue
             return;
         }
 
+        // No-ops until the wadesk.in payment-confirmation template is
+        // configured; see the job's own docblock.
+        SendVisibilityAuditPaymentConfirmationJob::dispatch($purchase->id);
+
         if ($tier === null) {
             Log::warning('Visibility Audit payment amount matched no known tier', [
                 'payment_id' => $this->paymentId,

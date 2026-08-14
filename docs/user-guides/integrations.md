@@ -230,6 +230,12 @@ which line via the `whatsapp_number` field on its webhook call.
   the support one. Needs `WADESK_HANDOFF_TEMPLATE_NAME` set in `.env` and a
   matching template approved both in Meta Business Manager and on
   wadesk.in's Templates page; silently skipped (logged) until both exist.
+- **Visibility Audit payment confirmation:** the moment someone pays for a
+  Visibility Audit offer tier (`/offers/visibility-audit`), the CRM sends
+  them an approved WhatsApp template on the **Marketing** line
+  (`WADESK_MARKETING_NUMBER`) confirming the payment — same
+  approve-then-set-env-var contract as the handoff message above, gated by
+  `WADESK_VISIBILITY_AUDIT_TEMPLATE_NAME`.
 
 **What the team sees:**
 - A ticket tagged WhatsApp behaves like any other ticket — reply in the CRM
@@ -334,6 +340,27 @@ endpoint itself, which always responds 200 immediately after queueing.
 
 ---
 
+## Integration 11 — Telegram lead alerts
+
+**What it does:** every new lead (any source) posts a short alert — name,
+source, assigned rep (or "unassigned"), and a link back into the CRM — to
+one shared Telegram group via the Telegram Bot API. A second, always-on
+place for the team to notice a new lead land, alongside the in-app
+notification bell and the auto-assigned rep's own notification.
+
+**Setup:** message **@BotFather** on Telegram, create a bot, and set the
+token it gives you as `TELEGRAM_BOT_TOKEN`. Add the bot to the team's
+Telegram group, send any message in that group, then open
+`https://api.telegram.org/bot<token>/getUpdates` and copy the negative
+number under `"chat":{"id":...}` into `TELEGRAM_CHAT_ID`. See Section 13a of
+the admin guide.
+
+**If alerts stop arriving:** check both env vars are set (silently skipped,
+logged as a warning, if either is missing — this must never block lead
+creation) and that the bot hasn't been removed from the group.
+
+---
+
 ## Checking integration health
 
 All integration events leave a trace in the CRM:
@@ -352,7 +379,8 @@ If any integration stops working, the most common causes are:
 1. **Server `.env` out of date** — a key (`DRISHTI_SERVICE_KEY`,
    `SMDOST_SERVICE_KEY`, `PORTAL_SSO_SECRET`, `WADESK_API_URL`,
    `WADESK_SERVICE_KEY`, `META_APP_SECRET`, `META_WEBHOOK_VERIFY_TOKEN`,
-   `META_PAGE_ACCESS_TOKEN`, etc.) is missing or wrong.
+   `META_PAGE_ACCESS_TOKEN`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, etc.)
+   is missing or wrong.
    Run `php artisan config:cache` after any `.env` change.
 2. **Docker not restarted after env change on VPS** — use
    `docker compose up -d` (not `restart`) so the container picks up new env vars.

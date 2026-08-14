@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Enums\LeadStatus;
 use App\Enums\UserRole;
 use App\Jobs\ScoreLead;
+use App\Jobs\SendTelegramLeadAlertJob;
 use App\Jobs\SyncLeadToWadeskJob;
 use App\Models\Lead;
 use App\Models\LeadAssignmentRule;
@@ -165,5 +166,7 @@ class LeadObserver
                 ->get()
                 ->each(fn (User $u) => $u->notify($notification));
         }
+
+        SendTelegramLeadAlertJob::dispatch($lead->id);
     }
 }

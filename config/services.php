@@ -60,13 +60,25 @@ return [
     // no-ops (logs, never throws) while unset.
     // marketing_number: digits-only business number (e.g. 919112095202) for
     // the pre-sale Marketing line — used by SyncLeadToWadeskJob to stage a
-    // newly created/reassigned Lead in wadesk.in without sending a message.
+    // newly created/reassigned Lead in wadesk.in without sending a message,
+    // and by SendVisibilityAuditPaymentConfirmationJob to send the paid
+    // template below.
+    // visibility_audit_payment_template_name: the wadesk.in Template.name of
+    // a Meta-approved "Utility" template confirming a Visibility Audit offer
+    // payment (see App\Jobs\SendVisibilityAuditPaymentConfirmationJob) —
+    // same null-until-approved contract as handoff_template_name above.
+    // Suggested body (submit as-is or adapt): "Hi {{1}}, we've received your
+    // payment for the {{2}}. Our team will begin work shortly and reach out
+    // here on WhatsApp with any questions. Thank you for choosing Niranjan
+    // Enterprises Digital Solutions!" — {{1}} = payer name, {{2}} = tier
+    // label + amount, e.g. "GBP Audit (₹120.00)".
     'wadesk' => [
         'base_url' => env('WADESK_API_URL', 'https://wadesk.in'),
         'service_key' => env('WADESK_SERVICE_KEY'),
         'support_number' => env('WADESK_SUPPORT_NUMBER'),
         'marketing_number' => env('WADESK_MARKETING_NUMBER'),
         'handoff_template_name' => env('WADESK_HANDOFF_TEMPLATE_NAME'),
+        'visibility_audit_payment_template_name' => env('WADESK_VISIBILITY_AUDIT_TEMPLATE_NAME'),
     ],
 
     // nedsdrishti.in — agency service delivery platform.
@@ -208,6 +220,20 @@ return [
         // invoice payment. Same one-secret-per-integration pattern as every
         // other webhook this app receives.
         'visibility_audit_webhook_secret' => env('RAZORPAY_VISIBILITY_AUDIT_WEBHOOK_SECRET'),
+    ],
+
+    // Telegram Bot API — posts a plain HTTP message to one shared group chat
+    // whenever a new Lead is created (see App\Jobs\SendTelegramLeadAlertJob).
+    // bot_token comes from @BotFather; chat_id is the target group's own
+    // numeric id (e.g. -1001234567890 — get it by adding the bot to the
+    // group, sending any message, then GET https://api.telegram.org/bot
+    // <token>/getUpdates and reading the "chat":{"id":...} field). No
+    // webhook/polling needed for outbound sends. No-ops until both values
+    // are set — ships inert, starts working the moment the owner creates
+    // the bot and sets both env vars.
+    'telegram' => [
+        'bot_token' => env('TELEGRAM_BOT_TOKEN'),
+        'chat_id' => env('TELEGRAM_CHAT_ID'),
     ],
 
 ];
