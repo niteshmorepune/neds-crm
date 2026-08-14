@@ -89,6 +89,28 @@ it('summarizes a customer timeline', function () {
     expect(AiUsage::where('feature', 'summarize_customer')->exists())->toBeTrue();
 });
 
+it('summarizes a lead\'s notes timeline, including WhatsApp messages captured there', function () {
+    aiOn();
+    fakeAiText('- Asked about GMB pricing over WhatsApp. - Quoted ₹12,000/mo. - Awaiting decision.');
+    $lead = Lead::factory()->create(['name' => 'Priya Shah']);
+    $lead->notes()->create(['user_id' => null, 'body' => 'What are your charges for GMB?']);
+    $lead->notes()->create(['user_id' => null, 'body' => "[Sent via WhatsApp by Kiran Katte]\nIt's ₹12,000/month."]);
+
+    $summary = app(AiAssistant::class)->summarizeLead($lead);
+
+    expect($summary)->toContain('GMB');
+    expect(AiUsage::where('feature', 'summarize_lead')->exists())->toBeTrue();
+});
+
+it('returns null and makes no call when summarizing a lead with AI disabled', function () {
+    config(['services.anthropic.enabled' => false]);
+    Http::fake();
+    $lead = Lead::factory()->create();
+
+    expect(app(AiAssistant::class)->summarizeLead($lead))->toBeNull();
+    Http::assertNothingSent();
+});
+
 it('summarizes a meeting transcript', function () {
     aiOn();
     fakeAiText("Key points:\n- Discussed renewal");

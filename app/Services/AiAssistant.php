@@ -640,6 +640,39 @@ class AiAssistant
     }
 
     /**
+     * Summarizes a Lead's notes timeline — including every WhatsApp message
+     * captured there (inbound from the contact, outbound from a staffer or
+     * the wadesk.in AI assistant — see WhatsappWebhookController), since
+     * that's the only place a Lead's conversation history lives (unlike a
+     * Customer, a Lead has no Ticket to summarize separately).
+     */
+    public function summarizeLead(Lead $lead): ?string
+    {
+        if (! Ai::enabled()) {
+            return null;
+        }
+
+        $lead->loadMissing('notes');
+
+        $lines = [
+            'Lead: '.$lead->name.($lead->company ? " ({$lead->company})" : ''),
+            'Status: '.$lead->status->label(),
+            '',
+            'Notes:',
+        ];
+
+        foreach ($lead->notes->take(self::MAX_ITEMS) as $note) {
+            $lines[] = '- '.$note->body;
+        }
+
+        return $this->trimmed($this->client->message(
+            feature: 'summarize_lead',
+            prompt: implode("\n", $lines),
+            system: $this->summarySystem(),
+        ));
+    }
+
+    /**
      * Summarizes a Meeting's stored raw_transcript (Phase 2 of Google Meet
      * Notes) into structured notes — key points, decisions, action items.
      * Transcript is capped to bound token usage on long calls. Called from

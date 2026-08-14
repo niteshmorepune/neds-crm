@@ -173,6 +173,11 @@ sequence stops (the CRM assumes you've taken it from here).
   follow-up message based on the lead's details and history. Read it, edit it to
   match your voice, then send it yourself (WhatsApp, email, or call). The AI
   never sends anything automatically.
+- **Summarize (✨)** — click this button (above the notes list, next to Draft
+  follow-up) to have AI condense a lead's whole notes timeline — including
+  every WhatsApp message on it — into a few sentences. Handy for a lead
+  that's had a long back-and-forth and you want the gist before your next
+  call, without scrolling through everything.
 
 **Merging duplicate leads:** if the same person or company ended up as two
 leads (a duplicate WhatsApp enquiry, a repeat website form), tick exactly 2

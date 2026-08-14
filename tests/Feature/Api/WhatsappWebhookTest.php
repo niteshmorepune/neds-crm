@@ -2,6 +2,7 @@
 
 use App\Enums\LeadSource;
 use App\Enums\LeadStatus;
+use App\Enums\TicketStatus;
 use App\Enums\UserRole;
 use App\Jobs\ImportWhatsappTicketMedia;
 use App\Models\Contact;
@@ -346,4 +347,209 @@ it('treats a payload with no whatsapp_number field as the support line, for back
         ->assertJson(['status' => 'created']);
 
     expect(Ticket::where('whatsapp_conversation_id', 'conv_no_line_field')->exists())->toBeTrue();
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Full-conversation capture — every message, both directions (a wadesk.in
+// build that tags message_id/direction/sender_type)
+// ──────────────────────────────────────────────────────────────────────────────
+
+it('appends a customer\'s later inbound message on an existing ticket as a reply, not a second ticket', function () {
+    $customer = Customer::factory()->create(['phone' => '919028099919']);
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '919028099919',
+        'contact_name' => 'Ravi Kumar',
+        'message' => 'Hi, I need help',
+        'conversation_id' => 'conv_full_capture',
+        'message_id' => 'wa_msg_1',
+    ], ['Authorization' => 'Bearer test-wa-token'])->assertJson(['status' => 'created']);
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '919028099919',
+        'contact_name' => 'Ravi Kumar',
+        'message' => 'Any update?',
+        'conversation_id' => 'conv_full_capture',
+        'message_id' => 'wa_msg_2',
+        'direction' => 'inbound',
+        'sender_type' => 'customer',
+    ], ['Authorization' => 'Bearer test-wa-token'])
+        ->assertOk()
+        ->assertJson(['status' => 'reply_added']);
+
+    expect(Ticket::where('whatsapp_conversation_id', 'conv_full_capture')->count())->toBe(1);
+
+    $ticket = Ticket::where('whatsapp_conversation_id', 'conv_full_capture')->first();
+    $reply = $ticket->replies()->latest()->first();
+    expect($reply->body)->toBe('Any update?')
+        ->and($reply->whatsapp_direction)->toBe('inbound')
+        ->and($reply->external_sender_name)->toBe('Ravi Kumar')
+        ->and($reply->isFromCustomer())->toBeTrue()
+        ->and($reply->authorName())->toBe('Ravi Kumar')
+        ->and($reply->is_internal)->toBeFalse();
+});
+
+it('appends a human agent\'s outbound reply (sent from wadesk.in directly, not via the CRM) as a reply attributed to them', function () {
+    $customer = Customer::factory()->create(['phone' => '919028099919']);
+    $ticket = Ticket::factory()->for($customer)->create(['whatsapp_conversation_id' => 'conv_agent_reply']);
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '919028099919',
+        'message' => 'Sure, let me check that for you.',
+        'conversation_id' => 'conv_agent_reply',
+        'message_id' => 'wa_msg_agent_1',
+        'direction' => 'outbound',
+        'sender_type' => 'agent',
+        'sender_name' => 'Kiran Katte',
+    ], ['Authorization' => 'Bearer test-wa-token'])->assertJson(['status' => 'reply_added']);
+
+    $reply = $ticket->replies()->latest()->first();
+    expect($reply->whatsapp_direction)->toBe('outbound')
+        ->and($reply->external_sender_name)->toBe('Kiran Katte')
+        ->and($reply->isFromCustomer())->toBeFalse()
+        ->and($reply->authorName())->toBe('Kiran Katte');
+});
+
+it('attributes an AI after-hours auto-reply to "AI Assistant" rather than a blank/System author', function () {
+    $customer = Customer::factory()->create(['phone' => '919028099919']);
+    $ticket = Ticket::factory()->for($customer)->create(['whatsapp_conversation_id' => 'conv_ai_reply']);
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '919028099919',
+        'message' => 'Thanks for reaching out — our team will respond during business hours.',
+        'conversation_id' => 'conv_ai_reply',
+        'message_id' => 'wa_msg_ai_1',
+        'direction' => 'outbound',
+        'sender_type' => 'ai',
+    ], ['Authorization' => 'Bearer test-wa-token'])->assertJson(['status' => 'reply_added']);
+
+    $reply = $ticket->replies()->latest()->first();
+    expect($reply->external_sender_name)->toBe('AI Assistant (WhatsApp)')
+        ->and($reply->authorName())->toBe('AI Assistant (WhatsApp)');
+});
+
+it('reopens a Resolved ticket when the customer messages again', function () {
+    $customer = Customer::factory()->create(['phone' => '919028099919']);
+    $ticket = Ticket::factory()->for($customer)->create([
+        'whatsapp_conversation_id' => 'conv_reopen',
+        'status' => TicketStatus::Resolved,
+    ]);
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '919028099919',
+        'message' => 'Actually the issue is back',
+        'conversation_id' => 'conv_reopen',
+        'message_id' => 'wa_msg_reopen',
+        'direction' => 'inbound',
+        'sender_type' => 'customer',
+    ], ['Authorization' => 'Bearer test-wa-token'])->assertOk();
+
+    expect($ticket->fresh()->status)->toBe(TicketStatus::Open);
+});
+
+it('does not reopen a Resolved ticket for a staff/AI outbound message', function () {
+    $customer = Customer::factory()->create(['phone' => '919028099919']);
+    $ticket = Ticket::factory()->for($customer)->create([
+        'whatsapp_conversation_id' => 'conv_no_reopen',
+        'status' => TicketStatus::Resolved,
+    ]);
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '919028099919',
+        'message' => 'Just following up, no action needed.',
+        'conversation_id' => 'conv_no_reopen',
+        'message_id' => 'wa_msg_no_reopen',
+        'direction' => 'outbound',
+        'sender_type' => 'agent',
+        'sender_name' => 'Kiran Katte',
+    ], ['Authorization' => 'Bearer test-wa-token'])->assertOk();
+
+    expect($ticket->fresh()->status)->toBe(TicketStatus::Resolved);
+});
+
+it('ignores a message wadesk.in tags as sent by the CRM itself — already recorded when the CRM sent it', function () {
+    $customer = Customer::factory()->create(['phone' => '919028099919']);
+    $ticket = Ticket::factory()->for($customer)->create(['whatsapp_conversation_id' => 'conv_own_send']);
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '919028099919',
+        'message' => 'This was already saved as a TicketReply by the CRM before sending.',
+        'conversation_id' => 'conv_own_send',
+        'message_id' => 'wa_msg_crm_echo',
+        'direction' => 'outbound',
+        'sender_type' => 'crm',
+    ], ['Authorization' => 'Bearer test-wa-token'])
+        ->assertOk()
+        ->assertJson(['status' => 'ignored', 'reason' => 'own_send']);
+
+    expect($ticket->replies()->count())->toBe(0);
+});
+
+it('dedupes a retried webhook delivery by message_id, even across a status transition in between', function () {
+    $customer = Customer::factory()->create(['phone' => '919028099919']);
+    $ticket = Ticket::factory()->for($customer)->create(['whatsapp_conversation_id' => 'conv_msg_dedup']);
+
+    $payload = [
+        'phone' => '919028099919',
+        'message' => 'One message, delivered twice',
+        'conversation_id' => 'conv_msg_dedup',
+        'message_id' => 'wa_msg_retry',
+        'direction' => 'inbound',
+        'sender_type' => 'customer',
+    ];
+
+    $this->postJson('/api/webhook/whatsapp', $payload, ['Authorization' => 'Bearer test-wa-token'])
+        ->assertJson(['status' => 'reply_added']);
+    $this->postJson('/api/webhook/whatsapp', $payload, ['Authorization' => 'Bearer test-wa-token'])
+        ->assertJson(['status' => 'duplicate']);
+
+    expect($ticket->replies()->count())->toBe(1);
+});
+
+it('formats an outbound agent message on a Lead as a clearly-attributed note, not a raw echo', function () {
+    $lead = Lead::factory()->create(['phone' => '919999999999', 'whatsapp_conversation_id' => 'conv_lead_agent_reply']);
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '919999999999',
+        'message' => 'Sure, I can share pricing over a quick call.',
+        'conversation_id' => 'conv_lead_agent_reply',
+        'message_id' => 'wa_msg_lead_agent',
+        'direction' => 'outbound',
+        'sender_type' => 'agent',
+        'sender_name' => 'Priya Shah',
+    ], ['Authorization' => 'Bearer test-wa-token'])->assertJson(['status' => 'lead_note_added']);
+
+    $note = $lead->notes()->latest()->first();
+    expect($note->body)->toBe("[Sent via WhatsApp by Priya Shah]\nSure, I can share pricing over a quick call.");
+});
+
+it('formats an AI auto-reply on a Lead as a clearly-attributed note', function () {
+    $lead = Lead::factory()->create(['phone' => '919999999999', 'whatsapp_conversation_id' => 'conv_lead_ai_reply']);
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '919999999999',
+        'message' => 'Thanks for reaching out!',
+        'conversation_id' => 'conv_lead_ai_reply',
+        'message_id' => 'wa_msg_lead_ai',
+        'direction' => 'outbound',
+        'sender_type' => 'ai',
+    ], ['Authorization' => 'Bearer test-wa-token'])->assertOk();
+
+    $note = $lead->notes()->latest()->first();
+    expect($note->body)->toBe("[Sent via WhatsApp by AI Assistant (auto-reply)]\nThanks for reaching out!");
+});
+
+it('leaves an inbound Lead message body unprefixed, same as before this feature', function () {
+    $lead = Lead::factory()->create(['phone' => '919999999999', 'whatsapp_conversation_id' => 'conv_lead_inbound_tagged']);
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '919999999999',
+        'message' => 'What are your charges for GMB?',
+        'conversation_id' => 'conv_lead_inbound_tagged',
+        'message_id' => 'wa_msg_lead_inbound',
+        'direction' => 'inbound',
+        'sender_type' => 'customer',
+    ], ['Authorization' => 'Bearer test-wa-token'])->assertOk();
+
+    expect($lead->notes()->latest()->first()->body)->toBe('What are your charges for GMB?');
 });
