@@ -458,6 +458,12 @@ both in Meta Business Manager and on wadesk.in's own Templates page; until
 `WADESK_HANDOFF_TEMPLATE_NAME` is set in the server `.env`, this step is
 silently skipped (logged, never blocks the deal being won).
 
+**Visibility Audit payment confirmation:** when someone pays for a Visibility
+Audit offer tier (`/offers/visibility-audit`), the CRM sends them a WhatsApp
+template confirming the payment, on the **Marketing** number
+(`WADESK_MARKETING_NUMBER`) — same no-op-until-approved contract as the
+handoff message above, gated by `WADESK_VISIBILITY_AUDIT_TEMPLATE_NAME`.
+
 **Managing which staff see which line:** this is configured on **wadesk.in
 itself**, not the CRM — Admin → Agents page has a checkbox per staff member
 for each line, and Admin → Numbers is where the lines themselves (and their
@@ -468,12 +474,25 @@ a CRM permission.
 
 This integration is configured via `WADESK_API_URL`/`WADESK_SERVICE_KEY`
 (outbound replies), `WHATSAPP_WEBHOOK_TOKEN` (inbound), `WADESK_SUPPORT_NUMBER`
-(which line is "Support" for the routing logic above), and
-`WADESK_HANDOFF_TEMPLATE_NAME` (the Deal-Won message) in the server `.env`.
-Contact your developer if the integration stops creating tickets/leads or
-the handoff message stops sending. (`COMPANY_WHATSAPP` is a separate,
-unrelated setting — just the number shown on client-facing WhatsApp buttons
-elsewhere in the app, not part of this integration.)
+(which line is "Support" for the routing logic above), `WADESK_MARKETING_NUMBER`,
+`WADESK_HANDOFF_TEMPLATE_NAME` (the Deal-Won message), and
+`WADESK_VISIBILITY_AUDIT_TEMPLATE_NAME` (the payment confirmation) in the
+server `.env`. Contact your developer if the integration stops creating
+tickets/leads or a template message stops sending. (`COMPANY_WHATSAPP` is a
+separate, unrelated setting — just the number shown on client-facing
+WhatsApp buttons elsewhere in the app, not part of this integration.)
+
+## 13a. Telegram lead alerts
+Every new lead also posts a short alert (name, source, assigned rep, and a
+link back into the CRM) to one shared Telegram group — a second, always-on
+place to notice a new lead land, alongside the in-app notification bell.
+To set it up: message **@BotFather** on Telegram, create a bot (`/newbot`),
+and copy the token it gives you into `TELEGRAM_BOT_TOKEN`. Add that bot to
+your team's Telegram group, send any message in the group, then open
+`https://api.telegram.org/bot<token>/getUpdates` in a browser and copy the
+negative number under `"chat":{"id":...}` into `TELEGRAM_CHAT_ID`. Until
+both are set in the server `.env`, this step is silently skipped (logged,
+never blocks lead creation).
 
 ## 14. Scheduled maintenance tasks
 The CRM runs `app:dispatch-scheduled-tasks` at **8 AM IST daily** via the cron

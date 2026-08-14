@@ -973,6 +973,52 @@ Record every "we chose X because Y" here — this is the project's memory.
   MySQL and smoke-tested end-to-end via curl (rule create+list, Reassign
   button rendering for a lead's owner) rather than assumed from passing
   tests alone.
+- **2026-08-14 — Telegram lead alerts + WhatsApp payment confirmation for
+  the Visibility Audit offer, both built as no-op-until-configured jobs
+  mirroring `SendWhatsappHandoffMessageJob`'s existing contract.** Owner
+  asked for (1) a Telegram alert whenever a new lead lands, and (2) a
+  WhatsApp transactional confirmation to whoever pays via the Visibility
+  Audit offer (`/offers/visibility-audit`), on the Marketing line
+  (`9112095202`). Confirmed via AskUserQuestion: Telegram posts to **one
+  shared group** (not a per-Sales-rep DM — simpler, no new per-user
+  "connect Telegram" step or `chat_id` column needed). New
+  `App\Jobs\SendTelegramLeadAlertJob`, hooked into the existing
+  `LeadObserver::notifyNewLead()` path (already fires on every Lead
+  creation, already knows the resolved owner) — plain Telegram Bot API
+  `sendMessage` HTTP POST, no polling/webhook needed to send outbound. New
+  `App\Jobs\SendVisibilityAuditPaymentConfirmationJob`, dispatched from
+  `RecordVisibilityAuditPurchase` after a purchase row is created — same
+  `wadesk.in` `POST /api/send-template` call shape as the existing Deal-Won
+  handoff job, just the Marketing number instead of Support and a new
+  `WADESK_VISIBILITY_AUDIT_TEMPLATE_NAME` config (a suggested two-variable
+  template body — payer name, tier+amount — is documented alongside the
+  config value for the owner to submit to Meta). Applies to **any**
+  Visibility Audit tier (Gbp/Website/Both), not just the Gbp one literally
+  named in the request — a payment confirmation reads the same regardless
+  of which tier was purchased, and `RecordVisibilityAuditPurchase` already
+  treats all three tiers identically. Both jobs are true no-ops (log a
+  warning, never throw) until their respective env vars are set — ship
+  inert today, Telegram starts working the moment the owner creates a bot
+  via @BotFather and sets `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID`; the
+  WhatsApp confirmation starts working once the template is Meta-approved,
+  same as the handoff job's existing contract.
+  **Real gap found while researching, not this milestone's scope but
+  worth flagging**: `WhatsappWebhookController` only ever captures the
+  *first* inbound message per wadesk.in conversation — for a Ticket it
+  dedupes every later message away entirely (never becomes a reply), and
+  for a Lead only inbound messages land as notes, never what staff type
+  back inside wadesk.in's own chat UI. Scoped out of this milestone
+  (owner confirmed via AskUserQuestion) as its own larger, cross-repo
+  item — see [[backlog]].
+  19 new Pest tests (dispatch + HTTP-call shape + every no-op branch for
+  both jobs), full suite 1968 (up from 1949) green, Pint clean. No
+  frontend/Blade changes, so no `npm run build` needed. Updated
+  `docs/user-guides/admin.md` (new Section 13a) and
+  `docs/user-guides/integrations.md` (Integration 8 extended, new
+  Integration 11) plus `.env.example` — also filled in `WADESK_MARKETING_NUMBER`
+  there, a pre-existing real gap (the var was used in `config/services.php`
+  and production but never documented in `.env.example`), found while
+  editing the adjacent block.
 - **2026-08-14 — Wadesk.in full conversation capture: every WhatsApp message,
   both directions, lands on the matching Ticket/Lead — not just a
   conversation's opening message.** Owner asked for wadesk.in chat messages
