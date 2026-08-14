@@ -5,11 +5,15 @@ namespace App\Http\Controllers;
 class VisibilityAuditOfferController extends Controller
 {
     /**
-     * Public landing page for the discounted GBP Visibility Check offer —
-     * no login required. Linked from the Meta Lead Ads "thank you" screen;
-     * copy deliberately mirrors that ad's own GBP-only framing (message
-     * match). The CTA links to a Razorpay Payment Page, hidden entirely
-     * when its URL isn't configured yet.
+     * Public landing page for the discounted GBP Audit offer — no login
+     * required. Linked from the Meta Lead Ads "thank you" screen; copy is a
+     * fully custom design (owner-supplied HTML/CSS, converted to Blade)
+     * mirroring that ad's own GBP-only framing and Hindi/English mix
+     * (message match). Deliberately uses "Audit" throughout, not "Review" —
+     * a considered choice, not an oversight (see project memory). Every CTA
+     * links straight to the Razorpay Payment Page (no on-page form; the
+     * Payment Page itself already collects Name/GBP link/Email), hidden
+     * entirely when its URL isn't configured yet.
      *
      * Also still passes websitePaymentUrl/bothPaymentUrl — the Website and
      * "Both" Payment Pages + their webhook tier-matching remain fully
