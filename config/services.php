@@ -187,6 +187,18 @@ return [
         'key_id' => env('RAZORPAY_KEY_ID'),
         'key_secret' => env('RAZORPAY_KEY_SECRET'),
         'webhook_secret' => env('RAZORPAY_WEBHOOK_SECRET'),
+
+        // Visibility Audit offer landing page (/offers/visibility-audit).
+        // Each of these is a Razorpay Payment Page URL (Dashboard → Payment
+        // Pages — a separate, simpler product from the Orders API above),
+        // one per offer tier. The page hides a tier's CTA entirely rather
+        // than link to a blank/'#' URL when its value is unset, so this is
+        // safe to leave blank until the Payment Pages actually exist.
+        'payment_pages' => [
+            'gbp_audit' => env('RAZORPAY_PAYMENT_PAGE_GBP_AUDIT'),
+            'website_audit' => env('RAZORPAY_PAYMENT_PAGE_WEBSITE_AUDIT'),
+            'both_audit' => env('RAZORPAY_PAYMENT_PAGE_BOTH_AUDIT'),
+        ],
     ],
 
 ];

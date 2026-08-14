@@ -59,6 +59,7 @@ use App\Http\Controllers\TeamWorkloadController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\TwoFactorSetupController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\VisibilityAuditOfferController;
 use App\Livewire\ClientImport;
 use App\Livewire\ContractRenewalDashboard;
 use App\Livewire\DealsBoard;
@@ -75,6 +76,11 @@ use Illuminate\Support\Facades\Route;
  */
 Route::get('/partner/upload/{token}', [PartnerUploadController::class, 'show'])->name('partner-upload.show');
 Route::post('/partner/upload/{token}', [PartnerUploadController::class, 'store'])->name('partner-upload.store');
+
+// Visibility Audit offer — public landing page, no login required. Linked
+// from the Meta Lead Ads "thank you" screen; CTAs go to Razorpay Payment
+// Pages, not this app's own Razorpay Orders integration.
+Route::get('/offers/visibility-audit', [VisibilityAuditOfferController::class, 'show'])->name('offers.visibility-audit');
 
 // Internal CRM — no public landing page. Send visitors to the right place.
 Route::get('/', function () {
