@@ -39,6 +39,12 @@
                     A visibility audit shows you exactly what's working, what isn't, and what to fix first — for
                     your Google Business Profile, your website, or both.
                 </p>
+                <div class="mt-8">
+                    <a href="#pricing"
+                       class="inline-block px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+                        See Pricing &amp; Get Your Audit
+                    </a>
+                </div>
             </div>
         </section>
 
@@ -70,8 +76,29 @@
             </div>
         </section>
 
+        {{-- How it works --}}
+        <section class="max-w-5xl mx-auto px-4 pb-14">
+            <div class="grid sm:grid-cols-3 gap-8 text-center">
+                <div>
+                    <div class="w-9 h-9 rounded-full bg-blue-600 text-white font-semibold flex items-center justify-center mx-auto mb-3">1</div>
+                    <h3 class="font-semibold text-gray-900 mb-1">Pick your audit</h3>
+                    <p class="text-gray-500 text-sm">Choose GBP, Website, or both — whatever you need reviewed.</p>
+                </div>
+                <div>
+                    <div class="w-9 h-9 rounded-full bg-blue-600 text-white font-semibold flex items-center justify-center mx-auto mb-3">2</div>
+                    <h3 class="font-semibold text-gray-900 mb-1">Pay securely</h3>
+                    <p class="text-gray-500 text-sm">Quick checkout via Razorpay — UPI, card, or netbanking.</p>
+                </div>
+                <div>
+                    <div class="w-9 h-9 rounded-full bg-blue-600 text-white font-semibold flex items-center justify-center mx-auto mb-3">3</div>
+                    <h3 class="font-semibold text-gray-900 mb-1">Get your report</h3>
+                    <p class="text-gray-500 text-sm">Our team reviews your details and sends a written report with prioritized fixes.</p>
+                </div>
+            </div>
+        </section>
+
         {{-- Pricing / CTAs --}}
-        <section class="bg-gray-50 border-y border-gray-100">
+        <section id="pricing" class="bg-gray-50 border-y border-gray-100 scroll-mt-6">
             <div class="max-w-5xl mx-auto px-4 py-14">
                 <h2 class="text-2xl font-bold text-gray-900 text-center mb-2">Choose Your Audit</h2>
                 <p class="text-gray-500 text-center mb-10">Introductory pricing — regular price shown for comparison.</p>
@@ -140,6 +167,10 @@
                         @endif
                     </div>
                 </div>
+
+                <p class="text-center text-gray-500 text-sm mt-8">
+                    Secure payment via Razorpay &middot; GST invoice included &middot; Priced in INR
+                </p>
             </div>
         </section>
 
