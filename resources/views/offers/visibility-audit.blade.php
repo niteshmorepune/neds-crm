@@ -45,6 +45,42 @@
                         See Pricing &amp; Get Your Review
                     </a>
                 </div>
+
+                {{-- Illustrative mockup only — not a screenshot of a real client's
+                     report. Clearly labelled as a sample so it's never mistaken
+                     for an actual result. --}}
+                <div class="mt-10 max-w-sm mx-auto bg-white border border-gray-200 rounded-xl shadow-lg p-5 text-left">
+                    <div class="flex items-center gap-2 mb-4">
+                        <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Sample Report</span>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-700">Profile Completeness</span>
+                            <span class="flex items-center gap-1.5 text-xs font-medium text-amber-700">
+                                <span class="w-2 h-2 rounded-full bg-amber-400"></span> Needs Work
+                            </span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-700">Photos &amp; Reviews</span>
+                            <span class="flex items-center gap-1.5 text-xs font-medium text-green-700">
+                                <span class="w-2 h-2 rounded-full bg-green-500"></span> Good
+                            </span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-700">Search Visibility</span>
+                            <span class="flex items-center gap-1.5 text-xs font-medium text-amber-700">
+                                <span class="w-2 h-2 rounded-full bg-amber-400"></span> Needs Work
+                            </span>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+                        <span class="text-xs text-gray-400">Illustrative example</span>
+                        <span class="text-xs font-semibold text-blue-600">8 prioritized fixes</span>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -54,23 +90,23 @@
                 <div class="border border-gray-200 rounded-xl p-6">
                     <h2 class="text-lg font-semibold text-gray-900 mb-3">Google Business Profile (GBP) Review</h2>
                     <ul class="space-y-2 text-gray-600 text-sm">
-                        <li class="flex gap-2"><span class="text-blue-600">✓</span> Profile completeness &amp; accuracy check</li>
-                        <li class="flex gap-2"><span class="text-blue-600">✓</span> Category, services &amp; business info review</li>
-                        <li class="flex gap-2"><span class="text-blue-600">✓</span> Photos, posts &amp; Q&amp;A review</li>
-                        <li class="flex gap-2"><span class="text-blue-600">✓</span> Reviews &amp; rating overview</li>
-                        <li class="flex gap-2"><span class="text-blue-600">✓</span> Local search visibility snapshot</li>
-                        <li class="flex gap-2"><span class="text-blue-600">✓</span> Written report with prioritized fixes</li>
+                        <li class="flex gap-2"><svg class="w-5 h-5 flex-shrink-0 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg> Profile completeness &amp; accuracy check</li>
+                        <li class="flex gap-2"><svg class="w-5 h-5 flex-shrink-0 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg> Category, services &amp; business info review</li>
+                        <li class="flex gap-2"><svg class="w-5 h-5 flex-shrink-0 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg> Photos, posts &amp; Q&amp;A review</li>
+                        <li class="flex gap-2"><svg class="w-5 h-5 flex-shrink-0 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg> Reviews &amp; rating overview</li>
+                        <li class="flex gap-2"><svg class="w-5 h-5 flex-shrink-0 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg> Local search visibility snapshot</li>
+                        <li class="flex gap-2"><svg class="w-5 h-5 flex-shrink-0 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg> Written report with prioritized fixes</li>
                     </ul>
                 </div>
                 <div class="border border-gray-200 rounded-xl p-6">
                     <h2 class="text-lg font-semibold text-gray-900 mb-3">Website Review</h2>
                     <ul class="space-y-2 text-gray-600 text-sm">
-                        <li class="flex gap-2"><span class="text-blue-600">✓</span> On-page SEO health check</li>
-                        <li class="flex gap-2"><span class="text-blue-600">✓</span> Page speed &amp; mobile-friendliness review</li>
-                        <li class="flex gap-2"><span class="text-blue-600">✓</span> Google search visibility check</li>
-                        <li class="flex gap-2"><span class="text-blue-600">✓</span> Content &amp; metadata review</li>
-                        <li class="flex gap-2"><span class="text-blue-600">✓</span> Technical issues (broken links, missing tags, etc.)</li>
-                        <li class="flex gap-2"><span class="text-blue-600">✓</span> Written report with prioritized fixes</li>
+                        <li class="flex gap-2"><svg class="w-5 h-5 flex-shrink-0 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg> On-page SEO health check</li>
+                        <li class="flex gap-2"><svg class="w-5 h-5 flex-shrink-0 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg> Page speed &amp; mobile-friendliness review</li>
+                        <li class="flex gap-2"><svg class="w-5 h-5 flex-shrink-0 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg> Google search visibility check</li>
+                        <li class="flex gap-2"><svg class="w-5 h-5 flex-shrink-0 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg> Content &amp; metadata review</li>
+                        <li class="flex gap-2"><svg class="w-5 h-5 flex-shrink-0 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg> Technical issues (broken links, missing tags, etc.)</li>
+                        <li class="flex gap-2"><svg class="w-5 h-5 flex-shrink-0 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg> Written report with prioritized fixes</li>
                     </ul>
                 </div>
             </div>
@@ -145,7 +181,7 @@
                     </div>
 
                     {{-- Both --}}
-                    <div class="bg-white border-2 border-blue-600 rounded-xl p-6 flex flex-col relative">
+                    <div class="bg-blue-50 border-2 border-blue-600 rounded-xl p-6 flex flex-col relative">
                         <span class="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-xs font-semibold px-3 py-1 rounded-full">
                             Best Value
                         </span>
