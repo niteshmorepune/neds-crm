@@ -3,8 +3,8 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Your Special Offer — Visibility Audit | Niranjan Enterprises Digital Solutions</title>
-        <meta name="description" content="Get a professional Google Business Profile or Website Visibility Audit from Niranjan Enterprises Digital Solutions — a limited-time offer at ₹120 / ₹240.">
+        <title>Your Special Offer — Visibility Review | Niranjan Enterprises Digital Solutions</title>
+        <meta name="description" content="Get a professional Google Business Profile or Website Visibility Review from Niranjan Enterprises Digital Solutions — a limited-time offer at ₹120 / ₹240.">
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
@@ -16,7 +16,7 @@
     <body class="font-sans text-gray-900 antialiased bg-white">
 
         {{-- Header — deliberately no site navigation. This is a single-purpose
-             landing page; the only action on it should be choosing an audit. --}}
+             landing page; the only action on it should be choosing a review. --}}
         <header class="border-b border-gray-100">
             <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-center sm:justify-start">
                 <a href="https://niranjanenterprises.com" target="_blank" rel="noopener noreferrer">
@@ -36,13 +36,13 @@
                 </h1>
                 <p class="text-gray-600 text-lg mt-4 leading-relaxed">
                     Most businesses have no idea how they actually look to a customer searching for them on Google.
-                    A visibility audit shows you exactly what's working, what isn't, and what to fix first — for
+                    A visibility review shows you exactly what's working, what isn't, and what to fix first — for
                     your Google Business Profile, your website, or both.
                 </p>
                 <div class="mt-8">
                     <a href="#pricing"
                        class="inline-block px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
-                        See Pricing &amp; Get Your Audit
+                        See Pricing &amp; Get Your Review
                     </a>
                 </div>
             </div>
@@ -52,18 +52,18 @@
         <section class="max-w-5xl mx-auto px-4 py-14">
             <div class="grid sm:grid-cols-2 gap-8">
                 <div class="border border-gray-200 rounded-xl p-6">
-                    <h2 class="text-lg font-semibold text-gray-900 mb-3">Google Business Profile (GBP) Audit</h2>
+                    <h2 class="text-lg font-semibold text-gray-900 mb-3">Google Business Profile (GBP) Review</h2>
                     <ul class="space-y-2 text-gray-600 text-sm">
                         <li class="flex gap-2"><span class="text-blue-600">✓</span> Profile completeness &amp; accuracy check</li>
                         <li class="flex gap-2"><span class="text-blue-600">✓</span> Category, services &amp; business info review</li>
-                        <li class="flex gap-2"><span class="text-blue-600">✓</span> Photos, posts &amp; Q&amp;A audit</li>
+                        <li class="flex gap-2"><span class="text-blue-600">✓</span> Photos, posts &amp; Q&amp;A review</li>
                         <li class="flex gap-2"><span class="text-blue-600">✓</span> Reviews &amp; rating overview</li>
                         <li class="flex gap-2"><span class="text-blue-600">✓</span> Local search visibility snapshot</li>
                         <li class="flex gap-2"><span class="text-blue-600">✓</span> Written report with prioritized fixes</li>
                     </ul>
                 </div>
                 <div class="border border-gray-200 rounded-xl p-6">
-                    <h2 class="text-lg font-semibold text-gray-900 mb-3">Website Audit</h2>
+                    <h2 class="text-lg font-semibold text-gray-900 mb-3">Website Review</h2>
                     <ul class="space-y-2 text-gray-600 text-sm">
                         <li class="flex gap-2"><span class="text-blue-600">✓</span> On-page SEO health check</li>
                         <li class="flex gap-2"><span class="text-blue-600">✓</span> Page speed &amp; mobile-friendliness review</li>
@@ -81,7 +81,7 @@
             <div class="grid sm:grid-cols-3 gap-8 text-center">
                 <div>
                     <div class="w-9 h-9 rounded-full bg-blue-600 text-white font-semibold flex items-center justify-center mx-auto mb-3">1</div>
-                    <h3 class="font-semibold text-gray-900 mb-1">Pick your audit</h3>
+                    <h3 class="font-semibold text-gray-900 mb-1">Pick your review</h3>
                     <p class="text-gray-500 text-sm">Choose GBP, Website, or both — whatever you need reviewed.</p>
                 </div>
                 <div>
@@ -100,13 +100,13 @@
         {{-- Pricing / CTAs --}}
         <section id="pricing" class="bg-gray-50 border-y border-gray-100 scroll-mt-6">
             <div class="max-w-5xl mx-auto px-4 py-14">
-                <h2 class="text-2xl font-bold text-gray-900 text-center mb-2">Choose Your Audit</h2>
+                <h2 class="text-2xl font-bold text-gray-900 text-center mb-2">Choose Your Review</h2>
                 <p class="text-gray-500 text-center mb-10">Introductory pricing — regular price shown for comparison.</p>
 
                 <div class="grid sm:grid-cols-3 gap-6">
-                    {{-- GBP Audit --}}
+                    {{-- GBP Review --}}
                     <div class="bg-white border border-gray-200 rounded-xl p-6 flex flex-col">
-                        <h3 class="font-semibold text-gray-900">GBP Audit</h3>
+                        <h3 class="font-semibold text-gray-900">GBP Review</h3>
                         <p class="text-gray-500 text-sm mt-1 mb-4">Google Business Profile</p>
                         <div class="mb-4">
                             <span class="text-3xl font-bold text-gray-900">₹120</span>
@@ -115,7 +115,7 @@
                         @if ($gbpPaymentUrl)
                             <a href="{{ $gbpPaymentUrl }}"
                                class="mt-auto inline-block text-center px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
-                                Get My GBP Audit
+                                Get My GBP Review
                             </a>
                         @else
                             <span class="mt-auto inline-block text-center px-4 py-3 bg-gray-100 text-gray-400 text-sm font-medium rounded-lg">
@@ -124,9 +124,9 @@
                         @endif
                     </div>
 
-                    {{-- Website Audit --}}
+                    {{-- Website Review --}}
                     <div class="bg-white border border-gray-200 rounded-xl p-6 flex flex-col">
-                        <h3 class="font-semibold text-gray-900">Website Audit</h3>
+                        <h3 class="font-semibold text-gray-900">Website Review</h3>
                         <p class="text-gray-500 text-sm mt-1 mb-4">Full site review</p>
                         <div class="mb-4">
                             <span class="text-3xl font-bold text-gray-900">₹240</span>
@@ -135,7 +135,7 @@
                         @if ($websitePaymentUrl)
                             <a href="{{ $websitePaymentUrl }}"
                                class="mt-auto inline-block text-center px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
-                                Get My Website Audit
+                                Get My Website Review
                             </a>
                         @else
                             <span class="mt-auto inline-block text-center px-4 py-3 bg-gray-100 text-gray-400 text-sm font-medium rounded-lg">
@@ -149,7 +149,7 @@
                         <span class="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-xs font-semibold px-3 py-1 rounded-full">
                             Best Value
                         </span>
-                        <h3 class="font-semibold text-gray-900">Both Audits</h3>
+                        <h3 class="font-semibold text-gray-900">Both Reviews</h3>
                         <p class="text-gray-500 text-sm mt-1 mb-4">GBP + Website</p>
                         <div class="mb-4">
                             <span class="text-3xl font-bold text-gray-900">₹360</span>
@@ -158,7 +158,7 @@
                         @if ($bothPaymentUrl)
                             <a href="{{ $bothPaymentUrl }}"
                                class="mt-auto inline-block text-center px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
-                                Get Both Audits
+                                Get Both Reviews
                             </a>
                         @else
                             <span class="mt-auto inline-block text-center px-4 py-3 bg-gray-100 text-gray-400 text-sm font-medium rounded-lg">
