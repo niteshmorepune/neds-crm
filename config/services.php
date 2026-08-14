@@ -199,6 +199,15 @@ return [
             'website_audit' => env('RAZORPAY_PAYMENT_PAGE_WEBSITE_AUDIT'),
             'both_audit' => env('RAZORPAY_PAYMENT_PAGE_BOTH_AUDIT'),
         ],
+
+        // A THIRD, separate webhook subscription/secret (Dashboard →
+        // Settings → Webhooks → new subscription, event: payment.captured
+        // only) pointed at /api/webhooks/razorpay/visibility-audit — kept
+        // distinct from webhook_secret above so a Payment Page purchase can
+        // never be confused with (or accidentally authenticate as) an
+        // invoice payment. Same one-secret-per-integration pattern as every
+        // other webhook this app receives.
+        'visibility_audit_webhook_secret' => env('RAZORPAY_VISIBILITY_AUDIT_WEBHOOK_SECRET'),
     ],
 
 ];

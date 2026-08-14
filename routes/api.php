@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\DrishtiTrendIdeaBriefController;
 use App\Http\Controllers\Api\DrishtiWebhookController;
 use App\Http\Controllers\Api\LeadCaptureController;
 use App\Http\Controllers\Api\MetaLeadsWebhookController;
+use App\Http\Controllers\Api\RazorpayVisibilityAuditWebhookController;
 use App\Http\Controllers\Api\RazorpayWebhookController;
 use App\Http\Controllers\Api\SmdostWebhookController;
 use App\Http\Controllers\Api\WhatsappWebhookController;
@@ -12,6 +13,7 @@ use App\Http\Middleware\VerifyBiometricBridgeToken;
 use App\Http\Middleware\VerifyDrishtiWebhookSignature;
 use App\Http\Middleware\VerifyLeadCaptureToken;
 use App\Http\Middleware\VerifyMetaWebhookSignature;
+use App\Http\Middleware\VerifyRazorpayVisibilityAuditWebhookSignature;
 use App\Http\Middleware\VerifyRazorpayWebhookSignature;
 use App\Http\Middleware\VerifySmdostWebhookToken;
 use App\Http\Middleware\VerifyWhatsappWebhookToken;
@@ -83,6 +85,16 @@ Route::post('/webhooks/meta-leads', [MetaLeadsWebhookController::class, 'receive
 Route::post('/webhooks/razorpay', [RazorpayWebhookController::class, 'handle'])
     ->middleware(['throttle:120,1', VerifyRazorpayWebhookSignature::class])
     ->name('api.webhooks.razorpay');
+
+// Razorpay → CRM bridge. Visibility Audit offer (/offers/visibility-audit)
+// Payment Page purchases. A completed payment is matched to a Lead by phone
+// (Lead::findOpenByPhone(), same dedup mechanism ImportMetaLead uses) and
+// logged as a note — deliberately does not auto-create a Deal, see
+// RecordVisibilityAuditPurchase. A separate webhook subscription/secret
+// from the one above, so this can never be confused with an invoice payment.
+Route::post('/webhooks/razorpay/visibility-audit', [RazorpayVisibilityAuditWebhookController::class, 'handle'])
+    ->middleware(['throttle:120,1', VerifyRazorpayVisibilityAuditWebhookSignature::class])
+    ->name('api.webhooks.razorpay.visibility-audit');
 
 // Office-LAN bridge (tools/biometric-bridge/check-manual-sync.mjs) polls
 // this once a minute to see if an admin/manager has clicked "Sync now" on
