@@ -3,8 +3,8 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Your Special Offer — Visibility Review | Niranjan Enterprises Digital Solutions</title>
-        <meta name="description" content="Get a professional Google Business Profile or Website Visibility Review from Niranjan Enterprises Digital Solutions — a limited-time offer at ₹120 / ₹240.">
+        <title>Your Special Offer — Google Visibility Check | Niranjan Enterprises Digital Solutions</title>
+        <meta name="description" content="Get a quick Google Business Profile Visibility Check from Niranjan Enterprises Digital Solutions — a limited-time offer at ₹120.">
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
@@ -16,7 +16,7 @@
     <body class="font-sans text-gray-900 antialiased bg-white">
 
         {{-- Header — deliberately no site navigation. This is a single-purpose
-             landing page; the only action on it should be choosing a review. --}}
+             landing page; the only action on it should be getting the check. --}}
         <header class="border-b border-gray-100">
             <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-center sm:justify-start">
                 <a href="https://niranjanenterprises.com" target="_blank" rel="noopener noreferrer">
@@ -25,24 +25,24 @@
             </div>
         </header>
 
-        {{-- Hero --}}
+        {{-- Hero — copy matches the Meta Ad's own GBP-visibility framing 1:1
+             (message match), single offer only. --}}
         <section class="bg-gray-50 border-b border-gray-100">
             <div class="max-w-3xl mx-auto px-4 py-14 text-center">
-                <span class="inline-block bg-blue-100 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full mb-4">
-                    Your Special Offer
+                <span class="inline-block bg-blue-100 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full mb-4 uppercase tracking-wide">
+                    Special Offer
                 </span>
                 <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 leading-tight">
-                    Find Out What's Costing You Customers Online
+                    See What's Holding Your Business Back on Google
                 </h1>
                 <p class="text-gray-600 text-lg mt-4 leading-relaxed">
-                    Most businesses have no idea how they actually look to a customer searching for them on Google.
-                    A visibility review shows you exactly what's working, what isn't, and what to fix first — for
-                    your Google Business Profile, your website, or both.
+                    Get a quick visibility check of your Google Business Profile and discover opportunities to get
+                    more calls and customers.
                 </p>
                 <div class="mt-8">
                     <a href="#pricing"
                        class="inline-block px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
-                        See Pricing &amp; Get Your Review
+                        Get Your Offer
                     </a>
                 </div>
 
@@ -64,13 +64,13 @@
                             </span>
                         </div>
                         <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-700">Photos &amp; Reviews</span>
+                            <span class="text-sm text-gray-700">Photos &amp; Posts</span>
                             <span class="flex items-center gap-1.5 text-xs font-medium text-green-700">
                                 <span class="w-2 h-2 rounded-full bg-green-500"></span> Good
                             </span>
                         </div>
                         <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-700">Search Visibility</span>
+                            <span class="text-sm text-gray-700">Search &amp; Maps Visibility</span>
                             <span class="flex items-center gap-1.5 text-xs font-medium text-amber-700">
                                 <span class="w-2 h-2 rounded-full bg-amber-400"></span> Needs Work
                             </span>
@@ -78,37 +78,24 @@
                     </div>
                     <div class="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
                         <span class="text-xs text-gray-400">Illustrative example</span>
-                        <span class="text-xs font-semibold text-blue-600">8 prioritized fixes</span>
+                        <span class="text-xs font-semibold text-blue-600">6 opportunities found</span>
                     </div>
                 </div>
             </div>
         </section>
 
-        {{-- What's checked --}}
-        <section class="max-w-5xl mx-auto px-4 py-14">
-            <div class="grid sm:grid-cols-2 gap-8">
-                <div class="border border-gray-200 rounded-xl p-6">
-                    <h2 class="text-lg font-semibold text-gray-900 mb-3">Google Business Profile (GBP) Review</h2>
-                    <ul class="space-y-2 text-gray-600 text-sm">
-                        <li class="flex gap-2"><svg class="w-5 h-5 flex-shrink-0 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg> Profile completeness &amp; accuracy check</li>
-                        <li class="flex gap-2"><svg class="w-5 h-5 flex-shrink-0 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg> Category, services &amp; business info review</li>
-                        <li class="flex gap-2"><svg class="w-5 h-5 flex-shrink-0 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg> Photos, posts &amp; Q&amp;A review</li>
-                        <li class="flex gap-2"><svg class="w-5 h-5 flex-shrink-0 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg> Reviews &amp; rating overview</li>
-                        <li class="flex gap-2"><svg class="w-5 h-5 flex-shrink-0 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg> Local search visibility snapshot</li>
-                        <li class="flex gap-2"><svg class="w-5 h-5 flex-shrink-0 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg> Written report with prioritized fixes</li>
-                    </ul>
-                </div>
-                <div class="border border-gray-200 rounded-xl p-6">
-                    <h2 class="text-lg font-semibold text-gray-900 mb-3">Website Review</h2>
-                    <ul class="space-y-2 text-gray-600 text-sm">
-                        <li class="flex gap-2"><svg class="w-5 h-5 flex-shrink-0 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg> On-page SEO health check</li>
-                        <li class="flex gap-2"><svg class="w-5 h-5 flex-shrink-0 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg> Page speed &amp; mobile-friendliness review</li>
-                        <li class="flex gap-2"><svg class="w-5 h-5 flex-shrink-0 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg> Google search visibility check</li>
-                        <li class="flex gap-2"><svg class="w-5 h-5 flex-shrink-0 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg> Content &amp; metadata review</li>
-                        <li class="flex gap-2"><svg class="w-5 h-5 flex-shrink-0 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg> Technical issues (broken links, missing tags, etc.)</li>
-                        <li class="flex gap-2"><svg class="w-5 h-5 flex-shrink-0 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg> Written report with prioritized fixes</li>
-                    </ul>
-                </div>
+        {{-- What's included — single offer now, one centered card --}}
+        <section class="max-w-2xl mx-auto px-4 py-14">
+            <div class="border border-gray-200 rounded-xl p-6 sm:p-8">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Google Business Profile Visibility Check</h2>
+                <ul class="space-y-2 text-gray-600 text-sm">
+                    <li class="flex gap-2"><svg class="w-5 h-5 flex-shrink-0 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg> Profile completeness</li>
+                    <li class="flex gap-2"><svg class="w-5 h-5 flex-shrink-0 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg> Categories &amp; services</li>
+                    <li class="flex gap-2"><svg class="w-5 h-5 flex-shrink-0 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg> Photos &amp; posts</li>
+                    <li class="flex gap-2"><svg class="w-5 h-5 flex-shrink-0 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg> Reviews &amp; ratings</li>
+                    <li class="flex gap-2"><svg class="w-5 h-5 flex-shrink-0 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg> Google Search &amp; Maps visibility</li>
+                    <li class="flex gap-2"><svg class="w-5 h-5 flex-shrink-0 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg> Improvement opportunities</li>
+                </ul>
             </div>
         </section>
 
@@ -117,100 +104,63 @@
             <div class="grid sm:grid-cols-3 gap-8 text-center">
                 <div>
                     <div class="w-9 h-9 rounded-full bg-blue-600 text-white font-semibold flex items-center justify-center mx-auto mb-3">1</div>
-                    <h3 class="font-semibold text-gray-900 mb-1">Pick your review</h3>
-                    <p class="text-gray-500 text-sm">Choose GBP, Website, or both — whatever you need reviewed.</p>
-                </div>
-                <div>
-                    <div class="w-9 h-9 rounded-full bg-blue-600 text-white font-semibold flex items-center justify-center mx-auto mb-3">2</div>
                     <h3 class="font-semibold text-gray-900 mb-1">Pay securely</h3>
                     <p class="text-gray-500 text-sm">Quick checkout via Razorpay — UPI, card, or netbanking.</p>
                 </div>
                 <div>
+                    <div class="w-9 h-9 rounded-full bg-blue-600 text-white font-semibold flex items-center justify-center mx-auto mb-3">2</div>
+                    <h3 class="font-semibold text-gray-900 mb-1">We check your profile</h3>
+                    <p class="text-gray-500 text-sm">Our team reviews your Google Business Profile in detail.</p>
+                </div>
+                <div>
                     <div class="w-9 h-9 rounded-full bg-blue-600 text-white font-semibold flex items-center justify-center mx-auto mb-3">3</div>
-                    <h3 class="font-semibold text-gray-900 mb-1">Get your report</h3>
-                    <p class="text-gray-500 text-sm">Our team reviews your details and sends a written report with prioritized fixes.</p>
+                    <h3 class="font-semibold text-gray-900 mb-1">Get your results</h3>
+                    <p class="text-gray-500 text-sm">We show you what's working, what isn't, and how to fix it.</p>
                 </div>
             </div>
         </section>
 
-        {{-- Pricing / CTAs --}}
+        {{-- Special Offer / CTA — single offer, matching the ad 1:1 --}}
         <section id="pricing" class="bg-gray-50 border-y border-gray-100 scroll-mt-6">
-            <div class="max-w-5xl mx-auto px-4 py-14">
-                <h2 class="text-2xl font-bold text-gray-900 text-center mb-2">Choose Your Review</h2>
-                <p class="text-gray-500 text-center mb-10">Introductory pricing — regular price shown for comparison.</p>
+            <div class="max-w-md mx-auto px-4 py-14 text-center">
+                <span class="inline-block bg-blue-100 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full mb-4 uppercase tracking-wide">
+                    Special Offer
+                </span>
+                <h2 class="text-2xl font-bold text-gray-900 mb-1">Google Visibility Check</h2>
+                <p class="text-gray-500 text-sm mb-6">Introductory pricing — regular price shown for comparison.</p>
 
-                <div class="grid sm:grid-cols-3 gap-6">
-                    {{-- GBP Review --}}
-                    <div class="bg-white border border-gray-200 rounded-xl p-6 flex flex-col">
-                        <h3 class="font-semibold text-gray-900">GBP Review</h3>
-                        <p class="text-gray-500 text-sm mt-1 mb-4">Google Business Profile</p>
-                        <div class="mb-4">
-                            <span class="text-3xl font-bold text-gray-900">₹120</span>
-                            <span class="text-gray-400 line-through ml-2">₹3,000</span>
-                        </div>
-                        @if ($gbpPaymentUrl)
-                            <a href="{{ $gbpPaymentUrl }}"
-                               class="mt-auto inline-block text-center px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
-                                Get My GBP Review
-                            </a>
-                        @else
-                            <span class="mt-auto inline-block text-center px-4 py-3 bg-gray-100 text-gray-400 text-sm font-medium rounded-lg">
-                                Coming soon
-                            </span>
-                        @endif
+                <div class="bg-white border-2 border-blue-600 rounded-xl p-8">
+                    <div class="mb-6">
+                        <span class="text-4xl font-bold text-gray-900">₹120</span>
+                        <span class="text-gray-400 line-through ml-2">₹3,000</span>
                     </div>
-
-                    {{-- Website Review --}}
-                    <div class="bg-white border border-gray-200 rounded-xl p-6 flex flex-col">
-                        <h3 class="font-semibold text-gray-900">Website Review</h3>
-                        <p class="text-gray-500 text-sm mt-1 mb-4">Full site review</p>
-                        <div class="mb-4">
-                            <span class="text-3xl font-bold text-gray-900">₹240</span>
-                            <span class="text-gray-400 line-through ml-2">₹6,000</span>
-                        </div>
-                        @if ($websitePaymentUrl)
-                            <a href="{{ $websitePaymentUrl }}"
-                               class="mt-auto inline-block text-center px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
-                                Get My Website Review
-                            </a>
-                        @else
-                            <span class="mt-auto inline-block text-center px-4 py-3 bg-gray-100 text-gray-400 text-sm font-medium rounded-lg">
-                                Coming soon
-                            </span>
-                        @endif
-                    </div>
-
-                    {{-- Both --}}
-                    <div class="bg-blue-50 border-2 border-blue-600 rounded-xl p-6 flex flex-col relative">
-                        <span class="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-xs font-semibold px-3 py-1 rounded-full">
-                            Best Value
+                    @if ($gbpPaymentUrl)
+                        <a href="{{ $gbpPaymentUrl }}"
+                           class="block text-center px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+                            Get My Visibility Check
+                        </a>
+                    @else
+                        <span class="block text-center px-4 py-3 bg-gray-100 text-gray-400 text-sm font-medium rounded-lg">
+                            Coming soon
                         </span>
-                        <h3 class="font-semibold text-gray-900">Both Reviews</h3>
-                        <p class="text-gray-500 text-sm mt-1 mb-4">GBP + Website</p>
-                        <div class="mb-4">
-                            <span class="text-3xl font-bold text-gray-900">₹360</span>
-                            <span class="text-gray-400 line-through ml-2">₹9,000</span>
-                        </div>
-                        @if ($bothPaymentUrl)
-                            <a href="{{ $bothPaymentUrl }}"
-                               class="mt-auto inline-block text-center px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
-                                Get Both Reviews
-                            </a>
-                        @else
-                            <span class="mt-auto inline-block text-center px-4 py-3 bg-gray-100 text-gray-400 text-sm font-medium rounded-lg">
-                                Coming soon
-                            </span>
-                        @endif
-                    </div>
+                    @endif
                 </div>
 
-                <p class="text-center text-gray-500 text-sm mt-8">
+                <p class="text-center text-gray-500 text-sm mt-6">
                     Secure payment via Razorpay &middot; GST invoice included &middot; Priced in INR
                 </p>
             </div>
         </section>
 
-        {{-- About / trust --}}
+        {{-- Trust — real figure, matches the Meta Ad's own stat --}}
+        <section class="bg-blue-600">
+            <div class="max-w-3xl mx-auto px-4 py-10 text-center">
+                <p class="text-white text-3xl font-bold">66+ Maharashtra businesses</p>
+                <p class="text-blue-100 mt-1">already showing up on Google Search &amp; Maps with our help.</p>
+            </div>
+        </section>
+
+        {{-- About --}}
         <section class="max-w-3xl mx-auto px-4 py-14 text-center">
             <h2 class="text-lg font-semibold text-gray-900 mb-3">About Niranjan Enterprises Digital Solutions</h2>
             <p class="text-gray-600 leading-relaxed">
