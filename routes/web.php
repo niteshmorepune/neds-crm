@@ -59,6 +59,7 @@ use App\Http\Controllers\TeamWorkloadController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\TwoFactorSetupController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\VisibilityAuditFunnelTrackingController;
 use App\Http\Controllers\VisibilityAuditOfferController;
 use App\Livewire\ClientImport;
 use App\Livewire\ContractRenewalDashboard;
@@ -81,6 +82,15 @@ Route::post('/partner/upload/{token}', [PartnerUploadController::class, 'store']
 // from the Meta Lead Ads "thank you" screen; CTAs go to Razorpay Payment
 // Pages, not this app's own Razorpay Orders integration.
 Route::get('/offers/visibility-audit', [VisibilityAuditOfferController::class, 'show'])->name('offers.visibility-audit');
+
+// Invisible tracking redirects in front of the offer above — see
+// VisibilityAuditFunnelTrackingController's docblock for why these exist
+// (telling apart the funnel's drop-off points, not just "Lead"/"Lead paid").
+// `enter` is what Meta's Lead Ads thank-you-screen button should link to;
+// `checkout` is what the landing page's own "Get My Audit Offer" CTAs link
+// to instead of a raw Razorpay Payment Page URL.
+Route::get('/offers/visibility-audit/enter', [VisibilityAuditFunnelTrackingController::class, 'enter'])->name('offers.visibility-audit.enter');
+Route::get('/offers/visibility-audit/checkout', [VisibilityAuditFunnelTrackingController::class, 'checkout'])->name('offers.visibility-audit.checkout');
 
 // Internal CRM — no public landing page. Send visitors to the right place.
 Route::get('/', function () {

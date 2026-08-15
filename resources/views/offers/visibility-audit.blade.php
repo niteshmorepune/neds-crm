@@ -94,7 +94,7 @@ h2{font-size:clamp(30px,4vw,45px);line-height:1.1;letter-spacing:-.04em;margin:0
         <li>Reviews, Photos & Content Review</li>
       </ul>
       @if ($gbpPaymentUrl)
-        <a class="primary" href="{{ $gbpPaymentUrl }}">{{ $ctaLabel }}</a>
+        <a class="primary" href="{{ route('offers.visibility-audit.checkout', array_filter(['tier' => 'gbp', 'lead' => $lead])) }}">{{ $ctaLabel }}</a>
       @else
         <span class="primary disabled">Coming soon</span>
       @endif
@@ -160,7 +160,7 @@ h2{font-size:clamp(30px,4vw,45px);line-height:1.1;letter-spacing:-.04em;margin:0
         <span class="tag">ONE-TIME</span>
       </div>
       @if ($gbpPaymentUrl)
-        <a class="primary buybtn" href="{{ $gbpPaymentUrl }}">{{ $ctaLabel }}</a>
+        <a class="primary buybtn" href="{{ route('offers.visibility-audit.checkout', array_filter(['tier' => 'gbp', 'lead' => $lead])) }}">{{ $ctaLabel }}</a>
       @else
         <span class="primary buybtn disabled">Coming soon</span>
       @endif
@@ -248,7 +248,7 @@ h2{font-size:clamp(30px,4vw,45px);line-height:1.1;letter-spacing:-.04em;margin:0
     <h2>Before spending more on marketing, find out whether your Google Business Profile is doing its job.</h2>
     <p>Get your Google Business Profile reviewed and discover the gaps that may be holding back your local visibility.</p>
     @if ($gbpPaymentUrl)
-      <a class="primary" href="{{ $gbpPaymentUrl }}">{{ $ctaLabel }}</a>
+      <a class="primary" href="{{ route('offers.visibility-audit.checkout', array_filter(['tier' => 'gbp', 'lead' => $lead])) }}">{{ $ctaLabel }}</a>
     @else
       <span class="primary disabled">Coming soon</span>
     @endif
@@ -260,7 +260,7 @@ h2{font-size:clamp(30px,4vw,45px);line-height:1.1;letter-spacing:-.04em;margin:0
 <div class="sticky">
   <div class="sticky-price"><span>GBP Review & Audit</span><strong>₹120 one-time</strong></div>
   @if ($gbpPaymentUrl)
-    <a class="primary" href="{{ $gbpPaymentUrl }}">Get My Offer →</a>
+    <a class="primary" href="{{ route('offers.visibility-audit.checkout', array_filter(['tier' => 'gbp', 'lead' => $lead])) }}">Get My Offer →</a>
   @else
     <span class="primary disabled">Coming soon</span>
   @endif
