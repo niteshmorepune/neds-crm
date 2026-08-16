@@ -81,8 +81,10 @@ return [
         'visibility_audit_payment_template_name' => env('WADESK_VISIBILITY_AUDIT_TEMPLATE_NAME'),
 
         // Recovery nudges (SendVisibilityAuditRecoveryNudges, scheduled) —
-        // one template per funnel stage, both {{1}}=name/{{2}}=link. Ships
-        // inert until each is set (template must be Meta-approved first).
+        // one template per funnel stage. Body has {{1}}=name; the recovery
+        // link is a Dynamic-URL CTA button (its own {{1}}=lead id, sent as
+        // buttonUrlParam), not a second body variable. Ships inert until
+        // each is set (template must be Meta-approved first).
         'visibility_audit_recovery_landing_template_name' => env('WADESK_VISIBILITY_AUDIT_RECOVERY_LANDING_TEMPLATE_NAME'),
         'visibility_audit_recovery_checkout_template_name' => env('WADESK_VISIBILITY_AUDIT_RECOVERY_CHECKOUT_TEMPLATE_NAME'),
     ],
