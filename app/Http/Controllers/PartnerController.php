@@ -8,6 +8,7 @@ use App\Mail\PartnerInvitation;
 use App\Models\Customer;
 use App\Models\Partner;
 use App\Models\PartnerCommissionStatement;
+use App\Models\Quotation;
 use App\Services\CollectionsMetrics;
 use App\Services\PartnerCommissionCalculator;
 use Illuminate\Http\RedirectResponse;
@@ -38,7 +39,14 @@ class PartnerController extends Controller
             : null;
         $commissionHistory = $partner->commissionStatements()->orderByDesc('period_start')->limit(12)->get();
 
-        return view('partners.show', compact('partner', 'rows', 'billed', 'billedByMonth', 'commissionEstimate', 'commissionHistory'));
+        $quotations = Quotation::query()
+            ->whereHas('customer', fn ($q) => $q->where('referring_partner_id', $partner->id))
+            ->with('customer')
+            ->latest()
+            ->limit(50)
+            ->get();
+
+        return view('partners.show', compact('partner', 'rows', 'billed', 'billedByMonth', 'commissionEstimate', 'commissionHistory', 'quotations'));
     }
 
     public function create()

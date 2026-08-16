@@ -12,8 +12,10 @@ use App\Models\Quotation;
 use App\Models\User;
 use App\Notifications\QuotationAwaitingDecision;
 use App\Notifications\QuotationNeedsApproval;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -50,6 +52,21 @@ class QuotationController extends Controller
         $quotation->load(['customer', 'items', 'deal', 'invoice', 'recurringInvoices']);
 
         return view('quotations.show', ['quotation' => $quotation]);
+    }
+
+    public function pdf(Quotation $quotation): Response
+    {
+        $this->authorize('view', $quotation);
+
+        $quotation->load(['customer', 'items']);
+
+        $pdf = Pdf::loadView('quotations.pdf', ['quotation' => $quotation]);
+
+        $filename = $quotation->number
+            ? str_replace('/', '-', $quotation->number).'.pdf'
+            : 'quotation-'.$quotation->id.'.pdf';
+
+        return $pdf->stream($filename);
     }
 
     public function send(Quotation $quotation): RedirectResponse

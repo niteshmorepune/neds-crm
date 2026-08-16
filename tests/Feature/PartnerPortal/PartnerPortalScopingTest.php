@@ -4,6 +4,7 @@ use App\Enums\ContentStatus;
 use App\Models\ContentPiece;
 use App\Models\Customer;
 use App\Models\Partner;
+use App\Models\Quotation;
 use Illuminate\Http\UploadedFile;
 
 beforeEach(function () {
@@ -23,6 +24,28 @@ it('shows the partner only their own referred clients and content pieces', funct
         ->assertOk()
         ->assertSee('Alpha Client')->assertDontSee('Bravo Client')
         ->assertSee('Alpha Reel')->assertDontSee('Bravo Reel');
+});
+
+it('shows the partner only quotations for their own referred clients, with a working PDF download', function () {
+    $mine = Customer::factory()->create(['company_name' => 'Alpha Client', 'referring_partner_id' => $this->partnerA->id]);
+    $theirs = Customer::factory()->create(['company_name' => 'Bravo Client', 'referring_partner_id' => $this->partnerB->id]);
+
+    $myQuotation = Quotation::factory()->create(['customer_id' => $mine->id, 'number' => 'QTN/2026-27/8001']);
+    $theirQuotation = Quotation::factory()->create(['customer_id' => $theirs->id, 'number' => 'QTN/2026-27/8002']);
+
+    $this->actingAs($this->partnerA, 'partner')
+        ->get(route('partner-portal.home'))
+        ->assertOk()
+        ->assertSee('QTN/2026-27/8001')
+        ->assertDontSee('QTN/2026-27/8002');
+
+    $this->actingAs($this->partnerA, 'partner')
+        ->get(route('partner-portal.quotations.pdf', $myQuotation))
+        ->assertOk();
+
+    $this->actingAs($this->partnerA, 'partner')
+        ->get(route('partner-portal.quotations.pdf', $theirQuotation))
+        ->assertForbidden();
 });
 
 it('lets a partner upload files against their own content piece and advances a waiting status', function () {

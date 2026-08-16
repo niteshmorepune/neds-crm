@@ -444,6 +444,26 @@ it('points the Back link on the edit page at the quotation itself, not the index
     expect($html)->toContain($backLink);
 });
 
+it('streams a PDF quotation', function () {
+    $quotation = quotationWithLine();
+
+    $response = $this->actingAs($this->admin)->get(route('quotations.pdf', $quotation));
+
+    $response->assertOk();
+    expect($response->getContent())->toStartWith('%PDF');
+});
+
+it('renders the quotation PDF template with non-GST wording and no tax breakup when GST-exempt', function () {
+    $quotation = quotationWithLine(['is_gst_exempt' => true]);
+    $quotation->load(['customer', 'items']);
+
+    $html = view('quotations.pdf', ['quotation' => $quotation])->render();
+
+    expect($html)->toContain('Non-GST Quotation')
+        ->toContain('GST not charged')
+        ->not->toContain('CGST');
+});
+
 it('shows a delete button on the quotation show page and deletes it', function () {
     $quotation = quotationWithLine();
 

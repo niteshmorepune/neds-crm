@@ -61,6 +61,27 @@
         </div>
     </div>
 
+    <div class="mt-6 rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
+        <h3 class="text-base font-semibold text-gray-900">Quotations</h3>
+        <p class="mt-1 text-sm text-gray-500">Quotations shared with you for your referred clients — download the PDF anytime.</p>
+
+        <div class="mt-4 divide-y divide-gray-100">
+            @forelse ($quotations as $quotation)
+                <div class="flex items-center justify-between py-3">
+                    <div>
+                        <p class="text-sm font-medium text-gray-900">{{ $quotation->customer?->company_name ?? 'Client removed' }}</p>
+                        <p class="text-xs text-gray-400">{{ $quotation->number ?? '—' }} · {{ $quotation->status->label() }} · {{ \App\Support\Money::format($quotation->total) }}</p>
+                    </div>
+                    <a href="{{ route('partner-portal.quotations.pdf', $quotation) }}" class="shrink-0 rounded-md border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-100">
+                        Download PDF
+                    </a>
+                </div>
+            @empty
+                <p class="py-6 text-center text-sm text-gray-400">No quotations shared yet.</p>
+            @endforelse
+        </div>
+    </div>
+
     @if ($commissionEstimate || $commissionHistory->isNotEmpty())
         <div class="mt-6 rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
             <h3 class="text-base font-semibold text-gray-900">Your Earnings</h3>
