@@ -500,8 +500,8 @@ shown on client-facing WhatsApp buttons elsewhere in the app, not part of
 this integration.)
 
 ## 13a. Telegram lead alerts
-Every new lead also posts a short alert (name, source, assigned rep, and a
-link back into the CRM) to one shared Telegram group — a second, always-on
+Every new lead also posts a short alert (name, phone number, source, assigned
+rep, and a link back into the CRM) to one shared Telegram group — a second, always-on
 place to notice a new lead land, alongside the in-app notification bell.
 To set it up: message **@BotFather** on Telegram, create a bot (`/newbot`),
 and copy the token it gives you into `TELEGRAM_BOT_TOKEN`. Add that bot to
