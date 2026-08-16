@@ -464,6 +464,20 @@ template confirming the payment, on the **Marketing** number
 (`WADESK_MARKETING_NUMBER`) — same no-op-until-approved contract as the
 handoff message above, gated by `WADESK_VISIBILITY_AUDIT_TEMPLATE_NAME`.
 
+**Visibility Audit recovery nudges:** a lead who lands on the offer page or
+reaches checkout but never pays is automatically nudged over WhatsApp — no
+one has to notice and follow up manually. A scheduled job checks every 30
+minutes for a lead stuck at checkout 2+ hours or the landing page 4+ hours,
+and sends them an approved template with a button back to where they left
+off, plus a required "Stop promotions" opt-out (this is Marketing-category
+content per Meta's rules, not a plain order update). Gated by
+`WADESK_VISIBILITY_AUDIT_RECOVERY_CHECKOUT_TEMPLATE_NAME` /
+`WADESK_VISIBILITY_AUDIT_RECOVERY_LANDING_TEMPLATE_NAME` — each stage stays
+silently off until its own template is approved and its env var set. A
+human can still see and follow up on the same stuck leads any time via
+**Lead Generation → Audit Recovery**, whether or not the automated nudge
+has fired yet.
+
 **Managing which staff see which line:** this is configured on **wadesk.in
 itself**, not the CRM — Admin → Agents page has a checkbox per staff member
 for each line, and Admin → Numbers is where the lines themselves (and their
@@ -475,12 +489,15 @@ a CRM permission.
 This integration is configured via `WADESK_API_URL`/`WADESK_SERVICE_KEY`
 (outbound replies), `WHATSAPP_WEBHOOK_TOKEN` (inbound), `WADESK_SUPPORT_NUMBER`
 (which line is "Support" for the routing logic above), `WADESK_MARKETING_NUMBER`,
-`WADESK_HANDOFF_TEMPLATE_NAME` (the Deal-Won message), and
-`WADESK_VISIBILITY_AUDIT_TEMPLATE_NAME` (the payment confirmation) in the
-server `.env`. Contact your developer if the integration stops creating
-tickets/leads or a template message stops sending. (`COMPANY_WHATSAPP` is a
-separate, unrelated setting — just the number shown on client-facing
-WhatsApp buttons elsewhere in the app, not part of this integration.)
+`WADESK_HANDOFF_TEMPLATE_NAME` (the Deal-Won message),
+`WADESK_VISIBILITY_AUDIT_TEMPLATE_NAME` (the payment confirmation), and
+`WADESK_VISIBILITY_AUDIT_RECOVERY_CHECKOUT_TEMPLATE_NAME` /
+`WADESK_VISIBILITY_AUDIT_RECOVERY_LANDING_TEMPLATE_NAME` (the recovery
+nudges) in the server `.env`. Contact your developer if the integration
+stops creating tickets/leads or a template message stops sending.
+(`COMPANY_WHATSAPP` is a separate, unrelated setting — just the number
+shown on client-facing WhatsApp buttons elsewhere in the app, not part of
+this integration.)
 
 ## 13a. Telegram lead alerts
 Every new lead also posts a short alert (name, source, assigned rep, and a

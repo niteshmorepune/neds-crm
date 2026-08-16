@@ -128,6 +128,16 @@ lead automatically (source = Meta Ads). Any question on the ad form beyond
 name/email/phone/company (e.g. a custom budget question) appears as a note
 on the lead.
 
+**Visibility Audit Recovery:** **Lead Generation → Audit Recovery** lists
+leads who reached the Visibility Audit offer page or checkout but never
+paid — a "who's stuck, at which stage" queue, worth a quick WhatsApp/call
+follow-up rather than leaving them to a bounced ad. Each row links straight
+to that lead's own page so you can act with the usual tools. The CRM also
+automatically nudges these leads over WhatsApp on its own (2–4 hours after
+they stall) with a "Stop promotions"-gated template, so a lead who
+converts from that alone will simply disappear off this list — nothing
+extra to do there, this page is for the ones a nudge alone doesn't move.
+
 **Automatic nurture follow-ups:** if a New lead sits with no note or logged
 call from you for **1, 3, or 7 days**, the CRM drafts a follow-up message for
 you automatically — it appears as an "✨ AI-drafted follow-up (touch N/3)"

@@ -374,6 +374,43 @@ creation) and that the bot hasn't been removed from the group.
 
 ---
 
+## Integration 12 — Visibility Audit funnel tracking + WhatsApp recovery nudges
+
+**What it does:** the `/offers/visibility-audit` page and its checkout link
+are tracking redirects, not raw links — every hit logs which funnel stage a
+lead reached (landing page viewed, checkout/Payment Page viewed) so the CRM
+can tell a lead who never engaged apart from a lead who got close and
+dropped off. Sales/Telecaller can review the stuck ones any time on
+**Lead Generation → Audit Recovery** (see the Sales guide). On top of that,
+a scheduled job automatically nudges a stuck lead over WhatsApp so recovery
+doesn't depend on staff noticing during office hours: `app:send-
+visibility-audit-recovery-nudges` runs every 30 minutes and, for any lead
+stuck at checkout 2+ hours or at the landing page 4+ hours with no nudge
+sent yet, sends an approved WhatsApp template on the **Marketing** line —
+`WADESK_VISIBILITY_AUDIT_RECOVERY_CHECKOUT_TEMPLATE_NAME` /
+`WADESK_VISIBILITY_AUDIT_RECOVERY_LANDING_TEMPLATE_NAME`, same
+approve-then-set-env-var contract as the handoff/payment-confirmation
+messages above. Each template's own CTA button (a WhatsApp "Dynamic URL"
+button, not a plain link in the message text) carries the lead back to the
+right funnel stage; a required "Stop promotions" button lets the lead
+opt out, since Meta classifies this as Marketing content, not a Utility
+message about an existing order.
+
+**A lead is only ever nudged once per stuck event** — if they come back and
+drop off again later, that's a fresh nudge opportunity, but a single stall
+never sends the same message twice.
+
+**If nudges stop arriving:** confirm both template names are set in `.env`
+(each stage silently no-ops on its own until its var is set) and that both
+templates are still Approved in Meta Business Manager **and** on wadesk.in's
+own Templates page — wadesk.in keeps its own copy of each template's
+approval status, which doesn't update automatically just because Meta
+approved it. Use wadesk.in's **Templates → Sync from Meta** button (Admin
+only) to pull the latest name/body/category/approval status straight from
+Meta instead of re-entering it by hand.
+
+---
+
 ## Checking integration health
 
 All integration events leave a trace in the CRM:
@@ -387,6 +424,7 @@ All integration events leave a trace in the CRM:
 | Ticket → replies | Outbound Support-line WhatsApp replies sent via wadesk.in |
 | Lead Generation → source filter | Leads auto-created from Website, WhatsApp (both lines), and Meta Ads |
 | Lead → notes → green "Sent via WhatsApp" badge | Outbound Marketing-line WhatsApp replies sent from a lead |
+| Lead Generation → Audit Recovery | Leads currently stuck at the Visibility Audit landing page or checkout |
 
 If any integration stops working, the most common causes are:
 1. **Server `.env` out of date** — a key (`DRISHTI_SERVICE_KEY`,

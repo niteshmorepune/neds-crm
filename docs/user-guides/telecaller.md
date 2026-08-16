@@ -56,6 +56,12 @@ checkbox before saving (it only appears when the lead has an open WhatsApp
 conversation). Leave it unchecked for a normal internal note — that's the
 default, so nothing goes to the client unless you explicitly tick it.
 
+**Visibility Audit Recovery:** **Lead Generation → Audit Recovery** lists
+leads who reached the Visibility Audit offer page or checkout but never
+paid — worth a follow-up call. The CRM also nudges these leads
+automatically over WhatsApp a few hours after they stall, so someone
+already on this list may convert before you even get to them.
+
 ## 4. Calling
 Use **☎ Log a call** (top bar) or **Calling** to record every call you make.
 Pick the **Lead** you called, the **direction**, **outcome**, and any notes —
