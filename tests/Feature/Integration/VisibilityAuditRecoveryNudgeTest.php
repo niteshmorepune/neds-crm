@@ -57,8 +57,8 @@ it('sends the checkout-stage template with the checkout link and marks the event
         return $request->url() === 'https://wadesk.test/api/send-template'
             && $request['phone'] === '919876543210'
             && $request['templateName'] === 'va_recovery_checkout'
-            && $request['variables'][0] === 'Priya Shah'
-            && str_contains($request['variables'][1], route('offers.visibility-audit.checkout', ['tier' => 'gbp', 'lead' => $lead->id]));
+            && $request['variables'] === ['Priya Shah']
+            && $request['buttonUrlParam'] === (string) $lead->id;
     });
 
     expect($event->fresh()->nudged_at)->not->toBeNull();
@@ -73,7 +73,7 @@ it('sends the landing-stage template with the enter link', function () {
     (new SendVisibilityAuditRecoveryNudgeJob($lead->id, $event->id, VisibilityAuditFunnelEventType::LandingViewed))->handle();
 
     Http::assertSent(fn ($request) => $request['templateName'] === 'va_recovery_landing'
-        && str_contains($request['variables'][1], route('offers.visibility-audit.enter', ['lead' => $lead->id])));
+        && $request['buttonUrlParam'] === (string) $lead->id);
 });
 
 it('never sends twice for the same event once already nudged', function () {

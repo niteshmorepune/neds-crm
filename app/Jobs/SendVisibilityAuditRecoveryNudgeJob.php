@@ -68,10 +68,6 @@ class SendVisibilityAuditRecoveryNudgeJob implements ShouldQueue
             return;
         }
 
-        $link = $this->stage === VisibilityAuditFunnelEventType::LandingViewed
-            ? route('offers.visibility-audit.enter', ['lead' => $lead->id])
-            : route('offers.visibility-audit.checkout', ['tier' => 'gbp', 'lead' => $lead->id]);
-
         $digits = Phone::digits($lead->phone);
 
         try {
@@ -81,7 +77,13 @@ class SendVisibilityAuditRecoveryNudgeJob implements ShouldQueue
                     'phone' => $digits,
                     'businessNumber' => $marketingNumber,
                     'templateName' => $templateName,
-                    'variables' => [$lead->name ?: 'there', $link],
+                    // Body has only {{1}}=name — the link now lives on the
+                    // template's own CTA button as a Dynamic URL, whose
+                    // {{1}} Meta appends to the button's configured base
+                    // URL (.../checkout?tier=gbp&lead= or .../enter?lead=),
+                    // so only the lead id needs to travel here.
+                    'variables' => [$lead->name ?: 'there'],
+                    'buttonUrlParam' => (string) $lead->id,
                 ]);
 
             if (! $response->successful()) {
