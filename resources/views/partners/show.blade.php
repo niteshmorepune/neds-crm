@@ -52,6 +52,50 @@
             </div>
         </div>
 
+        @if ($partnerAccount)
+            <div class="rounded-lg bg-white p-6 shadow-sm">
+                <div class="flex flex-wrap items-baseline justify-between gap-2">
+                    <h3 class="text-base font-semibold text-gray-900">Your Account — {{ $partnerAccount['customer']->company_name }}</h3>
+                    <p class="text-sm text-gray-500">Outstanding: <span class="font-semibold text-gray-900">{{ \App\Support\Money::format($partnerAccount['outstanding_amount']) }}</span></p>
+                </div>
+                <p class="mt-1 text-sm text-gray-500">
+                    This is a reseller partner — referred clients are GST-billed to this one consolidated account
+                    (<a href="{{ route('clients.show', $partnerAccount['customer']) }}" class="text-indigo-600 hover:underline">{{ $partnerAccount['customer']->company_name }}</a>)
+                    instead of individually, so "Billed — last 6 months" below is empty for each referred client by design.
+                    @if ($partnerAccount['overdue_count'] > 0)
+                        <span class="font-medium text-red-700">{{ $partnerAccount['overdue_count'] }} invoice(s) overdue.</span>
+                    @endif
+                </p>
+
+                <div class="mt-4 overflow-x-auto">
+                    <table class="min-w-full text-sm">
+                        <thead class="text-left text-xs uppercase tracking-wide text-gray-500">
+                            <tr>
+                                <th class="py-2">Invoice</th>
+                                <th class="py-2">Status</th>
+                                <th class="py-2">Due date</th>
+                                <th class="py-2 text-right">Amount</th>
+                                <th class="py-2 text-right">Balance</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            @forelse ($partnerAccount['invoices'] as $invoice)
+                                <tr>
+                                    <td class="py-2 font-medium text-gray-900">{{ $invoice->invoice_number }}</td>
+                                    <td class="py-2 text-gray-600">{{ $invoice->status->label() }}</td>
+                                    <td class="py-2 text-gray-600">{{ $invoice->status === \App\Enums\InvoiceStatus::Paid ? '—' : ($invoice->due_date?->format('d M Y') ?? '—') }}</td>
+                                    <td class="py-2 text-right text-gray-700">{{ \App\Support\Money::format($invoice->total) }}</td>
+                                    <td class="py-2 text-right text-gray-700">{{ \App\Support\Money::format($invoice->balance()) }}</td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="5" class="py-6 text-center text-gray-400">No invoices on this account yet.</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        @endif
+
         @if ($commissionEstimate || $commissionHistory->isNotEmpty())
             <div class="rounded-lg bg-white p-6 shadow-sm">
                 <div class="flex flex-wrap items-baseline justify-between gap-2">

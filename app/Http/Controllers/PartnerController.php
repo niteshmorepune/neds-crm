@@ -8,7 +8,6 @@ use App\Mail\PartnerInvitation;
 use App\Models\Customer;
 use App\Models\Partner;
 use App\Models\PartnerCommissionStatement;
-use App\Models\Quotation;
 use App\Services\CollectionsMetrics;
 use App\Services\PartnerCommissionCalculator;
 use Illuminate\Http\RedirectResponse;
@@ -39,14 +38,18 @@ class PartnerController extends Controller
             : null;
         $commissionHistory = $partner->commissionStatements()->orderByDesc('period_start')->limit(12)->get();
 
-        $quotations = Quotation::query()
-            ->whereHas('customer', fn ($q) => $q->where('referring_partner_id', $partner->id))
-            ->with('customer')
-            ->latest()
-            ->limit(50)
-            ->get();
+        $quotations = $partner->quotations()->with('customer')->latest()->limit(50)->get();
 
-        return view('partners.show', compact('partner', 'rows', 'billed', 'billedByMonth', 'commissionEstimate', 'commissionHistory', 'quotations'));
+        // Reseller partners (billing_customer_id set) have their referred
+        // clients' invoices GST-billed to this one consolidated Customer
+        // record instead of to each client individually — billedByClient()
+        // above is correctly empty for those clients, so this is the real
+        // account/receivables figure to show for a reseller partner.
+        $partnerAccount = $partner->billing_customer_id !== null
+            ? $collectionsMetrics->accountSummaryForCustomer($partner->billingCustomer) + ['customer' => $partner->billingCustomer]
+            : null;
+
+        return view('partners.show', compact('partner', 'rows', 'billed', 'billedByMonth', 'commissionEstimate', 'commissionHistory', 'quotations', 'partnerAccount'));
     }
 
     public function create()

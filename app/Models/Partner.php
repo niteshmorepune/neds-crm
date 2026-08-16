@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\LogsActivity;
 use Illuminate\Auth\Authenticatable as AuthenticatableTrait;
 use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -61,6 +62,39 @@ class Partner extends Model implements Authenticatable
     public function commissionStatements(): HasMany
     {
         return $this->hasMany(PartnerCommissionStatement::class);
+    }
+
+    /**
+     * Quotations belonging to this partner: quotations for a directly
+     * referred client, PLUS — when this is a reseller partner — quotations
+     * billed to its own billingCustomer(). A reseller-referred client's
+     * quotation is GST-billed to the partner's billing_customer at save
+     * time (Customer::billingTarget()), so filtering on the referred
+     * client's own referring_partner_id alone (as this query used to)
+     * silently misses every reseller-billed quotation.
+     */
+    public function quotations(): Builder
+    {
+        return Quotation::query()->where(function (Builder $query) {
+            $query->whereHas('customer', fn (Builder $q) => $q->where('referring_partner_id', $this->id));
+
+            if ($this->billing_customer_id !== null) {
+                $query->orWhere('customer_id', $this->billing_customer_id);
+            }
+        });
+    }
+
+    /**
+     * Whether the given quotation belongs to this partner — either it's
+     * for a directly referred client, or (reseller partners only) it's
+     * billed to this partner's own billingCustomer(). Mirrors quotations()
+     * above but for a single already-loaded model, so a controller doesn't
+     * need to re-query to check ownership of a route-bound quotation.
+     */
+    public function ownsQuotation(Quotation $quotation): bool
+    {
+        return $quotation->customer?->referring_partner_id === $this->id
+            || ($this->billing_customer_id !== null && $quotation->customer_id === $this->billing_customer_id);
     }
 
     public function hasCommission(): bool

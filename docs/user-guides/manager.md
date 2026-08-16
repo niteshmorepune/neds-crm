@@ -523,6 +523,14 @@ Click a partner's **name** on the Partners list (or from Business Overview's
 Partner Performance table) to open their page. Alongside their contact
 details, it shows:
 
+- **Your Account** (reseller partners only — one with a "Bill to" customer
+  set on the Edit page): a reseller partner's referred clients are all
+  GST-billed to one consolidated customer record instead of individually,
+  so this section shows that account's own real invoices (number, status,
+  due date, amount, balance) — the actual number to reference for that
+  partner, since the "Billed — last 6 months" per-client breakdown below
+  will correctly show ₹0 for every one of their individual referred
+  clients.
 - **Billed — last 6 months**: total invoiced (issued, not just paid) for that
   partner's clients, as 6 month-by-month tiles plus a per-client breakdown
   below. Every referred client appears in the by-client table, even one
