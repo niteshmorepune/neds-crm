@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -172,6 +173,16 @@ class Lead extends Model
     public function meetings(): MorphMany
     {
         return $this->morphMany(Meeting::class, 'meetable')->latest('occurred_at');
+    }
+
+    public function visibilityAuditFunnelEvents(): HasMany
+    {
+        return $this->hasMany(VisibilityAuditFunnelEvent::class);
+    }
+
+    public function visibilityAuditPurchases(): HasMany
+    {
+        return $this->hasMany(VisibilityAuditPurchase::class);
     }
 
     /**

@@ -61,6 +61,7 @@ use App\Http\Controllers\TwoFactorSetupController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VisibilityAuditFunnelTrackingController;
 use App\Http\Controllers\VisibilityAuditOfferController;
+use App\Http\Controllers\VisibilityAuditRecoveryController;
 use App\Livewire\ClientImport;
 use App\Livewire\ContractRenewalDashboard;
 use App\Livewire\DealsBoard;
@@ -168,8 +169,9 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
      * Leads — Milestone 2. Gated by menu.access:lead-generation.
      */
     Route::middleware('menu.access:lead-generation')->group(function () {
-        // Declared before the resource below so the literal "merge" segment
-        // isn't swallowed by the resource's leads/{lead} wildcard.
+        // Declared before the resource below so these literal segments
+        // aren't swallowed by the resource's leads/{lead} wildcard.
+        Route::get('leads/visibility-audit-recovery', [VisibilityAuditRecoveryController::class, 'index'])->name('leads.visibility-audit-recovery');
         Route::get('leads/merge', [LeadMergeController::class, 'show'])->name('leads.merge.show');
         Route::post('leads/merge', [LeadMergeController::class, 'store'])->name('leads.merge.store');
         Route::post('leads/{lead}/convert', [LeadController::class, 'convert'])->name('leads.convert');

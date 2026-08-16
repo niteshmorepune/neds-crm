@@ -101,6 +101,7 @@
                     <a href="{{ route('leads.index', array_merge(request()->except(['sort', 'page']), ['sort' => 'newest'])) }}"
                        class="{{ $sort === 'newest' ? 'font-semibold text-indigo-600' : 'text-gray-500 hover:text-gray-700' }}">Newest</a>
                 </div>
+                <a href="{{ route('leads.visibility-audit-recovery') }}" class="rounded-md border border-indigo-200 bg-white px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50">Audit Recovery</a>
                 @can('create', \App\Models\Lead::class)
                     <a href="{{ route('leads.create') }}" class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">Add Lead</a>
                 @endcan
