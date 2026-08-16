@@ -64,6 +64,7 @@
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
                     @can('view', $quotation)
+                        <a href="{{ route('quotations.pdf', $quotation) }}" target="_blank" class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Download PDF</a>
                         @if ($quotation->needsApproval())
                             <button type="button" disabled title="Needs approval before it can be sent" class="cursor-not-allowed rounded-md bg-gray-300 px-3 py-2 text-sm font-medium text-gray-500">Send to Client</button>
                         @else

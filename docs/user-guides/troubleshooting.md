@@ -674,6 +674,32 @@ this one account.
 
 ---
 
+## 19. A quotation or invoice shows a different client's name than what was picked
+
+**Symptom:** staff selected one client (e.g. "ESS") on a new quotation or
+invoice, but the saved document — or an amber notice on the form before
+saving — shows a different company's name (e.g. "Brand Whiz") as the
+actual bill-to party.
+
+**Not a bug** — this is reseller billing working as designed. The picked
+client's record has **Referred by (agency)** set to a partner that's
+itself configured as a reseller (**Partners → that partner → Edit →
+"Bills as reseller for"**, Admin only). When that's set, NEDS's GST
+invoice for that client is legally issued to the partner instead, since
+the partner in turn bills their own client — the picked client stays
+linked for internal tracking (deals, projects, tasks), only the actual
+bill-to party on the document itself changes. See Manager guide → Content
+collaboration → Reseller billing for the full explanation.
+
+**If this is unexpected** (the client isn't actually part of a reseller
+arrangement): check that client's **Referred by (agency)** field on their
+Edit page — it may be pointing at the wrong partner, or a partner that
+shouldn't have "Bills as reseller for" set at all. Fixing either of those
+stops future documents for that client from redirecting; it does not
+retroactively change anything already saved.
+
+---
+
 ## General: when in doubt, run these four commands
 
 After any deployment, `.env` edit, or unexpected behaviour:

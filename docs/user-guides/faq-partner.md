@@ -52,7 +52,19 @@ that link or through **Your Content Submissions** in the portal both move
 the piece to **Received**. If a link has expired, just ask NEDS to
 generate a fresh one.
 
-## 4. Earnings & commission
+## 4. Quotations
+
+**Q: Where do I find quotations NEDS has shared with me?**
+On your Dashboard, under **Quotations** — every quotation for a client
+you've referred appears there, whether they're an existing client or
+still just a lead. Click **Download PDF** to get the actual document —
+no more waiting for it over WhatsApp or email.
+
+**Q: Can I see quotations for another agency's clients?**
+No — same as everything else in the portal, you only ever see quotations
+for clients referred by you specifically.
+
+## 5. Earnings & commission
 
 **Q: I don't see "Your Earnings" on my Dashboard — why?**
 It only appears if you're on a commission arrangement with NEDS. If you
@@ -77,7 +89,7 @@ history. NEDS updates this once a payout is made — the portal itself
 doesn't process payments, so this status is the record of what's actually
 gone out.
 
-## 5. Security & your account
+## 6. Security & your account
 
 **Q: I need portal access for someone else at my agency, or lost access to my email — what do I do?**
 Contact your NEDS point of contact directly; this can't be self-served

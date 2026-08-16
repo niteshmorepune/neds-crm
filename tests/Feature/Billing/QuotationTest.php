@@ -464,6 +464,15 @@ it('renders the quotation PDF template with non-GST wording and no tax breakup w
         ->not->toContain('CGST');
 });
 
+it('shows a Download PDF link on the quotation show page', function () {
+    $quotation = quotationWithLine();
+
+    $this->actingAs($this->admin)
+        ->get(route('quotations.show', $quotation))
+        ->assertOk()
+        ->assertSee(route('quotations.pdf', $quotation), false);
+});
+
 it('shows a delete button on the quotation show page and deletes it', function () {
     $quotation = quotationWithLine();
 
