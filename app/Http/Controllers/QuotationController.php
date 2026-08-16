@@ -7,6 +7,7 @@ use App\Enums\QuotationApprovalStatus;
 use App\Enums\QuotationStatus;
 use App\Enums\UserRole;
 use App\Mail\QuotationSent;
+use App\Models\FollowUpReminder;
 use App\Models\Quotation;
 use App\Models\User;
 use App\Notifications\QuotationAwaitingDecision;
@@ -74,6 +75,19 @@ class QuotationController extends Controller
         $quotation->customer->portalContacts->each(
             fn ($contact) => $contact->notify(new QuotationAwaitingDecision($quotation))
         );
+
+        $referringPartner = $quotation->customer->referringPartner;
+
+        $nextAction = $referringPartner
+            ? "Follow up with {$referringPartner->name} (referring partner) on quotation {$quotation->number} for {$quotation->customer->company_name}"
+            : "Follow up on quotation {$quotation->number} sent to {$quotation->customer->company_name}";
+
+        FollowUpReminder::create([
+            'user_id' => auth()->id(),
+            'customer_id' => $quotation->customer_id,
+            'remind_at' => now()->addDays(3),
+            'next_action' => $nextAction,
+        ]);
 
         return back()->with('status', "Quotation sent to {$email}.");
     }

@@ -122,6 +122,18 @@ class Customer extends Model
         return $this->belongsTo(Partner::class, 'referring_partner_id');
     }
 
+    /**
+     * Who a GST invoice for this customer should actually name as the buyer
+     * — itself, unless it was referred by a reseller partner (one with its
+     * own billing_customer_id set), in which case that partner's own
+     * customer record is billed instead (e.g. Brand-Whiz's referred clients
+     * are billed to Brand Whiz).
+     */
+    public function billingTarget(): self
+    {
+        return $this->referringPartner?->billingCustomer ?? $this;
+    }
+
     public function notes(): MorphMany
     {
         return $this->morphMany(Note::class, 'notable')->latest();

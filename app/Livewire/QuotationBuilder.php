@@ -93,7 +93,7 @@ class QuotationBuilder extends Component
             $this->customer_id = $customer_id ?? (request()->integer('customer_id') ?: null);
             $this->deal_id = $deal_id ?? (request()->integer('deal_id') ?: null);
             $this->is_gst_exempt = $this->customer_id
-                ? (bool) Customer::find($this->customer_id)?->gst_exempt
+                ? (bool) Customer::find($this->customer_id)?->billingTarget()->gst_exempt
                 : false;
             $this->addItem();
         }
@@ -106,7 +106,30 @@ class QuotationBuilder extends Component
      */
     public function updatedCustomerId(?int $value): void
     {
-        $this->is_gst_exempt = $value ? (bool) Customer::find($value)?->gst_exempt : false;
+        $customer = $value ? Customer::find($value)?->billingTarget() : null;
+        $this->is_gst_exempt = (bool) $customer?->gst_exempt;
+    }
+
+    /**
+     * When the selected client is a reseller-referred customer (e.g. one of
+     * Brand-Whiz's clients), the quotation is actually billed to the
+     * reseller — surface that so staff aren't surprised by who the saved
+     * quotation names as the buyer.
+     */
+    public function getBillingRedirectNoticeProperty(): ?string
+    {
+        if (! $this->customer_id) {
+            return null;
+        }
+
+        $selected = Customer::find($this->customer_id);
+        $billTo = $selected?->billingTarget();
+
+        if (! $selected || ! $billTo || $billTo->id === $selected->id) {
+            return null;
+        }
+
+        return "This client is billed via {$billTo->company_name} — the quotation will be issued to {$billTo->company_name}, not {$selected->company_name} directly.";
     }
 
     public function addItem(): void
@@ -244,7 +267,7 @@ class QuotationBuilder extends Component
             'gst_rate' => (float) ($item['gst_rate'] ?: 0),
         ])->all();
 
-        $customer = $this->customer_id ? Customer::find($this->customer_id) : null;
+        $customer = $this->customer_id ? Customer::find($this->customer_id)?->billingTarget() : null;
 
         return app(GstCalculator::class)->calculate(
             $lines,
@@ -270,7 +293,7 @@ class QuotationBuilder extends Component
             'items.*.gst_rate' => ['required', 'numeric', 'min:0', 'max:28'],
         ]);
 
-        $customer = Customer::findOrFail($this->customer_id);
+        $customer = Customer::findOrFail($this->customer_id)->billingTarget();
 
         $quotation = DB::transaction(function () use ($customer) {
             $quotation = $this->quotationId

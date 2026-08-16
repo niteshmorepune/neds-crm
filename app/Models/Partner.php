@@ -7,6 +7,7 @@ use Illuminate\Auth\Authenticatable as AuthenticatableTrait;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
@@ -19,7 +20,7 @@ class Partner extends Model implements Authenticatable
 {
     use AuthenticatableTrait, HasFactory, LogsActivity;
 
-    protected $fillable = ['name', 'email', 'phone', 'notes', 'commission_rate'];
+    protected $fillable = ['name', 'email', 'phone', 'notes', 'commission_rate', 'billing_customer_id'];
 
     protected $hidden = [
         'password',
@@ -46,6 +47,15 @@ class Partner extends Model implements Authenticatable
     public function referredCustomers(): HasMany
     {
         return $this->hasMany(Customer::class, 'referring_partner_id');
+    }
+
+    /**
+     * When set, a reseller relationship — clients referred by this partner
+     * are GST-invoiced to this Customer instead of billed directly.
+     */
+    public function billingCustomer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class, 'billing_customer_id');
     }
 
     public function commissionStatements(): HasMany

@@ -5,6 +5,7 @@ use App\Enums\UserRole;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\Partner;
+use App\Models\RecurringInvoice;
 use App\Models\User;
 use Database\Seeders\MenuItemsSeeder;
 
@@ -45,6 +46,35 @@ it('admin can create a partner', function () {
     expect(Partner::where('name', 'Test Agency')->exists())->toBeTrue();
 });
 
+it('admin can set a partner as a reseller billed to a customer', function () {
+    $billTo = Customer::factory()->create(['company_name' => 'Brand Whiz']);
+
+    actingAs(User::factory()->create(['role' => UserRole::Admin]))
+        ->post(route('partners.store'), [
+            'name' => 'Brand-Whiz',
+            'billing_customer_id' => $billTo->id,
+        ])
+        ->assertRedirect(route('partners.index'));
+
+    $partner = Partner::where('name', 'Brand-Whiz')->firstOrFail();
+    expect($partner->billing_customer_id)->toBe($billTo->id)
+        ->and($partner->billingCustomer->id)->toBe($billTo->id);
+});
+
+it('can clear a partner\'s reseller billing customer', function () {
+    $billTo = Customer::factory()->create();
+    $partner = Partner::factory()->create(['billing_customer_id' => $billTo->id]);
+
+    actingAs(User::factory()->create(['role' => UserRole::Admin]))
+        ->put(route('partners.update', $partner), [
+            'name' => $partner->name,
+            'billing_customer_id' => null,
+        ])
+        ->assertRedirect(route('partners.index'));
+
+    expect($partner->fresh()->billing_customer_id)->toBeNull();
+});
+
 it('manager can update a partner', function () {
     $partner = Partner::factory()->create();
 
@@ -83,14 +113,14 @@ it('admin can view a partner\'s client-health page, showing only that partner\'s
     $theirClient = Customer::factory()->create(['company_name' => 'Referred Co', 'referring_partner_id' => $partner->id]);
     Invoice::factory()->create([
         'customer_id' => $theirClient->id, 'status' => InvoiceStatus::Overdue,
-        'recurring_invoice_id' => \App\Models\RecurringInvoice::factory()->create(['customer_id' => $theirClient->id])->id,
+        'recurring_invoice_id' => RecurringInvoice::factory()->create(['customer_id' => $theirClient->id])->id,
         'due_date' => now()->subDays(10), 'total' => 100000, 'amount_paid' => 0,
     ]);
 
     $otherClient = Customer::factory()->create(['company_name' => 'Not Referred Co', 'referring_partner_id' => $otherPartner->id]);
     Invoice::factory()->create([
         'customer_id' => $otherClient->id, 'status' => InvoiceStatus::Overdue,
-        'recurring_invoice_id' => \App\Models\RecurringInvoice::factory()->create(['customer_id' => $otherClient->id])->id,
+        'recurring_invoice_id' => RecurringInvoice::factory()->create(['customer_id' => $otherClient->id])->id,
         'due_date' => now()->subDays(10), 'total' => 100000, 'amount_paid' => 0,
     ]);
 

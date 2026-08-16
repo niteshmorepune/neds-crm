@@ -6,7 +6,9 @@ use App\Enums\UserRole;
 use App\Livewire\QuotationBuilder;
 use App\Models\Customer;
 use App\Models\Deal;
+use App\Models\FollowUpReminder;
 use App\Models\Invoice;
+use App\Models\Partner;
 use App\Models\Quotation;
 use App\Models\User;
 use App\Notifications\QuotationNeedsApproval;
@@ -251,6 +253,94 @@ it('lets a manager approve a quotation, unblocking send', function () {
 
     $this->actingAs($this->admin)->post(route('quotations.send', $quotation))->assertRedirect();
     expect($quotation->fresh()->status)->toBe(QuotationStatus::Sent);
+});
+
+it('creates a 3-day follow-up reminder for the sender when a quotation is sent', function () {
+    Mail::fake();
+    $customer = Customer::factory()->create(['email' => 'client@x.test', 'company_name' => 'Prajakta Digital']);
+    $quotation = quotationWithLine(['customer_id' => $customer->id]);
+    $manager = User::factory()->role(UserRole::Manager)->create();
+    $this->actingAs($manager)->post(route('quotations.approve', $quotation))->assertRedirect();
+
+    $now = now();
+    $this->travelTo($now);
+    $this->actingAs($this->admin)
+        ->post(route('quotations.send', $quotation))
+        ->assertSessionDoesntHaveErrors()
+        ->assertRedirect();
+
+    $reminder = FollowUpReminder::query()->where('customer_id', $customer->id)->first();
+
+    expect($reminder)->not->toBeNull()
+        ->and($reminder->user_id)->toBe($this->admin->id)
+        ->and($reminder->remind_at->toDateTimeString())->toBe($now->copy()->addDays(3)->toDateTimeString())
+        ->and($reminder->next_action)->toContain($quotation->number)
+        ->and($reminder->next_action)->toContain('Prajakta Digital');
+});
+
+it('names the referring partner in the follow-up reminder when the client was referred', function () {
+    Mail::fake();
+    $partner = Partner::factory()->create(['name' => 'Prajakta Dahake']);
+    $customer = Customer::factory()->create([
+        'email' => 'client@x.test',
+        'company_name' => 'Brand Whiz',
+        'referring_partner_id' => $partner->id,
+    ]);
+    $quotation = quotationWithLine(['customer_id' => $customer->id]);
+    $manager = User::factory()->role(UserRole::Manager)->create();
+    $this->actingAs($manager)->post(route('quotations.approve', $quotation))->assertRedirect();
+
+    $this->actingAs($this->admin)
+        ->post(route('quotations.send', $quotation))
+        ->assertSessionDoesntHaveErrors()
+        ->assertRedirect();
+
+    $reminder = FollowUpReminder::query()->where('customer_id', $customer->id)->first();
+
+    expect($reminder)->not->toBeNull()
+        ->and($reminder->next_action)->toContain('Prajakta Dahake')
+        ->and($reminder->next_action)->toContain('Brand Whiz')
+        ->and($reminder->next_action)->toContain($quotation->number);
+});
+
+it('bills a reseller-referred client\'s quotation to the reseller\'s own customer record, not the client directly', function () {
+    $billTo = Customer::factory()->create(['company_name' => 'Brand Whiz', 'state_code' => '27']);
+    $reseller = Partner::factory()->create(['name' => 'Brand-Whiz', 'billing_customer_id' => $billTo->id]);
+    $client = Customer::factory()->create([
+        'company_name' => 'ESS', 'state_code' => '19', 'referring_partner_id' => $reseller->id,
+    ]);
+
+    Livewire::actingAs($this->admin)
+        ->test(QuotationBuilder::class)
+        ->set('customer_id', $client->id)
+        ->set('items', [[
+            'description' => 'SEO Service for ESS for the month', 'sac_code' => '998361',
+            'quantity' => '1', 'rate' => '1000', 'gst_rate' => '18',
+        ]])
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $quotation = Quotation::first();
+
+    expect($quotation->customer_id)->toBe($billTo->id)
+        ->and($quotation->place_of_supply_state_code)->toBe('27') // billed party's state, not ESS's
+        ->and($quotation->cgst_total)->toBeGreaterThan(0); // intra-state (27 vs 27), not IGST
+});
+
+it('bills an ordinary client (no reseller partner) to themselves as before', function () {
+    $client = Customer::factory()->create(['company_name' => 'Regular Client', 'state_code' => '27']);
+
+    Livewire::actingAs($this->admin)
+        ->test(QuotationBuilder::class)
+        ->set('customer_id', $client->id)
+        ->set('items', [[
+            'description' => 'SEO retainer', 'sac_code' => '998361',
+            'quantity' => '1', 'rate' => '1000', 'gst_rate' => '18',
+        ]])
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect(Quotation::first()->customer_id)->toBe($client->id);
 });
 
 it('lets a manager reject or request changes on a quotation, and the creator can resubmit', function () {

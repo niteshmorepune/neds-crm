@@ -76,11 +76,12 @@ class InvoiceController extends Controller
         $total = Money::toPaise($request->validated()['amount']);
 
         $data = $request->validated();
+        $customer = Customer::findOrFail($data['customer_id'])->billingTarget();
 
         $invoice = Invoice::create([
             'invoice_number' => $data['invoice_number'],
             'financial_year' => $numbers->financialYear($issueDate),
-            'customer_id' => $data['customer_id'],
+            'customer_id' => $customer->id,
             'deal_id' => $data['deal_id'] ?? null,
             'project_id' => $data['project_id'] ?? null,
             'status' => InvoiceStatus::Sent,
@@ -115,11 +116,12 @@ class InvoiceController extends Controller
         $total = Money::toPaise($request->validated()['amount']);
 
         $data = $request->validated();
+        $customer = Customer::findOrFail($data['customer_id'])->billingTarget();
 
         $invoice->update([
             'invoice_number' => $data['invoice_number'],
             'financial_year' => $numbers->financialYear($issueDate),
-            'customer_id' => $data['customer_id'],
+            'customer_id' => $customer->id,
             'deal_id' => $data['deal_id'] ?? null,
             'project_id' => $data['project_id'] ?? null,
             'issue_date' => $issueDate,

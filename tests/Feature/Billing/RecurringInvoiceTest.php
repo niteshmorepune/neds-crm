@@ -6,6 +6,7 @@ use App\Livewire\RecurringInvoiceBuilder;
 use App\Mail\InvoiceIssued;
 use App\Models\Customer;
 use App\Models\Invoice;
+use App\Models\Partner;
 use App\Models\RecurringInvoice;
 use App\Models\User;
 use Database\Seeders\MenuItemsSeeder;
@@ -115,6 +116,42 @@ it('carries the GST-exempt flag through "Generate & Send Now" too', function () 
     $invoice = Invoice::where('recurring_invoice_id', $template->id)->first();
     expect($invoice->is_gst_exempt)->toBeTrue()
         ->and($invoice->cgst_total)->toBe(0);
+});
+
+it('saves a reseller-referred client\'s recurring invoice template billed to the reseller\'s own customer record', function () {
+    $admin = User::factory()->role(UserRole::Admin)->create();
+    $billTo = Customer::factory()->create(['company_name' => 'Brand Whiz', 'state_code' => '27']);
+    $reseller = Partner::factory()->create(['name' => 'Brand-Whiz', 'billing_customer_id' => $billTo->id]);
+    $client = Customer::factory()->create(['company_name' => 'ESS', 'state_code' => '27', 'referring_partner_id' => $reseller->id]);
+
+    Livewire::actingAs($admin)
+        ->test(RecurringInvoiceBuilder::class)
+        ->set('customer_id', $client->id)
+        ->set('items', [[
+            'description' => 'SEO Service for ESS for the month', 'sac_code' => '998361',
+            'quantity' => '1', 'rate' => '1000', 'gst_rate' => '18',
+        ]])
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect(RecurringInvoice::first()->customer_id)->toBe($billTo->id);
+});
+
+it('generates via "Generate & Send Now" billed to the reseller, proving the redirect at save-time is enough on its own', function () {
+    $this->seed(MenuItemsSeeder::class);
+    Mail::fake();
+    $billTo = Customer::factory()->create(['company_name' => 'Brand Whiz', 'state_code' => '27', 'email' => 'billing@brand-whiz.com']);
+    $reseller = Partner::factory()->create(['name' => 'Brand-Whiz', 'billing_customer_id' => $billTo->id]);
+    // The template's own customer_id is already the reseller (as QuotationBuilder/
+    // RecurringInvoiceBuilder::save() would have stored it) — generation just
+    // reads it back, so no separate fix is needed in the generation path itself.
+    $template = recurringWithLine(['customer_id' => $billTo->id, 'next_run_on' => now()->addWeek()->toDateString()]);
+    $accounts = User::factory()->role(UserRole::Accounts)->create();
+
+    $this->actingAs($accounts)->post(route('recurring-invoices.generate-now', $template))->assertRedirect();
+
+    $invoice = Invoice::where('recurring_invoice_id', $template->id)->first();
+    expect($invoice->customer_id)->toBe($billTo->id);
 });
 
 it('defaults the RecurringInvoiceBuilder GST-exempt toggle from the selected client, and can still be overridden', function () {
