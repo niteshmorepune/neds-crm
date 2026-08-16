@@ -223,6 +223,7 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
         Route::get('quotations/create', QuotationBuilder::class)->name('quotations.create');
         Route::get('quotations/{quotation}', [QuotationController::class, 'show'])->name('quotations.show');
         Route::get('quotations/{quotation}/edit', QuotationBuilder::class)->name('quotations.edit');
+        Route::get('quotations/{quotation}/pdf', [QuotationController::class, 'pdf'])->name('quotations.pdf');
         Route::post('quotations/{quotation}/send', [QuotationController::class, 'send'])->name('quotations.send');
         Route::post('quotations/{quotation}/status', [QuotationController::class, 'transition'])->name('quotations.status');
         Route::post('quotations/{quotation}/convert', [QuotationController::class, 'convert'])->name('quotations.convert');
@@ -706,6 +707,7 @@ Route::prefix('partner-portal')->name('partner-portal.')->group(function () {
         Route::post('logout', [App\Http\Controllers\PartnerPortal\LoginController::class, 'logout'])->name('logout');
         Route::get('/', [App\Http\Controllers\PartnerPortal\HomeController::class, 'index'])->name('home');
         Route::get('faq', [App\Http\Controllers\PartnerPortal\FaqController::class, 'index'])->name('faq');
+        Route::get('quotations/{quotation}/pdf', [App\Http\Controllers\PartnerPortal\QuotationController::class, 'pdf'])->name('quotations.pdf');
         Route::post('content-pieces/{contentPiece}/attachments', [App\Http\Controllers\PartnerPortal\ContentPieceController::class, 'upload'])->name('content-pieces.upload');
     });
 });

@@ -166,6 +166,39 @@
         </div>
 
         <div class="rounded-lg bg-white p-6 shadow-sm">
+            <h3 class="text-base font-semibold text-gray-900">Quotations</h3>
+            <p class="mt-1 text-sm text-gray-500">Every quotation for this partner's referred clients — proposal stage, before any invoice.</p>
+            <div class="mt-3 overflow-x-auto">
+                <table class="min-w-full text-sm">
+                    <thead class="text-left text-xs uppercase tracking-wide text-gray-500">
+                        <tr>
+                            <th class="py-2">Number</th>
+                            <th class="py-2">Client</th>
+                            <th class="py-2">Status</th>
+                            <th class="py-2 text-right">Amount</th>
+                            <th class="py-2">Date</th>
+                            <th class="py-2 text-right"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        @forelse ($quotations as $quotation)
+                            <tr>
+                                <td class="py-2 font-medium text-gray-900">{{ $quotation->number ?? '—' }}</td>
+                                <td class="py-2 text-gray-600">{{ $quotation->customer?->company_name ?? 'Client removed' }}</td>
+                                <td class="py-2 text-gray-600">{{ $quotation->status->label() }}</td>
+                                <td class="py-2 text-right text-gray-700">{{ \App\Support\Money::format($quotation->total) }}</td>
+                                <td class="py-2 text-gray-600">{{ $quotation->created_at->format('d M Y') }}</td>
+                                <td class="py-2 text-right"><a href="{{ route('quotations.show', $quotation) }}" class="text-indigo-600 hover:underline">View</a></td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="6" class="py-6 text-center text-gray-400">No quotations for this partner's referred clients yet.</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="rounded-lg bg-white p-6 shadow-sm">
             <h3 class="text-base font-semibold text-gray-900">Client health</h3>
             <p class="mt-1 text-sm text-gray-500">Which of this partner's clients need a collections follow-up or are ready for the next milestone invoice.</p>
             <div class="mt-3">

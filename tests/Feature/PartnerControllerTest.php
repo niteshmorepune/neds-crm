@@ -5,6 +5,7 @@ use App\Enums\UserRole;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\Partner;
+use App\Models\Quotation;
 use App\Models\RecurringInvoice;
 use App\Models\User;
 use Database\Seeders\MenuItemsSeeder;
@@ -158,6 +159,23 @@ it('shows a month-wise billed breakdown for the last 6 months on the partner sho
         ->get(route('partners.show', $partner))
         ->assertOk()
         ->assertSee(now()->format('M Y'));
+});
+
+it('shows quotations for a partner\'s referred clients, and excludes another partner\'s', function () {
+    $partner = Partner::factory()->create();
+    $otherPartner = Partner::factory()->create();
+
+    $theirClient = Customer::factory()->create(['company_name' => 'Prajakta Referral Co', 'referring_partner_id' => $partner->id]);
+    Quotation::factory()->create(['customer_id' => $theirClient->id, 'number' => 'QTN/2026-27/9001']);
+
+    $otherClient = Customer::factory()->create(['company_name' => 'Unrelated Co', 'referring_partner_id' => $otherPartner->id]);
+    Quotation::factory()->create(['customer_id' => $otherClient->id, 'number' => 'QTN/2026-27/9002']);
+
+    actingAs(User::factory()->create(['role' => UserRole::Admin]))
+        ->get(route('partners.show', $partner))
+        ->assertOk()
+        ->assertSee('QTN/2026-27/9001')
+        ->assertDontSee('QTN/2026-27/9002');
 });
 
 it('sales cannot view a partner show page', function () {
