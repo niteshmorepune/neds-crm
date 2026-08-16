@@ -155,8 +155,12 @@ renewals) — Manager sees the same report with those three itemized sections
 trimmed to summary numbers only. Click a partner's name there (or on the
 Partners list) to open their page for actual invoiced amounts — a
 month-by-month and per-client "Billed — last 6 months" breakdown, plus which
-of their clients are unpaid/overdue and for how long (see [Manager guide →
-Partner client health](manager.md) for the full breakdown).
+of their clients are unpaid/overdue and for how long. For a **reseller**
+partner (one with a "Bill to" customer set), that same page also shows a
+"Your Account" section with their own real consolidated invoices, since
+their referred clients are billed to that one account rather than
+individually (see [Manager guide → Partner client health](manager.md) for
+the full breakdown).
 
 ## 4. Notice Board — post staff/client announcements
 **Notice Board** in the sidebar (Admin/Manager only) is where you post
