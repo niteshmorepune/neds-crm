@@ -24,6 +24,7 @@ class VisibilityAuditFunnelEvent extends Model
         'event_type',
         'tier',
         'lead_id',
+        'nudged_at',
     ];
 
     protected function casts(): array
@@ -31,6 +32,7 @@ class VisibilityAuditFunnelEvent extends Model
         return [
             'event_type' => VisibilityAuditFunnelEventType::class,
             'tier' => VisibilityAuditTier::class,
+            'nudged_at' => 'datetime',
         ];
     }
 

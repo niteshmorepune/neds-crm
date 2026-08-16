@@ -71,6 +71,13 @@ Schedule::command('app:send-dashboard-followup-reminders')->everyFiveMinutes();
 // in. Checked every 5 minutes so reminders land close to the real threshold.
 Schedule::command('app:escalate-untouched-leads')->everyFiveMinutes();
 
+// Visibility Audit recovery nudges — WhatsApp templates for leads stuck at
+// checkout/landing (see VisibilityAuditFunnelMetrics), so this doesn't
+// depend on staff noticing during office hours. 30 min is frequent enough
+// against the 2-4hr wait thresholds without being wasteful; ships inert
+// until both WADESK_VISIBILITY_AUDIT_RECOVERY_*_TEMPLATE_NAME are set.
+Schedule::command('app:send-visibility-audit-recovery-nudges')->everyThirtyMinutes();
+
 // Ticket SLA breach escalation — check hourly during the working day.
 Schedule::command('app:check-ticket-sla')->hourly();
 
