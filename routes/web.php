@@ -30,6 +30,7 @@ use App\Http\Controllers\ManagerActionCenterController;
 use App\Http\Controllers\MyDayController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PartnerController;
+use App\Http\Controllers\PartnerPortal\ClientController;
 use App\Http\Controllers\PartnerUploadController;
 use App\Http\Controllers\Portal\FaqController;
 use App\Http\Controllers\Portal\ForgotPasswordController;
@@ -706,6 +707,7 @@ Route::prefix('partner-portal')->name('partner-portal.')->group(function () {
     Route::middleware('auth:partner')->group(function () {
         Route::post('logout', [App\Http\Controllers\PartnerPortal\LoginController::class, 'logout'])->name('logout');
         Route::get('/', [App\Http\Controllers\PartnerPortal\HomeController::class, 'index'])->name('home');
+        Route::get('clients/{customer}', [ClientController::class, 'show'])->name('clients.show');
         Route::get('faq', [App\Http\Controllers\PartnerPortal\FaqController::class, 'index'])->name('faq');
         Route::get('quotations/{quotation}/pdf', [App\Http\Controllers\PartnerPortal\QuotationController::class, 'pdf'])->name('quotations.pdf');
         Route::post('content-pieces/{contentPiece}/attachments', [App\Http\Controllers\PartnerPortal\ContentPieceController::class, 'upload'])->name('content-pieces.upload');

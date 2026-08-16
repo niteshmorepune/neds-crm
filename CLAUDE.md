@@ -1093,3 +1093,97 @@ Record every "we chose X because Y" here — this is the project's memory.
   1964 green (up from 1949), Pint clean. wadesk.in side: `npx tsc --noEmit`,
   `npm run lint`, and `npm run build` all clean (that repo has no test
   suite — see its own CLAUDE.md).
+- **2026-08-16 — Quotation follow-up reminders + reseller billing
+  (PR #121).** Two features in one milestone. (1) Sending a quotation now
+  auto-creates a 3-day dashboard follow-up reminder, naming the referring
+  partner in the reminder text when the client was referred (e.g. "Follow
+  up with Prajakta Dahake (referring partner)...") — a plain reminder for a
+  direct client otherwise, same mechanism. (2) `Partner` gets a nullable
+  `billing_customer_id` (FK → `customers.id`) so a referral partner can
+  instead be set up as a **reseller**: a referred client's quotations/
+  invoices/recurring-invoice templates are GST-billed to the partner's own
+  customer record instead of the client directly (e.g. Brand-Whiz's
+  referred clients are billed to Brand Whiz, not each client's own GSTIN).
+  New `Customer::billingTarget()` (`referringPartner?->billingCustomer ??
+  $this`) is the single place this resolves — called wherever a
+  Quotation/Invoice/RecurringInvoice is actually created
+  (`QuotationBuilder`, `RecurringInvoiceBuilder`, `InvoiceController`), so
+  the client someone *picks* in the UI and the customer actually GST-billed
+  can differ without a second, redundant "bill-to" field anywhere. Deliberately
+  going-forward only — existing invoices are untouched, no backfill.
+  **Known follow-on gap, fixed in the very next milestone (see the 2026-08-16
+  entry below):** because a reseller-billed invoice/quotation's `customer_id`
+  becomes the billing customer, every existing partner-scoped query that
+  filtered on `Customer.referring_partner_id` (the internal `/partners/{id}`
+  page's Quotations table, the Partner Portal's own Quotations list, and the
+  6-month `billedByClient()`/`billedByMonth()` breakdown) silently stopped
+  matching a reseller partner's own billed work — not caught in this PR's
+  own testing, surfaced later when building real account visibility for the
+  Partner Portal.
+- **2026-08-16 — Quotation tracking for referral partners, internal +
+  Partner Portal (PR #122).** Added the internal `/partners/{id}` page
+  (header, portal invite/revoke, commission section, "Billed — last 6
+  months" via new `CollectionsMetrics::billedByClient()`/`billedByMonth()`,
+  a Quotations table, and `clientHealth()`-driven "Client health") and gave
+  referral partners a Partner Portal (guard `partner`, mirrors the client
+  portal's `Contact` auth shape) to see their own referred clients,
+  quotations (with PDF download), content-piece collaboration, and
+  commission earnings — read-only, scoped per-partner via inline
+  `abort_unless` ownership checks in each `PartnerPortal\*` controller (no
+  dedicated Policy class for the `partner` guard, since every query is
+  already pre-scoped to the logged-in partner). At the time this shipped,
+  "Your Referred Clients" was intentionally minimal (name + status only) —
+  see the entry below for why that turned out to be too minimal in
+  practice.
+- **2026-08-16 — Partner Portal: real account visibility for referred
+  clients, plus the reseller-billing visibility fix flagged above (this
+  milestone).** Owner reported the Partner Portal dashboard (real partner
+  Prajakta Dahake's screenshot) was a dead end: "Your Referred Clients" was
+  just a name+status list with no way to see receivables/pending payments
+  so a partner could actually follow up with their own referred clients,
+  and asked what "Your Content Submissions" even does. Confirmed 3 scope
+  decisions with the owner via AskUserQuestion before building: (1) full
+  invoice-level detail per referred client (number, amount, due date,
+  status, overdue days), not a summary-only figure; (2) applies to ALL
+  referred clients, not just reseller-billed ones; (3) "Your Content
+  Submissions" stays fully staff-gated (a partner still can't originate a
+  submission, only upload against one staff already opened) — just improve
+  the empty-state copy, since that's working as designed
+  ([[project-progress]] / the Content Collaboration module), not a bug.
+  The underlying receivables data already existed — `CollectionsMetrics::
+  clientHealth()`/`billedByClient()`/`billedByMonth()` already powered the
+  internal Partner page added one milestone earlier — this exposes the
+  same data to the `partner` guard rather than inventing new billing
+  computation.
+  **Fixed the reseller-billing visibility gap surfaced by the prior two
+  milestones**, on both the internal Partner page and the Portal: new
+  `Partner::quotations()`/`ownsQuotation()` match a quotation via EITHER
+  the referred client's own `referring_partner_id` OR (reseller partners
+  only) `customer_id === billing_customer_id`, so a reseller partner's own
+  quotations are no longer invisible to themselves and to internal staff
+  viewing their Partner page. Deliberately did NOT try to attribute a
+  reseller partner's consolidated invoices back to individual referred
+  sub-clients — that would be dishonest: a reseller-referred client's
+  invoices are genuinely GST-billed in bulk to the partner's own
+  `billing_customer` record (`Customer::billingTarget()`), with no
+  per-sub-client amount ever recorded anywhere in the schema. Instead, new
+  `CollectionsMetrics::accountSummaryForCustomer()` (invoice list +
+  outstanding total + overdue count for one Customer) powers a new "Your
+  Account" section — shown only when `billing_customer_id` is set, against
+  the partner's own `billingCustomer()` — on both the internal Partner page
+  and the Portal dashboard; each referred sub-client's own row is
+  correctly billed "Billed via your account" rather than a misleading ₹0.
+  For the common, non-reseller case (confirmed as the actual scenario in
+  the owner's screenshot), `accountSummaryForCustomer()` runs directly
+  against each referred client's own `Customer` record — which already
+  carries its own real invoices, so full per-client detail Just Works.
+  New Portal route `partner-portal/clients/{customer}` (`PartnerPortal\
+  ClientController`, same inline `abort_unless($customer->
+  referring_partner_id === $this->partner()->id, 404)` ownership pattern
+  as the rest of the Portal — reseller partners' `billingCustomer()` is
+  deliberately NOT reachable through this per-client drill-down, since
+  it's not "a referred client," it's the partner's own account, shown
+  directly on the dashboard instead) shows a referred client's own
+  invoices, quotations, and active projects — the answer to "give the
+  overall details and answers to all the questions the partner needs to
+  know," not just a name in a list.

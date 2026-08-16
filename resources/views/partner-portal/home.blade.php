@@ -5,17 +5,74 @@
         <h2 class="text-2xl font-bold">{{ $partner->name }} 👋</h2>
     </div>
 
+    <div class="mb-6 grid gap-4 sm:grid-cols-2">
+        <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
+            <p class="text-xs uppercase tracking-wide text-gray-500">Total outstanding</p>
+            <p class="mt-1 text-xl font-semibold text-gray-900">{{ \App\Support\Money::format($outstandingTotal) }}</p>
+        </div>
+        <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
+            <p class="text-xs uppercase tracking-wide text-gray-500">{{ $partnerAccount ? 'Overdue' : 'Clients with something overdue' }}</p>
+            <p class="mt-1 text-xl font-semibold {{ $overdueClientCount > 0 ? 'text-red-700' : 'text-gray-900' }}">{{ $overdueClientCount }}</p>
+        </div>
+    </div>
+
+    @if ($partnerAccount)
+        <div class="mb-6 rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
+            <h3 class="text-base font-semibold text-gray-900">Your Account — {{ $partnerAccount['customer']->company_name }}</h3>
+            <p class="mt-1 text-sm text-gray-500">Your referred clients are billed to you as one consolidated account, not individually — this is your real invoice history and balance with {{ config('company.name') }}.</p>
+
+            <div class="mt-4 overflow-x-auto">
+                <table class="min-w-full text-sm">
+                    <thead class="text-left text-xs uppercase tracking-wide text-gray-500">
+                        <tr>
+                            <th class="py-2">Invoice</th>
+                            <th class="py-2">Status</th>
+                            <th class="py-2">Due date</th>
+                            <th class="py-2 text-right">Amount</th>
+                            <th class="py-2 text-right">Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        @forelse ($partnerAccount['invoices'] as $invoice)
+                            <tr>
+                                <td class="py-2 font-medium text-gray-900">{{ $invoice->invoice_number }}</td>
+                                <td class="py-2 text-gray-600">{{ $invoice->status->label() }}</td>
+                                <td class="py-2 text-gray-600">{{ $invoice->status === \App\Enums\InvoiceStatus::Paid ? '—' : ($invoice->due_date?->format('d M Y') ?? '—') }}</td>
+                                <td class="py-2 text-right text-gray-700">{{ \App\Support\Money::format($invoice->total) }}</td>
+                                <td class="py-2 text-right text-gray-700">{{ \App\Support\Money::format($invoice->balance()) }}</td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="5" class="py-6 text-center text-gray-400">No invoices on your account yet.</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    @endif
+
     <div class="grid gap-6 lg:grid-cols-2">
         <div class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
             <h3 class="text-base font-semibold text-gray-900">Your Referred Clients</h3>
             <p class="mt-1 text-sm text-gray-500">Clients you've referred to {{ config('company.name') }}.</p>
 
             <div class="mt-4 divide-y divide-gray-100">
-                @forelse ($referredCustomers as $customer)
-                    <div class="flex items-center justify-between py-3">
-                        <span class="text-sm font-medium text-gray-900">{{ $customer->company_name }}</span>
-                        <span class="text-xs text-gray-400">{{ $customer->status->label() }}</span>
-                    </div>
+                @forelse ($referredCustomers as $row)
+                    <a href="{{ route('partner-portal.clients.show', $row->customer) }}" class="flex items-center justify-between py-3 hover:bg-gray-50 -mx-2 px-2 rounded">
+                        <div>
+                            <span class="text-sm font-medium text-gray-900">{{ $row->customer->company_name }}</span>
+                            <span class="ml-2 text-xs text-gray-400">{{ $row->customer->status->label() }}</span>
+                        </div>
+                        <div class="text-right">
+                            @if ($partnerAccount)
+                                <span class="text-xs text-gray-400">Billed via your account</span>
+                            @else
+                                <span class="text-sm font-medium {{ $row->overdue_count > 0 ? 'text-red-700' : 'text-gray-700' }}">{{ \App\Support\Money::format($row->outstanding_amount) }}</span>
+                                @if ($row->overdue_count > 0)
+                                    <span class="ml-1 text-xs text-red-600">({{ $row->overdue_count }} overdue)</span>
+                                @endif
+                            @endif
+                        </div>
+                    </a>
                 @empty
                     <p class="py-6 text-center text-sm text-gray-400">No referred clients yet.</p>
                 @endforelse
@@ -55,7 +112,9 @@
                         </form>
                     </div>
                 @empty
-                    <p class="py-6 text-center text-sm text-gray-400">No content submissions yet.</p>
+                    <p class="py-6 text-center text-sm text-gray-400">
+                        No content submissions yet — we'll open a submission here as soon as a piece of content is ready for you to upload against. Nothing to do on your side until then.
+                    </p>
                 @endforelse
             </div>
         </div>

@@ -14,7 +14,7 @@ class QuotationController extends PartnerPortalController
      */
     public function pdf(Quotation $quotation): Response
     {
-        abort_unless($quotation->customer?->referring_partner_id === $this->partner()->id, 403);
+        abort_unless($this->partner()->ownsQuotation($quotation), 403);
 
         $quotation->load(['customer', 'items']);
 

@@ -185,3 +185,34 @@ it('sales cannot view a partner show page', function () {
         ->get(route('partners.show', $partner))
         ->assertForbidden();
 });
+
+it('shows a reseller partner\'s consolidated account, including quotations billed to their billing customer', function () {
+    $billTo = Customer::factory()->create(['company_name' => 'Brand Whiz']);
+    $partner = Partner::factory()->create(['name' => 'Brand-Whiz', 'billing_customer_id' => $billTo->id]);
+    $referred = Customer::factory()->create(['company_name' => 'Sub Client Co', 'referring_partner_id' => $partner->id]);
+
+    // Reseller-billed: the invoice/quotation's customer_id is the billing
+    // customer, NOT the referred client (Customer::billingTarget()).
+    Invoice::factory()->create([
+        'customer_id' => $billTo->id, 'status' => InvoiceStatus::Overdue,
+        'invoice_number' => 'NEDS/2026-27/9101', 'due_date' => now()->subDays(5),
+        'total' => 50000, 'amount_paid' => 0,
+    ]);
+    Quotation::factory()->create(['customer_id' => $billTo->id, 'number' => 'QTN/2026-27/9101']);
+
+    actingAs(User::factory()->create(['role' => UserRole::Admin]))
+        ->get(route('partners.show', $partner))
+        ->assertOk()
+        ->assertSee('Your Account')
+        ->assertSee('NEDS/2026-27/9101')
+        ->assertSee('QTN/2026-27/9101');
+});
+
+it('does not show a "Your Account" section for a non-reseller partner', function () {
+    $partner = Partner::factory()->create(['billing_customer_id' => null]);
+
+    actingAs(User::factory()->create(['role' => UserRole::Admin]))
+        ->get(route('partners.show', $partner))
+        ->assertOk()
+        ->assertDontSee('Your Account');
+});
