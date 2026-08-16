@@ -32,13 +32,14 @@ it('dispatches SendTelegramLeadAlertJob whenever a lead is created', function ()
 // Job execution
 // ──────────────────────────────────────────────────────────────────────────────
 
-it('POSTs the lead detail, source, assignee, and CRM link to the Telegram Bot API', function () {
+it('POSTs the lead detail, phone, source, assignee, and CRM link to the Telegram Bot API', function () {
     Http::fake(['https://api.telegram.org/*' => Http::response(['ok' => true], 200)]);
 
     $owner = User::factory()->role(UserRole::Sales)->create(['name' => 'Kiran Katte']);
     $lead = Lead::factory()->ownedBy($owner->id)->create([
         'name' => 'Priya Shah',
         'company' => 'Shah Traders',
+        'phone' => '9876543210',
         'source' => LeadSource::MetaAds,
     ]);
 
@@ -48,9 +49,20 @@ it('POSTs the lead detail, source, assignee, and CRM link to the Telegram Bot AP
         return $request->url() === 'https://api.telegram.org/bottest-bot-token/sendMessage'
             && $request['chat_id'] === '-100123456789'
             && str_contains($request['text'], 'Priya Shah (Shah Traders)')
+            && str_contains($request['text'], 'Phone: 9876543210')
             && str_contains($request['text'], 'Kiran Katte')
             && str_contains($request['text'], (string) $lead->id);
     });
+});
+
+it('reports "not provided" when the lead has no phone number', function () {
+    Http::fake(['https://api.telegram.org/*' => Http::response(['ok' => true], 200)]);
+
+    $lead = Lead::factory()->create(['phone' => null]);
+
+    (new SendTelegramLeadAlertJob($lead->id))->handle();
+
+    Http::assertSent(fn ($request) => str_contains($request['text'], 'Phone: not provided'));
 });
 
 it('reports "unassigned" when the lead has no owner yet', function () {
