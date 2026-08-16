@@ -25,6 +25,18 @@
 </div>
 
 <div>
+    <x-input-label for="billing_customer_id" value="Bills as reseller for" />
+    <select id="billing_customer_id" name="billing_customer_id" class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm">
+        <option value="">Not a reseller — bill each referred client directly</option>
+        @foreach ($customers as $customer)
+            <option value="{{ $customer->id }}" @selected(old('billing_customer_id', $partner->billing_customer_id ?? '') == $customer->id)>{{ $customer->company_name }}</option>
+        @endforeach
+    </select>
+    <p class="mt-1 text-xs text-gray-500">If set, every quotation/invoice/recurring invoice for a client referred by this partner is billed to this customer instead — e.g. Brand-Whiz's own clients get invoiced to Brand Whiz, not each client directly.</p>
+    <x-input-error :messages="$errors->get('billing_customer_id')" class="mt-1" />
+</div>
+
+<div>
     <x-input-label for="notes" value="Notes" />
     <textarea id="notes" name="notes" rows="3"
               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ old('notes', $partner->notes ?? '') }}</textarea>

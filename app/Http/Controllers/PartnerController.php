@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StorePartnerRequest;
 use App\Http\Requests\UpdatePartnerRequest;
 use App\Mail\PartnerInvitation;
+use App\Models\Customer;
 use App\Models\Partner;
 use App\Models\PartnerCommissionStatement;
 use App\Services\CollectionsMetrics;
@@ -44,7 +45,9 @@ class PartnerController extends Controller
     {
         $this->authorize('create', Partner::class);
 
-        return view('partners.create');
+        return view('partners.create', [
+            'customers' => Customer::orderBy('company_name')->get(['id', 'company_name']),
+        ]);
     }
 
     public function store(StorePartnerRequest $request)
@@ -61,7 +64,10 @@ class PartnerController extends Controller
     {
         $this->authorize('update', $partner);
 
-        return view('partners.edit', compact('partner'));
+        return view('partners.edit', [
+            'partner' => $partner,
+            'customers' => Customer::orderBy('company_name')->get(['id', 'company_name']),
+        ]);
     }
 
     public function update(UpdatePartnerRequest $request, Partner $partner)

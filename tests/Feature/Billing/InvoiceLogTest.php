@@ -5,6 +5,7 @@ use App\Enums\UserRole;
 use App\Models\Customer;
 use App\Models\Deal;
 use App\Models\Invoice;
+use App\Models\Partner;
 use App\Models\Project;
 use App\Models\User;
 use Database\Seeders\MenuItemsSeeder;
@@ -60,6 +61,25 @@ it('logs an invoice linked to a deal and project', function () {
 
     expect($invoice->deal_id)->toBe($deal->id)
         ->and($invoice->project_id)->toBe($project->id);
+});
+
+it('logs a reseller-referred client\'s invoice to the reseller\'s own customer record', function () {
+    $billTo = Customer::factory()->create(['company_name' => 'Brand Whiz']);
+    $reseller = Partner::factory()->create(['name' => 'Brand-Whiz', 'billing_customer_id' => $billTo->id]);
+    $client = Customer::factory()->create(['company_name' => 'ESS', 'referring_partner_id' => $reseller->id]);
+
+    $this->actingAs($this->accounts)
+        ->post(route('invoices.store'), [
+            'invoice_number' => 'HT-2026-0099',
+            'customer_id' => $client->id,
+            'issue_date' => '2026-07-01',
+            'amount' => '10000',
+        ])
+        ->assertRedirect();
+
+    $invoice = Invoice::where('invoice_number', 'HT-2026-0099')->firstOrFail();
+
+    expect($invoice->customer_id)->toBe($billTo->id);
 });
 
 it('rejects a duplicate invoice number', function () {

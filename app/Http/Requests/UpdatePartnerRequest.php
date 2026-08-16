@@ -18,6 +18,7 @@ class UpdatePartnerRequest extends FormRequest
             'email' => ['nullable', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:30'],
             'commission_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'billing_customer_id' => ['nullable', 'exists:customers,id'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ];
     }

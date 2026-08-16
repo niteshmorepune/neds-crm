@@ -15,11 +15,14 @@
     <div class="rounded-lg bg-white p-6 shadow-sm grid grid-cols-1 gap-4 md:grid-cols-3">
         <div>
             <x-input-label value="Client *" />
-            <select wire:model="customer_id" class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm">
+            <select wire:model.live="customer_id" class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm">
                 <option value="">Select client</option>
                 @foreach ($customers as $customer)<option value="{{ $customer->id }}">{{ $customer->company_name }}</option>@endforeach
             </select>
             @error('customer_id') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
+            @if ($this->billingRedirectNotice)
+                <p class="mt-1 text-xs text-amber-700 bg-amber-50 rounded px-2 py-1">{{ $this->billingRedirectNotice }}</p>
+            @endif
         </div>
         <div>
             <x-input-label value="Service" />

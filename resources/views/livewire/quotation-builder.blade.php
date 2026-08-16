@@ -34,6 +34,9 @@
                         @endforeach
                     </select>
                     @error('customer_id') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
+                    @if ($this->billingRedirectNotice)
+                        <p class="mt-1 text-xs text-amber-700 bg-amber-50 rounded px-2 py-1">{{ $this->billingRedirectNotice }}</p>
+                    @endif
                 </div>
                 <div>
                     <x-input-label value="Validity date" />

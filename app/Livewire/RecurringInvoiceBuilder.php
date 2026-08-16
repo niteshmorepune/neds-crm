@@ -97,7 +97,28 @@ class RecurringInvoiceBuilder extends Component
     /** Defaults the non-GST checkbox from the selected client, same as QuotationBuilder. */
     public function updatedCustomerId(?int $value): void
     {
-        $this->is_gst_exempt = $value ? (bool) Customer::find($value)?->gst_exempt : false;
+        $customer = $value ? Customer::find($value)?->billingTarget() : null;
+        $this->is_gst_exempt = (bool) $customer?->gst_exempt;
+    }
+
+    /**
+     * Same reseller-billing notice as QuotationBuilder — surfaces when the
+     * selected client is actually billed to a different (reseller) customer.
+     */
+    public function getBillingRedirectNoticeProperty(): ?string
+    {
+        if (! $this->customer_id) {
+            return null;
+        }
+
+        $selected = Customer::find($this->customer_id);
+        $billTo = $selected?->billingTarget();
+
+        if (! $selected || ! $billTo || $billTo->id === $selected->id) {
+            return null;
+        }
+
+        return "This client is billed via {$billTo->company_name} — every invoice generated from this template will be issued to {$billTo->company_name}, not {$selected->company_name} directly.";
     }
 
     public function addItem(): void
@@ -130,13 +151,15 @@ class RecurringInvoiceBuilder extends Component
             'items.*.gst_rate' => ['required', 'numeric', 'min:0', 'max:28'],
         ]);
 
-        $recurring = DB::transaction(function () {
+        $customer = Customer::findOrFail($this->customer_id)->billingTarget();
+
+        $recurring = DB::transaction(function () use ($customer) {
             $recurring = $this->recurringId
                 ? RecurringInvoice::findOrFail($this->recurringId)
                 : new RecurringInvoice(['is_active' => true]);
 
             $recurring->fill([
-                'customer_id' => $this->customer_id,
+                'customer_id' => $customer->id,
                 'quotation_id' => $this->quotationId,
                 'service_id' => $this->service_id,
                 'frequency' => $this->frequency,
