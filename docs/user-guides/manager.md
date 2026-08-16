@@ -529,6 +529,13 @@ details, it shows:
   billed nothing in the window — so it can't be mistaken for the (narrower)
   client health table below it, which only lists clients that actually need
   attention.
+- **Quotations**: every quotation for that partner's referred clients —
+  including leads who aren't a real client yet — with status, amount, and
+  date. This is the proposal-stage view; "Billed" above only shows once
+  something's actually been invoiced. The partner sees this same list
+  (with a Download PDF button) on their own Partner Portal dashboard, so
+  there's no need to forward quotations to them separately over WhatsApp
+  or email anymore.
 - **Client health**: the same collections/delivery table as the Collections
   report (above), already filtered to that partner's referred clients — who
   hasn't paid, who's only partially paid (with the oldest overdue invoice's
@@ -537,6 +544,24 @@ details, it shows:
 
 Useful when a partner asks "how are my clients doing with us" or "what have
 we billed through you lately," or before a check-in call with them.
+
+> **Note:** quotations and the Partner Portal both key off the client
+> record's own **Referred by (agency)** field (set on the Client's Edit
+> page) — not the Deal-level **Referred by** dropdown described above.
+> Set both if you want a client's deals *and* their quotations/portal
+> visibility attributed to the same agency.
+
+### Reseller billing
+Some partners resell NEDS's services under their own name — they have
+their own clients, and NEDS should invoice **the partner**, not each
+individual client. If a partner is set up this way (**Partners → Edit →
+Bills as reseller for**, Admin only — see the Admin guide), any new
+quotation or invoice created for one of their referred clients
+automatically bills the partner's own client record instead, with an
+amber notice on the quotation/invoice form confirming who it's really
+being billed to. The client you originally picked stays linked for
+internal tracking (deals, projects, tasks) — only the actual GST bill-to
+party changes.
 
 ## Notice Board
 **Notice Board** in the sidebar (Admin/Manager only) is for posting time-bound

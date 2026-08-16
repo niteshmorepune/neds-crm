@@ -110,6 +110,10 @@ This is separate from a Call Log's own follow-up reminder (see the Sales/
 Support guides) — that one only exists once you've actually logged a call;
 this one is for setting a reminder ahead of time, for anything.
 
+**Sending a quotation creates one of these automatically** — a 3-day
+reminder to follow up, no need to set it yourself. See Sales guide →
+Quotations.
+
 ## 4f. Meeting Invitations
 If a colleague schedules a **Google Meet** call (via **Create Meeting** on a
 client or lead's Calls tab — see the Sales/Support guides) and adds you as

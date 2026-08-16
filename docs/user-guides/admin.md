@@ -139,6 +139,19 @@ collaborates with. Managers and admins can add, edit, and delete partner records
 Each partner needs only a **name**. Email and phone are optional but useful for
 quick reference when you need to contact the agency.
 
+**Bills as reseller for** (Edit page, optional): set this only when the
+partner resells NEDS's services under their own name to their own clients
+— e.g. an agency that has its own client base and expects NEDS to invoice
+*them*, not each individual client. Pick the Customer record that should
+receive the actual GST bill. Once set, every new quotation, invoice, or
+recurring invoice created for one of that partner's referred clients
+automatically bills the chosen customer instead — the originally-picked
+client stays linked for internal tracking, only the GST bill-to party
+changes. Leave this blank for a normal referral partner (the common case) — those
+clients are billed directly as usual, and the partner can instead be set
+up with a **Commission rate** (also on the Edit page) to earn a percentage
+of each referred deal's value when it's won.
+
 Once a partner is registered, staff can assign them to content pieces inside
 projects (see [Manager guide → Content collaboration](manager.md)).
 

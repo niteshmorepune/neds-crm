@@ -20,6 +20,10 @@ When you log in you'll see:
   on with NEDS (title, platform, and which project it belongs to), with its
   current status (e.g. Pending from Agency, Received, Approved, Scheduled,
   Published).
+- **Quotations** — every quotation for a client you've referred, whether
+  they're already a real client or still just a lead you've introduced us
+  to. Shows the client, status, and amount, with a **Download PDF** button
+  to get the actual document straight from the portal.
 - **Your Earnings** — only shown if you're on a commission arrangement with
   NEDS (ask your NEDS point of contact to set this up). Shows this month's
   referred business and your estimated commission so far, plus a history of
@@ -45,7 +49,8 @@ Click **FAQ** in the header for quick answers to the questions we hear
 most often — logins, referred clients, uploading content, and commission.
 
 ## Security & privacy
-- You can only ever see **your own** referred clients and content pieces.
+- You can only ever see **your own** referred clients, quotations, and
+  content pieces.
 - Use a strong password and don't share your login.
 - **Forgot your password?** Click **Forgot your password?** on the sign-in
   page, enter your email, and a reset link will be sent to your inbox.
