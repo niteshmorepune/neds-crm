@@ -356,8 +356,9 @@ endpoint itself, which always responds 200 immediately after queueing.
 ## Integration 11 — Telegram lead alerts
 
 **What it does:** every new lead (any source) posts a short alert — name,
-source, assigned rep (or "unassigned"), and a link back into the CRM — to
-one shared Telegram group via the Telegram Bot API. A second, always-on
+phone number (or "not provided"), source, assigned rep (or "unassigned"),
+and a link back into the CRM — to one shared Telegram group via the
+Telegram Bot API. A second, always-on
 place for the team to notice a new lead land, alongside the in-app
 notification bell and the auto-assigned rep's own notification.
 

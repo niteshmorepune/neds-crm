@@ -14,12 +14,29 @@ track referred clients and submit content directly. This guide is for
 ## Your Dashboard
 When you log in you'll see:
 
+- **Total outstanding / overdue summary** — at the top of the page, a
+  quick total of how much is currently owed across your referred clients
+  (or your own account, if you're billed as a reseller — see below), and
+  how many clients have something overdue.
 - **Your Referred Clients** — every client you've referred to NEDS, with
-  their current status (Active, Prospect, Inactive).
+  their current status (Active, Prospect, Inactive) and, next to each,
+  their own outstanding amount (and an overdue count if anything's past
+  due). Click any client to open their **account page** — every invoice
+  (number, status, due date, amount, balance), every quotation (with PDF
+  download), and their active projects. Use this to follow up directly
+  with a client whose payment is overdue.
+- **Your Account** (reseller partners only) — if you're set up as a
+  reseller, your referred clients' invoices are billed to you as one
+  consolidated account rather than individually. This section shows your
+  own real invoice history and balance with NEDS; each referred client's
+  row on the dashboard shows "Billed via your account" instead of its own
+  amount, since NEDS doesn't track a per-client split in that arrangement.
 - **Your Content Submissions** — every content piece you're collaborating
   on with NEDS (title, platform, and which project it belongs to), with its
   current status (e.g. Pending from Agency, Received, Approved, Scheduled,
-  Published).
+  Published). NEDS opens a submission here when a piece of content is ready
+  for you to deliver against — there's nothing to do on your side until one
+  appears; you can't start a submission yourself.
 - **Quotations** — every quotation for a client you've referred, whether
   they're already a real client or still just a lead you've introduced us
   to. Shows the client, status, and amount, with a **Download PDF** button

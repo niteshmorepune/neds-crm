@@ -220,6 +220,38 @@ class CollectionsMetrics
     }
 
     /**
+     * Invoice-level receivables detail for one customer — every non-draft,
+     * non-cancelled invoice with its own amount/balance/due date/overdue
+     * status, plus the running outstanding total and overdue count. Reused
+     * for two different callers: a referred client's own account
+     * (referral-only partners, where the client's own customer_id is the
+     * real invoice owner) and a reseller partner's own consolidated
+     * billing_customer account (Partner::billingCustomer() — see
+     * Customer::billingTarget(), which repoints a reseller-referred
+     * client's invoices to the partner's own customer record instead of
+     * the client itself, so this method is never meaningful called
+     * against one of THAT partner's individual referred clients — it will
+     * correctly return an empty list for them).
+     *
+     * @return array{invoices: Collection<int, Invoice>, outstanding_amount: int, overdue_count: int}
+     */
+    public function accountSummaryForCustomer(Customer $customer): array
+    {
+        $invoices = $customer->invoices()
+            ->whereNotIn('status', [InvoiceStatus::Draft->value, InvoiceStatus::Cancelled->value])
+            ->orderByDesc('issue_date')
+            ->get();
+
+        $outstanding = $invoices->filter(fn (Invoice $invoice) => $invoice->balance() > 0);
+
+        return [
+            'invoices' => $invoices,
+            'outstanding_amount' => (int) $outstanding->sum(fn (Invoice $invoice) => $invoice->balance()),
+            'overdue_count' => $outstanding->where('status', InvoiceStatus::Overdue)->count(),
+        ];
+    }
+
+    /**
      * All invoices considered "outstanding" — Draft/Sent/PartiallyPaid/
      * Overdue. Deliberately does NOT exclude invoices whose customer has
      * been soft-deleted (an earlier version of the Receivables Report did,

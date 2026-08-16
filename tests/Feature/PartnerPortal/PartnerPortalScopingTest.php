@@ -1,8 +1,10 @@
 <?php
 
 use App\Enums\ContentStatus;
+use App\Enums\InvoiceStatus;
 use App\Models\ContentPiece;
 use App\Models\Customer;
+use App\Models\Invoice;
 use App\Models\Partner;
 use App\Models\Quotation;
 use Illuminate\Http\UploadedFile;
@@ -71,4 +73,92 @@ it('404s when a partner tries to upload against another partner\'s content piece
 
 it('does not let an internal user session into the partner portal', function () {
     $this->get(route('partner-portal.home'))->assertRedirect(route('partner-portal.login'));
+});
+
+it('shows each referred client\'s own outstanding amount and overdue count on the dashboard', function () {
+    $client = Customer::factory()->create(['company_name' => 'Alpha Client', 'referring_partner_id' => $this->partnerA->id]);
+    Invoice::factory()->create([
+        'customer_id' => $client->id, 'status' => InvoiceStatus::Overdue,
+        'due_date' => now()->subDays(3), 'total' => 75000, 'amount_paid' => 0,
+    ]);
+
+    $this->actingAs($this->partnerA, 'partner')
+        ->get(route('partner-portal.home'))
+        ->assertOk()
+        ->assertSee('₹750.00')
+        ->assertSee('1 overdue');
+});
+
+it('lets a partner drill into their own referred client\'s account page, with invoices/quotations/projects', function () {
+    $client = Customer::factory()->create(['company_name' => 'Alpha Client', 'referring_partner_id' => $this->partnerA->id]);
+    Invoice::factory()->create([
+        'customer_id' => $client->id, 'status' => InvoiceStatus::Overdue,
+        'invoice_number' => 'NEDS/2026-27/7001', 'due_date' => now()->subDays(3),
+        'total' => 75000, 'amount_paid' => 0,
+    ]);
+    Quotation::factory()->create(['customer_id' => $client->id, 'number' => 'QTN/2026-27/7001']);
+
+    $this->actingAs($this->partnerA, 'partner')
+        ->get(route('partner-portal.clients.show', $client))
+        ->assertOk()
+        ->assertSee('Alpha Client')
+        ->assertSee('NEDS/2026-27/7001')
+        ->assertSee('QTN/2026-27/7001');
+});
+
+it('404s when a partner tries to view another partner\'s referred client', function () {
+    $theirClient = Customer::factory()->create(['referring_partner_id' => $this->partnerB->id]);
+
+    $this->actingAs($this->partnerA, 'partner')
+        ->get(route('partner-portal.clients.show', $theirClient))
+        ->assertNotFound();
+});
+
+it('404s when a partner tries to view a client not referred by anyone', function () {
+    $unowned = Customer::factory()->create(['referring_partner_id' => null]);
+
+    $this->actingAs($this->partnerA, 'partner')
+        ->get(route('partner-portal.clients.show', $unowned))
+        ->assertNotFound();
+});
+
+it('shows a reseller partner their consolidated "Your Account" invoices, and each referred client as billed via that account', function () {
+    $billTo = Customer::factory()->create(['company_name' => 'Brand Whiz']);
+    $reseller = Partner::factory()->portalUser()->create(['name' => 'Brand-Whiz Partner', 'billing_customer_id' => $billTo->id]);
+    $subClient = Customer::factory()->create(['company_name' => 'Sub Client Co', 'referring_partner_id' => $reseller->id]);
+
+    Invoice::factory()->create([
+        'customer_id' => $billTo->id, 'status' => InvoiceStatus::Overdue,
+        'invoice_number' => 'NEDS/2026-27/7101', 'due_date' => now()->subDays(2),
+        'total' => 120000, 'amount_paid' => 0,
+    ]);
+    Quotation::factory()->create(['customer_id' => $billTo->id, 'number' => 'QTN/2026-27/7101']);
+
+    $response = $this->actingAs($reseller, 'partner')
+        ->get(route('partner-portal.home'))
+        ->assertOk()
+        ->assertSee('Your Account')
+        ->assertSee('NEDS/2026-27/7101')
+        ->assertSee('QTN/2026-27/7101')
+        ->assertSee('Sub Client Co')
+        ->assertSee('Billed via your account');
+
+    $response->assertSee(route('partner-portal.quotations.pdf', Quotation::where('number', 'QTN/2026-27/7101')->first()));
+});
+
+it('lets a reseller partner download a PDF for a quotation billed to their billing customer', function () {
+    $billTo = Customer::factory()->create();
+    $reseller = Partner::factory()->portalUser()->create(['billing_customer_id' => $billTo->id]);
+    $quotation = Quotation::factory()->create(['customer_id' => $billTo->id]);
+
+    $this->actingAs($reseller, 'partner')
+        ->get(route('partner-portal.quotations.pdf', $quotation))
+        ->assertOk();
+});
+
+it('shows a friendlier empty state for content submissions instead of a bare "no submissions"', function () {
+    $this->actingAs($this->partnerA, 'partner')
+        ->get(route('partner-portal.home'))
+        ->assertOk()
+        ->assertSee("we'll open a submission here", false);
 });

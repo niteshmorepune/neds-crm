@@ -49,7 +49,8 @@ class SendTelegramLeadAlertJob implements ShouldQueue
         $detail = $lead->company ? "{$lead->name} ({$lead->company})" : $lead->name;
         $source = $lead->source?->label() ?? 'unknown';
         $owner = $lead->owner?->name ?? 'unassigned';
-        $text = "New lead: {$detail}\nSource: {$source}\nAssigned to: {$owner}\n".route('leads.show', $lead->id);
+        $phone = $lead->phone ?: 'not provided';
+        $text = "New lead: {$detail}\nPhone: {$phone}\nSource: {$source}\nAssigned to: {$owner}\n".route('leads.show', $lead->id);
 
         try {
             $response = Http::timeout(15)
