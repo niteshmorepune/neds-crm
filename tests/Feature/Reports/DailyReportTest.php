@@ -1,12 +1,15 @@
 <?php
 
 use App\Enums\AttendanceStatus;
+use App\Enums\DealStage;
 use App\Enums\TaskStatus;
 use App\Enums\UserRole;
 use App\Mail\DailyReportReminder;
+use App\Models\Activity;
 use App\Models\Attendance;
 use App\Models\CallLog;
 use App\Models\DailyReport;
+use App\Models\Deal;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\User;
@@ -306,4 +309,47 @@ it('orders project groups by their earliest due date, most urgent first', functi
     $this->actingAs($this->user)->get(route('daily-reports.index'))
         ->assertOk()
         ->assertSeeInOrder(['Urgent Project', 'Later Project']);
+});
+
+it('shows todays activity timeline entries on the daily report page', function () {
+    $deal = Deal::factory()->create(['title' => 'ADTA Group Website']);
+    Activity::create([
+        'user_id' => $this->user->id, 'subject_type' => Deal::class, 'subject_id' => $deal->id,
+        'event' => 'created', 'changes' => [],
+    ]);
+
+    $this->actingAs($this->user)->get(route('daily-reports.index'))
+        ->assertOk()
+        ->assertSee('Activity timeline')
+        ->assertSee('Created deal "ADTA Group Website"');
+});
+
+it('browses the activity timeline to a previous day via the date picker', function () {
+    $deal = Deal::factory()->create(['title' => 'Old Work']);
+    $activity = Activity::create([
+        'user_id' => $this->user->id, 'subject_type' => Deal::class, 'subject_id' => $deal->id,
+        'event' => 'created', 'changes' => [],
+    ]);
+    $activity->created_at = now()->subDays(5);
+    $activity->saveQuietly();
+
+    $this->actingAs($this->user)->get(route('daily-reports.index'))
+        ->assertOk()->assertDontSee('Old Work');
+
+    $this->actingAs($this->user)->get(route('daily-reports.index', ['date' => now()->subDays(5)->toDateString()]))
+        ->assertOk()->assertSee('Old Work');
+});
+
+it('never shows a future date on the activity timeline even if requested', function () {
+    $response = $this->actingAs($this->user)->get(route('daily-reports.index', ['date' => now()->addDays(3)->toDateString()]));
+
+    $response->assertOk();
+    expect($response->viewData('viewDateInput'))->toBe(now()->timezone(config('app.display_timezone'))->toDateString());
+});
+
+it('shows a pending deal owned by the employee on the daily report page', function () {
+    Deal::factory()->ownedBy($this->user->id)->create(['title' => 'Open Opportunity', 'stage' => DealStage::Proposal]);
+
+    $this->actingAs($this->user)->get(route('daily-reports.index'))
+        ->assertOk()->assertSee('Still pending')->assertSee('Open Opportunity');
 });

@@ -21,6 +21,53 @@
             <div class="rounded-lg bg-white p-4 shadow-sm"><div class="text-xs text-gray-500">Attendance</div><div class="text-xl font-semibold">{{ $metrics['attendance_status'] ? \App\Enums\AttendanceStatus::from($metrics['attendance_status'])->label() : '—' }}</div></div>
         </div>
 
+        {{-- Still pending — everything still open for you right now, across
+             every module (tasks, tickets, leads, deals, quotations awaiting a
+             client decision, unpaid/overdue invoices) — not scoped to the
+             date picker below, since "pending" always means "as of now." --}}
+        <div class="rounded-lg bg-white p-4 shadow-sm">
+            <h3 class="text-sm font-semibold text-gray-900">Still pending ({{ $pending->count() }})</h3>
+            <ul class="mt-2 divide-y divide-gray-100 text-sm">
+                @forelse ($pending as $item)
+                    <li class="flex items-center justify-between gap-3 py-1.5">
+                        <a href="{{ $item['url'] }}" class="text-gray-800 hover:text-indigo-600 hover:underline">{{ $item['description'] }}</a>
+                        <span class="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">{{ $item['type'] }}</span>
+                    </li>
+                @empty
+                    <li class="py-2 text-gray-400">Nothing pending — fully caught up.</li>
+                @endforelse
+            </ul>
+        </div>
+
+        {{-- Activity timeline — everything you did on a chosen day,
+             chronologically, assembled from the activities audit log +
+             CallLog. Defaults to today; pick a previous day to see it
+             instead (never a future date). --}}
+        <div class="rounded-lg bg-white p-4 shadow-sm">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <h3 class="text-sm font-semibold text-gray-900">Activity timeline ({{ $timelineEntries->count() }})</h3>
+                <form method="GET" class="flex items-center gap-2">
+                    <input type="date" name="date" value="{{ $viewDateInput }}" max="{{ now()->timezone(config('app.display_timezone'))->toDateString() }}" class="rounded-md border-gray-300 text-xs shadow-sm" onchange="this.form.submit()" />
+                </form>
+            </div>
+            <ul class="mt-2 divide-y divide-gray-100 text-sm">
+                @forelse ($timelineEntries as $entry)
+                    <li class="flex items-start justify-between gap-3 py-1.5">
+                        <div>
+                            @if ($entry['url'])
+                                <a href="{{ $entry['url'] }}" class="text-gray-800 hover:text-indigo-600 hover:underline">{{ $entry['description'] }}</a>
+                            @else
+                                <span class="text-gray-500">{{ $entry['description'] }}</span>
+                            @endif
+                        </div>
+                        <span class="shrink-0 text-xs text-gray-400">{{ $entry['at']->timezone(config('app.display_timezone'))->format('g:i A') }}</span>
+                    </li>
+                @empty
+                    <li class="py-2 text-gray-400">No activity on this day.</li>
+                @endforelse
+            </ul>
+        </div>
+
         {{-- Carried forward: open tasks that already existed before today, so
              yesterday's unfinished work isn't buried further down the page. --}}
         @if ($carryForward->isNotEmpty())

@@ -1,10 +1,13 @@
 <?php
 
+use App\Enums\DealStage;
 use App\Enums\TaskStatus;
 use App\Enums\TicketStatus;
 use App\Enums\UserRole;
+use App\Models\Activity;
 use App\Models\Attendance;
 use App\Models\Customer;
+use App\Models\Deal;
 use App\Models\Task;
 use App\Models\Ticket;
 use App\Models\User;
@@ -102,4 +105,44 @@ it('forbids a non admin/manager from viewing an employee 360 page even with the 
     $other = User::factory()->role(UserRole::Support)->create();
 
     $this->actingAs($support)->get(route('employees.show', $other))->assertForbidden();
+});
+
+it('shows todays activity timeline entries by default', function () {
+    $staff = User::factory()->role(UserRole::Sales)->create();
+    $deal = Deal::factory()->create(['title' => 'ADTA Group Website']);
+    Activity::create([
+        'user_id' => $staff->id, 'subject_type' => Deal::class, 'subject_id' => $deal->id,
+        'event' => 'created', 'changes' => [],
+    ]);
+
+    $this->actingAs($this->admin)->get(route('employees.show', $staff))
+        ->assertOk()
+        ->assertSee('Activity timeline')
+        ->assertSee('Created deal "ADTA Group Website"');
+});
+
+it('filters the activity timeline to a chosen date range', function () {
+    $staff = User::factory()->role(UserRole::Sales)->create();
+    $deal = Deal::factory()->create(['title' => 'Old Work']);
+    $activity = Activity::create([
+        'user_id' => $staff->id, 'subject_type' => Deal::class, 'subject_id' => $deal->id,
+        'event' => 'created', 'changes' => [],
+    ]);
+    $activity->created_at = now()->subDays(10);
+    $activity->saveQuietly();
+
+    $this->actingAs($this->admin)->get(route('employees.show', $staff))
+        ->assertOk()->assertDontSee('Old Work');
+
+    $this->actingAs($this->admin)->get(route('employees.show', [
+        'user' => $staff, 'from' => now()->subDays(11)->toDateString(), 'to' => now()->subDays(9)->toDateString(),
+    ]))->assertOk()->assertSee('Old Work');
+});
+
+it('shows a pending deal owned by the employee', function () {
+    $staff = User::factory()->role(UserRole::Sales)->create();
+    Deal::factory()->ownedBy($staff->id)->create(['title' => 'Open Opportunity', 'stage' => DealStage::Proposal]);
+
+    $this->actingAs($this->admin)->get(route('employees.show', $staff))
+        ->assertOk()->assertSee('Still pending')->assertSee('Open Opportunity');
 });

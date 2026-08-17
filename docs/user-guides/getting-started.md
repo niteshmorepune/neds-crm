@@ -190,6 +190,14 @@ what's still open from before:
 - **📋 Copy to send** — once you've submitted today's report (or on any past
   day in the history table below), copies a plain-text version formatted for
   pasting straight into WhatsApp or email.
+- **Still pending** — everything still open for you right now, across every
+  module you touch: tasks, tickets, leads, deals, quotations awaiting a
+  client decision, and unpaid/overdue invoices. Not just tasks — the full
+  picture of what needs following up.
+- **Activity timeline** — a chronological feed of everything you actually did
+  today (deals moved, quotations sent, invoices raised, payments recorded,
+  tickets worked, calls made, and more), each entry linking straight to the
+  record. Use the date picker to look back at a previous day instead.
 
 **My Tasks** on this page is grouped by project, with the project needing the
 soonest attention shown first. Within each project, tasks someone assigned you

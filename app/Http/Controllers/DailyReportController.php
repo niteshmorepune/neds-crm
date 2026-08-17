@@ -8,6 +8,7 @@ use App\Models\Project;
 use App\Models\Task;
 use App\Models\User;
 use App\Services\DailyReportMetrics;
+use App\Services\EmployeeActivityTimeline;
 use Carbon\CarbonPeriod;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,7 +18,7 @@ use Illuminate\View\View;
 
 class DailyReportController extends Controller
 {
-    public function index(Request $request, DailyReportMetrics $metrics): View
+    public function index(Request $request, DailyReportMetrics $metrics, EmployeeActivityTimeline $timeline): View
     {
         $this->authorize('viewAny', DailyReport::class);
 
@@ -30,6 +31,25 @@ class DailyReportController extends Controller
             ->orderByRaw('due_date IS NULL, due_date ASC')
             ->get();
 
+        // The Activity Timeline below is browsable to a previous day
+        // (?date=), independent of the EOD summary form above (always
+        // "today" — you submit today's report regardless of which day's
+        // timeline you're looking at). Never a future date — nothing to
+        // show, and it would silently desync from "today" everywhere else
+        // on this page.
+        //
+        // Parsed against app.display_timezone, not Carbon::parse()'s
+        // default of app.timezone (UTC) — see EmployeeActivityTimeline's
+        // own note on this; a plain "2026-08-17" date input must resolve to
+        // IST midnight, not UTC midnight.
+        $displayTz = config('app.display_timezone', 'Asia/Kolkata');
+        $viewDate = $request->filled('date')
+            ? Carbon::createFromFormat('Y-m-d', $request->string('date')->value(), $displayTz)->startOfDay()
+            : now($displayTz)->startOfDay();
+        if ($viewDate->gt(now($displayTz)->startOfDay())) {
+            $viewDate = now($displayTz)->startOfDay();
+        }
+
         return view('daily-reports.index', [
             'metrics' => $metrics->for($user, $today),
             'todayReport' => DailyReport::where('user_id', $user->id)->whereDate('date', $today)->first(),
@@ -39,6 +59,9 @@ class DailyReportController extends Controller
             'taskStatuses' => TaskStatus::cases(),
             'completedToday' => $this->completedToday($user, $today),
             'carryForward' => $this->carryForward($user, $today),
+            'timelineEntries' => $timeline->entries($user, $viewDate->copy()->utc(), $viewDate->copy()->endOfDay()->utc()),
+            'pending' => $timeline->pending($user),
+            'viewDateInput' => $viewDate->toDateString(),
         ]);
     }
 
