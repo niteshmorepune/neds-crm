@@ -395,6 +395,17 @@ This is the same notes feature as the one on the Users → Edit page
 useful if you want to leave a note on someone without also being able to
 change their account/role.
 
+Two more panels give the full day-to-day picture, not just the monthly
+summary above:
+- **Still pending** — everything still open for that person right now,
+  across every module: tasks, tickets, leads, deals, quotations awaiting a
+  client decision, and unpaid/overdue invoices.
+- **Activity timeline** — a chronological feed of everything they actually
+  did (deals moved, quotations sent, invoices raised, payments recorded,
+  tickets worked, calls made, and more), each entry linking straight to the
+  record. Pick a date range (defaults to today) to see a previous day or a
+  whole week at once.
+
 ## Daily reports & attendance
 - **Daily Reports → Team** shows what each person submitted for the selected
   date. Each name also shows a **"X/Y this week"** badge — how many of the

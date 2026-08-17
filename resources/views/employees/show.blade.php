@@ -47,6 +47,60 @@
             @endif
         </div>
 
+        {{-- Still pending — a point-in-time snapshot of everything still open
+             for this person (not date-scoped), across every module: tasks,
+             tickets, leads, deals, quotations awaiting a client decision, and
+             unpaid/overdue invoices. Quotations/invoices are attributed via
+             Quotation::ownerId()/Invoice::ownerId() (deal owner, falling back
+             to the customer's account owner) since neither model has its own
+             owner column. --}}
+        <div class="rounded-lg bg-white p-5 shadow-sm">
+            <h2 class="text-sm font-semibold text-gray-900">Still pending ({{ $pending->count() }})</h2>
+            <ul class="mt-3 divide-y divide-gray-100 text-sm">
+                @forelse ($pending as $item)
+                    <li class="flex items-center justify-between gap-3 py-1.5">
+                        <a href="{{ $item['url'] }}" class="text-gray-800 hover:text-indigo-600 hover:underline">{{ $item['description'] }}</a>
+                        <span class="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">{{ $item['type'] }}</span>
+                    </li>
+                @empty
+                    <li class="py-2 text-gray-400">Nothing pending — fully caught up.</li>
+                @endforelse
+            </ul>
+        </div>
+
+        {{-- Activity Timeline — everything this person did, chronologically,
+             assembled from the activities audit log (already logs who/what/
+             when across ~30 core models) + CallLog (calls aren't
+             activity-logged). Date range is independent of the "Performance
+             this month" panel above. --}}
+        <div class="rounded-lg bg-white p-5 shadow-sm">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <h2 class="text-sm font-semibold text-gray-900">Activity timeline ({{ $timelineEntries->count() }})</h2>
+                <form method="GET" class="flex items-center gap-2">
+                    <input type="date" name="from" value="{{ $timelineFromInput }}" class="rounded-md border-gray-300 text-xs shadow-sm" />
+                    <span class="text-xs text-gray-400">to</span>
+                    <input type="date" name="to" value="{{ $timelineToInput }}" class="rounded-md border-gray-300 text-xs shadow-sm" />
+                    <button class="rounded-md bg-gray-800 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-700">Filter</button>
+                </form>
+            </div>
+            <ul class="mt-3 divide-y divide-gray-100 text-sm">
+                @forelse ($timelineEntries as $entry)
+                    <li class="flex items-start justify-between gap-3 py-1.5">
+                        <div>
+                            @if ($entry['url'])
+                                <a href="{{ $entry['url'] }}" class="text-gray-800 hover:text-indigo-600 hover:underline">{{ $entry['description'] }}</a>
+                            @else
+                                <span class="text-gray-500">{{ $entry['description'] }}</span>
+                            @endif
+                        </div>
+                        <span class="shrink-0 text-xs text-gray-400">{{ $entry['at']->timezone(config('app.display_timezone'))->format('d M, g:i A') }}</span>
+                    </li>
+                @empty
+                    <li class="py-2 text-gray-400">No activity in this range.</li>
+                @endforelse
+            </ul>
+        </div>
+
         {{-- Workload --}}
         <div class="rounded-lg bg-white p-5 shadow-sm">
             <h2 class="text-sm font-semibold text-gray-900">Task workload</h2>

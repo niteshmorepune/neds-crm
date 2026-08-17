@@ -7,7 +7,10 @@ use App\Models\Attendance;
 use App\Models\Task;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Services\EmployeeActivityTimeline;
 use App\Services\ReportMetrics;
+use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 
 /**
@@ -45,10 +48,28 @@ class EmployeeProfileController extends Controller
         return view('employees.index', compact('employees'));
     }
 
-    public function show(User $user, ReportMetrics $metrics): View
+    public function show(Request $request, User $user, ReportMetrics $metrics, EmployeeActivityTimeline $timeline): View
     {
         $from = now()->startOfMonth();
         $to = now()->endOfMonth();
+
+        // Activity Timeline has its own, independently-picked date range
+        // (default: today) — the performance summary above stays fixed to
+        // "this month" regardless, so switching timeline dates never makes
+        // that section look like it changed too.
+        //
+        // Parsed against app.display_timezone (Asia/Kolkata), not
+        // Carbon::parse()'s default of app.timezone (UTC) — the same class
+        // of off-by-5:30 bug already caught and fixed once in this app
+        // (Create Meeting's timezone bug, 2026-07-29); a plain "2026-08-17"
+        // date input must resolve to IST midnight, not UTC midnight.
+        $displayTz = config('app.display_timezone', 'Asia/Kolkata');
+        $timelineFrom = $request->filled('from')
+            ? Carbon::createFromFormat('Y-m-d', $request->string('from')->value(), $displayTz)->startOfDay()->utc()
+            : now($displayTz)->startOfDay()->utc();
+        $timelineTo = $request->filled('to')
+            ? Carbon::createFromFormat('Y-m-d', $request->string('to')->value(), $displayTz)->endOfDay()->utc()
+            : now($displayTz)->endOfDay()->utc();
 
         // rankedEmployeePerformance() (not the plain employeePerformance())
         // so this page surfaces the same score/rank/weakest_metric coaching
@@ -82,6 +103,10 @@ class EmployeeProfileController extends Controller
             'tickets' => $tickets,
             'ticketCounts' => $ticketCounts,
             'attendance' => $attendance,
+            'timelineEntries' => $timeline->entries($user, $timelineFrom, $timelineTo),
+            'pending' => $timeline->pending($user),
+            'timelineFromInput' => $request->string('from')->value() ?: now($displayTz)->toDateString(),
+            'timelineToInput' => $request->string('to')->value() ?: now($displayTz)->toDateString(),
         ]);
     }
 }

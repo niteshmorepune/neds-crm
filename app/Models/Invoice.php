@@ -56,11 +56,22 @@ class Invoice extends Model
             if ($invoice->recurring_invoice_id !== null) {
                 return;
             }
-            $ownerId = Customer::where('id', $invoice->customer_id)->value('owner_id');
+            $ownerId = $invoice->ownerId();
             if ($ownerId) {
                 User::find($ownerId)?->notify(new NewInvoiceNotification($invoice));
             }
         });
+    }
+
+    /**
+     * The user responsible for this invoice — the customer's account
+     * owner. Mirrors Quotation::ownerId()'s resolution (used to decide who
+     * to notify about a new invoice, and who a still-unpaid invoice counts
+     * as "pending" for on the Employee Activity Timeline).
+     */
+    public function ownerId(): ?int
+    {
+        return Customer::where('id', $this->customer_id)->value('owner_id');
     }
 
     public function customer(): BelongsTo
