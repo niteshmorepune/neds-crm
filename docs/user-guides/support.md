@@ -12,7 +12,9 @@ You handle **tickets** (client issues) and **projects & tasks** (delivery work).
   this month, an overall score, and your biggest opportunity area. Private
   to you — nobody else sees your rank, and you don't see anyone else's. If
   AI is enabled, click **Get tips to improve** for a specific suggestion
-  based on your own numbers.
+  based on your own numbers — if you have a monthly target set (below), the
+  tip is built around exactly how much you need to close the gap, not just
+  a general nudge.
 - **Your target this month** — a progress bar against your monthly **tickets
   resolved** target, if Admin/Manager has set one for you (Team Targets page).
   "No target set" is normal if they haven't.

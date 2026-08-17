@@ -7,11 +7,13 @@ use App\Http\Requests\AiUsageSettingsRequest;
 use App\Models\AiUsageSetting;
 use App\Models\Customer;
 use App\Models\Partner;
+use App\Models\User;
 use App\Models\WeeklyDigest;
 use App\Services\AiUsageMetrics;
 use App\Services\BusinessOverviewMetrics;
 use App\Services\CollectionsMetrics;
 use App\Services\ReportMetrics;
+use App\Services\RoleTargetMetrics;
 use App\Services\SalesPipelineMetrics;
 use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
@@ -28,6 +30,7 @@ class ReportController extends Controller
         private readonly CollectionsMetrics $collectionsMetrics,
         private readonly SalesPipelineMetrics $pipelineMetrics,
         private readonly AiUsageMetrics $aiUsageMetrics,
+        private readonly RoleTargetMetrics $roleTargets,
     ) {}
 
     public function employeePerformance(Request $request): View
@@ -35,8 +38,21 @@ class ReportController extends Controller
         $this->authorizePerformance($request);
         [$from, $to] = $this->monthRange($request);
 
+        $rows = $this->metrics->employeePerformanceTrend($from, $to);
+
+        // Feeds ProductivityGapSuggestions' AI coaching call — a target gap
+        // is more actionable than a percentile alone (see AiAssistant::
+        // targetLine()). One batch User fetch rather than N+1 inside the
+        // map, cheap either way at this company's scale but no reason not to.
+        $users = User::whereIn('id', $rows->pluck('user_id'))->get()->keyBy('id');
+        $rows = $rows->map(function (array $row) use ($users) {
+            $row['target'] = $users->has($row['user_id']) ? $this->roleTargets->progressForUser($users[$row['user_id']]) : null;
+
+            return $row;
+        });
+
         return view('reports.employee-performance', [
-            'rows' => $this->metrics->employeePerformanceTrend($from, $to),
+            'rows' => $rows,
             'from' => $from,
             'to' => $to,
         ]);

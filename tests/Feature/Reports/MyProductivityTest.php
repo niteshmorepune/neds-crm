@@ -1,8 +1,11 @@
 <?php
 
+use App\Enums\TargetMetric;
 use App\Enums\UserRole;
 use App\Livewire\MyProductivity;
+use App\Models\CallLog;
 use App\Models\Lead;
+use App\Models\RoleTarget;
 use App\Models\User;
 use Illuminate\Support\Facades\Http;
 use Livewire\Livewire;
@@ -43,6 +46,41 @@ it('lets a staff member get an AI tip for themselves only', function () {
         ->test(MyProductivity::class)
         ->call('getTip')
         ->assertSet('tip', 'Try logging a few more calls this week.');
+});
+
+it('includes the viewer\'s own target progress in the AI tip prompt when one is set', function () {
+    config(['services.anthropic.enabled' => true, 'services.anthropic.key' => 'sk-test']);
+    Http::fake([
+        'api.anthropic.com/*' => Http::response([
+            'content' => [['type' => 'text', 'text' => 'Great pace — 5 more calls closes it out.']],
+            'usage' => ['input_tokens' => 20, 'output_tokens' => 15],
+        ]),
+    ]);
+    $telecaller = User::factory()->role(UserRole::Telecaller)->create();
+    User::factory()->role(UserRole::Telecaller)->create(); // peer, so ranking isn't "not enough peers"
+    RoleTarget::factory()->forUser($telecaller->id, TargetMetric::CallsMade)->create(['target_value' => 20]);
+    CallLog::factory()->count(8)->create(['user_id' => $telecaller->id, 'called_at' => now()]);
+
+    Livewire::actingAs($telecaller)->test(MyProductivity::class)->call('getTip');
+
+    Http::assertSent(fn ($request) => str_contains($request['messages'][0]['content'], 'monthly target — Calls made: 8 of 20 so far (40% of target)'));
+});
+
+it('omits target language from the AI tip prompt for a role with no mapped KRA metric', function () {
+    config(['services.anthropic.enabled' => true, 'services.anthropic.key' => 'sk-test']);
+    Http::fake([
+        'api.anthropic.com/*' => Http::response([
+            'content' => [['type' => 'text', 'text' => 'Keep up the consistent pace.']],
+            'usage' => ['input_tokens' => 20, 'output_tokens' => 15],
+        ]),
+    ]);
+    $alice = User::factory()->role(UserRole::Sales)->create();
+    $bob = User::factory()->role(UserRole::Sales)->create();
+    Lead::factory()->create(['owner_id' => $alice->id, 'converted_at' => now()]);
+
+    Livewire::actingAs($bob)->test(MyProductivity::class)->call('getTip');
+
+    Http::assertSent(fn ($request) => ! str_contains($request['messages'][0]['content'], 'monthly target'));
 });
 
 it('does not render on the Admin/Manager dashboard', function () {
