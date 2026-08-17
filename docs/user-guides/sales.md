@@ -216,9 +216,12 @@ builder with the client and deal already filled in. If they're already a client,
 it skips conversion and goes straight to the builder. Either way you land on a
 blank quotation ready to fill in — no manual selection needed.
 
-## 2. Pipeline (Sales Department)
-The **Sales Department** board shows your deals in columns by stage:
-**New → Contacted → Proposal → Negotiation → Won / Lost**.
+## 2. Sales Pipeline
+The **Sales Pipeline** board shows your deals in columns by stage:
+**New → Contacted → Proposal → Negotiation → Won / Lost**. It's a working
+screen — just the board, so you can focus on moving deals forward. The full
+numbers (KPI strip, stage conversion, trends, targets) live one click away
+on **Sales Dashboard** — see 2a below.
 
 - **Drag a deal** to the next column as it progresses (or open it and change the
   stage).
@@ -236,8 +239,8 @@ The **Sales Department** board shows your deals in columns by stage:
   This lets management see which deals were agency-sourced vs direct.
 - **Value (₹) is required** when adding or editing a deal — enter your best
   estimate even early on (New/Contacted) and correct it as the deal firms up.
-  It drives every figure in the KPI strip below, so a missing or 0 value
-  understates your own numbers.
+  It drives every figure on the Sales Dashboard's KPI strip, so a missing or
+  0 value understates your own numbers.
 - **Deals like this one** — on a deal's page, a panel shows up to 3 other
   closed deals (Won or Lost) for the same service, ranked by how close their
   value is to this one — useful context on how deals with this profile tend
@@ -245,8 +248,16 @@ The **Sales Department** board shows your deals in columns by stage:
   won't appear until this service has at least one other closed deal to
   compare against.
 
-**KPI strip** — above the board, seven figures scoped to your own deals
-(Admin/Manager see the whole company's pipeline instead):
+**Stale-deal badge** — each card shows how many days it's been sitting in its
+current stage, turning red past 10 days. A red badge is a nudge to follow up
+or move the deal, not an automatic penalty.
+
+## 2a. Sales Dashboard
+A dedicated page (Sidebar → **Sales Dashboard**, or the link at the top of
+the Pipeline board) with the full numbers, scoped to your own deals (Admin/
+Manager see everyone):
+
+**KPI strip** — seven figures at the top:
 - **Open pipeline** — total value of everything still open (not yet Won/Lost).
 - **Weighted forecast** — open pipeline value adjusted by a rough
   likelihood-to-close per stage (New 10%, Contacted 25%, Proposal 50%,
@@ -265,14 +276,6 @@ forward only, so each pair shows "Not enough data yet" until at least 5 deals
 have passed through it — it doesn't reconstruct history from before this
 feature shipped.
 
-**Stale-deal badge** — each card shows how many days it's been sitting in its
-current stage, turning red past 10 days. A red badge is a nudge to follow up
-or move the deal, not an automatic penalty.
-
-## 2a. Sales Dashboard
-A dedicated page (Sidebar → **Sales Dashboard**) for a fuller view than the
-board's KPI strip — same numbers, scoped the same way (your own deals; Admin/
-Manager see everyone):
 - **Target vs actual** — a progress bar against your monthly (and FY, if set)
   revenue target, if Admin/Manager has set one for you. "No target set" is
   normal if they haven't.

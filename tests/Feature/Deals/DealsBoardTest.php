@@ -88,3 +88,43 @@ it('shows similar closed deals on the deal detail page, or an empty-state messag
         ->assertSee('Similar Client Co')
         ->assertDontSee('No similar closed deals yet for this service.');
 });
+
+it('requires a value when creating a deal from the board', function () {
+    $customer = Customer::factory()->create();
+
+    Livewire::actingAs($this->admin)->test(DealsBoard::class)
+        ->set('customer_id', $customer->id)
+        ->set('title', 'No value deal')
+        ->set('value', '')
+        ->call('createDeal')
+        ->assertHasErrors(['value' => 'required']);
+});
+
+it('requires a value when updating a deal', function () {
+    $deal = Deal::factory()->create();
+    $this->seed(MenuItemsSeeder::class);
+
+    $this->actingAs($this->admin)
+        ->put(route('deals.update', $deal), [
+            'title' => $deal->title,
+            'stage' => $deal->stage->value,
+        ])
+        ->assertSessionHasErrors('value');
+});
+
+it('flags a deal as stale after more than 10 days in its current stage', function () {
+    $deal = Deal::factory()->create();
+    $deal->forceFill(['stage_changed_at' => now()->subDays(14)])->saveQuietly();
+
+    Livewire::actingAs($this->admin)->test(DealsBoard::class)
+        ->assertSee('⚠')
+        ->assertSee('14 days in stage');
+});
+
+it('does not flag a deal as stale within 10 days of its current stage', function () {
+    Deal::factory()->create();
+
+    Livewire::actingAs($this->admin)->test(DealsBoard::class)
+        ->assertSee('0 days in stage')
+        ->assertDontSee('⚠');
+});

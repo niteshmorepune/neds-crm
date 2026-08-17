@@ -241,7 +241,7 @@ Decisions / Action items), visible to anyone who opens that client or
 lead's page, including you.
 
 ## Sales Dashboard
-A company-wide view (Sidebar → **Sales Dashboard**, under Sales Department) —
+A company-wide view (Sidebar → **Sales Dashboard**, under Sales Pipeline) —
 same KPI strip/stage-conversion/trend/needs-attention sections described in
 the sales guide, but unscoped (everyone's deals). Two sections are
 Admin/Manager only:

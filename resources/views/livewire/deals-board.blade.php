@@ -1,9 +1,14 @@
 <div x-data="{ dragId: null }"
      x-on:deal-move-blocked.window="alert('That deal is Won or Lost and can\'t be moved.')">
     <div class="mb-4 flex items-center justify-between">
-        <h1 class="text-xl font-semibold text-gray-900">Sales Pipeline</h1>
+        <div>
+            <h1 class="text-xl font-semibold text-gray-900">Sales Pipeline</h1>
+            <p class="mt-0.5 text-sm text-gray-500">
+                Drag deals through their stages here. Full KPIs, trends & targets →
+                <a href="{{ route('sales-dashboard.index') }}" class="font-medium text-indigo-600 hover:underline">Sales Dashboard</a>
+            </p>
+        </div>
         <div class="flex items-center gap-4">
-            <a href="{{ route('sales-dashboard.index') }}" class="text-sm font-medium text-indigo-600 hover:underline">Sales Dashboard →</a>
             @can('create', \App\Models\Deal::class)
                 <button wire:click="$toggle('showAddForm')"
                         class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">
@@ -12,10 +17,6 @@
             @endcan
         </div>
     </div>
-
-    <x-kpi-strip :kpis="$kpis" class="mb-4" />
-
-    <x-stage-conversion :stage-conversion="$stageConversion" class="mb-4" />
 
     @if ($showAddForm)
         <div class="mb-4 grid grid-cols-1 gap-4 rounded-lg bg-white p-4 shadow-sm md:grid-cols-5">
