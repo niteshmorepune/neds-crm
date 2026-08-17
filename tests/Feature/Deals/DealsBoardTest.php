@@ -69,6 +69,23 @@ it('renders the deal detail page', function () {
     $this->actingAs($this->admin)->get(route('deals.show', $deal))->assertOk()->assertSee($deal->title);
 });
 
+it('shows inline hints clarifying the Stage and Service fields on the deal detail page', function () {
+    $deal = Deal::factory()->stage(DealStage::New)->create();
+    $this->seed(MenuItemsSeeder::class);
+
+    $this->actingAs($this->admin)->get(route('deals.show', $deal))->assertOk()
+        ->assertSee('Move to Negotiation only once a quotation has actually been sent')
+        ->assertSee("don't reach for a vague catch-all", false);
+});
+
+it('shows an inline hint on the Add deal form service field', function () {
+    $this->seed(MenuItemsSeeder::class);
+
+    Livewire::actingAs($this->admin)->test(DealsBoard::class)
+        ->set('showAddForm', true)
+        ->assertSee('Covers two services? Pick the main one and name the other in the title.');
+});
+
 it('shows similar closed deals on the deal detail page, or an empty-state message', function () {
     $this->seed(MenuItemsSeeder::class);
     $service = Service::factory()->create();

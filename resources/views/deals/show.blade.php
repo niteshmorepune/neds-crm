@@ -148,6 +148,8 @@
                             @if ($deal->stage->isTerminal())
                                 <input type="hidden" name="stage" value="{{ $deal->stage->value }}">
                                 <p class="mt-1 text-xs text-gray-400">{{ $deal->stage->label() }} is final and cannot be changed.</p>
+                            @else
+                                <p class="mt-1 text-xs text-gray-400">Move to Negotiation only once a quotation has actually been sent — this stage means "pricing shared, discussing terms," not just "talked to them again."</p>
                             @endif
                             <x-input-error :messages="$errors->get('stage')" class="mt-1" />
                         </div>
@@ -164,6 +166,7 @@
                                     <option value="{{ $service->id }}" @selected((string) old('service_id', $deal->service_id) === (string) $service->id)>{{ $service->name }}</option>
                                 @endforeach
                             </select>
+                            <p class="mt-1 text-xs text-gray-400">Pick the closest match. If this deal genuinely covers two services, choose the main one here and name the other in the title — don't reach for a vague catch-all.</p>
                         </div>
                         <div>
                             <x-input-label for="owner_id" value="Owner" />

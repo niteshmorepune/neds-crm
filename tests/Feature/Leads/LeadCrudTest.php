@@ -155,6 +155,15 @@ it('renders the lead index, create, show and edit pages', function () {
     $this->actingAs($this->admin)->get(route('leads.edit', $lead))->assertOk()->assertSee('Save Changes');
 });
 
+it('shows an inline hint clarifying Qualified vs Converted on the lead form', function () {
+    $lead = Lead::factory()->create();
+
+    $this->actingAs($this->admin)->get(route('leads.create'))->assertOk()
+        ->assertSee('Qualified = real budget & need confirmed', false);
+    $this->actingAs($this->admin)->get(route('leads.edit', $lead))->assertOk()
+        ->assertSee('Converted = this lead became a real Deal + Client');
+});
+
 it('shows summary cards with lead counts per status, unaffected by list filters', function () {
     Lead::factory()->create(['status' => LeadStatus::New]);
     Lead::factory()->count(2)->create(['status' => LeadStatus::Contacted]);

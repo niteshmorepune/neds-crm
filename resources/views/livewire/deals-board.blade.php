@@ -43,6 +43,7 @@
                         <option value="{{ $service->id }}">{{ $service->name }}</option>
                     @endforeach
                 </select>
+                <p class="mt-1 text-xs text-gray-400">Covers two services? Pick the main one and name the other in the title.</p>
             </div>
             <div>
                 <x-input-label value="Value (₹) *" />

@@ -222,6 +222,44 @@ never invents anything, and disappears automatically the next day.
 
 Click your **name** (top-right) → **Log Out**. Always log out on shared devices.
 
+## 9. Glossary — what these words actually mean
+The CRM uses several words that sound interchangeable but aren't. Picking the
+wrong one doesn't just look odd — it makes that record invisible to the
+reports and reminders that key off it. When in doubt, use this list rather
+than guessing.
+
+- **Lead vs Client** — a **Lead** is someone who hasn't paid yet: an inquiry
+  you're still working. A **Client** (called "Customer" internally) is a real
+  company with at least one won Deal. A Lead doesn't become a Client by
+  editing its status — it becomes one when you actually convert it.
+- **Lead status: New → Contacted → Qualified → Converted** (or **Lost**) —
+  **Qualified** means you've confirmed a real budget and a real need, not
+  just that you spoke to them. **Converted** means this lead has actually
+  become a Deal and a Client record — don't set it by hand as a label; use
+  the **Convert** action so both records are actually created.
+- **Deal stages: New → Contacted → Proposal → Negotiation → Won/Lost** — a
+  Deal is one specific piece of work being sold, priced in ₹. **Negotiation**
+  specifically means a quotation has been sent and you're discussing terms —
+  don't drag a card there just because you talked to the client again; send
+  the quotation first.
+- **Deal vs Quotation** — the Deal is the pipeline card (stage, value,
+  service, owner). The **Quotation** is the actual priced document you send
+  the client, generated from the Deal and downloadable as a PDF. A Deal in
+  Negotiation or later should always have a real Quotation attached — if it
+  doesn't, something's out of sync.
+- **Service** — the category tag on a Lead, Deal, Project, or Quotation line
+  (SEO, GMB, Website Design & Development, Social Media Management,
+  Performance Marketing, Software Development, AI Automation, AMC Service,
+  plus anything an admin has added since). Pick whichever is the **closest
+  real match**. If one deal genuinely spans two services, put the main one
+  here and name the second in the title — don't invent or reach for a vague
+  catch-all category, since reports are sliced by this field.
+- **Project vs Task ("Emptask")** — a **Project** is created once a Deal is
+  Won; it's where a client's ongoing delivery work lives. A **Task** is one
+  specific unit of work inside a Project (or standalone) — what actually gets
+  assigned to a person, tracked, and marked done. Deals and Leads themselves
+  are never "worked" directly; the Tasks under a Project are.
+
 ---
 Next: read the guide for your role — [Sales](sales.md), [Support](support.md),
 [Accounts](accounts.md), [Manager](manager.md), [Admin](admin.md), or
