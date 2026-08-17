@@ -32,3 +32,10 @@
 @if (in_array('my_productivity', $visibleWidgets))
     <livewire:my-productivity />
 @endif
+
+@if (in_array('target_progress', $visibleWidgets) && $targetProgress)
+    <div class="max-w-sm rounded-lg bg-white p-4 shadow-sm">
+        <p class="mb-3 text-xs font-medium text-gray-500">Your target this month</p>
+        <x-target-progress-bar :metric="$targetProgress['metric']" :target="$targetProgress['target']" :actual="$targetProgress['actual']" :pct="$targetProgress['pct']" />
+    </div>
+@endif

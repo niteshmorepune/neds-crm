@@ -13,6 +13,9 @@ When you log in, you'll see:
 - **Calls made today** — your own call count for today.
 - **Follow-ups due** — how many of your own logged calls have a follow-up
   date that's arrived.
+- **Your target this month** — a progress bar against your monthly **calls
+  made** target, if Admin/Manager has set one for you (Team Targets page).
+  "No target set" is normal if they haven't.
 
 ## 2. Attendance
 Do **both** every day: use the **Check In** / **Check Out** buttons on your

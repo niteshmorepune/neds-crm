@@ -47,6 +47,7 @@ class DashboardWidgets
                 'unapplied_advances' => 'Unapplied client advances',
                 'action_buttons' => 'Report quick links',
                 'my_productivity' => 'Your Productivity This Month',
+                'target_progress' => 'Your Target Progress',
             ],
             'support' => [
                 'open_tickets' => 'Open tickets',
@@ -56,17 +57,20 @@ class DashboardWidgets
                 'tasks_overdue' => 'Overdue tasks',
                 'open_by_priority' => 'Open tickets by priority',
                 'my_productivity' => 'Your Productivity This Month',
+                'target_progress' => 'Your Target Progress',
             ],
             'intern' => [
                 'pending_tasks' => 'Pending tasks',
                 'completed_today' => 'Completed today',
                 'active_projects' => 'Active projects',
                 'my_productivity' => 'Your Productivity This Month',
+                'target_progress' => 'Your Target Progress',
             ],
             'telecaller' => [
                 'new_leads' => 'New leads to call',
                 'calls_today' => 'Calls made today',
                 'followups_due' => 'Follow-ups due',
+                'target_progress' => 'Your Target Progress',
             ],
         ];
     }

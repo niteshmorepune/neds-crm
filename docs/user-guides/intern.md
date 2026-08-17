@@ -14,6 +14,9 @@ When you log in, you'll see:
   you — nobody else sees your rank, and you don't see anyone else's. If AI
   is enabled, click **Get tips to improve** for a specific suggestion based
   on your own numbers.
+- **Your target this month** — a progress bar against your monthly **tasks
+  completed** target, if Admin/Manager has set one for you (Team Targets
+  page). "No target set" is normal if they haven't.
 
 Click the links on the cards to jump straight to your task list or projects.
 
