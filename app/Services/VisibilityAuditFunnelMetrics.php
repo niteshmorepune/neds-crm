@@ -2,19 +2,23 @@
 
 namespace App\Services;
 
+use App\Enums\LeadSource;
 use App\Enums\VisibilityAuditFunnelEventType;
 use App\Models\Lead;
+use App\Models\Service;
+use App\Models\VisibilityAuditFunnelEvent;
+use App\Models\VisibilityAuditPurchase;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
 
 /**
  * Powers the Visibility Audit recovery queue — Leads attributably stuck at
  * one of the funnel's tracked stages (see VisibilityAuditFunnelTrackingController)
- * with no completed purchase yet. Deliberately does NOT cover "filled the
- * Meta lead form but never clicked through at all" — that would need a
- * reliable way to tell which Leads belong to this specific campaign, which
- * doesn't exist yet (Meta's own utm_campaign string isn't a safe filter
- * without confirming its exact value), so it's left out rather than guessed.
+ * with no completed purchase yet — and funnelSummary(), the full-funnel
+ * count-per-stage view. "Filled the Meta lead form but never clicked
+ * through at all" (previously not coverable — see LeadObserver's own note)
+ * is now identified via `source = MetaAds AND service_id = GMB`, the same
+ * cohort SendVisibilityAuditFirstInviteJob targets.
  */
 class VisibilityAuditFunnelMetrics
 {
@@ -71,5 +75,47 @@ class VisibilityAuditFunnelMetrics
             ->whereHas('visibilityAuditFunnelEvents', fn ($q) => $q->where('event_type', $type))
             ->whereDoesntHave('visibilityAuditPurchases')
             ->with(['owner', 'visibilityAuditFunnelEvents' => fn ($q) => $q->where('event_type', $type)->latest()]);
+    }
+
+    /**
+     * Stage-by-stage counts for the GMB-tagged Meta Ads lead cohort: how
+     * many were eligible, invited, reached the landing page, reached
+     * checkout, and paid — in that order, each stage a subset of the one
+     * before it in spirit (though not strictly a strict funnel query, since
+     * a lead could in principle reach a later stage via an older recovery
+     * link without a fresh landing_viewed event — rare enough not to chase).
+     * $from/$to bound eligibility by Lead.created_at; omit both for
+     * all-time totals.
+     *
+     * @return array{eligible: int, invited: int, landing_viewed: int, checkout_viewed: int, paid: int}
+     */
+    public function funnelSummary(?Carbon $from = null, ?Carbon $to = null): array
+    {
+        $eligibleIds = $this->eligibleLeadsQuery($from, $to)->pluck('id');
+
+        return [
+            'eligible' => $eligibleIds->count(),
+            'invited' => $this->eligibleLeadsQuery($from, $to)->whereNotNull('visibility_audit_invited_at')->count(),
+            'landing_viewed' => VisibilityAuditFunnelEvent::where('event_type', VisibilityAuditFunnelEventType::LandingViewed)
+                ->whereIn('lead_id', $eligibleIds)
+                ->distinct('lead_id')
+                ->count('lead_id'),
+            'checkout_viewed' => VisibilityAuditFunnelEvent::where('event_type', VisibilityAuditFunnelEventType::PaymentViewed)
+                ->whereIn('lead_id', $eligibleIds)
+                ->distinct('lead_id')
+                ->count('lead_id'),
+            'paid' => VisibilityAuditPurchase::whereIn('lead_id', $eligibleIds)->count(),
+        ];
+    }
+
+    private function eligibleLeadsQuery(?Carbon $from, ?Carbon $to)
+    {
+        $gmbServiceId = Service::where('name', 'GMB')->value('id');
+
+        return Lead::query()
+            ->where('source', LeadSource::MetaAds->value)
+            ->where('service_id', $gmbServiceId)
+            ->when($from, fn ($q) => $q->where('created_at', '>=', $from))
+            ->when($to, fn ($q) => $q->where('created_at', '<=', $to));
     }
 }

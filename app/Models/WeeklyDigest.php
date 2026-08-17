@@ -30,6 +30,11 @@ class WeeklyDigest extends Model
         'client_radar_flagged_count',
         'client_radar_low_satisfaction_count',
         'client_radar_overdue_invoice_count',
+        'visibility_audit_eligible_count',
+        'visibility_audit_invited_count',
+        'visibility_audit_landing_viewed_count',
+        'visibility_audit_checkout_viewed_count',
+        'visibility_audit_paid_count',
     ];
 
     protected function casts(): array
@@ -49,6 +54,11 @@ class WeeklyDigest extends Model
             'client_radar_flagged_count' => 'integer',
             'client_radar_low_satisfaction_count' => 'integer',
             'client_radar_overdue_invoice_count' => 'integer',
+            'visibility_audit_eligible_count' => 'integer',
+            'visibility_audit_invited_count' => 'integer',
+            'visibility_audit_landing_viewed_count' => 'integer',
+            'visibility_audit_checkout_viewed_count' => 'integer',
+            'visibility_audit_paid_count' => 'integer',
         ];
     }
 }

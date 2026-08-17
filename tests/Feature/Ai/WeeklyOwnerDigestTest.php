@@ -1,12 +1,16 @@
 <?php
 
+use App\Enums\LeadSource;
 use App\Enums\UserRole;
 use App\Mail\WeeklyOwnerDigest;
+use App\Models\Lead;
+use App\Models\Service;
 use App\Models\User;
 use App\Models\WeeklyDigest;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Queue;
 
 it('caches an AI weekly digest on every admin/manager and emails each one', function () {
     Mail::fake();
@@ -38,6 +42,31 @@ it('caches an AI weekly digest on every admin/manager and emails each one', func
     $digest = WeeklyDigest::first();
     expect($digest->digest_date->toDateString())->toBe(now()->toDateString())
         ->and($digest->summary)->toBe('Pipeline is healthy; two clients need attention this week.');
+});
+
+it('records the Visibility Audit funnel counts for the last 7 days alongside the other metrics', function () {
+    Queue::fake(); // LeadObserver dispatches side-effect jobs on create — irrelevant here, see VisibilityAuditFirstInviteTest.
+    Mail::fake();
+    config(['services.anthropic.enabled' => false]);
+    User::factory()->role(UserRole::Admin)->create(['is_active' => true]);
+    $gmb = Service::factory()->create(['name' => 'GMB', 'is_active' => true]);
+    // Backdated 2 days: funnelSummary()'s range ends at today's midnight
+    // (matching BusinessOverviewMetrics::pipelineFunnel's identical
+    // boundary shape, both fine in production since this command only
+    // ever runs Monday morning over a fully-elapsed past week) — a lead
+    // created "now" mid-test would fall just after that boundary.
+    $invited = Lead::factory()->create(['source' => LeadSource::MetaAds, 'service_id' => $gmb->id, 'visibility_audit_invited_at' => now()]);
+    $invited->created_at = now()->subDays(2);
+    $invited->saveQuietly();
+    $notInvited = Lead::factory()->create(['source' => LeadSource::MetaAds, 'service_id' => $gmb->id]);
+    $notInvited->created_at = now()->subDays(2);
+    $notInvited->saveQuietly();
+
+    $this->artisan('app:send-weekly-owner-digest')->assertSuccessful();
+
+    $digest = WeeklyDigest::first();
+    expect($digest->visibility_audit_eligible_count)->toBe(2)
+        ->and($digest->visibility_audit_invited_count)->toBe(1);
 });
 
 it('still records a metrics-only snapshot, but sends nothing, when AI is disabled', function () {

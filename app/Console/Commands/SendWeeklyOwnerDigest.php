@@ -9,6 +9,7 @@ use App\Models\WeeklyDigest;
 use App\Services\AiAssistant;
 use App\Services\BusinessOverviewMetrics;
 use App\Services\ClientRadarService;
+use App\Services\VisibilityAuditFunnelMetrics;
 use App\Support\Ai;
 use App\Support\Money;
 use Illuminate\Console\Command;
@@ -16,10 +17,11 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
 
 /**
- * Monday-morning AI synthesis of pipeline, cash position, and at-risk
- * clients for Admin/Manager — reuses BusinessOverviewMetrics and
- * ClientRadarService (the same services behind those reports' own pages),
- * nothing new computed here. Always records a WeeklyDigest history row for
+ * Monday-morning AI synthesis of pipeline, cash position, at-risk clients,
+ * and the Visibility Audit funnel for Admin/Manager — reuses
+ * BusinessOverviewMetrics, ClientRadarService, and
+ * VisibilityAuditFunnelMetrics (the same services behind those reports' own
+ * pages), nothing new computed here. Always records a WeeklyDigest history row for
  * trend tracking, even when AI is disabled/unavailable (summary stays
  * null) — the metrics themselves don't depend on AI, only the narrative
  * does, and the email is skipped in that case since it has no non-AI value
@@ -31,11 +33,12 @@ class SendWeeklyOwnerDigest extends Command
 
     protected $description = 'Email Admin/Manager an AI synthesis of the week ahead (run Monday 09:00 IST).';
 
-    public function handle(BusinessOverviewMetrics $business, ClientRadarService $radar, AiAssistant $ai): int
+    public function handle(BusinessOverviewMetrics $business, ClientRadarService $radar, VisibilityAuditFunnelMetrics $visibilityAudit, AiAssistant $ai): int
     {
         $today = Carbon::today(config('app.display_timezone'));
 
         $pipeline = $business->pipelineFunnel($today->copy()->subDays(7), $today);
+        $visibilityAuditFunnel = $visibilityAudit->funnelSummary($today->copy()->subDays(7), $today);
         $mrr = $business->mrrSnapshot();
         $cashForecast = $business->cashForecast();
         $arAging = $business->arAging();
@@ -64,6 +67,11 @@ class SendWeeklyOwnerDigest extends Command
             'Clients flagged by Client Radar: '.$flagged->count(),
             'Clients with a low-satisfaction flag: '.($flagCounts['low_satisfaction'] ?? 0),
             'Clients with an overdue-invoice flag: '.($flagCounts['overdue_invoice'] ?? 0),
+            'Visibility Audit — new Meta leads (GMB) in the last 7 days: '.$visibilityAuditFunnel['eligible'],
+            'Visibility Audit — of those, invited via WhatsApp: '.$visibilityAuditFunnel['invited'],
+            'Visibility Audit — of those, viewed the offer page: '.$visibilityAuditFunnel['landing_viewed'],
+            'Visibility Audit — of those, reached checkout: '.$visibilityAuditFunnel['checkout_viewed'],
+            'Visibility Audit — of those, paid: '.$visibilityAuditFunnel['paid'],
         ];
 
         $summary = Ai::enabled() ? $ai->summarizeWeeklyOwnerDigest($lines) : null;
@@ -82,6 +90,11 @@ class SendWeeklyOwnerDigest extends Command
             'client_radar_flagged_count' => $flagged->count(),
             'client_radar_low_satisfaction_count' => $flagCounts['low_satisfaction'] ?? 0,
             'client_radar_overdue_invoice_count' => $flagCounts['overdue_invoice'] ?? 0,
+            'visibility_audit_eligible_count' => $visibilityAuditFunnel['eligible'],
+            'visibility_audit_invited_count' => $visibilityAuditFunnel['invited'],
+            'visibility_audit_landing_viewed_count' => $visibilityAuditFunnel['landing_viewed'],
+            'visibility_audit_checkout_viewed_count' => $visibilityAuditFunnel['checkout_viewed'],
+            'visibility_audit_paid_count' => $visibilityAuditFunnel['paid'],
         ];
 
         if ($summary !== null) {

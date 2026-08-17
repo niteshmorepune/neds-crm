@@ -42,7 +42,8 @@
               Full reports:
               <a href="{{ config('app.url') }}/reports/business-overview" style="color:#6366f1;">Business Overview</a> ·
               <a href="{{ config('app.url') }}/reports/cash-forecast" style="color:#6366f1;">Cash Forecast</a> ·
-              <a href="{{ config('app.url') }}/client-radar" style="color:#6366f1;">Client Radar</a>
+              <a href="{{ config('app.url') }}/client-radar" style="color:#6366f1;">Client Radar</a> ·
+              <a href="{{ config('app.url') }}/leads/visibility-audit-recovery" style="color:#6366f1;">Visibility Audit Funnel</a>
             </p>
             <p style="margin:16px 0 0;font-size:12px;color:#9ca3af;">
               Niranjan Enterprises Digital Solutions &nbsp;·&nbsp; NEDS CRM<br>

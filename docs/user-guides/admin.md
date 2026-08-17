@@ -481,6 +481,16 @@ template confirming the payment, on the **Marketing** number
 (`WADESK_MARKETING_NUMBER`) — same no-op-until-approved contract as the
 handoff message above, gated by `WADESK_VISIBILITY_AUDIT_TEMPLATE_NAME`.
 
+**Visibility Audit first invite:** Meta's own Lead Ads form never sends a
+submitter anywhere — it just captures their name/phone/email. For a Meta
+Ads lead tagged the **GMB** service specifically (not every Meta lead —
+inviting someone who inquired about SEO or a website to a Google Business
+Profile audit offer would be off-target), the CRM automatically sends a
+first WhatsApp invite the moment the lead is created, on the **Marketing**
+number, gated by `WADESK_VISIBILITY_AUDIT_FIRST_INVITE_TEMPLATE_NAME` —
+same no-op-until-approved contract as every other template here. Each lead
+is only ever invited once (`leads.visibility_audit_invited_at`).
+
 **Visibility Audit recovery nudges:** a lead who lands on the offer page or
 reaches checkout but never pays is automatically nudged over WhatsApp — no
 one has to notice and follow up manually. A scheduled job checks every 30
@@ -491,9 +501,10 @@ content per Meta's rules, not a plain order update). Gated by
 `WADESK_VISIBILITY_AUDIT_RECOVERY_CHECKOUT_TEMPLATE_NAME` /
 `WADESK_VISIBILITY_AUDIT_RECOVERY_LANDING_TEMPLATE_NAME` — each stage stays
 silently off until its own template is approved and its env var set. A
-human can still see and follow up on the same stuck leads any time via
-**Lead Generation → Audit Recovery**, whether or not the automated nudge
-has fired yet.
+human can still see the full funnel (eligible → invited → viewed offer
+page → reached checkout → paid) and follow up on the same stuck leads any
+time via **Lead Generation → Audit Recovery**, whether or not the
+automated invite/nudge has fired yet.
 
 **Managing which staff see which line:** this is configured on **wadesk.in
 itself**, not the CRM — Admin → Agents page has a checkbox per staff member
@@ -809,10 +820,13 @@ generated only from that person's own tasks/follow-ups.
 **AI weekly owner digest** — every Monday at 9 AM, Admin/Manager get a short
 AI-written paragraph synthesizing the week ahead: open pipeline, MRR,
 cash expected this month and over the next 3 months, receivables
-outstanding (including the 90+ days overdue figure), and how many clients
-Client Radar has flagged (and why). It's a synthesis of the existing
-Business Overview, Cash Forecast, and Client Radar reports — the email
-links to all three — and also appears as a dashboard banner for the rest
+outstanding (including the 90+ days overdue figure), how many clients
+Client Radar has flagged (and why), and the Visibility Audit funnel for
+the last 7 days (new Meta leads tagged GMB, invited, viewed the offer
+page, reached checkout, paid). It's a synthesis of the existing
+Business Overview, Cash Forecast, Client Radar, and Audit Recovery
+reports — the email links to all of them — and also appears as a
+dashboard banner for the rest
 of that Monday. The email/summary paragraph is skipped if AI is turned
 off, since there's nothing to synthesize beyond what those three reports
 already show on their own — but the underlying numbers are recorded

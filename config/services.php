@@ -87,6 +87,25 @@ return [
         // each is set (template must be Meta-approved first).
         'visibility_audit_recovery_landing_template_name' => env('WADESK_VISIBILITY_AUDIT_RECOVERY_LANDING_TEMPLATE_NAME'),
         'visibility_audit_recovery_checkout_template_name' => env('WADESK_VISIBILITY_AUDIT_RECOVERY_CHECKOUT_TEMPLATE_NAME'),
+
+        // First invite (App\Jobs\SendVisibilityAuditFirstInviteJob, fired
+        // from LeadObserver::created() for a Meta Ads lead tagged the GMB
+        // service) — the very first message inviting someone who filled a
+        // Meta lead form to actually see the Visibility Audit offer; unlike
+        // the recovery templates above, this one must NOT read like a
+        // follow-up ("you already saw this") since the recipient hasn't
+        // seen the landing page yet. Same Dynamic-URL button contract as
+        // the recovery templates (button's own {{1}} = lead id, sent as
+        // buttonUrlParam, appended to /offers/visibility-audit/enter).
+        // Submit as Marketing category (this is an unsolicited first
+        // outreach, not a reply to an open conversation), language "en",
+        // plus a required "Stop promotions" Quick Reply opt-out button
+        // (same requirement as the recovery templates above). Suggested
+        // body: "Hi {{1}}, thanks for your interest in a free Google
+        // Business Profile Audit for your business! See what's holding
+        // your listing back — tap below to check it out." — {{1}} = lead's
+        // name.
+        'visibility_audit_first_invite_template_name' => env('WADESK_VISIBILITY_AUDIT_FIRST_INVITE_TEMPLATE_NAME'),
     ],
 
     // nedsdrishti.in — agency service delivery platform.
