@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Services\AiAssistant;
 use App\Services\ReportMetrics;
+use App\Services\RoleTargetMetrics;
 use App\Support\Ai;
 use Livewire\Component;
 
@@ -26,7 +27,7 @@ class MyProductivity extends Component
 
     public ?string $error = null;
 
-    public function mount(ReportMetrics $metrics): void
+    public function mount(ReportMetrics $metrics, RoleTargetMetrics $roleTargets): void
     {
         $this->aiEnabled = Ai::enabled();
 
@@ -35,6 +36,14 @@ class MyProductivity extends Component
 
         $this->row = $metrics->rankedEmployeePerformance($from, $to)
             ->firstWhere('user_id', auth()->id());
+
+        // Fed to AiAssistant::suggestProductivityImprovement() so the tip can
+        // reference the concrete target gap instead of just a percentile —
+        // null for Sales/Admin/Manager (see TargetMetric::forRole()), same
+        // as every other nullable field this row already carries.
+        if ($this->row !== null) {
+            $this->row['target'] = $roleTargets->progressForUser(auth()->user());
+        }
     }
 
     public function getTip(AiAssistant $ai): void

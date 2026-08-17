@@ -1285,3 +1285,49 @@ Record every "we chose X because Y" here — this is the project's memory.
   failures were in this milestone's own files. Flagged to the owner
   rather than silently fixed, since it touches several unrelated test
   files outside this milestone's scope — see [[backlog]].
+- **2026-08-18 (same day) — AI coaching upgraded to be target-aware: Phase
+  3 of the productivity/KRA/AI-coaching direction, closing out the
+  3-phase plan.** Both existing AI coaching surfaces —
+  `AiAssistant::suggestProductivityImprovement()` (the self "✨ Get tips to
+  improve" button on `MyProductivity`) and `suggestTeamProductivityGaps()`
+  (the admin/manager "✨ Suggest Improvements for the Team" button on
+  `ProductivityGapSuggestions`) — now fold in `RoleTargetMetrics::
+  progressForUser()`'s target-vs-actual figure when the person's role has
+  one (Support/Accounts/Intern/Telecaller), and both system prompts were
+  rewritten to make the concrete target gap the centerpiece of the advice
+  over the relative percentile whenever one is present, instead of
+  silently ignoring the new target data introduced by Phase 2. New shared
+  private `AiAssistant::targetLine()` formats a `progressForUser()` row
+  into one prompt fragment — written once so both call sites describe a
+  target identically rather than drifting.
+  **Deliberately did NOT extend this to Sales** — Sales already has its
+  own separate `SalesTarget`/pipeline-KPI mechanism (monthly + FY,
+  dependent on `SalesPipelineMetrics::kpis()` being computed first), and
+  wiring it into the same shared `targetLine()` shape would have meant
+  either duplicating that computation or coupling two independently-
+  evolving target systems together for a single prompt line — matches the
+  same "Sales keeps its own mechanism" boundary drawn throughout Phase 2,
+  not a fresh decision.
+  **Deliberately did NOT extend this to `AiAssistant::
+  summarizeTeamPerformance()`** (the broader narrative "AI Summary" on the
+  same report page) — that's a trends/standouts summary across the whole
+  team, a different shape of feature from per-person coaching toward a
+  number, out of scope for "coaching," not silently missed.
+  Enrichment happens at the two existing call sites, not inside
+  `ReportMetrics`/`RoleTargetMetrics` themselves, so those services stay
+  pure aggregation with no AI-shaped concerns: `MyProductivity::mount()`
+  merges the viewer's own `progressForUser()` onto `$this->row['target']`;
+  `ReportController::employeePerformance()` now injects
+  `RoleTargetMetrics` and batch-fetches every visible row's `User` once
+  (not N+1) to merge `'target'` onto each row before handing the array to
+  `ProductivityGapSuggestions`.
+  6 new Pest tests asserting on the actual HTTP request body sent to the
+  (faked) Anthropic API — confirms the target line reaches the model,
+  not just that the UI renders — full suite 2101 green (the same 8
+  pre-existing UTC/IST-window failures from the entry above, still
+  present, still none in this work's own files). Pint clean. Docs: a
+  one-line addition to the existing "Get tips to improve" mention in
+  `support.md`/`accounts.md`/`intern.md`, and to "Suggest Improvements for
+  the Team" in `manager.md` — 3 PDFs regenerated (the ones with an actual
+  handout; Intern has none, a pre-existing gap noted in Phase 2's entry,
+  not touched here).

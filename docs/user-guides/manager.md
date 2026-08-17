@@ -102,7 +102,11 @@ panel) — a near-term cash view, blending:
   short, specific, encouraging suggestion per person — same "never invents
   a reason" rule as the AI Summary above, and same visibility (Admin/Manager
   only; each employee separately sees only their own suggestion, on their
-  own Dashboard — see `getting-started.md`).
+  own Dashboard — see `getting-started.md`). For anyone with a monthly
+  target set (Team Targets page, above), the suggestion is built around
+  their concrete target gap for the month rather than just their weakest
+  percentile — e.g. how many more tickets/calls/₹ they need to hit it, or
+  an acknowledgment if they're already on pace.
 - **Trend indicators**: every number column shows a small colored `(+3)` or
   `(-2)` next to it, comparing the selected month against the one right
   before it — green for an improvement, red for a drop. A blank means there's

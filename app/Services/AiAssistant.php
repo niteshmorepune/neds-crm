@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\CrmQueryType;
 use App\Enums\DealStage;
 use App\Enums\InvoiceStatus;
+use App\Enums\TargetMetric;
 use App\Enums\TicketPriority;
 use App\Models\Customer;
 use App\Models\Deal;
@@ -865,8 +866,9 @@ class AiAssistant
                 : 'no single standout weak area';
 
             return sprintf(
-                '- id %d: %s (%s), rank %d of %d, score %d/100, weakest area: %s',
+                '- id %d: %s (%s), rank %d of %d, score %d/100, weakest area: %s%s',
                 $row['user_id'], $row['user'], $row['role'], $row['rank'], $row['role_group_size'], $row['score'], $weakest,
+                $this->targetLine($row['target'] ?? null),
             );
         })->implode("\n");
 
@@ -878,7 +880,12 @@ class AiAssistant
         concrete action that would help — never a generic platitude, never a
         criticism or judgement, and never a cause or reason not evidenced by
         the numbers given. If someone has no standout weak area, encourage
-        them to keep up their consistency instead of inventing a gap.
+        them to keep up their consistency instead of inventing a gap. When a
+        monthly target is given, prefer tying the suggestion to it directly
+        (e.g. how many more they need this month to hit it, or acknowledging
+        they're on pace) over the weakest-area percentile — a concrete target
+        gap is more actionable than a relative rank. If no target is set for
+        someone, don't mention targets for them at all.
 
         Respond with ONLY a JSON array, no markdown, no prose:
         [{"id": <int>, "suggestion": "<sentence>"}]
@@ -941,6 +948,11 @@ class AiAssistant
             'Attendance %: '.($row['attendance_pct'] ?? 'n/a').', daily reports submitted: '.$row['daily_reports'],
         ];
 
+        $targetLine = $this->targetLine($row['target'] ?? null);
+        if ($targetLine !== '') {
+            $lines[] = ltrim($targetLine, ', ');
+        }
+
         $system = <<<'PROMPT'
         You coach one staff member at a digital-solutions agency in India on
         how to get more out of their role this period, based ONLY on the
@@ -950,7 +962,12 @@ class AiAssistant
         criticism, and never a cause or reason not evidenced by the numbers
         given. Address them directly ("you"). If there's no standout weak
         area, encourage them to keep up their consistency instead of
-        inventing a gap. Output only the message.
+        inventing a gap. When a monthly target line is given, make it the
+        centerpiece of your advice — say concretely what's needed to close
+        the gap this month (or, if already on/ahead of pace, say so and
+        encourage keeping it up) — since a concrete target is more
+        actionable than a relative percentile alone. If no target line is
+        given, don't mention targets. Output only the message.
         PROMPT;
 
         return $this->trimmed($this->client->message(
@@ -959,6 +976,37 @@ class AiAssistant
             system: $system,
             maxTokens: 300,
         ));
+    }
+
+    /**
+     * Formats a RoleTargetMetrics::progressForUser() row into one prompt
+     * fragment, leading with a comma so it appends cleanly onto an existing
+     * line (suggestTeamProductivityGaps()) — callers ltrim(', ') it off when
+     * used as its own standalone line instead (suggestProductivityImprovement()).
+     * Empty string for null (Sales/Admin/Manager, who keep their own
+     * separate SalesTarget mechanism / aren't ranked participants) so ONE
+     * shared method decides how a target is described everywhere it's
+     * mentioned to the model, rather than duplicating this formatting logic
+     * per call site.
+     *
+     * @param  array{metric: TargetMetric, target: ?int, actual: int, pct: ?int}|null  $target
+     */
+    private function targetLine(?array $target): string
+    {
+        if ($target === null) {
+            return '';
+        }
+
+        $format = fn (int $value) => $target['metric']->isMoney() ? Money::format($value) : (string) $value;
+
+        if ($target['target'] === null) {
+            return ', no monthly target set yet ('.$target['metric']->label().' so far: '.$format($target['actual']).')';
+        }
+
+        return sprintf(
+            ', monthly target — %s: %s of %s so far (%d%% of target)',
+            $target['metric']->label(), $format($target['actual']), $format($target['target']), $target['pct'],
+        );
     }
 
     /**
