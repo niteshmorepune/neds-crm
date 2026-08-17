@@ -74,7 +74,14 @@ class ImportMetaLead implements ShouldQueue
         $version = (string) config('services.meta.graph_api_version', 'v19.0');
 
         try {
+            // Meta's default response for this node omits ad_id/form_id
+            // entirely (only id + field_data come back without an explicit
+            // fields param) — confirmed live: every Meta lead so far has a
+            // null utm_campaign because of this. field_data must stay
+            // listed too, since requesting `fields` returns ONLY the named
+            // fields, not the previous defaults plus extras.
             $response = Http::timeout(15)->get("https://graph.facebook.com/{$version}/{$this->leadgenId}", [
+                'fields' => 'field_data,ad_id,form_id',
                 'access_token' => $accessToken,
             ]);
         } catch (\Throwable $e) {

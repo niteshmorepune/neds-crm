@@ -69,6 +69,27 @@ it('falls back to a generic name when nothing usable is present', function () {
     expect(Lead::where('meta_leadgen_id', 'lg-1')->first()->name)->toBe('Facebook Lead');
 });
 
+/**
+ * Real bug, found live: the initial leadgen fetch requested no `fields`
+ * param at all, so Meta's default response omitted ad_id/form_id entirely
+ * (only id + field_data come back by default) — every Meta lead so far had
+ * utm_campaign = null because of this, confirmed directly against
+ * production via the same token. Requesting `fields` explicitly is also
+ * why field_data must be listed alongside ad_id/form_id here — Meta
+ * returns ONLY the named fields, not the previous defaults plus extras.
+ */
+it('requests field_data, ad_id, and form_id explicitly on the initial fetch', function () {
+    fakeMetaGraphResponse([['name' => 'full_name', 'values' => ['Priya Shah']]]);
+
+    ImportMetaLead::dispatchSync('lg-1');
+
+    Http::assertSent(function ($request) {
+        return str_contains($request->url(), 'graph.facebook.com')
+            && str_contains($request->url(), 'lg-1')
+            && $request['fields'] === 'field_data,ad_id,form_id';
+    });
+});
+
 it('falls back to form_id for utm_campaign when ad_id is absent', function () {
     fakeMetaGraphResponse([], ['ad_id' => null]);
 
