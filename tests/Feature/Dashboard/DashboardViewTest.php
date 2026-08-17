@@ -259,6 +259,20 @@ it('ignores an extraneous month param on the admin dashboard without erroring', 
         ->assertSee('Total Clients');
 });
 
+it('shows the your-target-this-month widget on each non-Sales role dashboard', function () {
+    foreach ([UserRole::Support, UserRole::Accounts, UserRole::Intern, UserRole::Telecaller] as $role) {
+        $user = User::factory()->role($role)->create();
+
+        $this->actingAs($user)->get(route('dashboard'))->assertOk()->assertSee('Your target this month');
+    }
+});
+
+it('never shows the target-progress widget on the Sales dashboard panel, which keeps its own SalesTarget UI', function () {
+    $sales = User::factory()->role(UserRole::Sales)->create();
+
+    $this->actingAs($sales)->get(route('dashboard'))->assertOk()->assertDontSee('Your target this month');
+});
+
 it('keeps showing the support panel even when Sales is granted as an additional role', function () {
     // Regression test: DashboardController is deliberately keyed on the
     // primary role only ($user->role), not hasRole() — a secondary role must

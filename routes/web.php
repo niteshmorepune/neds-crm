@@ -48,6 +48,7 @@ use App\Http\Controllers\RecurringInvoiceController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ResourceController;
 use App\Http\Controllers\RevenueAtRiskController;
+use App\Http\Controllers\RoleTargetController;
 use App\Http\Controllers\SalesDashboardController;
 use App\Http\Controllers\SalesTargetController;
 use App\Http\Controllers\SearchController;
@@ -609,6 +610,16 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
      */
     Route::middleware('menu.access:team-workload')->group(function () {
         Route::get('team-workload', [TeamWorkloadController::class, 'index'])->name('team-workload.index');
+    });
+
+    /*
+     * Team Targets — the generalized KRA/Target framework for the 4
+     * non-Sales roles (App\Enums\TargetMetric). Sales keeps its own
+     * pre-existing sales-dashboard.targets.store route unchanged.
+     */
+    Route::middleware('menu.access:team-targets')->group(function () {
+        Route::get('team-targets', [RoleTargetController::class, 'index'])->name('role-targets.index');
+        Route::post('team-targets', [RoleTargetController::class, 'store'])->name('role-targets.store');
     });
 
     /*

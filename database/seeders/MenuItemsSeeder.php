@@ -63,6 +63,7 @@ class MenuItemsSeeder extends Seeder
             ['key' => 'revenue-at-risk',  'label' => 'Revenue at Risk',  'group' => MenuGroup::TeamInsights,    'route' => 'revenue-at-risk.index', 'icon' => 'exclamation-triangle', 'roles' => [UserRole::Manager]],
             ['key' => 'client-radar',     'label' => 'Client Radar',     'group' => MenuGroup::TeamInsights,    'route' => 'client-radar.index', 'icon' => 'radar',    'roles' => [UserRole::Manager]],
             ['key' => 'employee-360',     'label' => 'Employee 360°',    'group' => MenuGroup::TeamInsights,    'route' => 'employees.index',  'icon' => 'identification', 'roles' => [UserRole::Manager]],
+            ['key' => 'team-targets',     'label' => 'Team Targets',     'group' => MenuGroup::TeamInsights,    'route' => 'role-targets.index', 'icon' => 'flag', 'roles' => [UserRole::Manager]],
             ['key' => 'manager-calendar', 'label' => 'Manager Calendar', 'group' => MenuGroup::TeamInsights,    'route' => 'manager-calendar.index', 'icon' => 'calendar-days', 'roles' => [UserRole::Manager]],
             ['key' => 'daily-reports',    'label' => 'Daily Reports',    'group' => MenuGroup::TeamInsights,    'route' => 'daily-reports.index', 'icon' => 'clipboard', 'roles' => $all],
             ['key' => 'quarterly-awards', 'label' => 'Best Employee',    'group' => MenuGroup::TeamInsights,    'route' => 'quarterly-awards.index', 'icon' => 'trophy',  'roles' => $all],

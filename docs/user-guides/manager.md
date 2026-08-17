@@ -260,6 +260,29 @@ Admin/Manager only:
   on, so it may not show yet for a newer pipeline; there's no suggestion for
   the financial-year target.
 
+## Team Targets
+Sidebar → **Team Targets** — the same target-vs-actual mechanism as the Sales
+Dashboard's rep leaderboard, generalized to the 4 other roles. Each role has
+one KRA (Key Result Area) it's measured against, since that's what the job
+actually is:
+
+| Role | KRA metric |
+|---|---|
+| Support | Tickets resolved |
+| Accounts | Collections recorded (₹) |
+| Intern | Tasks completed |
+| Telecaller | Calls made |
+
+For each role: a **role-wide target** for the whole team this month (with a
+progress bar), and a table listing every active person in that role with
+their actual figure so far this month and an editable target field. Leave a
+field blank to leave that person's existing target unchanged, same "never
+zero out what you don't touch" rule as the Sales targets form. Everyone also
+sees their own progress bar on their own Dashboard, under "Your target this
+month" (can be hidden via **⚙ Customize dashboard**, like any other widget).
+Sales keeps its own separate mechanism on the Sales Dashboard above — this
+page is only the other 4 roles.
+
 ## Incentives
 Sidebar → **Incentives**. Admin/Manager see every active Sales rep's live
 monthly incentive (sales this month, current slab, individual incentive,

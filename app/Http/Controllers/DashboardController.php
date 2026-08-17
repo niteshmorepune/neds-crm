@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Announcement;
 use App\Services\CallPriorityService;
 use App\Services\DashboardMetrics;
+use App\Services\RoleTargetMetrics;
 use App\Support\DashboardWidgets;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -12,7 +13,7 @@ use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function index(Request $request, DashboardMetrics $metrics, CallPriorityService $callPriority): View
+    public function index(Request $request, DashboardMetrics $metrics, CallPriorityService $callPriority, RoleTargetMetrics $roleTargets): View
     {
         $user = $request->user();
         $announcements = Announcement::active()->forStaff()->newestFirst()->get();
@@ -51,10 +52,11 @@ class DashboardController extends Controller
             'accounts' => [
                 'stats' => $metrics->accountsStats($selectedMonth),
                 'month' => $selectedMonth->format('Y-m'),
+                'targetProgress' => $roleTargets->progressForUser($user),
             ],
-            'support' => ['stats' => $metrics->supportStats($user)],
-            'intern' => ['stats' => $metrics->internStats($user)],
-            'telecaller' => ['stats' => $metrics->telecallerStats($user)],
+            'support' => ['stats' => $metrics->supportStats($user), 'targetProgress' => $roleTargets->progressForUser($user)],
+            'intern' => ['stats' => $metrics->internStats($user), 'targetProgress' => $roleTargets->progressForUser($user)],
+            'telecaller' => ['stats' => $metrics->telecallerStats($user), 'targetProgress' => $roleTargets->progressForUser($user)],
             default => [],
         };
 

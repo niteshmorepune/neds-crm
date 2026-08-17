@@ -1187,3 +1187,101 @@ Record every "we chose X because Y" here — this is the project's memory.
   invoices, quotations, and active projects — the answer to "give the
   overall details and answers to all the questions the partner needs to
   know," not just a name in a list.
+- **2026-08-17 — Employee Activity Timeline (PR #131): Phase 1 of a new
+  owner-driven direction — turn the CRM into a productivity/KRA/AI-coaching
+  assistant for every employee, not just a system of record.** Owner's own
+  framing: "this CRM is just not a simple CRM anymore... it is going to be
+  an assistant or guide for an employee," wanting every employee's CRM
+  activity captured so AI can eventually help with productivity, targets,
+  and coaching. Confirmed a 3-phase build order via AskUserQuestion before
+  writing any code: (1) Activity Timeline — a unified view of what someone
+  did/still has pending, (2) a generalized per-role KRA/Target framework
+  (this file's next entry), (3) AI coaching tied to those targets, each
+  phase deliberately deferred until the previous one's data/design is
+  proven rather than planned all at once.
+  New `App\Services\EmployeeActivityTimeline`: `entries()` (chronological
+  "what did they do" feed, sourced from the existing `activities` audit
+  log — already on ~30 models via `LogsActivity` — plus `CallLog`, which
+  isn't activity-logged) and `pending()` ("what's still open" snapshot:
+  tasks, tickets, leads, deals, quotations awaiting a client decision,
+  unpaid/overdue invoices). Zero new data capture — confirmed with the
+  owner that staff shouldn't have to remember a new step; this is pure
+  aggregation over what the app already logs. Quotations/invoices have no
+  owner column of their own, so both are attributed via the deal owner,
+  falling back to the customer's account owner (confirmed via
+  AskUserQuestion) — added `Invoice::ownerId()` mirroring the pre-existing
+  `Quotation::ownerId()`, and refactored `Invoice::booted()`'s own
+  notification lookup to reuse it instead of duplicating the same query.
+  Surfaces: **Employee 360°** (Admin/Manager, any employee — both panels,
+  "Activity timeline" has an independent date-range picker defaulting to
+  today) and **Daily Reports** (self-view, every role, confirmed as the
+  right home over My Day since it already served the same "what did I do
+  today" purpose — same two panels, single-date picker browsable to a
+  previous day, never future).
+  **Caught proactively, not from a bug report**: date-range/date inputs
+  parsed via `Carbon::createFromFormat(..., config('app.display_timezone'))`
+  rather than `Carbon::parse()` (which resolves against `app.timezone` =
+  UTC) — the exact off-by-5:30 bug class already hit once in this app
+  (Create Meeting, 2026-07-29), recognized from that precedent before it
+  could ship a second time.
+  22 new/updated Pest tests, full suite 2086 green, Pint clean. Live-
+  verified against real local MySQL dev data (not SQLite) before shipping.
+  Deployed same session: `git pull` + `view:clear` + `view:cache` only (no
+  migration/route/menu change — the entire feature is aggregation over
+  existing tables). `gh pr create` and even a direct REST `POST .../pulls`
+  both 503'd for several minutes (a genuine GitHub-side outage on write
+  operations, reads worked fine) — owner opened PR #131 manually via the
+  compare-URL fallback instead of waiting it out.
+- **2026-08-18 — Generalized KRA/Target framework: one target metric per
+  non-Sales role, a new `role_targets` table separate from `sales_targets`.**
+  Phase 2 of the direction above. `SalesTarget` already gave Sales a
+  single money target (deal value) with a progress bar; the real gap was
+  that Support/Accounts/Intern/Telecaller had no domain-specific KRA at
+  all — `ReportMetrics::ROLE_WEIGHTS` ranks them on generic tasks/
+  attendance, with no ticket-resolution or collections figure anywhere.
+  Confirmed the per-role metric mapping via AskUserQuestion before
+  building: **Support** = tickets resolved (`Ticket.resolved_at`,
+  Resolved-or-Closed — mirrors `DraftMonthlyWinsNote`'s own existing
+  query exactly, not a new convention); **Accounts** = collections
+  recorded in ₹ (`Payment.recorded_by` + `paid_on`); **Intern** = tasks
+  completed; **Telecaller** = calls made — each reusing data the app
+  already tracks, zero new capture. New `App\Enums\TargetMetric` is a
+  bounded registry (`forRole()`/`role()`), not an admin-configurable
+  field — same discipline as `CrmQueryCatalog`/`NudgeAutoDetectType`.
+  **Deliberately did NOT widen `sales_targets` itself** to add a `metric`
+  column — that table is load-bearing for Incentives/Partner Commission,
+  and migrating it for this would have risked a financially-sensitive
+  feature for no real benefit. New `role_targets` table instead, same
+  shape (`user_id` nullable = role-wide target, `period_type`/
+  `period_start`, same distinct-NULLs uniqueness caveat as
+  `sales_targets`'s own migration comment). New `App\Services\
+  RoleTargetMetrics` (`actualValue()`, `progressForUser()` — primary role
+  only, same convention as `DashboardController`'s panel selection —
+  and `teamRows()`) and `App\Http\Controllers\RoleTargetController`
+  mirror `SalesTargetController`'s shape (blank field never zeroes an
+  existing target). New **Team Targets** page (`role-targets.index`,
+  sidebar under Team Insights, Admin/Manager only, confirmed via
+  AskUserQuestion as its own page rather than folding into Employee 360°
+  so there's one team-wide view per role) lists all 4 roles' active
+  people with editable targets + progress in one place; Sales keeps its
+  own separate Sales Dashboard page unchanged. Each person also gets a
+  "Your target this month" progress bar on their own Dashboard panel
+  (new `target_progress` key in `DashboardWidgets`, hideable like any
+  other widget) — new reusable `<x-target-progress-bar>` Blade component
+  powers both surfaces, though the Sales Dashboard's own pre-existing
+  inline progress-bar markup was deliberately left as-is rather than
+  refactored to use it, since that page already works and touching a
+  financially-visible page wasn't this milestone's job.
+  **Real pre-existing bug discovered while testing, not introduced by
+  this work, deliberately not fixed here**: several unrelated test files
+  (`DailyPrioritiesDigestTest`, `WeeklyOwnerDigestTest`,
+  `SendProjectUpdatesDigest`/`DraftProjectDailyUpdate` tests, plus 3
+  already-existing `DailyReportTest` tests) build "today" fixtures with
+  bare `now()`/`today()` (UTC) while the commands they test correctly
+  compute "today" via `Carbon::today(config('app.display_timezone'))`
+  (IST) — surfaced only during the ~5.5-hour daily window where UTC and
+  IST disagree on the date (confirmed live: wall clock was `2026-08-17
+  18:47 UTC` / `2026-08-18 00:17 IST` when this ran). None of the 8
+  failures were in this milestone's own files. Flagged to the owner
+  rather than silently fixed, since it touches several unrelated test
+  files outside this milestone's scope — see [[backlog]].
