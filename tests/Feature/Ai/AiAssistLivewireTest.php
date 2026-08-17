@@ -1,13 +1,17 @@
 <?php
 
+use App\Enums\TaskStatus;
 use App\Enums\UserRole;
 use App\Livewire\ClientNotes;
+use App\Livewire\DailyReportAiDraft;
 use App\Livewire\RecordNotes;
 use App\Livewire\TicketReplies;
 use App\Models\AiUsage;
+use App\Models\CallLog;
 use App\Models\Customer;
 use App\Models\Deal;
 use App\Models\Lead;
+use App\Models\Task;
 use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Support\Facades\Http;
@@ -177,4 +181,56 @@ it('record-notes: summarize button is hidden when AI is off', function () {
     Livewire::actingAs($sales)
         ->test(RecordNotes::class, ['record' => $lead, 'canManage' => true])
         ->assertDontSee('Summarize');
+});
+
+it('daily report: AI drafts today\'s outcome summary and dispatches it to the textarea', function () {
+    $user = withAi(fn () => User::factory()->create());
+    Task::factory()->create([
+        'assignee_id' => $user->id,
+        'status' => TaskStatus::Done,
+        'completed_at' => now(),
+    ]);
+    fakeReply('Completed a client task today.');
+
+    Livewire::actingAs($user)
+        ->test(DailyReportAiDraft::class)
+        ->call('draft')
+        ->assertHasNoErrors()
+        ->assertDispatched('daily-report-drafted', text: 'Completed a client task today.');
+});
+
+it('daily report: shows a message instead of calling AI when nothing was logged today', function () {
+    $user = withAi(fn () => User::factory()->create());
+    Http::fake();
+
+    Livewire::actingAs($user)
+        ->test(DailyReportAiDraft::class)
+        ->call('draft')
+        ->assertNotDispatched('daily-report-drafted')
+        ->assertSet('error', 'Nothing logged yet today to draft from — complete a task or log a call first.');
+
+    Http::assertNothingSent();
+});
+
+it('daily report: a drafted summary can be rated', function () {
+    $user = withAi(fn () => User::factory()->create());
+    CallLog::factory()->create(['user_id' => $user->id, 'called_at' => now()]);
+    fakeReply('Followed up with a client by phone.');
+
+    Livewire::actingAs($user)
+        ->test(DailyReportAiDraft::class)
+        ->call('draft')
+        ->call('rateDraft', 'up')
+        ->assertSet('draftFeedback', 'up');
+
+    expect(AiUsage::where('feature', 'daily_report_draft')->value('feedback'))->toBe('up');
+});
+
+it('daily report: AI draft button is hidden when AI is off', function () {
+    $user = User::factory()->create();
+
+    Livewire::actingAs($user)
+        ->test(DailyReportAiDraft::class)
+        ->assertSet('aiEnabled', false)
+        ->assertDontSee('Draft with AI');
 });

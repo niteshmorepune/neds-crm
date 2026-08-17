@@ -21,6 +21,45 @@
             <div class="rounded-lg bg-white p-4 shadow-sm"><div class="text-xs text-gray-500">Attendance</div><div class="text-xl font-semibold">{{ $metrics['attendance_status'] ? \App\Enums\AttendanceStatus::from($metrics['attendance_status'])->label() : '—' }}</div></div>
         </div>
 
+        {{-- Carried forward: open tasks that already existed before today, so
+             yesterday's unfinished work isn't buried further down the page. --}}
+        @if ($carryForward->isNotEmpty())
+        <div class="rounded-lg border border-amber-200 bg-amber-50 p-4">
+            <h3 class="text-sm font-semibold text-amber-900">⏳ Carried forward from before today ({{ $carryForward->count() }})</h3>
+            <ul class="mt-2 divide-y divide-amber-100">
+                @foreach ($carryForward as $task)
+                    <li class="flex items-center justify-between gap-3 py-1.5 text-sm">
+                        <a href="{{ route('tasks.show', $task) }}" class="font-medium text-amber-900 hover:underline">{{ $task->title }}</a>
+                        <span class="shrink-0 text-xs text-amber-700">
+                            {{ $task->projectLabel() }}
+                            @if ($task->due_date)
+                                · {{ $task->isOverdue() ? 'overdue since' : 'due' }} {{ $task->due_date->format('d M') }}
+                            @else
+                                · added {{ $task->created_at->diffForHumans() }}
+                            @endif
+                        </span>
+                    </li>
+                @endforeach
+            </ul>
+        </div>
+        @endif
+
+        {{-- Completed today, with inferred time-taken per task (started_at →
+             completed_at) — "—" when a task skipped In Progress entirely. --}}
+        @if ($completedToday->isNotEmpty())
+        <div class="rounded-lg bg-white p-4 shadow-sm">
+            <h3 class="text-sm font-semibold text-gray-900">✅ Completed today ({{ $completedToday->count() }})</h3>
+            <ul class="mt-2 divide-y divide-gray-100">
+                @foreach ($completedToday as $task)
+                    <li class="flex items-center justify-between gap-3 py-1.5 text-sm">
+                        <a href="{{ route('tasks.show', $task) }}" class="text-gray-800 hover:text-indigo-600 hover:underline">{{ $task->title }}</a>
+                        <span class="shrink-0 text-xs text-gray-500">{{ $task->projectLabel() }} · {{ $task->timeTakenLabel() }}</span>
+                    </li>
+                @endforeach
+            </ul>
+        </div>
+        @endif
+
         {{-- My tasks (active), grouped by project so routine maintenance checks
              don't bury the few tasks that need real attention --}}
         @if ($taskGroups->isNotEmpty())
@@ -87,11 +126,15 @@
         @endif
 
         {{-- EOD summary --}}
-        <div class="rounded-lg bg-white p-6 shadow-sm">
+        <div class="rounded-lg bg-white p-6 shadow-sm" x-data
+             x-on:daily-report-drafted.window="$refs.summary.value = $event.detail.text">
             <form method="POST" action="{{ route('daily-reports.store') }}">
                 @csrf
-                <x-input-label for="summary" value="What I did today *" />
-                <textarea id="summary" name="summary" rows="5" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>{{ old('summary') }}</textarea>
+                <div class="flex items-center justify-between">
+                    <x-input-label for="summary" value="What I did today *" />
+                    <livewire:daily-report-ai-draft />
+                </div>
+                <textarea x-ref="summary" id="summary" name="summary" rows="5" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>{{ old('summary') }}</textarea>
                 <x-input-error :messages="$errors->get('summary')" class="mt-1" />
                 <div class="mt-3 flex items-center justify-between">
                     <span class="text-xs text-gray-400">
@@ -100,25 +143,44 @@
                     <x-primary-button>{{ $todayReport ? 'Update report' : 'Submit report' }}</x-primary-button>
                 </div>
             </form>
+
+            @if ($todayReport)
+                <div class="mt-4 border-t border-gray-100 pt-4" x-data="{ copied: false }">
+                    <button type="button"
+                            x-on:click="navigator.clipboard.writeText(@js($todayReport->formattedForSharing())); copied = true; setTimeout(() => copied = false, 2000)"
+                            class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">
+                        <span x-show="!copied">📋 Copy to send</span>
+                        <span x-show="copied" x-cloak>Copied!</span>
+                    </button>
+                </div>
+            @endif
         </div>
 
         {{-- History --}}
         <div class="overflow-hidden overflow-x-auto rounded-lg bg-white shadow-sm">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
-                    <tr><th class="px-4 py-3">Date</th><th class="px-4 py-3 text-right">Tasks</th><th class="px-4 py-3 text-right">Calls</th><th class="px-4 py-3 text-right">Leads</th><th class="px-4 py-3">Summary</th></tr>
+                    <tr><th class="px-4 py-3">Date</th><th class="px-4 py-3 text-right">Tasks</th><th class="px-4 py-3 text-right">Calls</th><th class="px-4 py-3 text-right">Leads</th><th class="px-4 py-3">Summary</th><th class="px-4 py-3"></th></tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     @forelse ($history as $report)
-                        <tr class="hover:bg-gray-50">
+                        <tr class="hover:bg-gray-50" x-data="{ copied: false }">
                             <td class="px-4 py-2 text-gray-700">{{ $report->date->format('d M Y') }}</td>
                             <td class="px-4 py-2 text-right text-gray-600">{{ $report->tasks_completed }}</td>
                             <td class="px-4 py-2 text-right text-gray-600">{{ $report->calls_made }}</td>
                             <td class="px-4 py-2 text-right text-gray-600">{{ $report->leads_touched }}</td>
                             <td class="px-4 py-2 text-gray-500">{{ \Illuminate\Support\Str::limit($report->summary, 80) }}</td>
+                            <td class="px-4 py-2 text-right">
+                                <button type="button"
+                                        x-on:click="navigator.clipboard.writeText(@js($report->formattedForSharing())); copied = true; setTimeout(() => copied = false, 2000)"
+                                        class="text-xs font-medium text-gray-500 hover:text-indigo-600">
+                                    <span x-show="!copied">📋 Copy</span>
+                                    <span x-show="copied" x-cloak>Copied!</span>
+                                </button>
+                            </td>
                         </tr>
                     @empty
-                        <tr><td colspan="5" class="px-4 py-8 text-center text-gray-400">No reports yet.</td></tr>
+                        <tr><td colspan="6" class="px-4 py-8 text-center text-gray-400">No reports yet.</td></tr>
                     @endforelse
                 </tbody>
             </table>

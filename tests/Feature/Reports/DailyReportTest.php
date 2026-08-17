@@ -165,11 +165,16 @@ it('groups my tasks by project and separates manual from routine maintenance tas
 });
 
 it('excludes completed tasks from my tasks', function () {
-    Task::factory()->create([
+    // Backdated so it also falls outside today's new "Completed today"
+    // panel, keeping this test scoped to the pending-list exclusion it's
+    // actually about.
+    $task = Task::factory()->create([
         'title' => 'Already done',
         'assignee_id' => $this->user->id,
         'status' => TaskStatus::Done,
     ]);
+    $task->completed_at = now()->subDay();
+    $task->saveQuietly();
 
     $this->actingAs($this->user)->get(route('daily-reports.index'))->assertDontSee('Already done');
 });
@@ -187,6 +192,94 @@ it('buckets a task with no project under "Other tasks"', function () {
         ->assertOk()
         ->assertSee('Other tasks')
         ->assertSee('Standalone follow-up');
+});
+
+it('shows a carried-forward panel for an open task that already existed before today, but not for one created today', function () {
+    $old = Task::factory()->create([
+        'title' => 'Old pending task',
+        'assignee_id' => $this->user->id,
+        'status' => TaskStatus::Todo,
+        'created_by' => User::factory()->create()->id,
+    ]);
+    $old->created_at = now()->subDays(2);
+    $old->saveQuietly();
+
+    Task::factory()->create([
+        'title' => 'Fresh task added today',
+        'assignee_id' => $this->user->id,
+        'status' => TaskStatus::Todo,
+        'created_by' => User::factory()->create()->id,
+    ]);
+
+    $response = $this->actingAs($this->user)->get(route('daily-reports.index'));
+
+    $response->assertOk()
+        ->assertSee('Carried forward from before today')
+        ->assertSeeInOrder(['Carried forward from before today', 'Old pending task']);
+});
+
+it('does not show the carried-forward panel when nothing is carried over', function () {
+    Task::factory()->create([
+        'title' => 'Fresh task added today',
+        'assignee_id' => $this->user->id,
+        'status' => TaskStatus::Todo,
+        'created_by' => User::factory()->create()->id,
+    ]);
+
+    $this->actingAs($this->user)->get(route('daily-reports.index'))
+        ->assertOk()->assertDontSee('Carried forward from before today');
+});
+
+it('shows tasks completed today with their inferred time taken', function () {
+    $project = Project::factory()->create(['name' => 'Viva Website']);
+    $task = Task::factory()->create([
+        'title' => 'Fix contact form',
+        'project_id' => $project->id,
+        'assignee_id' => $this->user->id,
+        'status' => TaskStatus::Todo,
+        'created_by' => User::factory()->create()->id,
+    ]);
+    $task->update(['status' => TaskStatus::InProgress]);
+    $task->update(['status' => TaskStatus::Done]);
+
+    $this->actingAs($this->user)->get(route('daily-reports.index'))
+        ->assertOk()
+        ->assertSee('Completed today')
+        ->assertSee('Fix contact form');
+});
+
+it('offers a Copy to send button once today\'s report is submitted', function () {
+    $this->actingAs($this->user)->post(route('daily-reports.store'), ['summary' => 'Wrapped up the SEO audit']);
+
+    $this->actingAs($this->user)->get(route('daily-reports.index'))
+        ->assertOk()->assertSee('Copy to send');
+});
+
+it('does not offer Copy to send before today\'s report has been submitted', function () {
+    $this->actingAs($this->user)->get(route('daily-reports.index'))
+        ->assertOk()->assertDontSee('Copy to send');
+});
+
+it('formats a daily report as a plain-text block for sharing', function () {
+    $report = DailyReport::factory()->create([
+        'user_id' => $this->user->id,
+        'date' => '2026-08-17',
+        'tasks_completed' => 4,
+        'calls_made' => 3,
+        'leads_touched' => 2,
+        'attendance_status' => 'present',
+        'summary' => 'Closed two deals and followed up on three tickets.',
+    ]);
+
+    $text = $report->formattedForSharing();
+
+    expect($text)->toContain('Daily Report — 17 Aug 2026')
+        ->toContain($this->user->name)
+        ->toContain('Tasks completed: 4')
+        ->toContain('Calls made: 3')
+        ->toContain('Leads touched: 2')
+        ->toContain('Attendance: Present')
+        ->toContain('Closed two deals and followed up on three tickets.');
 });
 
 it('orders project groups by their earliest due date, most urgent first', function () {

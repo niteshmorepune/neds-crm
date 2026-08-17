@@ -247,6 +247,55 @@ class AiAssistant
     }
 
     /**
+     * Drafts the "what I did today" / outcome paragraph for the Daily Report
+     * form, from the day's completed tasks and calls — same
+     * draft-then-user-edits contract as draftTicketReply(), never
+     * auto-submitted. Returns null (not just an empty string) when there's
+     * nothing to summarize yet, so the caller can tell "AI failed" apart
+     * from "genuinely nothing done today" and message accordingly.
+     */
+    public function draftDailyReportSummary(User $user, Collection $completedTasks, Collection $callLogsToday): ?string
+    {
+        if (! Ai::enabled()) {
+            return null;
+        }
+
+        if ($completedTasks->isEmpty() && $callLogsToday->isEmpty()) {
+            return null;
+        }
+
+        $lines = ['Completed tasks:'];
+
+        foreach ($completedTasks->take(self::MAX_ITEMS) as $task) {
+            $project = $task->projectLabel();
+            $lines[] = "- {$task->title} ({$project})";
+        }
+
+        $lines[] = '';
+        $lines[] = 'Calls made:';
+
+        foreach ($callLogsToday->take(self::MAX_ITEMS) as $call) {
+            $outcome = $call->outcome?->label() ?? 'Unknown outcome';
+            $lines[] = '- '.($call->callable?->name ?? $call->callable?->company_name ?? 'Unknown').": {$outcome}".($call->notes ? " — {$call->notes}" : '');
+        }
+
+        $system = <<<'PROMPT'
+        You write the "what I did today" summary for a staff member's end-of-day
+        work report at a digital-solutions agency in India, based only on the
+        completed tasks and calls given. Write in first person ("Completed...",
+        "Followed up with..."), 3-5 sentences, factual and specific to the items
+        listed — do not invent tasks, clients, or outcomes not present in the
+        data. Output only the summary text, no heading.
+        PROMPT;
+
+        return $this->trimmed($this->client->message(
+            feature: 'daily_report_draft',
+            prompt: "Staff member: {$user->name}\n".implode("\n", $lines),
+            system: $system,
+        ));
+    }
+
+    /**
      * A Monday-morning "here's the week ahead" business briefing for
      * Admin/Manager, synthesizing pipeline, cash position, and at-risk
      * clients (SendWeeklyOwnerDigest assembles $lines from

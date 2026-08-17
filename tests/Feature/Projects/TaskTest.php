@@ -10,6 +10,7 @@ use App\Models\Task;
 use App\Models\User;
 use Database\Seeders\MenuItemsSeeder;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 
@@ -316,4 +317,46 @@ it('renders task index, create and show pages', function () {
     $this->actingAs($this->manager)->get(route('tasks.index'))->assertOk()->assertSee('Emptask');
     $this->actingAs($this->manager)->get(route('tasks.create'))->assertOk()->assertSee('Title');
     $this->actingAs($this->manager)->get(route('tasks.show', $task))->assertOk()->assertSee($task->title);
+});
+
+it('stamps started_at the first time a task enters In Progress, and completed_at on Done', function () {
+    $origin = Carbon::parse('2026-08-17 09:00:00');
+    $this->travelTo($origin);
+    $task = Task::factory()->create(['status' => TaskStatus::Todo]);
+    expect($task->started_at)->toBeNull();
+
+    $this->travelTo($origin->copy()->addMinutes(10));
+    $task->update(['status' => TaskStatus::InProgress]);
+    $firstStartedAt = $task->fresh()->started_at;
+    expect($firstStartedAt)->not->toBeNull();
+
+    // Bouncing through Review and back to In Progress must not reset the clock.
+    $this->travelTo($origin->copy()->addMinutes(30));
+    $task->update(['status' => TaskStatus::Review]);
+    $task->update(['status' => TaskStatus::InProgress]);
+    expect($task->fresh()->started_at->equalTo($firstStartedAt))->toBeTrue();
+
+    // started_at pinned at origin+10; completed at origin+85 => 75 minutes elapsed.
+    $this->travelTo($origin->copy()->addMinutes(85));
+    $task->update(['status' => TaskStatus::Done]);
+
+    expect($task->fresh()->timeTakenMinutes())->toBe(75)
+        ->and($task->fresh()->timeTakenLabel())->toBe('1h 15m');
+});
+
+it('reports "—" time taken for a task that skipped In Progress entirely', function () {
+    $task = Task::factory()->create(['status' => TaskStatus::Todo]);
+    $task->update(['status' => TaskStatus::Done]);
+
+    expect($task->fresh()->timeTakenMinutes())->toBeNull()
+        ->and($task->fresh()->timeTakenLabel())->toBe('—');
+});
+
+it('formats a sub-hour duration in minutes only', function () {
+    $task = Task::factory()->create(['status' => TaskStatus::Todo]);
+    $task->update(['status' => TaskStatus::InProgress]);
+    $this->travelTo(now()->addMinutes(45));
+    $task->update(['status' => TaskStatus::Done]);
+
+    expect($task->fresh()->timeTakenLabel())->toBe('45m');
 });

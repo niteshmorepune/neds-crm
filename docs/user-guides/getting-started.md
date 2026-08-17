@@ -173,6 +173,24 @@ At the end of the day, open **Daily Reports** and submit a short "what I did
 today". Some numbers (tasks completed, calls made) are filled in automatically;
 add a sentence or two on your day and submit. You'll get a reminder at 6 PM.
 
+This page is also your daily work dashboard, so you don't have to remember
+what's still open from before:
+- **⏳ Carried forward from before today** — a highlighted panel at the top
+  listing any of your open tasks that already existed before today, so
+  yesterday's unfinished work isn't buried further down the page.
+- **✅ Completed today** — every task you finished today, with how long it
+  took shown next to it. That time is worked out automatically from when you
+  moved the task to **In Progress** to when you marked it **Done** — there's
+  no separate start/stop button. A task moved straight from To Do to Done
+  without passing through In Progress shows "—" instead of a made-up number.
+- **✨ Draft with AI** (next to the summary box, when AI features are
+  enabled) — drafts your "what I did today" paragraph from today's completed
+  tasks and calls. Review and edit it like any AI draft before submitting;
+  it's never sent on your behalf.
+- **📋 Copy to send** — once you've submitted today's report (or on any past
+  day in the history table below), copies a plain-text version formatted for
+  pasting straight into WhatsApp or email.
+
 **My Tasks** on this page is grouped by project, with the project needing the
 soonest attention shown first. Within each project, tasks someone assigned you
 directly appear up top; **🔄 routine maintenance** tasks — things like

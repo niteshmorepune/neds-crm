@@ -37,6 +37,8 @@ class DailyReportController extends Controller
             'canViewTeam' => $user->can('viewTeam', DailyReport::class),
             'taskGroups' => $this->groupTasks($myTasks),
             'taskStatuses' => TaskStatus::cases(),
+            'completedToday' => $this->completedToday($user, $today),
+            'carryForward' => $this->carryForward($user, $today),
         ]);
     }
 
@@ -112,6 +114,42 @@ class DailyReportController extends Controller
                 'expected' => $businessDays->count(),
             ],
         ]);
+    }
+
+    /**
+     * Tasks this user finished today, most-recently-completed first — feeds
+     * both the "completed today" panel (with per-task time taken) and the
+     * AI outcome draft's context.
+     *
+     * @return Collection<int, Task>
+     */
+    private function completedToday(User $user, Carbon $today): Collection
+    {
+        return Task::where('assignee_id', $user->id)
+            ->where('status', TaskStatus::Done->value)
+            ->whereDate('completed_at', $today)
+            ->with('project')
+            ->orderByDesc('completed_at')
+            ->get();
+    }
+
+    /**
+     * Open tasks that already existed before today and are still not Done —
+     * i.e. genuinely carried forward, not just "everything open." Surfaced
+     * as its own panel above the full "My Tasks" list (which still shows
+     * everything, including these) so yesterday's unfinished work isn't
+     * buried in a longer list further down the page.
+     *
+     * @return Collection<int, Task>
+     */
+    private function carryForward(User $user, Carbon $today): Collection
+    {
+        return Task::where('assignee_id', $user->id)
+            ->where('status', '!=', TaskStatus::Done->value)
+            ->where('created_at', '<', $today->copy()->startOfDay())
+            ->with('project')
+            ->orderByRaw('due_date IS NULL, due_date ASC')
+            ->get();
     }
 
     /**

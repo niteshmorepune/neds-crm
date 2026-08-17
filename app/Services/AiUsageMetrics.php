@@ -224,6 +224,7 @@ class AiUsageMetrics
             'draft_lead_nurture_followup' => 'Lead Nurture Follow-up',
             'draft_festival_greeting' => 'Festival Greeting Draft',
             'daily_priorities_summary' => 'Morning Digest Summary',
+            'daily_report_draft' => 'Daily Report Draft',
             'weekly_owner_digest' => 'Weekly Owner Digest',
             'project_daily_update' => 'Project Daily Update Draft',
             'summarize_ticket' => 'Ticket Summary',

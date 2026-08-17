@@ -73,6 +73,12 @@ At the end of each working day, open **Daily Reports** and fill in a brief
 summary of your day. Some numbers (calls made) are filled in automatically.
 Submit it before leaving. You'll get a reminder email at 6 PM.
 
+This page also shows a **⏳ Carried forward** panel for anything left over
+from before today, a **✅ Completed today** list with how long each task
+took, and (once submitted) a **📋 Copy to send** button to paste your report
+into WhatsApp — see [Getting Started → Daily report](getting-started.md) for
+the full rundown.
+
 ## 6. What you can't access
 The following modules are not available to telecallers: Deals, Quotations,
 Invoices, Incentives, Tickets, and Clients — those belong to Sales, Accounts,
