@@ -1,6 +1,5 @@
 <?php
 
-use App\Enums\LeadSource;
 use App\Enums\UserRole;
 use App\Enums\VisibilityAuditFunnelEventType;
 use App\Enums\VisibilityAuditTier;
@@ -21,8 +20,8 @@ beforeEach(function () {
 it('shows the funnel stage summary tiles with real counts', function () {
     Queue::fake(); // LeadObserver dispatches side-effect jobs on create — see VisibilityAuditFirstInviteTest for why this is faked here too.
     $gmb = Service::factory()->create(['name' => 'GMB', 'is_active' => true]);
-    Lead::factory()->create(['source' => LeadSource::MetaAds, 'service_id' => $gmb->id, 'visibility_audit_invited_at' => now()]);
-    Lead::factory()->create(['source' => LeadSource::MetaAds, 'service_id' => $gmb->id]);
+    Lead::factory()->create(['meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => $gmb->id, 'visibility_audit_invited_at' => now()]);
+    Lead::factory()->create(['meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => $gmb->id]);
 
     $this->actingAs($this->admin)
         ->get(route('leads.visibility-audit-recovery'))

@@ -41,7 +41,7 @@ it('sends the first-invite template with the enter link and marks the lead invit
     $lead = Lead::factory()->create([
         'name' => 'Priya Shah',
         'phone' => '+91 98765 43210',
-        'source' => LeadSource::MetaAds,
+        'meta_leadgen_id' => 'lg_'.uniqid(),
         'service_id' => $this->gmb->id,
     ]);
 
@@ -63,7 +63,7 @@ it('never invites the same lead twice', function () {
 
     $lead = Lead::factory()->create([
         'phone' => '+91 98765 43210',
-        'source' => LeadSource::MetaAds,
+        'meta_leadgen_id' => 'lg_'.uniqid(),
         'service_id' => $this->gmb->id,
         'visibility_audit_invited_at' => now(),
     ]);
@@ -79,7 +79,7 @@ it('no-ops when the invite template is not configured', function () {
 
     $lead = Lead::factory()->create([
         'phone' => '+91 98765 43210',
-        'source' => LeadSource::MetaAds,
+        'meta_leadgen_id' => 'lg_'.uniqid(),
         'service_id' => $this->gmb->id,
     ]);
 
@@ -94,7 +94,7 @@ it('no-ops when the lead has no phone', function () {
 
     $lead = Lead::factory()->create([
         'phone' => null,
-        'source' => LeadSource::MetaAds,
+        'meta_leadgen_id' => 'lg_'.uniqid(),
         'service_id' => $this->gmb->id,
     ]);
 
@@ -107,47 +107,86 @@ it('no-ops when the lead has no phone', function () {
 // Observer: which new leads actually get invited
 // ──────────────────────────────────────────────────────────────────────────────
 
-it('dispatches the first-invite job for a new Meta Ads lead tagged the GMB service', function () {
+it('dispatches the first-invite job for a new lead with a meta_leadgen_id tagged the GMB service', function () {
     Queue::fake();
 
     $lead = Lead::factory()->create([
-        'source' => LeadSource::MetaAds,
+        'meta_leadgen_id' => 'lg_'.uniqid(),
         'service_id' => $this->gmb->id,
     ]);
 
     Queue::assertPushed(SendVisibilityAuditFirstInviteJob::class, fn ($job) => $job->leadId === $lead->id);
 });
 
-it('does not dispatch the first-invite job for a Meta Ads lead tagged a different service', function () {
+it('does not dispatch the first-invite job for a meta_leadgen_id lead tagged a different service', function () {
     Queue::fake();
     $seo = Service::factory()->create(['name' => 'SEO', 'is_active' => true]);
 
     Lead::factory()->create([
-        'source' => LeadSource::MetaAds,
+        'meta_leadgen_id' => 'lg_'.uniqid(),
         'service_id' => $seo->id,
     ]);
 
     Queue::assertNotPushed(SendVisibilityAuditFirstInviteJob::class);
 });
 
-it('does not dispatch the first-invite job for a non-Meta lead, even if tagged GMB', function () {
+it('does not dispatch the first-invite job for a lead with no meta_leadgen_id, even if tagged GMB', function () {
     Queue::fake();
 
     Lead::factory()->create([
         'source' => LeadSource::Website,
+        'meta_leadgen_id' => null,
         'service_id' => $this->gmb->id,
     ]);
 
     Queue::assertNotPushed(SendVisibilityAuditFirstInviteJob::class);
 });
 
-it('does not dispatch the first-invite job for a Meta Ads lead with no service tagged', function () {
+it('does not dispatch the first-invite job for a meta_leadgen_id lead with no service tagged', function () {
     Queue::fake();
 
     Lead::factory()->create([
-        'source' => LeadSource::MetaAds,
+        'meta_leadgen_id' => 'lg_'.uniqid(),
         'service_id' => null,
     ]);
+
+    Queue::assertNotPushed(SendVisibilityAuditFirstInviteJob::class);
+});
+
+/**
+ * Real production lead (id 225): Meta auto-sends a WhatsApp message on the
+ * submitter's behalf, which often reaches the CRM before the Lead Ads
+ * webhook — so the Lead is created via WhatsApp (source=whatsapp, no
+ * meta_leadgen_id, no service_id yet), and ImportMetaLead::
+ * attachToExistingLead() backfills meta_leadgen_id + service_id onto it a
+ * moment later via a plain update(), never re-triggering created(). Source
+ * deliberately stays "whatsapp" (attribution stays with whichever channel
+ * arrived first) — eligibility must not depend on it.
+ */
+it('dispatches the first-invite job when meta_leadgen_id and service_id are backfilled onto an existing WhatsApp-sourced lead', function () {
+    Queue::fake();
+
+    $lead = Lead::factory()->create([
+        'source' => LeadSource::Whatsapp,
+        'meta_leadgen_id' => null,
+        'service_id' => null,
+    ]);
+    Queue::assertNotPushed(SendVisibilityAuditFirstInviteJob::class);
+
+    $lead->update(['meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => $this->gmb->id]);
+
+    Queue::assertPushed(SendVisibilityAuditFirstInviteJob::class, fn ($job) => $job->leadId === $lead->id);
+    expect($lead->fresh()->source)->toBe(LeadSource::Whatsapp);
+});
+
+it('does not dispatch again on an unrelated update once already eligible', function () {
+    $lead = Lead::factory()->create([
+        'meta_leadgen_id' => 'lg_'.uniqid(),
+        'service_id' => $this->gmb->id,
+    ]);
+    Queue::fake();
+
+    $lead->update(['next_follow_up_at' => now()->addDay()]);
 
     Queue::assertNotPushed(SendVisibilityAuditFirstInviteJob::class);
 });
@@ -156,24 +195,25 @@ it('does not dispatch the first-invite job for a Meta Ads lead with no service t
 // Funnel summary
 // ──────────────────────────────────────────────────────────────────────────────
 
-it('summarizes the funnel stage by stage for the GMB Meta lead cohort only', function () {
+it('summarizes the funnel stage by stage for the GMB meta_leadgen_id cohort only', function () {
     $seo = Service::factory()->create(['name' => 'SEO', 'is_active' => true]);
 
     // Eligible + invited + clicked through + paid.
-    $wentAllTheWay = Lead::factory()->create(['source' => LeadSource::MetaAds, 'service_id' => $this->gmb->id, 'visibility_audit_invited_at' => now()]);
+    $wentAllTheWay = Lead::factory()->create(['meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => $this->gmb->id, 'visibility_audit_invited_at' => now()]);
     VisibilityAuditFunnelEvent::create(['event_type' => VisibilityAuditFunnelEventType::LandingViewed, 'lead_id' => $wentAllTheWay->id]);
     VisibilityAuditFunnelEvent::create(['event_type' => VisibilityAuditFunnelEventType::PaymentViewed, 'lead_id' => $wentAllTheWay->id]);
     VisibilityAuditPurchase::create(['tier' => VisibilityAuditTier::Gbp, 'amount_paise' => 12000, 'razorpay_payment_id' => 'pay_funnel1', 'lead_id' => $wentAllTheWay->id]);
 
-    // Eligible + invited, never clicked.
-    Lead::factory()->create(['source' => LeadSource::MetaAds, 'service_id' => $this->gmb->id, 'visibility_audit_invited_at' => now()]);
+    // Eligible + invited, never clicked. Deliberately source=whatsapp (not
+    // MetaAds) to also prove the funnel report doesn't rely on source.
+    Lead::factory()->create(['source' => LeadSource::Whatsapp, 'meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => $this->gmb->id, 'visibility_audit_invited_at' => now()]);
 
     // Eligible, not yet invited.
-    Lead::factory()->create(['source' => LeadSource::MetaAds, 'service_id' => $this->gmb->id, 'visibility_audit_invited_at' => null]);
+    Lead::factory()->create(['meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => $this->gmb->id, 'visibility_audit_invited_at' => null]);
 
     // Not eligible — different service, must not count toward this cohort
     // even though it has its own funnel events.
-    $offTarget = Lead::factory()->create(['source' => LeadSource::MetaAds, 'service_id' => $seo->id]);
+    $offTarget = Lead::factory()->create(['meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => $seo->id]);
     VisibilityAuditFunnelEvent::create(['event_type' => VisibilityAuditFunnelEventType::LandingViewed, 'lead_id' => $offTarget->id]);
 
     $summary = app(VisibilityAuditFunnelMetrics::class)->funnelSummary();
@@ -189,11 +229,11 @@ it('summarizes the funnel stage by stage for the GMB Meta lead cohort only', fun
 
 it('bounds the funnel summary by lead creation date when a range is given', function () {
     Queue::fake();
-    $old = Lead::factory()->create(['source' => LeadSource::MetaAds, 'service_id' => $this->gmb->id]);
+    $old = Lead::factory()->create(['meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => $this->gmb->id]);
     $old->created_at = now()->subDays(30);
     $old->saveQuietly();
 
-    Lead::factory()->create(['source' => LeadSource::MetaAds, 'service_id' => $this->gmb->id]);
+    Lead::factory()->create(['meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => $this->gmb->id]);
 
     $summary = app(VisibilityAuditFunnelMetrics::class)->funnelSummary(now()->subDays(7), now());
 

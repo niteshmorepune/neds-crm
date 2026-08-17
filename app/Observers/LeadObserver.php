@@ -2,7 +2,6 @@
 
 namespace App\Observers;
 
-use App\Enums\LeadSource;
 use App\Enums\LeadStatus;
 use App\Enums\UserRole;
 use App\Jobs\ScoreLead;
@@ -64,6 +63,18 @@ class LeadObserver
         // manual reassignment).
         if ($lead->wasChanged('owner_id')) {
             $this->syncToWadesk($lead);
+        }
+
+        // Covers the real race condition where Meta's own auto-sent WhatsApp
+        // message reaches the CRM before the Lead Ads webhook does: the Lead
+        // is created first via WhatsApp (source=whatsapp, no meta_leadgen_id,
+        // often no service_id), then ImportMetaLead::attachToExistingLead()
+        // backfills meta_leadgen_id/service_id onto it a moment later via a
+        // plain update() — which never reaches created() again. Without this,
+        // that lead is invisible to the invite despite genuinely having
+        // submitted the Meta form.
+        if ($lead->wasChanged(['meta_leadgen_id', 'service_id'])) {
+            $this->sendVisibilityAuditInviteIfEligible($lead);
         }
     }
 
@@ -161,16 +172,26 @@ class LeadObserver
     /**
      * Meta's native Lead Ads form never sends the submitter anywhere — this
      * is what actually shows them the Visibility Audit offer for the first
-     * time. Deliberately scoped to Meta Ads leads tagged the GMB service
-     * only (not every Meta lead — a Website Design or SEO inquiry has
-     * nothing to do with this offer), confirmed with the owner. Only fires
-     * on creation, not a later edit that sets service_id retroactively —
-     * see SendVisibilityAuditFirstInviteJob's own idempotency guard for why
-     * a duplicate dispatch is still safe regardless.
+     * time. Deliberately scoped to leads that genuinely submitted a Meta
+     * lead form, tagged the GMB service specifically (not every Meta lead —
+     * a Website Design or SEO inquiry has nothing to do with this offer),
+     * confirmed with the owner.
+     *
+     * Gated on meta_leadgen_id, NOT source === MetaAds — a real production
+     * lead (id 225) surfaced why: Meta's own auto-sent WhatsApp message
+     * often reaches the CRM before the Lead Ads webhook does, so the Lead
+     * gets created with source=whatsapp (attribution deliberately stays
+     * with whichever channel arrived first, see ImportMetaLead's own
+     * docblock) while meta_leadgen_id/service_id land moments later via
+     * attachToExistingLead(). meta_leadgen_id is set unconditionally on
+     * both paths, so it's the one reliable signal "this really did submit
+     * the Meta form" regardless of which channel won the race — source is
+     * about attribution, this is about eligibility, and they're different
+     * questions.
      */
     private function sendVisibilityAuditInviteIfEligible(Lead $lead): void
     {
-        if ($lead->source !== LeadSource::MetaAds || $lead->service_id === null) {
+        if ($lead->meta_leadgen_id === null || $lead->service_id === null) {
             return;
         }
 

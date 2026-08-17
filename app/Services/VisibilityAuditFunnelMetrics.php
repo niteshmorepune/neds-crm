@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Enums\LeadSource;
 use App\Enums\VisibilityAuditFunnelEventType;
 use App\Models\Lead;
 use App\Models\Service;
@@ -17,8 +16,12 @@ use Illuminate\Support\Carbon;
  * with no completed purchase yet — and funnelSummary(), the full-funnel
  * count-per-stage view. "Filled the Meta lead form but never clicked
  * through at all" (previously not coverable — see LeadObserver's own note)
- * is now identified via `source = MetaAds AND service_id = GMB`, the same
- * cohort SendVisibilityAuditFirstInviteJob targets.
+ * is now identified via `meta_leadgen_id IS NOT NULL AND service_id = GMB`,
+ * the same cohort SendVisibilityAuditFirstInviteJob targets — NOT
+ * `source = MetaAds`, which a real lead (id 225) proved unreliable: Meta's
+ * own auto-sent WhatsApp message can beat the Lead Ads webhook to the CRM,
+ * landing the lead as source=whatsapp even though it genuinely submitted
+ * the Meta form (meta_leadgen_id gets backfilled either way).
  */
 class VisibilityAuditFunnelMetrics
 {
@@ -113,7 +116,7 @@ class VisibilityAuditFunnelMetrics
         $gmbServiceId = Service::where('name', 'GMB')->value('id');
 
         return Lead::query()
-            ->where('source', LeadSource::MetaAds->value)
+            ->whereNotNull('meta_leadgen_id')
             ->where('service_id', $gmbServiceId)
             ->when($from, fn ($q) => $q->where('created_at', '>=', $from))
             ->when($to, fn ($q) => $q->where('created_at', '<=', $to));

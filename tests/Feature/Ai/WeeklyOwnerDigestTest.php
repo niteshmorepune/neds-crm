@@ -1,6 +1,5 @@
 <?php
 
-use App\Enums\LeadSource;
 use App\Enums\UserRole;
 use App\Mail\WeeklyOwnerDigest;
 use App\Models\Lead;
@@ -55,10 +54,10 @@ it('records the Visibility Audit funnel counts for the last 7 days alongside the
     // boundary shape, both fine in production since this command only
     // ever runs Monday morning over a fully-elapsed past week) — a lead
     // created "now" mid-test would fall just after that boundary.
-    $invited = Lead::factory()->create(['source' => LeadSource::MetaAds, 'service_id' => $gmb->id, 'visibility_audit_invited_at' => now()]);
+    $invited = Lead::factory()->create(['meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => $gmb->id, 'visibility_audit_invited_at' => now()]);
     $invited->created_at = now()->subDays(2);
     $invited->saveQuietly();
-    $notInvited = Lead::factory()->create(['source' => LeadSource::MetaAds, 'service_id' => $gmb->id]);
+    $notInvited = Lead::factory()->create(['meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => $gmb->id]);
     $notInvited->created_at = now()->subDays(2);
     $notInvited->saveQuietly();
 
