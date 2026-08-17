@@ -129,6 +129,10 @@ table.role-table tr:hover td{background:var(--bg-inset);}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
         Start Here
       </button>
+      <button class="tab" data-role="glossary" aria-selected="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+        Glossary
+      </button>
       <button class="tab" data-role="admin" aria-selected="false">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l7 3v5c0 5-3 8.5-7 10-4-1.5-7-5-7-10V6z"/></svg>
         Admin
@@ -779,6 +783,36 @@ table.role-table tr:hover td{background:var(--bg-inset);}
       <label class="cl-item"><input type="checkbox"><span>Check out</span></label>
     </div>
   </div>
+</section>
+
+<!-- GLOSSARY -->
+<section class="role-panel" data-panel="glossary" hidden>
+  <div class="role-head">
+    <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></div>
+    <div><h2>Words we use differently than you'd guess.</h2><p>These sound interchangeable but aren't — picking the wrong one makes a record invisible to whatever report or reminder keys off it.</p></div>
+  </div>
+
+  <p class="section-label">Lead → Client</p>
+  <div class="prose">A <b>Lead</b> is someone who hasn't paid yet — an inquiry you're still working. A <b>Client</b> (called "Customer" in the code) is a real company with at least one won Deal. A Lead doesn't become a Client by editing a field — it becomes one when you actually hit <b>Convert</b>.</div>
+
+  <p class="section-label">Lead status: New → Contacted → Qualified → Converted <span style="color:var(--text-muted)">(or Lost)</span></p>
+  <div class="prose"><b>Qualified</b> means you've confirmed a real budget and a real need — not just that you spoke to them again. <b>Converted</b> means this lead actually became a Deal and a Client record, via the Convert button — never set by hand as a label with nothing behind it.</div>
+
+  <p class="section-label">Deal stages: New → Contacted → Proposal → Negotiation → Won / Lost</p>
+  <div class="prose">A Deal is one specific piece of work being sold, priced in ₹. <b>Negotiation</b> specifically means a quotation has actually been sent and you're discussing terms — don't drag a card there just because you talked to the client again; send the quotation first.</div>
+
+  <p class="section-label">Deal vs Quotation</p>
+  <div class="prose">The <b>Deal</b> is the pipeline card — stage, value, service, owner. The <b>Quotation</b> is the actual priced document you send the client, generated from the Deal and downloadable as a PDF. A Deal sitting in Negotiation or later should always have a real Quotation attached to it — if it doesn't, something's out of sync and needs fixing before it moves further.</div>
+
+  <p class="section-label">Service</p>
+  <div class="prose">The category tag on a Lead, Deal, Project, or Quotation line — SEO, GMB, Website Design &amp; Development, Social Media Management, Performance Marketing, Software Development, AI Automation, AMC Service, plus anything an admin has added since. Pick whichever is the <b>closest real match</b>. If one deal genuinely spans two services, put the main one here and name the second in the title.</div>
+  <div class="callout">
+    <span class="k">Don't invent a catch-all</span>
+    Every report that slices pipeline value "by service" reads this one field. A vague catch-all service quietly hides real SEO or Social Media revenue from those reports — if nothing fits cleanly, ask before adding a new service rather than picking the closest-sounding existing one that isn't actually it.
+  </div>
+
+  <p class="section-label">Project vs Task <span style="color:var(--text-muted)">("Emptask" in the sidebar)</span></p>
+  <div class="prose">A <b>Project</b> is created once a Deal is Won — it's where a client's ongoing delivery work lives. A <b>Task</b> is one specific unit of work inside a Project (or standalone) — what actually gets assigned to a person, tracked, and marked done. Deals and Leads are never "worked" directly; the Tasks under a Project are.</div>
 </section>
 
 <!-- ASSIGN ROLES (Admin/Manager reference) -->

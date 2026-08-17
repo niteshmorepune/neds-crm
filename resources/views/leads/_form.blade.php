@@ -75,6 +75,7 @@
                 <option value="{{ $status->value }}" @selected(old('status', $lead->status?->value) === $status->value)>{{ $status->label() }}</option>
             @endforeach
         </select>
+        <p class="mt-1 text-xs text-gray-400">Qualified = real budget & need confirmed, not just contacted. Converted = this lead became a real Deal + Client.</p>
         <x-input-error :messages="$errors->get('status')" class="mt-1" />
     </div>
 
