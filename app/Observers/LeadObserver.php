@@ -2,13 +2,16 @@
 
 namespace App\Observers;
 
+use App\Enums\LeadSource;
 use App\Enums\LeadStatus;
 use App\Enums\UserRole;
 use App\Jobs\ScoreLead;
 use App\Jobs\SendTelegramLeadAlertJob;
+use App\Jobs\SendVisibilityAuditFirstInviteJob;
 use App\Jobs\SyncLeadToWadeskJob;
 use App\Models\Lead;
 use App\Models\LeadAssignmentRule;
+use App\Models\Service;
 use App\Models\User;
 use App\Notifications\NewLeadNotification;
 use App\Support\Ai;
@@ -36,6 +39,7 @@ class LeadObserver
         $this->autoAssign($lead);
         $this->queueScore($lead);
         $this->notifyNewLead($lead);
+        $this->sendVisibilityAuditInviteIfEligible($lead);
 
         // autoAssign()'s own save() above already fires a nested updated()
         // call when it finds an assignee, which handles the wadesk.in sync
@@ -152,6 +156,29 @@ class LeadObserver
     private function syncToWadesk(Lead $lead): void
     {
         SyncLeadToWadeskJob::dispatch($lead->id);
+    }
+
+    /**
+     * Meta's native Lead Ads form never sends the submitter anywhere — this
+     * is what actually shows them the Visibility Audit offer for the first
+     * time. Deliberately scoped to Meta Ads leads tagged the GMB service
+     * only (not every Meta lead — a Website Design or SEO inquiry has
+     * nothing to do with this offer), confirmed with the owner. Only fires
+     * on creation, not a later edit that sets service_id retroactively —
+     * see SendVisibilityAuditFirstInviteJob's own idempotency guard for why
+     * a duplicate dispatch is still safe regardless.
+     */
+    private function sendVisibilityAuditInviteIfEligible(Lead $lead): void
+    {
+        if ($lead->source !== LeadSource::MetaAds || $lead->service_id === null) {
+            return;
+        }
+
+        $gmbServiceId = Service::where('name', 'GMB')->value('id');
+
+        if ($lead->service_id === $gmbServiceId) {
+            SendVisibilityAuditFirstInviteJob::dispatch($lead->id);
+        }
     }
 
     private function notifyNewLead(Lead $lead): void

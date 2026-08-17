@@ -375,16 +375,25 @@ creation) and that the bot hasn't been removed from the group.
 
 ---
 
-## Integration 12 — Visibility Audit funnel tracking + WhatsApp recovery nudges
+## Integration 12 — Visibility Audit funnel: first invite, tracking, and WhatsApp recovery nudges
 
-**What it does:** the `/offers/visibility-audit` page and its checkout link
+**What it does:** Meta's native Lead Ads form (Instant Form, filled inside
+Facebook/Instagram) captures a submitter's name/phone/email but never sends
+them anywhere — so for a Meta Ads lead tagged the **GMB** service, the CRM
+sends a first WhatsApp invite automatically the moment the lead is created
+(`App\Jobs\SendVisibilityAuditFirstInviteJob`, `WADESK_VISIBILITY_
+AUDIT_FIRST_INVITE_TEMPLATE_NAME`), showing them the offer for the first
+time. From there, the `/offers/visibility-audit` page and its checkout link
 are tracking redirects, not raw links — every hit logs which funnel stage a
 lead reached (landing page viewed, checkout/Payment Page viewed) so the CRM
 can tell a lead who never engaged apart from a lead who got close and
-dropped off. Sales/Telecaller can review the stuck ones any time on
-**Lead Generation → Audit Recovery** (see the Sales guide). On top of that,
-a scheduled job automatically nudges a stuck lead over WhatsApp so recovery
-doesn't depend on staff noticing during office hours: `app:send-
+dropped off. Sales/Telecaller can review the whole funnel — how many
+leads came in, were invited, viewed the offer page, reached checkout, and
+paid — plus the stuck-lead queue, any time on **Lead Generation → Audit
+Recovery** (see the Sales guide); the same stage counts also appear in the
+Monday-morning weekly owner digest. On top of that, a scheduled job
+automatically nudges a stuck lead over WhatsApp so recovery doesn't depend
+on staff noticing during office hours: `app:send-
 visibility-audit-recovery-nudges` runs every 30 minutes and, for any lead
 stuck at checkout 2+ hours or at the landing page 4+ hours with no nudge
 sent yet, sends an approved WhatsApp template on the **Marketing** line —
@@ -395,20 +404,28 @@ messages above. Each template's own CTA button (a WhatsApp "Dynamic URL"
 button, not a plain link in the message text) carries the lead back to the
 right funnel stage; a required "Stop promotions" button lets the lead
 opt out, since Meta classifies this as Marketing content, not a Utility
-message about an existing order.
+message about an existing order. The first-invite template follows the
+same "Stop promotions"/Dynamic-URL-button/Marketing-category contract.
 
-**A lead is only ever nudged once per stuck event** — if they come back and
-drop off again later, that's a fresh nudge opportunity, but a single stall
-never sends the same message twice.
+**A lead is only ever invited once** (`leads.visibility_audit_invited_at`)
+**and only ever nudged once per stuck event** — if they come back and drop
+off again later, that's a fresh nudge opportunity, but a single stall never
+sends the same message twice.
 
-**If nudges stop arriving:** confirm both template names are set in `.env`
-(each stage silently no-ops on its own until its var is set) and that both
-templates are still Approved in Meta Business Manager **and** on wadesk.in's
-own Templates page — wadesk.in keeps its own copy of each template's
-approval status, which doesn't update automatically just because Meta
-approved it. Use wadesk.in's **Templates → Sync from Meta** button (Admin
-only) to pull the latest name/body/category/approval status straight from
-Meta instead of re-entering it by hand.
+**Only Meta Ads leads tagged the GMB service are invited** — a Meta lead
+form for SEO, Website Design, or another service is left alone, since the
+Visibility Audit offer is specifically a Google Business Profile audit and
+inviting an off-target lead to it would read as spam, not help.
+
+**If invites or nudges stop arriving:** confirm the relevant template name
+is set in `.env` (each one silently no-ops on its own until its var is
+set) and that the template is still Approved in Meta Business Manager
+**and** on wadesk.in's own Templates page — wadesk.in keeps its own copy of
+each template's approval status, which doesn't update automatically just
+because Meta approved it. Use wadesk.in's **Templates → Sync from Meta**
+button (Admin only) to pull the latest name/body/category/approval status
+(and, as of the first-invite template, whether it has a Dynamic-URL
+button) straight from Meta instead of re-entering it by hand.
 
 ---
 

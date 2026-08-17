@@ -72,6 +72,7 @@ class Lead extends Model
             'ai_urgency' => LeadUrgency::class,
             'owner_reminder_sent_at' => 'datetime',
             'manager_escalated_at' => 'datetime',
+            'visibility_audit_invited_at' => 'datetime',
         ];
     }
 

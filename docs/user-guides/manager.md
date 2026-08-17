@@ -23,10 +23,12 @@ Your dashboard shows the whole business at a glance:
 A separate **🤖 AI Recommendations** section (below the daily "Today" list,
 Admin/Manager only) is where the **weekly owner digest** paragraph lives
 (Monday mornings, if AI is enabled) — pipeline, MRR, cash expected, overdue
-receivables, and how many clients Client Radar has flagged, plus a link to
-the Employee Performance report's own coaching suggestions and productivity
-flags. It's a dedicated section now rather than mixed in with daily-habit
-items like leave approvals and festival greetings.
+receivables, how many clients Client Radar has flagged, and the Visibility
+Audit funnel (new Meta leads, invited, viewed the offer page, reached
+checkout, paid — all for the last 7 days), plus a link to the Employee
+Performance report's own coaching suggestions and productivity flags. It's
+a dedicated section now rather than mixed in with daily-habit items like
+leave approvals and festival greetings.
 
 ## Resources
 **Resources** in the sidebar has two tabs — **Files** (a shared internal

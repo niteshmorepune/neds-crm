@@ -1,25 +1,42 @@
 <?php
 
+use App\Enums\LeadSource;
 use App\Enums\UserRole;
 use App\Enums\VisibilityAuditFunnelEventType;
 use App\Enums\VisibilityAuditTier;
 use App\Models\Lead;
+use App\Models\Service;
 use App\Models\User;
 use App\Models\VisibilityAuditFunnelEvent;
 use App\Models\VisibilityAuditPurchase;
 use App\Services\VisibilityAuditFunnelMetrics;
 use Database\Seeders\MenuItemsSeeder;
+use Illuminate\Support\Facades\Queue;
 
 beforeEach(function () {
     $this->seed(MenuItemsSeeder::class);
     $this->admin = User::factory()->role(UserRole::Admin)->create();
 });
 
+it('shows the funnel stage summary tiles with real counts', function () {
+    Queue::fake(); // LeadObserver dispatches side-effect jobs on create — see VisibilityAuditFirstInviteTest for why this is faked here too.
+    $gmb = Service::factory()->create(['name' => 'GMB', 'is_active' => true]);
+    Lead::factory()->create(['source' => LeadSource::MetaAds, 'service_id' => $gmb->id, 'visibility_audit_invited_at' => now()]);
+    Lead::factory()->create(['source' => LeadSource::MetaAds, 'service_id' => $gmb->id]);
+
+    $this->actingAs($this->admin)
+        ->get(route('leads.visibility-audit-recovery'))
+        ->assertOk()
+        ->assertSee('Eligible leads')
+        ->assertSeeInOrder(['Eligible leads', '2'])
+        ->assertSeeInOrder(['Invited via WhatsApp', '1']);
+});
+
 it('renders the recovery queue page', function () {
     $this->actingAs($this->admin)
         ->get(route('leads.visibility-audit-recovery'))
         ->assertOk()
-        ->assertSee('Visibility Audit Recovery');
+        ->assertSee('Visibility Audit Funnel');
 });
 
 it('redirects a logged-out visitor to login', function () {

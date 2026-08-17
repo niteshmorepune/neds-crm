@@ -23,6 +23,7 @@ class VisibilityAuditRecoveryController extends Controller
         return view('leads.visibility-audit-recovery', [
             'stuckAtLanding' => $metrics->stuckAtLanding(),
             'stuckAtCheckout' => $metrics->stuckAtCheckout(),
+            'funnel' => $metrics->funnelSummary(),
         ]);
     }
 }
