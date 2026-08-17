@@ -3,6 +3,7 @@
 use App\Enums\CrmQueryType;
 use App\Enums\TicketPriority;
 use App\Models\AiUsage;
+use App\Models\CallLog;
 use App\Models\Customer;
 use App\Models\Deal;
 use App\Models\Festival;
@@ -11,6 +12,7 @@ use App\Models\Meeting;
 use App\Models\Project;
 use App\Models\Quotation;
 use App\Models\Service;
+use App\Models\Task;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Services\AiAssistant;
@@ -534,4 +536,26 @@ it('treats a blank model response as no result', function () {
     $ticket = Ticket::factory()->create();
 
     expect(app(AiAssistant::class)->draftTicketReply($ticket))->toBeNull();
+});
+
+it('drafts a daily report outcome summary from completed tasks and calls', function () {
+    aiOn();
+    fakeAiText('Completed the SEO audit for Acme Corp and followed up with two leads by phone.');
+    $user = User::factory()->create();
+    $tasks = collect([Task::factory()->create(['title' => 'SEO audit', 'assignee_id' => $user->id])]);
+    $calls = collect([CallLog::factory()->create(['user_id' => $user->id])]);
+
+    $draft = app(AiAssistant::class)->draftDailyReportSummary($user, $tasks, $calls);
+
+    expect($draft)->toBe('Completed the SEO audit for Acme Corp and followed up with two leads by phone.');
+    expect(AiUsage::where('feature', 'daily_report_draft')->exists())->toBeTrue();
+});
+
+it('does not call AI to draft a daily report summary when nothing was done today', function () {
+    aiOn();
+    Http::fake();
+    $user = User::factory()->create();
+
+    expect(app(AiAssistant::class)->draftDailyReportSummary($user, collect(), collect()))->toBeNull();
+    Http::assertNothingSent();
 });

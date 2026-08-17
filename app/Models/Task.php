@@ -25,6 +25,7 @@ class Task extends Model
     {
         return [
             'due_date' => 'date',
+            'started_at' => 'datetime',
             'completed_at' => 'datetime',
             'priority' => TaskPriority::class,
             'status' => TaskStatus::class,
@@ -34,13 +35,24 @@ class Task extends Model
     /**
      * Stamp completed_at when a task transitions to Done (and clear it if it's
      * reopened), so the Employee Performance Report can measure completions and
-     * on-time delivery regardless of which screen made the change.
+     * on-time delivery regardless of which screen made the change. Also stamp
+     * started_at the first time a task enters In Progress — a purely inferred
+     * signal (no manual start/stop button) that timeTakenMinutes() uses for
+     * "time taken." Never overwritten once set: re-entering In Progress after
+     * Review, for example, shouldn't reset the clock. A task that skips In
+     * Progress entirely (Todo straight to Done) simply never gets a
+     * started_at — timeTakenLabel() reports "—" for it rather than a
+     * fabricated duration.
      */
     protected static function booted(): void
     {
         static::saving(function (Task $task) {
             if (! $task->isDirty('status')) {
                 return;
+            }
+
+            if ($task->status === TaskStatus::InProgress) {
+                $task->started_at ??= now();
             }
 
             if ($task->status === TaskStatus::Done) {
@@ -91,6 +103,38 @@ class Task extends Model
         return $this->due_date !== null
             && ! $this->status->isComplete()
             && $this->due_date->isPast();
+    }
+
+    /**
+     * Minutes between entering In Progress and being marked Done. Null when
+     * either end is missing — a task never moved to In Progress, or one
+     * still in flight — rather than guessing from created_at.
+     */
+    public function timeTakenMinutes(): ?int
+    {
+        if ($this->started_at === null || $this->completed_at === null) {
+            return null;
+        }
+
+        return $this->started_at->diffInMinutes($this->completed_at);
+    }
+
+    public function timeTakenLabel(): string
+    {
+        $minutes = $this->timeTakenMinutes();
+
+        if ($minutes === null) {
+            return '—';
+        }
+
+        if ($minutes < 60) {
+            return "{$minutes}m";
+        }
+
+        $hours = intdiv($minutes, 60);
+        $remainder = $minutes % 60;
+
+        return $remainder === 0 ? "{$hours}h" : "{$hours}h {$remainder}m";
     }
 
     /**
