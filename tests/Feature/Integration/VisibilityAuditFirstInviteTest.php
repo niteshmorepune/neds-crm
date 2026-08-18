@@ -157,11 +157,15 @@ it('does not dispatch the first-invite job for a meta_leadgen_id lead with no se
  * Real production lead (id 225): Meta auto-sends a WhatsApp message on the
  * submitter's behalf, which often reaches the CRM before the Lead Ads
  * webhook — so the Lead is created via WhatsApp (source=whatsapp, no
- * meta_leadgen_id, no service_id yet), and ImportMetaLead::
- * attachToExistingLead() backfills meta_leadgen_id + service_id onto it a
- * moment later via a plain update(), never re-triggering created(). Source
- * deliberately stays "whatsapp" (attribution stays with whichever channel
- * arrived first) — eligibility must not depend on it.
+ * meta_leadgen_id, no service_id yet), and (in real production traffic)
+ * ImportMetaLead::attachToExistingLead() backfills meta_leadgen_id +
+ * service_id + a corrected source onto it a moment later via a plain
+ * update(), never re-triggering created(). This test simulates only the
+ * meta_leadgen_id/service_id backfill directly (not going through
+ * ImportMetaLead, which has its own dedicated source-correction tests in
+ * ImportMetaLeadJobTest) to isolate that eligibility is gated on
+ * meta_leadgen_id and does not depend on source at all — so a bare
+ * update() that never touches source still dispatches the invite.
  */
 it('dispatches the first-invite job when meta_leadgen_id and service_id are backfilled onto an existing WhatsApp-sourced lead', function () {
     Queue::fake();
@@ -176,7 +180,6 @@ it('dispatches the first-invite job when meta_leadgen_id and service_id are back
     $lead->update(['meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => $this->gmb->id]);
 
     Queue::assertPushed(SendVisibilityAuditFirstInviteJob::class, fn ($job) => $job->leadId === $lead->id);
-    expect($lead->fresh()->source)->toBe(LeadSource::Whatsapp);
 });
 
 it('does not dispatch again on an unrelated update once already eligible', function () {

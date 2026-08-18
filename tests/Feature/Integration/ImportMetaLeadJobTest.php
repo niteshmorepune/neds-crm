@@ -326,8 +326,29 @@ it('attaches to an existing open lead with the same phone from a different chann
 
     expect(Lead::count())->toBe(1)
         ->and($whatsappLead->fresh()->meta_leadgen_id)->toBe('lg-1')
-        ->and($whatsappLead->fresh()->source)->toBe(LeadSource::Whatsapp) // attribution unchanged
+        ->and($whatsappLead->fresh()->source)->toBe(LeadSource::MetaAds) // corrected once meta_leadgen_id proves real attribution
+        ->and($whatsappLead->fresh()->utm_source)->toBe('meta')
+        ->and($whatsappLead->fresh()->utm_medium)->toBe('paid_social')
         ->and($whatsappLead->notes()->first()->body)->toContain('Also submitted a Meta Ads form');
+});
+
+it('does not touch source/utm_* on an already-Meta-Ads-attributed lead matched by phone a second time', function () {
+    $lead = Lead::factory()->create([
+        'phone' => '9876543210',
+        'source' => LeadSource::MetaAds,
+        'utm_source' => 'meta',
+        'utm_medium' => 'paid_social',
+        'utm_campaign' => 'existing-campaign',
+        'service_id' => null,
+        'estimated_value' => null,
+    ]);
+    fakeMetaGraphResponse([
+        ['name' => 'phone_number', 'values' => ['9876543210']],
+    ]);
+
+    ImportMetaLead::dispatchSync('lg-1');
+
+    expect($lead->fresh()->utm_campaign)->toBe('existing-campaign');
 });
 
 it('backfills service_id and estimated_value on the matched lead only when it does not already have them', function () {

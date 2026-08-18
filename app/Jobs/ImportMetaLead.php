@@ -149,13 +149,18 @@ class ImportMetaLead implements ShouldQueue
      * message right after the Instant Form submit, which
      * WhatsappWebhookController lands as a lead a few seconds before this
      * job runs) — attach this submission as a note instead of creating a
-     * second lead. Attribution (source/utm_*) deliberately stays with
-     * whichever channel arrived first, so Lead Source Performance reporting
-     * doesn't flip-flop on which duplicate happened to land second; only
-     * service_id/estimated_value are backfilled, and only when the existing
-     * lead doesn't already have them (a WhatsApp-first lead has no way to
-     * capture either on its own, so this is genuinely new signal, not an
-     * overwrite).
+     * second lead.
+     *
+     * Attribution (source/utm_*) is corrected to Meta Ads here, even when a
+     * different channel created the lead first: a real leadgen_id fetched
+     * from Meta's API is definitive proof the person submitted the ad form,
+     * which is stronger signal than "which webhook happened to arrive
+     * first." (An earlier version of this method deliberately left source
+     * alone to avoid Lead Source Performance flip-flopping — that produced
+     * a real lead, id 235, genuinely Meta-sourced but permanently mislabeled
+     * "WhatsApp" on its own page, with no way to fix it short of a
+     * root-cause correction here.) service_id/estimated_value/utm_campaign
+     * are only backfilled when the existing lead doesn't already have them.
      *
      * @param  array<string, string>  $extra
      */
@@ -166,6 +171,10 @@ class ImportMetaLead implements ShouldQueue
         }
 
         $fill = array_filter([
+            'source' => $lead->source !== LeadSource::MetaAds ? LeadSource::MetaAds->value : null,
+            'utm_source' => $lead->utm_source === null ? 'meta' : null,
+            'utm_medium' => $lead->utm_medium === null ? 'paid_social' : null,
+            'utm_campaign' => $lead->utm_campaign === null ? $campaignLabel : null,
             'service_id' => $lead->service_id === null ? $serviceId : null,
             'estimated_value' => $lead->estimated_value === null ? $estimatedValue : null,
         ], fn ($v) => $v !== null);

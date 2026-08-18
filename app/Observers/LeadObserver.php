@@ -180,14 +180,12 @@ class LeadObserver
      * Gated on meta_leadgen_id, NOT source === MetaAds — a real production
      * lead (id 225) surfaced why: Meta's own auto-sent WhatsApp message
      * often reaches the CRM before the Lead Ads webhook does, so the Lead
-     * gets created with source=whatsapp (attribution deliberately stays
-     * with whichever channel arrived first, see ImportMetaLead's own
-     * docblock) while meta_leadgen_id/service_id land moments later via
-     * attachToExistingLead(). meta_leadgen_id is set unconditionally on
-     * both paths, so it's the one reliable signal "this really did submit
-     * the Meta form" regardless of which channel won the race — source is
-     * about attribution, this is about eligibility, and they're different
-     * questions.
+     * briefly exists with source=whatsapp while meta_leadgen_id/service_id
+     * land moments later via attachToExistingLead() (which now also
+     * corrects source back to Meta Ads there — see its own docblock).
+     * meta_leadgen_id is set unconditionally on both paths regardless of
+     * source, so it remains the reliable "did this really submit the Meta
+     * form" signal to gate the invite on.
      */
     private function sendVisibilityAuditInviteIfEligible(Lead $lead): void
     {
