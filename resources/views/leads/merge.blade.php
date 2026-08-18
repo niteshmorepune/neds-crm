@@ -14,6 +14,13 @@
             archived (soft-deleted), not deleted outright.
         </p>
 
+        @if (filled($leadA->phone) && filled($leadB->phone) && $leadA->phone !== $leadB->phone)
+            <p class="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+                These two leads have different phone numbers. Whichever one you don't pick below will still be kept
+                — automatically saved as the merged record's Alternate Phone, not discarded.
+            </p>
+        @endif
+
         <form method="POST" action="{{ route('leads.merge.store') }}" x-data="{ primary: '{{ $leadA->id }}' }" class="space-y-4">
             @csrf
             <input type="hidden" name="primary_id" :value="primary" />

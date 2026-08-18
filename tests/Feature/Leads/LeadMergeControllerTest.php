@@ -84,6 +84,65 @@ it('merges two leads end to end, applying the chosen field per column and redire
     $this->assertSoftDeleted($leadB);
 });
 
+it('preserves the non-chosen phone number as alternate_phone when the two leads differ', function () {
+    $admin = User::factory()->role(UserRole::Admin)->create();
+    $leadA = Lead::factory()->create(['phone' => '+919307297561', 'alternate_phone' => null]);
+    $leadB = Lead::factory()->create(['phone' => '918766050596', 'alternate_phone' => null]);
+
+    $this->actingAs($admin)->post(route('leads.merge.store'), [
+        'primary_id' => $leadA->id,
+        'duplicate_id' => $leadB->id,
+        'field_source' => array_merge(
+            array_fill_keys(
+                ['name', 'company', 'email', 'source', 'service_id', 'estimated_value', 'owner_id', 'status'],
+                $leadA->id,
+            ),
+            ['phone' => $leadA->id], // keep A's phone — B's should survive as alternate_phone
+        ),
+    ])->assertRedirect(route('leads.show', $leadA->id));
+
+    $leadA->refresh();
+    expect($leadA->phone)->toBe('+919307297561')
+        ->and($leadA->alternate_phone)->toBe('918766050596');
+});
+
+it('does not touch alternate_phone when both leads have the same phone number', function () {
+    $admin = User::factory()->role(UserRole::Admin)->create();
+    $leadA = Lead::factory()->create(['phone' => '9111111111', 'alternate_phone' => null]);
+    $leadB = Lead::factory()->create(['phone' => '9111111111', 'alternate_phone' => null]);
+
+    $this->actingAs($admin)->post(route('leads.merge.store'), [
+        'primary_id' => $leadA->id,
+        'duplicate_id' => $leadB->id,
+        'field_source' => array_fill_keys(
+            ['name', 'company', 'phone', 'email', 'source', 'service_id', 'estimated_value', 'owner_id', 'status'],
+            $leadA->id,
+        ),
+    ])->assertRedirect(route('leads.show', $leadA->id));
+
+    expect($leadA->refresh()->alternate_phone)->toBeNull();
+});
+
+it('does not overwrite an existing alternate_phone on the surviving lead', function () {
+    $admin = User::factory()->role(UserRole::Admin)->create();
+    $leadA = Lead::factory()->create(['phone' => '+919307297561', 'alternate_phone' => '9000000000']);
+    $leadB = Lead::factory()->create(['phone' => '918766050596', 'alternate_phone' => null]);
+
+    $this->actingAs($admin)->post(route('leads.merge.store'), [
+        'primary_id' => $leadA->id,
+        'duplicate_id' => $leadB->id,
+        'field_source' => array_merge(
+            array_fill_keys(
+                ['name', 'company', 'email', 'source', 'service_id', 'estimated_value', 'owner_id', 'status'],
+                $leadA->id,
+            ),
+            ['phone' => $leadA->id],
+        ),
+    ])->assertRedirect(route('leads.show', $leadA->id));
+
+    expect($leadA->refresh()->alternate_phone)->toBe('9000000000');
+});
+
 it('rejects a field_source value that is neither of the two leads being merged', function () {
     $admin = User::factory()->role(UserRole::Admin)->create();
     $leadA = Lead::factory()->create();

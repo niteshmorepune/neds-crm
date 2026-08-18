@@ -58,6 +58,17 @@ class LeadMergeController extends Controller
             ])
             ->all();
 
+        // The phone picker only keeps one number as `phone` — when the two
+        // leads genuinely have different numbers (e.g. a Meta lead-form
+        // submission and its own auto-sent WhatsApp confirmation carrying
+        // two real numbers for the same person, per lead 236/237), preserve
+        // the other as alternate_phone instead of losing it outright. Only
+        // fills it when the surviving record doesn't already have one, so an
+        // existing alternate_phone on $primary is never silently clobbered.
+        if (filled($primary->phone) && filled($duplicate->phone) && $primary->phone !== $duplicate->phone && blank($primary->alternate_phone)) {
+            $fields['alternate_phone'] = $fields['phone'] === $primary->phone ? $duplicate->phone : $primary->phone;
+        }
+
         $merged = $action->handle($primary, $duplicate, $fields);
 
         return redirect()->route('leads.show', $merged)
