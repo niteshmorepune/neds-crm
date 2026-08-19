@@ -63,6 +63,7 @@ class Lead extends Model
         return [
             'source' => LeadSource::class,
             'status' => LeadStatus::class,
+            'service_id' => 'integer',
             'estimated_value' => 'integer',
             'next_follow_up_at' => 'datetime',
             'converted_at' => 'datetime',

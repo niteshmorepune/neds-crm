@@ -210,6 +210,37 @@ it('dispatches the first-invite job when meta_leadgen_id and service_id are back
     Queue::assertPushed(SendVisibilityAuditFirstInviteJob::class, fn ($job) => $job->leadId === $lead->id);
 });
 
+/**
+ * Real production incident (leads 234, 235, 236 — reported by the owner as
+ * "not able to see the template or message sent to whoever filed the lead
+ * form"): a lead reaches the CRM via WhatsApp with no service tagged yet, so
+ * it's ineligible at creation; a staff member later manually tags it GMB via
+ * the Lead edit form (LeadUpdateRequest -> LeadController::payload(), which
+ * never casts service_id) while marking it "contacted". That form posts
+ * service_id as a string, e.g. "2", not the int Eloquent factories/JSON
+ * always produce — every other test in this file (including the backfill
+ * test above) passes an already-int $this->gmb->id, so none of them exercise
+ * this. sendVisibilityAuditInviteIfEligible() compared with strict ===
+ * against Service::value('id') (a real int), so "2" === 2 was false and the
+ * invite silently never dispatched — no error, no failed job, nothing in the
+ * logs. Fixed by casting Lead.service_id to 'integer' so it's normalized on
+ * read regardless of how it was assigned.
+ */
+it('dispatches the first-invite job when service_id is backfilled as a string, as a real HTML form field posts it', function () {
+    Queue::fake();
+
+    $lead = Lead::factory()->create([
+        'source' => LeadSource::Whatsapp,
+        'meta_leadgen_id' => 'lg_'.uniqid(),
+        'service_id' => null,
+    ]);
+    Queue::assertNotPushed(SendVisibilityAuditFirstInviteJob::class);
+
+    $lead->update(['service_id' => (string) $this->gmb->id, 'status' => 'contacted']);
+
+    Queue::assertPushed(SendVisibilityAuditFirstInviteJob::class, fn ($job) => $job->leadId === $lead->id);
+});
+
 it('does not dispatch again on an unrelated update once already eligible', function () {
     $lead = Lead::factory()->create([
         'meta_leadgen_id' => 'lg_'.uniqid(),
