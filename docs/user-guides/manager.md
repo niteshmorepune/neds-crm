@@ -577,21 +577,37 @@ details, it shows:
   billed nothing in the window — so it can't be mistaken for the (narrower)
   client health table below it, which only lists clients that actually need
   attention.
-- **Quotations**: every quotation for that partner's referred clients —
-  including leads who aren't a real client yet — with status, amount, and
-  date. This is the proposal-stage view; "Billed" above only shows once
-  something's actually been invoiced. The partner sees this same list
-  (with a Download PDF button) on their own Partner Portal dashboard, so
-  there's no need to forward quotations to them separately over WhatsApp
-  or email anymore.
+- **Quotations**: every quotation for that partner's referred clients, with
+  status, amount, and date. This is the proposal-stage view; "Billed" above
+  only shows once something's actually been invoiced. The partner sees this
+  same list (with a Download PDF button) on their own Partner Portal
+  dashboard, so there's no need to forward quotations to them separately
+  over WhatsApp or email anymore.
 - **Client health**: the same collections/delivery table as the Collections
   report (above), already filtered to that partner's referred clients — who
   hasn't paid, who's only partially paid (with the oldest overdue invoice's
   age shown in both days and an approximate month count), and how each
   active project is progressing.
+- **Referral Settlements**: a recurring, month-by-month view — separate from
+  the one-time Commission section above — of what's owed between NEDS and
+  the partner for each referred client's recurring services. Set up per
+  client on the Client's Edit page: **Who collects payment for this
+  client?** (NEDS collects — the default, NEDS invoices the client and then
+  owes the partner a share — or Partner collects, where the partner
+  invoices the client outside the CRM entirely, so no NEDS invoice is
+  created for that client at all, and the partner instead owes NEDS a share
+  of what they collected) and a **Referral share %** for that client. For a
+  NEDS-collects client the monthly figure is worked out automatically from
+  real invoices on the 1st of the following month; for a Partner-collects
+  client, since there's no invoice to read from, enter the month's
+  collected amount yourself right on this page. Either way, once the money
+  has actually changed hands, click **Mark Settled** on that row — the
+  partner sees the same grid (with amounts) and a live running total of
+  what's still owed, in either direction, on their own Portal dashboard.
 
-Useful when a partner asks "how are my clients doing with us" or "what have
-we billed through you lately," or before a check-in call with them.
+Useful when a partner asks "how are my clients doing with us," "what have
+we billed through you lately," or "what do we owe each other this month,"
+or before a check-in call with them.
 
 > **Note:** quotations and the Partner Portal both key off the client
 > record's own **Referred by (agency)** field (set on the Client's Edit

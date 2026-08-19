@@ -7,6 +7,7 @@ use App\Models\Invoice;
 use App\Models\Partner;
 use App\Models\Quotation;
 use App\Models\RecurringInvoice;
+use App\Models\ReferralSettlement;
 use App\Models\User;
 use Database\Seeders\MenuItemsSeeder;
 
@@ -215,4 +216,24 @@ it('does not show a "Your Account" section for a non-reseller partner', function
         ->get(route('partners.show', $partner))
         ->assertOk()
         ->assertDontSee('Your Account');
+});
+
+it('shows the referral settlement grid + net position on the partner show page', function () {
+    $partner = Partner::factory()->create();
+    $client = Customer::factory()->create([
+        'company_name' => 'Recurring Client Co', 'referring_partner_id' => $partner->id, 'referral_share_rate' => 20,
+    ]);
+    $template = RecurringInvoice::factory()->create(['customer_id' => $client->id]);
+    ReferralSettlement::factory()->create([
+        'customer_id' => $client->id, 'partner_id' => $partner->id, 'recurring_invoice_id' => $template->id,
+        'billed_amount' => 300000, 'share_rate' => 20, 'share_amount' => 60000,
+    ]);
+
+    actingAs(User::factory()->create(['role' => UserRole::Admin]))
+        ->get(route('partners.show', $partner))
+        ->assertOk()
+        ->assertSee('Referral Settlements')
+        ->assertSee('Recurring Client Co')
+        ->assertSee('₹600.00')
+        ->assertSee('Mark Settled');
 });

@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\CustomerStatus;
+use App\Enums\PartnerCollectionMode;
 use App\Enums\UserRole;
 use App\Models\Customer;
 use App\Models\Deal;
@@ -33,6 +34,41 @@ it('creates a client with valid data and derives the state name', function () {
         ->and($customer->state)->toBe('Maharashtra')
         ->and($customer->state_code)->toBe('27')
         ->and($customer->tags)->toBe(['seo', 'retainer']);
+});
+
+it('saves a referred client\'s collection mode and referral share rate', function () {
+    $partner = Partner::factory()->create();
+
+    $this->actingAs($this->admin)->post(route('clients.store'), [
+        'company_name' => 'Referred Client Co',
+        'country' => 'India',
+        'status' => CustomerStatus::Active->value,
+        'referring_partner_id' => $partner->id,
+        'partner_collection_mode' => PartnerCollectionMode::PartnerCollects->value,
+        'referral_share_rate' => '25.5',
+    ])->assertRedirect();
+
+    $customer = Customer::firstWhere('company_name', 'Referred Client Co');
+
+    expect($customer->partner_collection_mode)->toBe(PartnerCollectionMode::PartnerCollects)
+        ->and((float) $customer->referral_share_rate)->toBe(25.5)
+        ->and($customer->isPartnerCollected())->toBeTrue();
+});
+
+it('defaults a referred client to NedsCollects when no collection mode is chosen', function () {
+    $partner = Partner::factory()->create();
+
+    $this->actingAs($this->admin)->post(route('clients.store'), [
+        'company_name' => 'Default Mode Co',
+        'country' => 'India',
+        'status' => CustomerStatus::Active->value,
+        'referring_partner_id' => $partner->id,
+    ])->assertRedirect();
+
+    $customer = Customer::firstWhere('company_name', 'Default Mode Co');
+
+    expect($customer->partner_collection_mode)->toBeNull()
+        ->and($customer->isPartnerCollected())->toBeFalse();
 });
 
 it('saves and displays an alternate phone number', function () {

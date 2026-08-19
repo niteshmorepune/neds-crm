@@ -65,6 +65,17 @@ class Partner extends Model implements Authenticatable
     }
 
     /**
+     * Referral settlements across all this partner's referred clients —
+     * partner_id is denormalized directly onto referral_settlements (rather
+     * than a hasManyThrough via Customer) since it's the natural scope for
+     * both the internal Partner page and the Partner Portal.
+     */
+    public function referralSettlements(): HasMany
+    {
+        return $this->hasMany(ReferralSettlement::class);
+    }
+
+    /**
      * Quotations belonging to this partner: quotations for a directly
      * referred client, PLUS — when this is a reseller partner — quotations
      * billed to its own billingCustomer(). A reseller-referred client's

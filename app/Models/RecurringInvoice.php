@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ContractRenewalStatus;
 use App\Enums\InvoiceStatus;
+use App\Enums\PartnerCollectionMode;
 use App\Enums\RecurringFrequency;
 use App\Models\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Builder;
@@ -79,7 +80,16 @@ class RecurringInvoice extends Model
             ->whereDate('next_run_on', '<=', $date)
             ->where(function (Builder $q) {
                 $q->whereNull('end_date')->orWhereColumn('next_run_on', '<=', 'end_date');
-            });
+            })
+            // A PartnerCollects client gets no NEDS invoice at all (owner's
+            // explicit call) — real billing for these is tracked entirely via
+            // ReferralSettlement, never through GenerateRecurringInvoices.
+            // Enforced here (the single scope every real-billing caller uses)
+            // rather than only in the command, so this can never be bypassed
+            // by a future caller of scopeDue().
+            ->whereDoesntHave('customer', fn (Builder $q) => $q->where(
+                'partner_collection_mode', PartnerCollectionMode::PartnerCollects->value
+            ));
     }
 
     /**

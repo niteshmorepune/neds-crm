@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\CustomerStatus;
+use App\Enums\PartnerCollectionMode;
 use App\Enums\UserRole;
 use App\Models\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Builder;
@@ -42,6 +43,8 @@ class Customer extends Model
         'drishti_client_id',
         'smdost_client_id',
         'referring_partner_id',
+        'partner_collection_mode',
+        'referral_share_rate',
     ];
 
     protected function casts(): array
@@ -50,6 +53,8 @@ class Customer extends Model
             'tags' => 'array',
             'status' => CustomerStatus::class,
             'gst_exempt' => 'boolean',
+            'partner_collection_mode' => PartnerCollectionMode::class,
+            'referral_share_rate' => 'decimal:2',
         ];
     }
 
@@ -187,6 +192,17 @@ class Customer extends Model
     public function recurringInvoices(): HasMany
     {
         return $this->hasMany(RecurringInvoice::class);
+    }
+
+    public function referralSettlements(): HasMany
+    {
+        return $this->hasMany(ReferralSettlement::class);
+    }
+
+    /** Whether GenerateRecurringInvoices is allowed to bill this client at all. */
+    public function isPartnerCollected(): bool
+    {
+        return $this->partner_collection_mode === PartnerCollectionMode::PartnerCollects;
     }
 
     /** Quick-access links for this client (website, GBP, Drive, socials, payment links…). */

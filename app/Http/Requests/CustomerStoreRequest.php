@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Enums\CustomerStatus;
+use App\Enums\PartnerCollectionMode;
 use App\Rules\Gstin;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -56,6 +57,8 @@ class CustomerStoreRequest extends FormRequest
             'owner_id' => ['nullable', Rule::exists('users', 'id')],
             'status' => ['required', Rule::enum(CustomerStatus::class)],
             'referring_partner_id' => ['nullable', Rule::exists('partners', 'id')],
+            'partner_collection_mode' => ['nullable', Rule::enum(PartnerCollectionMode::class)],
+            'referral_share_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
         ];
     }
 

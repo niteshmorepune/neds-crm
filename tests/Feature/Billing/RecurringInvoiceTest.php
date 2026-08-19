@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\InvoiceStatus;
+use App\Enums\PartnerCollectionMode;
 use App\Enums\UserRole;
 use App\Livewire\RecurringInvoiceBuilder;
 use App\Mail\InvoiceIssued;
@@ -59,6 +60,21 @@ it('carries the template\'s own GST-exempt flag onto a generated recurring invoi
 it('skips templates that are not yet due', function () {
     Mail::fake();
     recurringWithLine(['next_run_on' => now()->addWeek()->toDateString()]);
+
+    $this->artisan('app:generate-recurring-invoices')->assertSuccessful();
+
+    expect(Invoice::count())->toBe(0);
+});
+
+it('never generates a real invoice for a PartnerCollects client\'s due template', function () {
+    Mail::fake();
+    $partner = Partner::factory()->create();
+    $customer = Customer::factory()->create([
+        'state_code' => '27',
+        'referring_partner_id' => $partner->id,
+        'partner_collection_mode' => PartnerCollectionMode::PartnerCollects,
+    ]);
+    recurringWithLine(['customer_id' => $customer->id, 'next_run_on' => now()->subDay()->toDateString()]);
 
     $this->artisan('app:generate-recurring-invoices')->assertSuccessful();
 

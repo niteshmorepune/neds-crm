@@ -10,6 +10,7 @@ use App\Models\Partner;
 use App\Models\PartnerCommissionStatement;
 use App\Services\CollectionsMetrics;
 use App\Services\PartnerCommissionCalculator;
+use App\Services\ReferralSettlementService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
@@ -25,7 +26,7 @@ class PartnerController extends Controller
         return view('partners.index', compact('partners'));
     }
 
-    public function show(Partner $partner, CollectionsMetrics $collectionsMetrics, PartnerCommissionCalculator $commissionCalculator)
+    public function show(Partner $partner, CollectionsMetrics $collectionsMetrics, PartnerCommissionCalculator $commissionCalculator, ReferralSettlementService $settlementService)
     {
         $this->authorize('view', $partner);
 
@@ -49,7 +50,20 @@ class PartnerController extends Controller
             ? $collectionsMetrics->accountSummaryForCustomer($partner->billingCustomer) + ['customer' => $partner->billingCustomer]
             : null;
 
-        return view('partners.show', compact('partner', 'rows', 'billed', 'billedByMonth', 'commissionEstimate', 'commissionHistory', 'quotations', 'partnerAccount'));
+        // Referral settlement grid + ledger — a separate, recurring, per-client
+        // concept from commissionEstimate/commissionHistory above (see
+        // ReferralSettlementService's own docblock).
+        $referredCustomers = $partner->referredCustomers()
+            ->with(['recurringInvoices.service', 'recurringInvoices.items', 'recurringInvoices.invoices', 'referralSettlements'])
+            ->orderBy('company_name')
+            ->get();
+        $settlementGrids = $referredCustomers->mapWithKeys(fn (Customer $c) => [$c->id => $settlementService->gridForClient($c)]);
+        $netPosition = $settlementService->portfolioNetPosition($partner->referralSettlements);
+
+        return view('partners.show', compact(
+            'partner', 'rows', 'billed', 'billedByMonth', 'commissionEstimate', 'commissionHistory',
+            'quotations', 'partnerAccount', 'referredCustomers', 'settlementGrids', 'netPosition'
+        ));
     }
 
     public function create()

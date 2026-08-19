@@ -6,10 +6,15 @@
 @php
     $countryValue = old('country', $customer->country ?? 'India');
     $isOverseasInit = ! empty($countryValue) && strtolower(trim($countryValue)) !== 'india';
+    $partnerIdValue = old('referring_partner_id', $customer->referring_partner_id ?? '');
 @endphp
 
 <div class="grid grid-cols-1 gap-6 md:grid-cols-2"
-     x-data="{ country: {{ Js::from($countryValue) }}, get isOverseas() { return this.country.trim().toLowerCase() !== 'india' && this.country.trim() !== '' } }">
+     x-data="{
+         country: {{ Js::from($countryValue) }},
+         get isOverseas() { return this.country.trim().toLowerCase() !== 'india' && this.country.trim() !== '' },
+         partnerId: {{ Js::from((string) $partnerIdValue) }},
+     }">
     <div class="md:col-span-2">
         <x-input-label for="company_name" value="Company name *" />
         <x-text-input id="company_name" name="company_name" type="text" class="mt-1 block w-full"
@@ -136,7 +141,7 @@
 
     <div>
         <x-input-label for="referring_partner_id" value="Referred by (agency)" />
-        <select id="referring_partner_id" name="referring_partner_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+        <select id="referring_partner_id" name="referring_partner_id" x-model="partnerId" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
             <option value="">—</option>
             @foreach ($partners as $partner)
                 <option value="{{ $partner->id }}" @selected((string) old('referring_partner_id', $customer->referring_partner_id) === (string) $partner->id)>
@@ -145,6 +150,26 @@
             @endforeach
         </select>
         <x-input-error :messages="$errors->get('referring_partner_id')" class="mt-1" />
+    </div>
+
+    <div x-show="partnerId !== ''" style="display: none;">
+        <x-input-label for="partner_collection_mode" value="Who collects payment for this client?" />
+        <select id="partner_collection_mode" name="partner_collection_mode" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+            <option value="">— NEDS collects (default) —</option>
+            @foreach (\App\Enums\PartnerCollectionMode::cases() as $mode)
+                <option value="{{ $mode->value }}" @selected(old('partner_collection_mode', $customer->partner_collection_mode?->value) === $mode->value)>
+                    {{ $mode->label() }}
+                </option>
+            @endforeach
+        </select>
+        <x-input-error :messages="$errors->get('partner_collection_mode')" class="mt-1" />
+    </div>
+
+    <div x-show="partnerId !== ''" style="display: none;">
+        <x-input-label for="referral_share_rate" value="Referral share % (recurring, per month)" />
+        <x-text-input id="referral_share_rate" name="referral_share_rate" type="number" step="0.01" min="0" max="100" class="mt-1 block w-full"
+                      :value="old('referral_share_rate', $customer->referral_share_rate)" placeholder="e.g. 20" />
+        <x-input-error :messages="$errors->get('referral_share_rate')" class="mt-1" />
     </div>
 
     <div class="md:col-span-2">

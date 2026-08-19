@@ -4,11 +4,12 @@ namespace App\Http\Controllers\PartnerPortal;
 
 use App\Services\CollectionsMetrics;
 use App\Services\PartnerCommissionCalculator;
+use App\Services\ReferralSettlementService;
 use Illuminate\View\View;
 
 class HomeController extends PartnerPortalController
 {
-    public function index(PartnerCommissionCalculator $commissionCalculator, CollectionsMetrics $collectionsMetrics): View
+    public function index(PartnerCommissionCalculator $commissionCalculator, CollectionsMetrics $collectionsMetrics, ReferralSettlementService $settlementService): View
     {
         $partner = $this->partner();
 
@@ -59,6 +60,8 @@ class HomeController extends PartnerPortalController
             ->groupBy('status')
             ->pluck('aggregate', 'status');
 
+        $settlementNetPosition = $settlementService->portfolioNetPosition($partner->referralSettlements);
+
         return view('partner-portal.home', [
             'partner' => $partner,
             'referredCustomers' => $referredCustomers,
@@ -68,6 +71,7 @@ class HomeController extends PartnerPortalController
             'clientStatusCounts' => $clientStatusCounts,
             'servicesOnHoldCount' => $servicesOnHoldCount,
             'quotationStatusCounts' => $quotationStatusCounts,
+            'settlementNetPosition' => $settlementNetPosition,
             'quotations' => $partner->quotations()->with('customer')->latest()->limit(50)->get(),
             'contentPieces' => $partner->contentPieces()->with('project')->latest()->get(),
             'commissionEstimate' => $partner->hasCommission()

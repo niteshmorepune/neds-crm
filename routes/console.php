@@ -114,6 +114,12 @@ Schedule::command('app:finalize-incentives')->monthlyOn(1, '07:50')->timezone('A
 // month that just ended. Idempotent per partner+month.
 Schedule::command('app:finalize-partner-commissions')->monthlyOn(1, '08:00')->timezone('Asia/Kolkata');
 
+// Locks the referral settlement share for each NedsCollects referred
+// client's recurring services for the month that just ended. Separate,
+// recurring, per-client concept from the one-time commission above —
+// idempotent per recurring-invoice+month.
+Schedule::command('app:finalize-referral-settlements')->monthlyOn(1, '08:10')->timezone('Asia/Kolkata');
+
 // Recurring maintenance tasks — creates project-linked tasks and fires in-app
 // bell notifications to project leads. Runs daily; the command decides internally
 // which templates are due today based on frequency (weekly/biweekly/monthly/quarterly).

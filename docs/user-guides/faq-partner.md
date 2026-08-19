@@ -40,6 +40,23 @@ Ended — so you can see exactly what's currently running without asking
 NEDS directly. Your Dashboard's portfolio summary also shows a total
 count of services on hold across all your referred clients.
 
+**Q: How do I see month-by-month what's been collected for a client, and what's still owed between us?**
+Open the client from **Your Referred Clients** — their page has a
+**Monthly Collections** grid, per service, showing each month as Paid,
+Pending, Collected, or Upcoming with the real amount. If anything's
+currently unsettled for that client, a **Settlement** card underneath
+shows exactly which direction — either "Owed to you by NEDS" or "Your
+share owed to NEDS" — and how much. Your Dashboard also totals this
+across your whole portfolio at the top.
+
+**Q: What's the difference between "NEDS collects" and "Partner collects"?**
+It depends on how that specific client was set up with NEDS. For a "NEDS
+collects" client, NEDS invoices the client directly and then owes you a
+share each month. For a "Partner collects" client, you invoice the client
+yourself outside the CRM — NEDS never invoices them — and you then owe
+NEDS a share of what you collected. Either way, it's the same
+Settlement card, just showing the opposite direction.
+
 ## 3. Content submissions & uploading
 
 **Q: How do I upload files for a content piece?**

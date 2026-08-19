@@ -23,16 +23,24 @@ When you log in you'll see:
   Inactive; how many of their recurring services are currently On Hold;
   and how many of your quotations have been Accepted, out of the total
   sent.
+- **Settlement** (only shown when something is owed) — a running total of
+  what's currently owed between you and NEDS, in each direction: **Owed to
+  you by NEDS** and **Your share owed to NEDS**. This only ever shows an
+  unsettled amount — once NEDS marks something settled on their side, it
+  drops out of this total.
 - **Your Referred Clients** — every client you've referred to NEDS, with
   their current status (Active, Prospect, Inactive) and, next to each,
   their own outstanding amount (and an overdue count if anything's past
   due). Click any client to open their **account page** — every invoice
   (number, status, due date, amount, balance), every quotation (with PDF
-  download, plus a quick Accepted/Sent/Rejected/Draft breakdown), and
-  their recurring services and projects with a status for each (Active, On
-  Hold, Upcoming, Not Billed, or Ended) — so you can see exactly what's
-  running for that client, not just whether they still owe money. Use this
-  to follow up directly with a client whose payment is overdue.
+  download, plus a quick Accepted/Sent/Rejected/Draft breakdown), their
+  recurring services and projects with a status for each (Active, On Hold,
+  Upcoming, Not Billed, or Ended), a **Monthly Collections** grid (each
+  service, month by month, showing Paid, Pending, Collected, or Upcoming
+  with the real amount), and — if there's anything currently unsettled for
+  that client — the same Settlement card described above, scoped to just
+  that client. Use this to follow up directly with a client whose payment
+  is overdue.
 - **Your Account** (reseller partners only) — if you're set up as a
   reseller, your referred clients' invoices are billed to you as one
   consolidated account rather than individually. This section shows your

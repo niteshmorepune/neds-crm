@@ -163,6 +163,107 @@
             </div>
         @endif
 
+        @if ($referredCustomers->isNotEmpty())
+            <div class="rounded-lg bg-white p-6 shadow-sm">
+                <h3 class="text-base font-semibold text-gray-900">Referral Settlements</h3>
+                <p class="mt-1 text-sm text-gray-500">
+                    Recurring, per-client share tracking — separate from the one-time Commission above. Each
+                    client is either "NEDS collects" (NEDS invoices the client directly, then owes the partner
+                    a share) or "Partner collects" (the partner invoices the client outside NEDS, so there's no
+                    NEDS invoice at all — the partner then owes NEDS a share of what they collected).
+                </p>
+
+                <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div class="rounded-md border border-gray-200 p-3">
+                        <p class="text-xs uppercase tracking-wide text-gray-500">NEDS owes partner (unsettled)</p>
+                        <p class="mt-1 text-lg font-semibold text-indigo-600">{{ \App\Support\Money::format($netPosition['neds_owes_partner']) }}</p>
+                    </div>
+                    <div class="rounded-md border border-gray-200 p-3">
+                        <p class="text-xs uppercase tracking-wide text-gray-500">Partner owes NEDS (unsettled)</p>
+                        <p class="mt-1 text-lg font-semibold text-amber-600">{{ \App\Support\Money::format($netPosition['partner_owes_neds']) }}</p>
+                    </div>
+                </div>
+
+                @foreach ($referredCustomers as $client)
+                    @php $grid = $settlementGrids->get($client->id, []); @endphp
+                    @if (! empty($grid))
+                        <div class="mt-6 border-t border-gray-100 pt-4">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <a href="{{ route('clients.show', $client) }}" class="font-medium text-indigo-600 hover:underline">{{ $client->company_name }}</a>
+                                <span class="text-xs text-gray-500">
+                                    {{ $client->partner_collection_mode?->label() ?? 'NEDS collects' }}
+                                    @if ($client->referral_share_rate)
+                                        · {{ rtrim(rtrim(number_format((float) $client->referral_share_rate, 2), '0'), '.') }}% share
+                                    @endif
+                                </span>
+                            </div>
+
+                            @foreach ($grid as $service)
+                                <div class="mt-3">
+                                    <p class="text-sm font-medium text-gray-700">{{ $service['service_name'] }}</p>
+                                    <div class="mt-1 overflow-x-auto">
+                                        <table class="min-w-full text-xs">
+                                            <thead class="text-left uppercase tracking-wide text-gray-500">
+                                                <tr>
+                                                    <th class="py-1 pr-3">Month</th>
+                                                    <th class="py-1 pr-3">Billing</th>
+                                                    <th class="py-1 pr-3 text-right">Amount</th>
+                                                    <th class="py-1 pr-3 text-right">Share</th>
+                                                    <th class="py-1 pr-3 text-right">Settlement</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y divide-gray-100">
+                                                @foreach ($service['rows'] as $row)
+                                                    <tr>
+                                                        <td class="py-1 pr-3 text-gray-900">{{ $row['label'] }}</td>
+                                                        <td class="py-1 pr-3 text-gray-600">{{ ucfirst(str_replace('_', ' ', $row['billing_status'])) }}</td>
+                                                        <td class="py-1 pr-3 text-right text-gray-700">{{ $row['amount'] !== null ? \App\Support\Money::format($row['amount']) : '—' }}</td>
+                                                        <td class="py-1 pr-3 text-right text-gray-700">{{ $row['settlement'] ? \App\Support\Money::format($row['settlement']->share_amount) : '—' }}</td>
+                                                        <td class="py-1 pr-3 text-right">
+                                                            @if ($row['settlement'])
+                                                                @if ($row['settlement']->isSettled())
+                                                                    <span class="inline-flex rounded-full bg-green-50 px-2 py-0.5 font-medium text-green-700">Settled {{ $row['settlement']->settled_at->format('d M Y') }}</span>
+                                                                @else
+                                                                    <form method="POST" action="{{ route('partners.referral-settlements.settle', [$partner, $row['settlement']]) }}" class="inline">
+                                                                        @csrf
+                                                                        <button type="submit" class="rounded-md border border-gray-300 px-2 py-0.5 font-medium text-gray-700 hover:bg-gray-50">Mark Settled</button>
+                                                                    </form>
+                                                                @endif
+                                                            @else
+                                                                <span class="text-gray-400">—</span>
+                                                            @endif
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    @if ($client->isPartnerCollected())
+                                        <form method="POST" action="{{ route('partners.referral-settlements.store', $partner) }}" class="mt-2 flex flex-wrap items-end gap-2">
+                                            @csrf
+                                            <input type="hidden" name="recurring_invoice_id" value="{{ $service['recurring_invoice']->id }}">
+                                            <div>
+                                                <label class="block text-xs text-gray-500">Month</label>
+                                                <input type="month" name="period_start" value="{{ now()->format('Y-m') }}" class="mt-0.5 rounded-md border-gray-300 text-xs shadow-sm">
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs text-gray-500">Amount collected (₹)</label>
+                                                <input type="number" step="0.01" min="0" name="billed_amount" class="mt-0.5 w-32 rounded-md border-gray-300 text-xs shadow-sm" required>
+                                            </div>
+                                            <button type="submit" class="rounded-md border border-indigo-300 bg-indigo-50 px-3 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-100">
+                                                Record
+                                            </button>
+                                        </form>
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+                @endforeach
+            </div>
+        @endif
+
         <div class="rounded-lg bg-white p-6 shadow-sm">
             <div class="flex flex-wrap items-baseline justify-between gap-2">
                 <h3 class="text-base font-semibold text-gray-900">Billed — last 6 months</h3>

@@ -40,6 +40,19 @@
         </div>
     </div>
 
+    @if ($settlementNetPosition['neds_owes_partner'] > 0 || $settlementNetPosition['partner_owes_neds'] > 0)
+        <div class="mb-6 grid gap-4 sm:grid-cols-2">
+            <div class="rounded-xl bg-indigo-50 p-5 shadow-sm ring-1 ring-gray-100">
+                <p class="text-xs font-medium text-indigo-700">Owed to you by NEDS</p>
+                <p class="mt-1 text-xl font-semibold text-indigo-900">{{ \App\Support\Money::format($settlementNetPosition['neds_owes_partner']) }}</p>
+            </div>
+            <div class="rounded-xl bg-amber-50 p-5 shadow-sm ring-1 ring-gray-100">
+                <p class="text-xs font-medium text-amber-700">Your share owed to NEDS</p>
+                <p class="mt-1 text-xl font-semibold text-amber-900">{{ \App\Support\Money::format($settlementNetPosition['partner_owes_neds']) }}</p>
+            </div>
+        </div>
+    @endif
+
     @if ($partnerAccount)
         <div class="mb-6 rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
             <h3 class="text-base font-semibold text-gray-900">Your Account — {{ $partnerAccount['customer']->company_name }}</h3>

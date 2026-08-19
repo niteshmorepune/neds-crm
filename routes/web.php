@@ -31,6 +31,7 @@ use App\Http\Controllers\MyDayController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PartnerController;
 use App\Http\Controllers\PartnerPortal\ClientController;
+use App\Http\Controllers\PartnerReferralSettlementController;
 use App\Http\Controllers\PartnerUploadController;
 use App\Http\Controllers\Portal\FaqController;
 use App\Http\Controllers\Portal\ForgotPasswordController;
@@ -323,6 +324,8 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
         Route::post('partners/{partner}/invite', [PartnerController::class, 'invite'])->name('partners.invite');
         Route::post('partners/{partner}/revoke', [PartnerController::class, 'revoke'])->name('partners.revoke');
         Route::post('partners/{partner}/commission-statements/{statement}/mark-paid', [PartnerController::class, 'markCommissionPaid'])->name('partners.commission-statements.mark-paid');
+        Route::post('partners/{partner}/referral-settlements', [PartnerReferralSettlementController::class, 'store'])->name('partners.referral-settlements.store');
+        Route::post('partners/{partner}/referral-settlements/{settlement}/settle', [PartnerReferralSettlementController::class, 'settle'])->name('partners.referral-settlements.settle');
     });
 
     /*

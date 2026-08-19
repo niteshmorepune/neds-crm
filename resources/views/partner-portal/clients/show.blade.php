@@ -82,4 +82,6 @@
 
     @include('partner-portal.clients._services', ['customer' => $customer])
 
+    @include('partner-portal.clients._monthly-collections', ['settlementGrid' => $settlementGrid])
+
 </x-partner-portal-app-layout>
