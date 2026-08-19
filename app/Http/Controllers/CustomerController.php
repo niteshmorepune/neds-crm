@@ -13,6 +13,7 @@ use App\Models\Partner;
 use App\Models\User;
 use App\Services\ClientHealthMetrics;
 use App\Services\CollectionsMetrics;
+use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -216,6 +217,14 @@ class CustomerController extends Controller
      */
     private function payload(array $data): array
     {
+        // The form collects rupees like every other money field in this app;
+        // referral_share_fixed_amount is the first money field on the
+        // Customer form, so this conversion has no existing precedent to
+        // follow here specifically.
+        if (array_key_exists('referral_share_fixed_amount', $data)) {
+            $data['referral_share_fixed_amount'] = Money::toPaise($data['referral_share_fixed_amount']);
+        }
+
         $isOverseas = ! empty($data['country']) && strtolower(trim($data['country'])) !== 'india';
 
         if ($isOverseas) {

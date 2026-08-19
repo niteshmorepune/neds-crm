@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\PartnerCollectionMode;
+use App\Enums\ReferralShareType;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\Partner;
@@ -26,6 +27,28 @@ it('creates one locked settlement per NedsCollects template billed within the ta
         ->and($settlement->share_amount)->toBe(12_000 * 100)
         ->and($settlement->flow_mode)->toBe(PartnerCollectionMode::NedsCollects)
         ->and($settlement->finalized_at)->not->toBeNull();
+});
+
+it('finalizes a FixedAmount NedsCollects client at the flat amount, ignoring the real billed total (real Ampra Biobact scenario)', function () {
+    $partner = Partner::factory()->create();
+    $customer = Customer::factory()->create([
+        'referring_partner_id' => $partner->id,
+        'referral_share_type' => ReferralShareType::FixedAmount,
+        'referral_share_fixed_amount' => 10_000 * 100,
+        'referral_share_rate' => null,
+    ]);
+    $template = RecurringInvoice::factory()->create(['customer_id' => $customer->id]);
+    Invoice::factory()->create([
+        'recurring_invoice_id' => $template->id, 'customer_id' => $customer->id,
+        'issue_date' => Carbon::create(2026, 6, 5), 'total' => 15_000 * 100,
+    ]);
+
+    $this->artisan('app:finalize-referral-settlements', ['--month' => '2026-06'])->assertSuccessful();
+
+    $settlement = ReferralSettlement::where('recurring_invoice_id', $template->id)->whereDate('period_start', '2026-06-01')->first();
+
+    expect($settlement->billed_amount)->toBe(15_000 * 100)
+        ->and($settlement->share_amount)->toBe(10_000 * 100);
 });
 
 it('never processes a PartnerCollects client, even if it somehow has a real invoice', function () {

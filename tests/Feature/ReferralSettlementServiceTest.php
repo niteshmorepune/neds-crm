@@ -2,6 +2,7 @@
 
 use App\Enums\InvoiceStatus;
 use App\Enums\PartnerCollectionMode;
+use App\Enums\ReferralShareType;
 use App\Enums\SettlementAmountSource;
 use App\Models\Customer;
 use App\Models\Invoice;
@@ -95,6 +96,43 @@ it('computes share_amount as billed_amount times the client\'s referral_share_ra
         ->and($settlement->flow_mode)->toBe(PartnerCollectionMode::PartnerCollects)
         ->and($settlement->amount_source)->toBe(SettlementAmountSource::Manual)
         ->and($settlement->entered_by)->toBe($user->id);
+});
+
+it('uses the fixed amount as-is, ignoring the billed amount, for a FixedAmount client', function () {
+    // Real production scenario: Ampra Biobact is billed ~15,000+GST but the
+    // referral share is a flat 10,000 regardless — never a percentage of
+    // whatever gets billed.
+    $customer = Customer::factory()->create([
+        'referring_partner_id' => $this->partner->id,
+        'partner_collection_mode' => PartnerCollectionMode::PartnerCollects,
+        'referral_share_type' => ReferralShareType::FixedAmount,
+        'referral_share_fixed_amount' => 1000000, // ₹10,000
+        'referral_share_rate' => null,
+    ]);
+    $template = RecurringInvoice::factory()->create(['customer_id' => $customer->id, 'service_id' => $this->seo->id]);
+    $user = User::factory()->create();
+
+    $settlement = $this->service->recordManualBilling($template, now()->startOfMonth(), 1500000, $user);
+
+    expect($settlement->billed_amount)->toBe(1500000)
+        ->and($settlement->share_amount)->toBe(1000000)
+        ->and((float) $settlement->share_rate)->toBe(0.0);
+
+    // A different billed amount next entry still yields the SAME fixed share.
+    $settlement2 = $this->service->recordManualBilling($template, now()->addMonth()->startOfMonth(), 2000000, $user);
+    expect($settlement2->share_amount)->toBe(1000000);
+});
+
+it('includes a FixedAmount NedsCollects customer in finalize eligibility even with no referral_share_rate set', function () {
+    $customer = Customer::factory()->create([
+        'referring_partner_id' => $this->partner->id,
+        'referral_share_type' => ReferralShareType::FixedAmount,
+        'referral_share_fixed_amount' => 1000000,
+        'referral_share_rate' => null,
+    ]);
+
+    expect($customer->hasReferralShareConfigured())->toBeTrue()
+        ->and($customer->referralShareAmount(1500000))->toBe(1000000);
 });
 
 it('updates the same month\'s row instead of creating a duplicate on re-entry', function () {

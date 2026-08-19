@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Enums\PartnerCollectionMode;
+use App\Enums\ReferralShareType;
 use App\Enums\SettlementAmountSource;
 use App\Models\Customer;
 use App\Models\ReferralSettlement;
@@ -35,16 +36,23 @@ class FinalizeReferralSettlements extends Command
             ? Carbon::createFromFormat('Y-m', $monthArg)->startOfMonth()
             : now()->subMonthNoOverflow()->startOfMonth();
 
+        // Broad DB filter (has SOME share configured, one way or the other),
+        // narrowed precisely per-customer below via hasReferralShareConfigured()
+        // — simpler and less error-prone than replicating that same
+        // fixed-vs-percentage branching again as a raw where() clause here.
         $customers = Customer::query()
             ->whereNotNull('referring_partner_id')
-            ->whereNotNull('referral_share_rate')
-            ->where('referral_share_rate', '>', 0)
+            ->where(function ($q) {
+                $q->where('referral_share_rate', '>', 0)
+                    ->orWhere('referral_share_fixed_amount', '>', 0);
+            })
             ->where(function ($q) {
                 $q->whereNull('partner_collection_mode')
                     ->orWhere('partner_collection_mode', PartnerCollectionMode::NedsCollects->value);
             })
             ->with('recurringInvoices.invoices')
-            ->get();
+            ->get()
+            ->filter(fn (Customer $c) => $c->hasReferralShareConfigured());
 
         $finalized = 0;
 
@@ -56,14 +64,14 @@ class FinalizeReferralSettlements extends Command
                     continue; // nothing billed this template this month — nothing to settle.
                 }
 
-                $rate = (float) $customer->referral_share_rate;
                 $values = [
                     'customer_id' => $customer->id,
                     'partner_id' => $customer->referring_partner_id,
                     'flow_mode' => PartnerCollectionMode::NedsCollects,
                     'billed_amount' => $billedAmount,
-                    'share_rate' => $rate,
-                    'share_amount' => (int) round($billedAmount * $rate / 100),
+                    'share_rate' => $customer->referral_share_type === ReferralShareType::FixedAmount
+                        ? 0 : (float) ($customer->referral_share_rate ?? 0),
+                    'share_amount' => $customer->referralShareAmount($billedAmount),
                     'amount_source' => SettlementAmountSource::Invoice,
                     'finalized_at' => now(),
                 ];

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\CustomerStatus;
 use App\Enums\PartnerCollectionMode;
+use App\Enums\ReferralShareType;
 use App\Enums\UserRole;
 use App\Models\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Builder;
@@ -45,6 +46,8 @@ class Customer extends Model
         'referring_partner_id',
         'partner_collection_mode',
         'referral_share_rate',
+        'referral_share_type',
+        'referral_share_fixed_amount',
     ];
 
     protected function casts(): array
@@ -54,6 +57,8 @@ class Customer extends Model
             'status' => CustomerStatus::class,
             'gst_exempt' => 'boolean',
             'partner_collection_mode' => PartnerCollectionMode::class,
+            'referral_share_type' => ReferralShareType::class,
+            'referral_share_fixed_amount' => 'integer',
             'referral_share_rate' => 'decimal:2',
         ];
     }
@@ -203,6 +208,41 @@ class Customer extends Model
     public function isPartnerCollected(): bool
     {
         return $this->partner_collection_mode === PartnerCollectionMode::PartnerCollects;
+    }
+
+    /**
+     * Whether this client has a usable referral share configured at all —
+     * either a real fixed amount, or a real (>0) percentage. Used to decide
+     * ReferralSettlement eligibility so a client with neither set (the
+     * default for every existing client) is silently skipped rather than
+     * producing a ₹0 settlement row every month.
+     */
+    public function hasReferralShareConfigured(): bool
+    {
+        if ($this->referral_share_type === ReferralShareType::FixedAmount) {
+            return (int) $this->referral_share_fixed_amount > 0;
+        }
+
+        return (float) ($this->referral_share_rate ?? 0) > 0;
+    }
+
+    /**
+     * The single source of truth for turning a billed amount into a referral
+     * share — a FIXED amount is exactly that every month regardless of the
+     * real billed total (e.g. Ampra Biobact: client billed ₹15,000+GST, but
+     * the referral share is a flat ₹10,000 either way, not a percentage that
+     * would silently drift if billing changes). Reused by both
+     * ReferralSettlementService::recordManualBilling() (PartnerCollects,
+     * staff-entered billedAmount) and FinalizeReferralSettlements
+     * (NedsCollects, billedAmount summed from real invoices).
+     */
+    public function referralShareAmount(int $billedAmount): int
+    {
+        if ($this->referral_share_type === ReferralShareType::FixedAmount) {
+            return (int) $this->referral_share_fixed_amount;
+        }
+
+        return (int) round($billedAmount * (float) ($this->referral_share_rate ?? 0) / 100);
     }
 
     /** Quick-access links for this client (website, GBP, Drive, socials, payment links…). */

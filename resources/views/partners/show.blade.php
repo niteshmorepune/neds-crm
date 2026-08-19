@@ -192,7 +192,9 @@
                                 <a href="{{ route('clients.show', $client) }}" class="font-medium text-indigo-600 hover:underline">{{ $client->company_name }}</a>
                                 <span class="text-xs text-gray-500">
                                     {{ $client->partner_collection_mode?->label() ?? 'NEDS collects' }}
-                                    @if ($client->referral_share_rate)
+                                    @if ($client->referral_share_type?->value === 'fixed_amount' && $client->referral_share_fixed_amount)
+                                        · {{ \App\Support\Money::format($client->referral_share_fixed_amount) }}/month fixed share
+                                    @elseif ($client->referral_share_rate)
                                         · {{ rtrim(rtrim(number_format((float) $client->referral_share_rate, 2), '0'), '.') }}% share
                                     @endif
                                 </span>

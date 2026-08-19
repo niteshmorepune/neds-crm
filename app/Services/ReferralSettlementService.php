@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\InvoiceStatus;
 use App\Enums\PartnerCollectionMode;
+use App\Enums\ReferralShareType;
 use App\Enums\SettlementAmountSource;
 use App\Models\Customer;
 use App\Models\RecurringInvoice;
@@ -104,16 +105,20 @@ class ReferralSettlementService
      */
     public function recordManualBilling(RecurringInvoice $template, Carbon $monthStart, int $amountPaise, User $enteredBy): ReferralSettlement
     {
-        $rate = (float) ($template->customer->referral_share_rate ?? 0);
+        $customer = $template->customer;
         $monthStart = $monthStart->copy()->startOfMonth();
 
         $values = [
             'customer_id' => $template->customer_id,
-            'partner_id' => $template->customer->referring_partner_id,
+            'partner_id' => $customer->referring_partner_id,
             'flow_mode' => PartnerCollectionMode::PartnerCollects,
             'billed_amount' => $amountPaise,
-            'share_rate' => $rate,
-            'share_amount' => (int) round($amountPaise * $rate / 100),
+            // A FixedAmount client has no meaningful percentage — 0 here,
+            // never used for display (views branch on the customer's own
+            // referral_share_type instead of inferring it from this column).
+            'share_rate' => $customer->referral_share_type === ReferralShareType::FixedAmount
+                ? 0 : (float) ($customer->referral_share_rate ?? 0),
+            'share_amount' => $customer->referralShareAmount($amountPaise),
             'amount_source' => SettlementAmountSource::Manual,
             'entered_by' => $enteredBy->id,
             'finalized_at' => now(),

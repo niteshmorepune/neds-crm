@@ -2,6 +2,7 @@
 
 use App\Enums\CustomerStatus;
 use App\Enums\PartnerCollectionMode;
+use App\Enums\ReferralShareType;
 use App\Enums\UserRole;
 use App\Models\Customer;
 use App\Models\Deal;
@@ -53,6 +54,25 @@ it('saves a referred client\'s collection mode and referral share rate', functio
     expect($customer->partner_collection_mode)->toBe(PartnerCollectionMode::PartnerCollects)
         ->and((float) $customer->referral_share_rate)->toBe(25.5)
         ->and($customer->isPartnerCollected())->toBeTrue();
+});
+
+it('saves a referred client\'s fixed-amount referral share, converting rupees to paise', function () {
+    $partner = Partner::factory()->create();
+
+    $this->actingAs($this->admin)->post(route('clients.store'), [
+        'company_name' => 'Fixed Share Co',
+        'country' => 'India',
+        'status' => CustomerStatus::Active->value,
+        'referring_partner_id' => $partner->id,
+        'partner_collection_mode' => PartnerCollectionMode::PartnerCollects->value,
+        'referral_share_type' => ReferralShareType::FixedAmount->value,
+        'referral_share_fixed_amount' => '10000',
+    ])->assertRedirect();
+
+    $customer = Customer::firstWhere('company_name', 'Fixed Share Co');
+
+    expect($customer->referral_share_type)->toBe(ReferralShareType::FixedAmount)
+        ->and($customer->referral_share_fixed_amount)->toBe(1000000);
 });
 
 it('defaults a referred client to NedsCollects when no collection mode is chosen', function () {

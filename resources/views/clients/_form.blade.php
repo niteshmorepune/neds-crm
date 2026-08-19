@@ -7,6 +7,7 @@
     $countryValue = old('country', $customer->country ?? 'India');
     $isOverseasInit = ! empty($countryValue) && strtolower(trim($countryValue)) !== 'india';
     $partnerIdValue = old('referring_partner_id', $customer->referring_partner_id ?? '');
+    $shareTypeValue = old('referral_share_type', $customer->referral_share_type?->value ?? 'percentage');
 @endphp
 
 <div class="grid grid-cols-1 gap-6 md:grid-cols-2"
@@ -14,6 +15,7 @@
          country: {{ Js::from($countryValue) }},
          get isOverseas() { return this.country.trim().toLowerCase() !== 'india' && this.country.trim() !== '' },
          partnerId: {{ Js::from((string) $partnerIdValue) }},
+         shareType: {{ Js::from($shareTypeValue) }},
      }">
     <div class="md:col-span-2">
         <x-input-label for="company_name" value="Company name *" />
@@ -166,10 +168,28 @@
     </div>
 
     <div x-show="partnerId !== ''" style="display: none;">
+        <x-input-label for="referral_share_type" value="Referral share type" />
+        <select id="referral_share_type" name="referral_share_type" x-model="shareType" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+            @foreach (\App\Enums\ReferralShareType::cases() as $type)
+                <option value="{{ $type->value }}">{{ $type->label() }}</option>
+            @endforeach
+        </select>
+        <x-input-error :messages="$errors->get('referral_share_type')" class="mt-1" />
+    </div>
+
+    <div x-show="partnerId !== '' &amp;&amp; shareType === 'percentage'" style="display: none;">
         <x-input-label for="referral_share_rate" value="Referral share % (recurring, per month)" />
         <x-text-input id="referral_share_rate" name="referral_share_rate" type="number" step="0.01" min="0" max="100" class="mt-1 block w-full"
                       :value="old('referral_share_rate', $customer->referral_share_rate)" placeholder="e.g. 20" />
         <x-input-error :messages="$errors->get('referral_share_rate')" class="mt-1" />
+    </div>
+
+    <div x-show="partnerId !== '' &amp;&amp; shareType === 'fixed_amount'" style="display: none;">
+        <x-input-label for="referral_share_fixed_amount" value="Referral share — fixed ₹ per month" />
+        <x-text-input id="referral_share_fixed_amount" name="referral_share_fixed_amount" type="number" step="0.01" min="0" class="mt-1 block w-full"
+                      :value="old('referral_share_fixed_amount', \App\Support\Money::toRupees($customer->referral_share_fixed_amount))" placeholder="e.g. 10000" />
+        <x-input-error :messages="$errors->get('referral_share_fixed_amount')" class="mt-1" />
+        <p class="mt-1 text-xs text-gray-500">A flat monthly amount regardless of what's actually billed — e.g. client billed ₹15,000 but the referral share stays exactly this amount.</p>
     </div>
 
     <div class="md:col-span-2">
