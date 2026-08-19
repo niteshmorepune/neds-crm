@@ -73,6 +73,34 @@ it('never invites the same lead twice', function () {
     Http::assertNothingSent();
 });
 
+it('skips sending when the lead paid after the job was queued but before it ran', function () {
+    // Regression test for a real incident (lead 242 "Shahdatta Mukadam",
+    // 2026-08-19): this job is dispatched once, right when the lead becomes
+    // eligible, but runs later on the database queue — real time passes
+    // before handle() actually executes, long enough for the lead to
+    // independently pay in between. He paid at 06:37:07 and this job fired
+    // 4 seconds later at 06:37:11, sending a "come check out our offer"
+    // invite right after his own payment-confirmation message.
+    Http::fake(['https://wadesk.test/api/send-template' => Http::response(['conversationId' => 'c1'], 201)]);
+
+    $lead = Lead::factory()->create([
+        'phone' => '+91 98765 43210',
+        'meta_leadgen_id' => 'lg_'.uniqid(),
+        'service_id' => $this->gmb->id,
+    ]);
+    VisibilityAuditPurchase::create([
+        'tier' => VisibilityAuditTier::Gbp,
+        'amount_paise' => 12000,
+        'razorpay_payment_id' => 'pay_va_invite_race1',
+        'lead_id' => $lead->id,
+    ]);
+
+    (new SendVisibilityAuditFirstInviteJob($lead->id))->handle();
+
+    Http::assertNothingSent();
+    expect($lead->fresh()->visibility_audit_invited_at)->toBeNull();
+});
+
 it('no-ops when the invite template is not configured', function () {
     config(['services.wadesk.visibility_audit_first_invite_template_name' => null]);
     Http::fake();

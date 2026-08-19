@@ -56,6 +56,19 @@ class SendVisibilityAuditFirstInviteJob implements ShouldQueue
             return;
         }
 
+        // This job is dispatched once, right when the Lead becomes eligible
+        // (see LeadObserver), but runs later on the database queue — real
+        // time passes before handle() actually executes, long enough for the
+        // lead to independently find the offer and pay in between (real
+        // incident: lead 242 "Shahdatta Mukadam", 2026-08-19 — paid at
+        // 06:37:07, this job fired 4 seconds later at 06:37:11, so a payment-
+        // confirmation message was immediately followed by a "come check out
+        // our offer" invite). Same fix as SendVisibilityAuditRecoveryNudgeJob:
+        // re-check for a completed purchase immediately before sending.
+        if ($lead->visibilityAuditPurchases()->exists()) {
+            return;
+        }
+
         $digits = Phone::digits($lead->phone);
 
         try {
