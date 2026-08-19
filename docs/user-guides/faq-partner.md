@@ -32,6 +32,14 @@ It takes a moment for NEDS to log the referral on our side before it
 appears here. If it's been a few days and you still don't see it, check
 in with your NEDS point of contact.
 
+**Q: How do I know what services a client I referred is actually getting, and whether any are paused?**
+Click into the client from **Your Referred Clients** to open their account
+page. It lists every recurring service (e.g. SEO, GMB, Social Media) and
+project with its own status — Active, On Hold, Upcoming, Not Billed, or
+Ended — so you can see exactly what's currently running without asking
+NEDS directly. Your Dashboard's portfolio summary also shows a total
+count of services on hold across all your referred clients.
+
 ## 3. Content submissions & uploading
 
 **Q: How do I upload files for a content piece?**
@@ -56,9 +64,11 @@ generate a fresh one.
 
 **Q: Where do I find quotations NEDS has shared with me?**
 On your Dashboard, under **Quotations** — every quotation for a client
-you've referred appears there, whether they're an existing client or
-still just a lead. Click **Download PDF** to get the actual document —
-no more waiting for it over WhatsApp or email.
+you've referred appears there. Click **Download PDF** to get the actual
+document — no more waiting for it over WhatsApp or email. A client's own
+page also shows a quick Accepted/Sent/Rejected/Draft breakdown of their
+quotations, and your Dashboard's portfolio summary totals this across all
+your referred clients.
 
 **Q: Can I see quotations for another agency's clients?**
 No — same as everything else in the portal, you only ever see quotations

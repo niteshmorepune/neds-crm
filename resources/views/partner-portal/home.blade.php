@@ -16,6 +16,30 @@
         </div>
     </div>
 
+    {{-- Portfolio summary: at-a-glance status of everything referred through this partner. --}}
+    <div class="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-5">
+        <div class="rounded-lg bg-emerald-50 px-4 py-3">
+            <p class="text-xs font-medium text-emerald-700">Active clients</p>
+            <p class="mt-1 text-2xl font-semibold text-emerald-900">{{ $clientStatusCounts->get('active', 0) }}</p>
+        </div>
+        <div class="rounded-lg bg-yellow-100 px-4 py-3">
+            <p class="text-xs font-medium text-yellow-700">Prospect clients</p>
+            <p class="mt-1 text-2xl font-semibold text-yellow-800">{{ $clientStatusCounts->get('prospect', 0) }}</p>
+        </div>
+        <div class="rounded-lg bg-gray-100 px-4 py-3">
+            <p class="text-xs font-medium text-gray-600">Inactive clients</p>
+            <p class="mt-1 text-2xl font-semibold text-gray-800">{{ $clientStatusCounts->get('inactive', 0) }}</p>
+        </div>
+        <div class="rounded-lg bg-amber-50 px-4 py-3">
+            <p class="text-xs font-medium text-amber-700">Services on hold</p>
+            <p class="mt-1 text-2xl font-semibold text-amber-900">{{ $servicesOnHoldCount }}</p>
+        </div>
+        <div class="rounded-lg bg-indigo-50 px-4 py-3">
+            <p class="text-xs font-medium text-indigo-700">Quotations accepted</p>
+            <p class="mt-1 text-2xl font-semibold text-indigo-900">{{ $quotationStatusCounts->get('accepted', 0) }} <span class="text-sm font-normal text-indigo-700">/ {{ $quotationStatusCounts->sum() }}</span></p>
+        </div>
+    </div>
+
     @if ($partnerAccount)
         <div class="mb-6 rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
             <h3 class="text-base font-semibold text-gray-900">Your Account — {{ $partnerAccount['customer']->company_name }}</h3>

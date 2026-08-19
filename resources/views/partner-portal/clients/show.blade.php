@@ -50,7 +50,18 @@
     </div>
 
     <div class="mt-6 rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
-        <h3 class="text-base font-semibold text-gray-900">Quotations</h3>
+        <div class="flex items-center justify-between">
+            <h3 class="text-base font-semibold text-gray-900">Quotations</h3>
+            @if ($quotations->isNotEmpty())
+                @php $statusCounts = $quotations->countBy(fn ($q) => $q->status->value); @endphp
+                <p class="text-xs text-gray-500">
+                    {{ $statusCounts->get('accepted', 0) }} accepted ·
+                    {{ $statusCounts->get('sent', 0) }} sent ·
+                    {{ $statusCounts->get('rejected', 0) }} rejected ·
+                    {{ $statusCounts->get('draft', 0) }} draft
+                </p>
+            @endif
+        </div>
 
         <div class="mt-4 divide-y divide-gray-100">
             @forelse ($quotations as $quotation)
@@ -69,19 +80,6 @@
         </div>
     </div>
 
-    <div class="mt-6 rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
-        <h3 class="text-base font-semibold text-gray-900">Active projects</h3>
-
-        <div class="mt-4 divide-y divide-gray-100">
-            @forelse ($projects as $project)
-                <div class="flex items-center justify-between py-3">
-                    <span class="text-sm font-medium text-gray-900">{{ $project->name }}</span>
-                    <span class="text-xs text-gray-400">{{ $project->service?->name }}</span>
-                </div>
-            @empty
-                <p class="py-6 text-center text-sm text-gray-400">No active projects right now.</p>
-            @endforelse
-        </div>
-    </div>
+    @include('partner-portal.clients._services', ['customer' => $customer])
 
 </x-partner-portal-app-layout>

@@ -18,13 +18,21 @@ When you log in you'll see:
   quick total of how much is currently owed across your referred clients
   (or your own account, if you're billed as a reseller — see below), and
   how many clients have something overdue.
+- **Portfolio summary** — a row of counts giving you the whole picture at a
+  glance: how many of your referred clients are Active, Prospect, or
+  Inactive; how many of their recurring services are currently On Hold;
+  and how many of your quotations have been Accepted, out of the total
+  sent.
 - **Your Referred Clients** — every client you've referred to NEDS, with
   their current status (Active, Prospect, Inactive) and, next to each,
   their own outstanding amount (and an overdue count if anything's past
   due). Click any client to open their **account page** — every invoice
   (number, status, due date, amount, balance), every quotation (with PDF
-  download), and their active projects. Use this to follow up directly
-  with a client whose payment is overdue.
+  download, plus a quick Accepted/Sent/Rejected/Draft breakdown), and
+  their recurring services and projects with a status for each (Active, On
+  Hold, Upcoming, Not Billed, or Ended) — so you can see exactly what's
+  running for that client, not just whether they still owe money. Use this
+  to follow up directly with a client whose payment is overdue.
 - **Your Account** (reseller partners only) — if you're set up as a
   reseller, your referred clients' invoices are billed to you as one
   consolidated account rather than individually. This section shows your
@@ -37,10 +45,10 @@ When you log in you'll see:
   Published). NEDS opens a submission here when a piece of content is ready
   for you to deliver against — there's nothing to do on your side until one
   appears; you can't start a submission yourself.
-- **Quotations** — every quotation for a client you've referred, whether
-  they're already a real client or still just a lead you've introduced us
-  to. Shows the client, status, and amount, with a **Download PDF** button
-  to get the actual document straight from the portal.
+- **Quotations** — every quotation for a client you've referred. Shows the
+  client, status (Draft, Sent, Accepted, or Rejected), and amount, with a
+  **Download PDF** button to get the actual document straight from the
+  portal.
 - **Your Earnings** — only shown if you're on a commission arrangement with
   NEDS (ask your NEDS point of contact to set this up). Shows this month's
   referred business and your estimated commission so far, plus a history of
