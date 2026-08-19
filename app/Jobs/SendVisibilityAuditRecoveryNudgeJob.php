@@ -68,6 +68,17 @@ class SendVisibilityAuditRecoveryNudgeJob implements ShouldQueue
             return;
         }
 
+        // The eligibility check ("hasn't paid yet") only ran once, when
+        // SendVisibilityAuditRecoveryNudges queried and dispatched this job —
+        // on the database queue, real time passes before this handle() runs,
+        // long enough for the payment to land in between. Re-check here so a
+        // just-paid lead never gets a "still interested?" nudge seconds after
+        // their own payment-confirmation message (real incident: lead 2026-08-19,
+        // both messages landed the same minute).
+        if ($lead->visibilityAuditPurchases()->exists()) {
+            return;
+        }
+
         $digits = Phone::digits($lead->phone);
 
         try {

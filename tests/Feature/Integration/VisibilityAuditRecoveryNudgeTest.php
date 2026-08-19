@@ -91,6 +91,33 @@ it('never sends twice for the same event once already nudged', function () {
     Http::assertNothingSent();
 });
 
+it('skips sending when the lead paid after the job was queued but before it ran', function () {
+    // Regression test for a real incident (2026-08-19): the recovery-nudge
+    // command queries "hasn't paid yet" once at dispatch time, but the
+    // database queue means real time passes before this job's handle()
+    // actually runs — long enough for a payment to land in between. A lead
+    // who pays in that gap must not get a "still interested?" nudge right
+    // after their own payment-confirmation message.
+    Http::fake(['https://wadesk.test/api/send-template' => Http::response(['conversationId' => 'c1'], 201)]);
+
+    $lead = Lead::factory()->create(['phone' => '+91 98765 43210']);
+    $event = VisibilityAuditFunnelEvent::create([
+        'event_type' => VisibilityAuditFunnelEventType::PaymentViewed,
+        'lead_id' => $lead->id,
+    ]);
+    VisibilityAuditPurchase::create([
+        'tier' => VisibilityAuditTier::Gbp,
+        'amount_paise' => 12000,
+        'razorpay_payment_id' => 'pay_va_race1',
+        'lead_id' => $lead->id,
+    ]);
+
+    (new SendVisibilityAuditRecoveryNudgeJob($lead->id, $event->id, VisibilityAuditFunnelEventType::PaymentViewed))->handle();
+
+    Http::assertNothingSent();
+    expect($event->fresh()->nudged_at)->toBeNull();
+});
+
 it('no-ops when the template for that stage is not configured', function () {
     config(['services.wadesk.visibility_audit_recovery_checkout_template_name' => null]);
     Http::fake();
