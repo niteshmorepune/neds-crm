@@ -232,6 +232,7 @@ class WhatsappWebhookController extends Controller
                     'user_id' => null,
                     'body' => $this->noteBody($data['message'], $direction, $senderType, $data['sender_name'] ?? null),
                 ]);
+                $this->scheduleFollowUpIfAiReplied($lead, $direction, $senderType);
             }
 
             return response()->json(['status' => 'lead_note_added', 'lead_id' => $lead->id]);
@@ -251,9 +252,42 @@ class WhatsappWebhookController extends Controller
                 'user_id' => null,
                 'body' => $this->noteBody($data['message'], $direction, $senderType, $data['sender_name'] ?? null),
             ]);
+            $this->scheduleFollowUpIfAiReplied($lead, $direction, $senderType);
         }
 
         return response()->json(['status' => 'lead_created', 'lead_id' => $lead->id]);
+    }
+
+    /**
+     * The wadesk.in after-hours AI assistant's reply is only ever a holding
+     * message — it never books anything or closes a deal. Without this, a
+     * lead it replies to has no reason to ever surface in the "Follow-ups
+     * due" queue (Lead index, Sales Dashboard, My Day) that reps already
+     * check, and can silently sit unfollowed. Confirmed as a real problem
+     * via production data 2026-08-20, not assumed: of 14 leads the AI had
+     * replied to, 8 (57%) had received zero human follow-up at all, some
+     * waiting 2+ days. Sets `next_follow_up_at` to right now — by the time
+     * staff next open the CRM (typically the next business morning, per
+     * the same data), it already reads as overdue and sorts to the top of
+     * the priority list (`Lead::priorityScore()`), rather than waiting for
+     * someone to notice a fresh WhatsApp message on their own. Only fires
+     * once: a lead that already has a follow-up scheduled (staff set one,
+     * or an earlier AI reply already set this) is left untouched, matching
+     * how every other write to this field in this app is manual/one-shot —
+     * there's no existing auto-clear-on-contact mechanism for
+     * `Lead.next_follow_up_at` to disrupt.
+     */
+    private function scheduleFollowUpIfAiReplied(Lead $lead, string $direction, string $senderType): void
+    {
+        if ($direction !== 'outbound' || $senderType !== 'ai') {
+            return;
+        }
+
+        if ($lead->next_follow_up_at !== null) {
+            return;
+        }
+
+        $lead->update(['next_follow_up_at' => now()]);
     }
 
     /**

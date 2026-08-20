@@ -148,6 +148,15 @@ email (editing as needed) and send it yourself — nothing is ever sent
 automatically. The moment you add your own note or log a call on a lead, the
 sequence stops (the CRM assumes you've taken it from here).
 
+**A lead the AI answered outside business hours also shows as follow-up
+due, immediately.** The after-hours WhatsApp assistant only ever sends a
+holding reply — it never books anything or closes a deal — so the moment
+it replies to a lead with no follow-up already scheduled, the CRM marks
+that lead as due for a real follow-up right away (no reminder was set
+before this, and leads were quietly going a day or more without any
+follow-up as a result). You'll see it as overdue the next time you check
+your "follow-ups due" list — same list, no separate place to look.
+
 **Working a lead:**
 - Open the lead to add **notes**, see the timeline, and log activity.
 - **Log a call** (top bar or the lead page) after you phone them — record the
