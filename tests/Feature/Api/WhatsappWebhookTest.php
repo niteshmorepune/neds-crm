@@ -539,6 +539,69 @@ it('formats an AI auto-reply on a Lead as a clearly-attributed note', function (
     expect($note->body)->toBe("[Sent via WhatsApp by AI Assistant (auto-reply)]\nThanks for reaching out!");
 });
 
+it('schedules an immediate follow-up on a Lead the first time the AI replies', function () {
+    $lead = Lead::factory()->create(['phone' => '919999999999', 'whatsapp_conversation_id' => 'conv_lead_ai_followup', 'next_follow_up_at' => null]);
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '919999999999',
+        'message' => 'Thanks for reaching out!',
+        'conversation_id' => 'conv_lead_ai_followup',
+        'message_id' => 'wa_msg_lead_ai_followup',
+        'direction' => 'outbound',
+        'sender_type' => 'ai',
+    ], ['Authorization' => 'Bearer test-wa-token'])->assertOk();
+
+    expect($lead->fresh()->next_follow_up_at)->not->toBeNull()
+        ->and($lead->fresh()->next_follow_up_at->diffInSeconds(now()))->toBeLessThan(5);
+});
+
+it('does not push back a follow-up a rep already scheduled', function () {
+    $existing = now()->addDays(2);
+    $lead = Lead::factory()->create(['phone' => '919999999999', 'whatsapp_conversation_id' => 'conv_lead_ai_keep_existing', 'next_follow_up_at' => $existing]);
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '919999999999',
+        'message' => 'Thanks for reaching out!',
+        'conversation_id' => 'conv_lead_ai_keep_existing',
+        'message_id' => 'wa_msg_lead_ai_keep_existing',
+        'direction' => 'outbound',
+        'sender_type' => 'ai',
+    ], ['Authorization' => 'Bearer test-wa-token'])->assertOk();
+
+    expect($lead->fresh()->next_follow_up_at->diffInSeconds($existing))->toBeLessThan(1);
+});
+
+it('does not schedule a follow-up from an inbound customer message', function () {
+    $lead = Lead::factory()->create(['phone' => '919999999999', 'whatsapp_conversation_id' => 'conv_lead_inbound_no_followup', 'next_follow_up_at' => null]);
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '919999999999',
+        'message' => 'What are your charges?',
+        'conversation_id' => 'conv_lead_inbound_no_followup',
+        'message_id' => 'wa_msg_lead_inbound_no_followup',
+        'direction' => 'inbound',
+        'sender_type' => 'customer',
+    ], ['Authorization' => 'Bearer test-wa-token'])->assertOk();
+
+    expect($lead->fresh()->next_follow_up_at)->toBeNull();
+});
+
+it('does not schedule a follow-up from a human staff reply — only the AI reply counts', function () {
+    $lead = Lead::factory()->create(['phone' => '919999999999', 'whatsapp_conversation_id' => 'conv_lead_staff_no_followup', 'next_follow_up_at' => null]);
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '919999999999',
+        'message' => 'Sure, calling you now.',
+        'conversation_id' => 'conv_lead_staff_no_followup',
+        'message_id' => 'wa_msg_lead_staff_no_followup',
+        'direction' => 'outbound',
+        'sender_type' => 'agent',
+        'sender_name' => 'Kiran Katte',
+    ], ['Authorization' => 'Bearer test-wa-token'])->assertOk();
+
+    expect($lead->fresh()->next_follow_up_at)->toBeNull();
+});
+
 it('leaves an inbound Lead message body unprefixed, same as before this feature', function () {
     $lead = Lead::factory()->create(['phone' => '919999999999', 'whatsapp_conversation_id' => 'conv_lead_inbound_tagged']);
 
