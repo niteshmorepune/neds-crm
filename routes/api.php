@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\BiometricSyncController;
 use App\Http\Controllers\Api\DrishtiTrendIdeaBriefController;
 use App\Http\Controllers\Api\DrishtiWebhookController;
 use App\Http\Controllers\Api\LeadCaptureController;
+use App\Http\Controllers\Api\LeadContextController;
 use App\Http\Controllers\Api\MetaLeadsWebhookController;
 use App\Http\Controllers\Api\RazorpayVisibilityAuditWebhookController;
 use App\Http\Controllers\Api\RazorpayWebhookController;
@@ -31,6 +32,15 @@ Route::post('/leads', [LeadCaptureController::class, 'store'])
 Route::post('/webhook/whatsapp', [WhatsappWebhookController::class, 'handle'])
     ->middleware(['throttle:60,1', VerifyWhatsappWebhookToken::class])
     ->name('api.webhook.whatsapp');
+
+// wadesk.in → CRM bridge, the reverse direction of the route above. Called
+// by the after-hours AI assistant right before drafting a reply, so it can
+// reference the lead's actual campaign/service/declared budget instead of a
+// generic "thanks for the form" placeholder. Same Bearer token, same
+// wadesk.in trust boundary.
+Route::get('/leads/context', [LeadContextController::class, 'show'])
+    ->middleware(['throttle:120,1', VerifyWhatsappWebhookToken::class])
+    ->name('api.leads.context');
 
 // socialmediadost.com → CRM bridge. Called when all content in a brief is
 // approved. Creates a draft invoice for the accounts team to price and send.

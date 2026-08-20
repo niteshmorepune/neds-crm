@@ -427,6 +427,33 @@ button (Admin only) to pull the latest name/body/category/approval status
 (and, as of the first-invite template, whether it has a Dynamic-URL
 button) straight from Meta instead of re-entering it by hand.
 
+## Integration 13 — Lead context for the wadesk.in after-hours AI assistant
+
+**What it does:** before wadesk.in's after-hours AI assistant drafts a
+reply, it now calls `GET /api/leads/context?phone=...` on the CRM (same
+Bearer token as the existing wadesk.in → CRM webhook, no new secret) to
+pull the matching Lead's campaign, service, declared budget, other form
+answers, and — if the lead qualifies for it — a Visibility Audit offer
+link. The assistant uses this to name the actual campaign or goal a lead
+mentioned instead of a vague "thanks for filling in the form," to ask a
+lead to confirm their budget instead of repeating back an answer that
+isn't really a number, and to hand out the Visibility Audit link as a
+concrete next step rather than only promising a future follow-up.
+
+**Why it exists:** a real Meta Ads lead's WhatsApp auto-message had a
+garbled "budget" answer (the submitter's company name, not a number —
+confirmed as a Meta-side form data issue, not a CRM bug), and the AI's
+reply could only say "thanks for the form" because it had no idea which
+form or what the lead actually asked for.
+
+**If replies still read generically:** confirm `CRM_LEAD_CONTEXT_URL` and
+`CRM_WEBHOOK_TOKEN` are set in wadesk.in's `.env.local` — like every other
+best-effort call in this integration, a missing/failing lookup just falls
+back to the previous generic reply rather than blocking the send, so this
+degrades silently. The lookup only finds a match for a phone number with
+an **open** Lead in the CRM — an existing client or a closed/converted
+lead won't return context, by design.
+
 ---
 
 ## Checking integration health
