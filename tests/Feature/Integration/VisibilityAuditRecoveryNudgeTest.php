@@ -2,10 +2,12 @@
 
 use App\Enums\VisibilityAuditFunnelEventType;
 use App\Enums\VisibilityAuditTier;
+use App\Enums\VisibilityAuditTouchType;
 use App\Jobs\SendVisibilityAuditRecoveryNudgeJob;
 use App\Models\Lead;
 use App\Models\VisibilityAuditFunnelEvent;
 use App\Models\VisibilityAuditPurchase;
+use App\Models\VisibilityAuditTouch;
 use App\Services\VisibilityAuditFunnelMetrics;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
@@ -62,6 +64,11 @@ it('sends the checkout-stage template with the checkout link and marks the event
     });
 
     expect($event->fresh()->nudged_at)->not->toBeNull();
+
+    $touch = VisibilityAuditTouch::firstOrFail();
+    expect($touch->lead_id)->toBe($lead->id)
+        ->and($touch->touch_type)->toBe(VisibilityAuditTouchType::RecoveryNudgeCheckout)
+        ->and($touch->success)->toBeTrue();
 });
 
 it('sends the landing-stage template with the enter link', function () {
@@ -74,6 +81,22 @@ it('sends the landing-stage template with the enter link', function () {
 
     Http::assertSent(fn ($request) => $request['templateName'] === 'va_recovery_landing'
         && $request['buttonUrlParam'] === (string) $lead->id);
+
+    expect(VisibilityAuditTouch::firstOrFail()->touch_type)->toBe(VisibilityAuditTouchType::RecoveryNudgeLanding);
+});
+
+it('logs a failed touch when wadesk.in returns non-2xx', function () {
+    Http::fake(['https://wadesk.test/api/send-template' => Http::response(['error' => 'bad'], 500)]);
+
+    $lead = Lead::factory()->create(['phone' => '+91 98765 43210']);
+    $event = VisibilityAuditFunnelEvent::create(['event_type' => VisibilityAuditFunnelEventType::PaymentViewed, 'lead_id' => $lead->id]);
+
+    (new SendVisibilityAuditRecoveryNudgeJob($lead->id, $event->id, VisibilityAuditFunnelEventType::PaymentViewed))->handle();
+
+    $touch = VisibilityAuditTouch::firstOrFail();
+    expect($touch->success)->toBeFalse()
+        ->and($touch->touch_type)->toBe(VisibilityAuditTouchType::RecoveryNudgeCheckout);
+    expect($event->fresh()->nudged_at)->toBeNull();
 });
 
 it('never sends twice for the same event once already nudged', function () {
@@ -89,6 +112,7 @@ it('never sends twice for the same event once already nudged', function () {
     (new SendVisibilityAuditRecoveryNudgeJob($lead->id, $event->id, VisibilityAuditFunnelEventType::PaymentViewed))->handle();
 
     Http::assertNothingSent();
+    expect(VisibilityAuditTouch::count())->toBe(0);
 });
 
 it('skips sending when the lead paid after the job was queued but before it ran', function () {

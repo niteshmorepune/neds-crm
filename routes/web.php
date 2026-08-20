@@ -62,6 +62,7 @@ use App\Http\Controllers\TeamWorkloadController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\TwoFactorSetupController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\VisibilityAuditDashboardController;
 use App\Http\Controllers\VisibilityAuditFunnelTrackingController;
 use App\Http\Controllers\VisibilityAuditOfferController;
 use App\Http\Controllers\VisibilityAuditRecoveryController;
@@ -314,6 +315,17 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
      */
     Route::middleware('menu.access:collections')->group(function () {
         Route::get('reports/collections', [ReportController::class, 'collections'])->name('reports.collections');
+    });
+
+    /*
+     * Visibility Audit funnel dashboard — Admin/Manager oversight over the
+     * AI-automated vs. staff-manual-outreach funnel. Gated by
+     * menu.access:visibility-audit-funnel (its own sidebar item), with a
+     * further Admin/Manager-only check inside the controller (same
+     * belt-and-suspenders pattern the other role-gated Reports routes use).
+     */
+    Route::middleware('menu.access:visibility-audit-funnel')->group(function () {
+        Route::get('reports/visibility-audit-funnel', [VisibilityAuditDashboardController::class, 'index'])->name('reports.visibility-audit-funnel');
     });
 
     /*

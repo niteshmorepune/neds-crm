@@ -2,7 +2,9 @@
 
 namespace App\Jobs;
 
+use App\Enums\VisibilityAuditTouchType;
 use App\Models\Lead;
+use App\Models\VisibilityAuditTouch;
 use App\Support\Phone;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -89,6 +91,8 @@ class SendVisibilityAuditFirstInviteJob implements ShouldQueue
                     'body' => $response->body(),
                 ]);
 
+                VisibilityAuditTouch::logSend($this->leadId, VisibilityAuditTouchType::FirstInvite, false, ['status' => $response->status()]);
+
                 return;
             }
         } catch (\Throwable $e) {
@@ -97,8 +101,12 @@ class SendVisibilityAuditFirstInviteJob implements ShouldQueue
                 'error' => $e->getMessage(),
             ]);
 
+            VisibilityAuditTouch::logSend($this->leadId, VisibilityAuditTouchType::FirstInvite, false, ['error' => $e->getMessage()]);
+
             return;
         }
+
+        VisibilityAuditTouch::logSend($this->leadId, VisibilityAuditTouchType::FirstInvite, true, ['template' => $templateName]);
 
         $lead->forceFill(['visibility_audit_invited_at' => now()])->saveQuietly();
     }

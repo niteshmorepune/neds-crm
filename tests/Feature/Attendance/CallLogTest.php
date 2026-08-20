@@ -1,11 +1,18 @@
 <?php
 
 use App\Enums\UserRole;
+use App\Enums\VisibilityAuditFunnelEventType;
+use App\Enums\VisibilityAuditTouchChannel;
+use App\Enums\VisibilityAuditTouchType;
 use App\Models\CallLog;
 use App\Models\Customer;
 use App\Models\Lead;
+use App\Models\Service;
 use App\Models\User;
+use App\Models\VisibilityAuditFunnelEvent;
+use App\Models\VisibilityAuditTouch;
 use Database\Seeders\MenuItemsSeeder;
+use Illuminate\Support\Facades\Queue;
 
 beforeEach(function () {
     $this->seed(MenuItemsSeeder::class);
@@ -203,6 +210,82 @@ it('clears a reminder even after it has already fired (notified)', function () {
     ]);
 
     expect($earlier->fresh()->follow_up_at)->toBeNull();
+});
+
+it('auto-logs a manual_outreach touch when the call reaches a lead in the Visibility Audit cohort', function () {
+    Queue::fake();
+    $gmb = Service::factory()->create(['name' => 'GMB', 'is_active' => true]);
+    $lead = Lead::factory()->create(['meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => $gmb->id]);
+
+    $this->actingAs($this->sales)->post(route('calls.store'), [
+        'lead_id' => $lead->id,
+        'direction' => 'outgoing',
+        'outcome' => 'connected',
+        'called_at' => now()->format('Y-m-d H:i:s'),
+    ])->assertRedirect(route('leads.show', $lead));
+
+    $touch = VisibilityAuditTouch::firstOrFail();
+    expect($touch->lead_id)->toBe($lead->id)
+        ->and($touch->touch_type)->toBe(VisibilityAuditTouchType::ManualOutreach)
+        ->and($touch->channel)->toBe(VisibilityAuditTouchChannel::StaffCall)
+        ->and($touch->actor_user_id)->toBe($this->sales->id)
+        ->and($touch->success)->toBeTrue();
+});
+
+it('also logs a touch for a lead with an existing funnel event even if its service tag changed since', function () {
+    Queue::fake();
+    $lead = Lead::factory()->create();
+    VisibilityAuditFunnelEvent::create(['event_type' => VisibilityAuditFunnelEventType::LandingViewed, 'lead_id' => $lead->id]);
+
+    $this->actingAs($this->sales)->post(route('calls.store'), [
+        'lead_id' => $lead->id,
+        'direction' => 'outgoing',
+        'outcome' => 'connected',
+        'called_at' => now()->format('Y-m-d H:i:s'),
+    ]);
+
+    expect(VisibilityAuditTouch::where('lead_id', $lead->id)->exists())->toBeTrue();
+});
+
+it('does not log a touch for a call against a lead outside the Visibility Audit cohort', function () {
+    $lead = Lead::factory()->create();
+
+    $this->actingAs($this->sales)->post(route('calls.store'), [
+        'lead_id' => $lead->id,
+        'direction' => 'outgoing',
+        'outcome' => 'connected',
+        'called_at' => now()->format('Y-m-d H:i:s'),
+    ]);
+
+    expect(VisibilityAuditTouch::count())->toBe(0);
+});
+
+it('does not log a touch for a VA-cohort lead when the call did not reach them', function () {
+    Queue::fake();
+    $gmb = Service::factory()->create(['name' => 'GMB', 'is_active' => true]);
+    $lead = Lead::factory()->create(['meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => $gmb->id]);
+
+    $this->actingAs($this->sales)->post(route('calls.store'), [
+        'lead_id' => $lead->id,
+        'direction' => 'outgoing',
+        'outcome' => 'no_answer',
+        'called_at' => now()->format('Y-m-d H:i:s'),
+    ]);
+
+    expect(VisibilityAuditTouch::count())->toBe(0);
+});
+
+it('does not log a Visibility Audit touch for a call against a client', function () {
+    $customer = Customer::factory()->create();
+
+    $this->actingAs($this->sales)->post(route('calls.store'), [
+        'customer_id' => $customer->id,
+        'direction' => 'outgoing',
+        'outcome' => 'connected',
+        'called_at' => now()->format('Y-m-d H:i:s'),
+    ]);
+
+    expect(VisibilityAuditTouch::count())->toBe(0);
 });
 
 it('does not touch another client\'s pending reminder', function () {

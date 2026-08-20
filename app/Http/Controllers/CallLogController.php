@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Enums\CallDirection;
 use App\Enums\CallOutcome;
 use App\Enums\UserRole;
+use App\Enums\VisibilityAuditTouchChannel;
+use App\Enums\VisibilityAuditTouchType;
 use App\Enums\VoiceTranscriptStatus;
 use App\Http\Requests\CallLogStoreRequest;
 use App\Jobs\TranscribeCallLogVoiceNote;
@@ -12,7 +14,9 @@ use App\Models\CallLog;
 use App\Models\Customer;
 use App\Models\Lead;
 use App\Models\User;
+use App\Models\VisibilityAuditTouch;
 use App\Services\MenuResolver;
+use App\Services\VisibilityAuditFunnelMetrics;
 use App\Support\Ai;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -68,7 +72,7 @@ class CallLogController extends Controller
         ]);
     }
 
-    public function store(CallLogStoreRequest $request): RedirectResponse
+    public function store(CallLogStoreRequest $request, VisibilityAuditFunnelMetrics $vaMetrics): RedirectResponse
     {
         $this->authorize('create', CallLog::class);
 
@@ -100,6 +104,8 @@ class CallLogController extends Controller
         if ($request->hasFile('voice_note') && Ai::voiceTranscriptionEnabled()) {
             $this->attachVoiceNote($call, $request);
         }
+
+        $this->logVisibilityAuditTouch($call, $type, $id, $vaMetrics);
 
         $this->clearSupersededFollowUps($call, $type, $id);
 
@@ -144,6 +150,41 @@ class CallLogController extends Controller
             ->where('id', '!=', $call->id)
             ->whereNotNull('follow_up_at')
             ->update(['follow_up_at' => null]);
+    }
+
+    /**
+     * Auto-logs a manual_outreach touch when this call was against a Lead
+     * already in the Visibility Audit cohort — zero new staff-facing UI,
+     * pure aggregation off the existing Call Log flow (same "zero new
+     * capture" convention as the Employee Activity Timeline). Only a call
+     * that actually reached the lead counts as a real follow-up touch — a
+     * NoAnswer/Busy attempt didn't move the funnel, so it isn't logged.
+     */
+    private function logVisibilityAuditTouch(CallLog $call, ?string $type, ?int $id, VisibilityAuditFunnelMetrics $vaMetrics): void
+    {
+        if ($type !== Lead::class || $id === null) {
+            return;
+        }
+
+        if (! in_array($call->outcome, [CallOutcome::Connected, CallOutcome::FollowUpNeeded], true)) {
+            return;
+        }
+
+        $lead = Lead::find($id);
+
+        if ($lead === null || ! $vaMetrics->isVisibilityAuditCohort($lead)) {
+            return;
+        }
+
+        VisibilityAuditTouch::create([
+            'lead_id' => $lead->id,
+            'touch_type' => VisibilityAuditTouchType::ManualOutreach,
+            'channel' => VisibilityAuditTouchChannel::StaffCall,
+            'actor_user_id' => $call->user_id,
+            'occurred_at' => $call->called_at,
+            'success' => true,
+            'meta' => ['call_log_id' => $call->id, 'outcome' => $call->outcome->value],
+        ]);
     }
 
     private function attachVoiceNote(CallLog $call, Request $request): void

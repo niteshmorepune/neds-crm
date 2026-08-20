@@ -3,8 +3,10 @@
 namespace App\Jobs;
 
 use App\Enums\VisibilityAuditFunnelEventType;
+use App\Enums\VisibilityAuditTouchType;
 use App\Models\Lead;
 use App\Models\VisibilityAuditFunnelEvent;
+use App\Models\VisibilityAuditTouch;
 use App\Support\Phone;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -105,6 +107,8 @@ class SendVisibilityAuditRecoveryNudgeJob implements ShouldQueue
                     'body' => $response->body(),
                 ]);
 
+                VisibilityAuditTouch::logSend($this->leadId, $this->touchType(), false, ['status' => $response->status()]);
+
                 return;
             }
         } catch (\Throwable $e) {
@@ -114,9 +118,20 @@ class SendVisibilityAuditRecoveryNudgeJob implements ShouldQueue
                 'error' => $e->getMessage(),
             ]);
 
+            VisibilityAuditTouch::logSend($this->leadId, $this->touchType(), false, ['error' => $e->getMessage()]);
+
             return;
         }
 
+        VisibilityAuditTouch::logSend($this->leadId, $this->touchType(), true, ['template' => $templateName]);
+
         $event->update(['nudged_at' => now()]);
+    }
+
+    private function touchType(): VisibilityAuditTouchType
+    {
+        return $this->stage === VisibilityAuditFunnelEventType::LandingViewed
+            ? VisibilityAuditTouchType::RecoveryNudgeLanding
+            : VisibilityAuditTouchType::RecoveryNudgeCheckout;
     }
 }
