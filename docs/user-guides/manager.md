@@ -410,6 +410,31 @@ recovery message** — writes a client-facing apology grounded in the actual
 ticket that was rated poorly (not just the generic flag). Review and
 personalize it before sending; nothing goes out automatically.
 
+## Visibility Audit Funnel Dashboard
+Sidebar → **VA Funnel** — a full analytics view over the same Visibility
+Audit funnel the weekly digest summarizes (see "The company dashboard"
+above), with a pickable date range instead of a fixed 7 days:
+- **Stage counts + conversion %** — eligible → invited (WhatsApp) → viewed
+  the offer page → reached checkout → paid, each stage showing what % of
+  the one before it converted, plus one overall paid/eligible figure.
+- **Daily trend chart** — the same five stages plotted per day, so you can
+  spot exactly which day a drop-off started.
+- **Touches by channel** — how many WhatsApp sends the AI automation made
+  vs. how many phone calls Sales/Telecaller logged against a funnel lead
+  (auto-counted from Call Log entries — no extra step for staff).
+- **AI-only vs. staff-assisted conversion** — of the leads who actually
+  paid, how many got a phone call before they paid vs. converted from the
+  automated WhatsApp messages alone. This is the number to watch if you're
+  deciding whether chasing these leads by phone is worth the time.
+- **Awaiting service tag** — a callout for Meta leads that can't enter this
+  funnel yet because nobody has tagged a service on them (they need the GMB
+  service tag to qualify); links straight to those leads.
+
+The **Visibility Audit Recovery** worklist (Sidebar → Lead Generation →
+the "Recovery worklist" link on this page) is where you or Sales/Telecaller
+actually work a stuck lead one at a time — this dashboard is the oversight
+view, not a place to take action from directly.
+
 ## Employee 360°
 Sidebar → **Employee 360°** — one consolidated page per employee: this
 month's performance (the same score/rank/focus-area the Employee

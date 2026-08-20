@@ -187,6 +187,11 @@ class Lead extends Model
         return $this->hasMany(VisibilityAuditPurchase::class);
     }
 
+    public function visibilityAuditTouches(): HasMany
+    {
+        return $this->hasMany(VisibilityAuditTouch::class);
+    }
+
     /**
      * All roles see all leads. Access to the leads page is controlled by
      * the menu.access:lead-generation middleware; visibility within is unrestricted.

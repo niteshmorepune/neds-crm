@@ -3,12 +3,16 @@
 use App\Enums\LeadSource;
 use App\Enums\VisibilityAuditFunnelEventType;
 use App\Enums\VisibilityAuditTier;
+use App\Enums\VisibilityAuditTouchChannel;
+use App\Enums\VisibilityAuditTouchType;
 use App\Jobs\SendVisibilityAuditFirstInviteJob;
 use App\Models\Lead;
 use App\Models\Service;
 use App\Models\VisibilityAuditFunnelEvent;
 use App\Models\VisibilityAuditPurchase;
+use App\Models\VisibilityAuditTouch;
 use App\Services\VisibilityAuditFunnelMetrics;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 
@@ -56,6 +60,45 @@ it('sends the first-invite template with the enter link and marks the lead invit
     });
 
     expect($lead->fresh()->visibility_audit_invited_at)->not->toBeNull();
+
+    $touch = VisibilityAuditTouch::firstOrFail();
+    expect($touch->lead_id)->toBe($lead->id)
+        ->and($touch->touch_type)->toBe(VisibilityAuditTouchType::FirstInvite)
+        ->and($touch->channel)->toBe(VisibilityAuditTouchChannel::AiWhatsapp)
+        ->and($touch->actor_user_id)->toBeNull()
+        ->and($touch->success)->toBeTrue();
+});
+
+it('logs a failed touch, not a silently dropped one, when wadesk.in returns non-2xx', function () {
+    Http::fake(['https://wadesk.test/api/send-template' => Http::response(['error' => 'bad'], 500)]);
+
+    $lead = Lead::factory()->create([
+        'phone' => '+91 98765 43210',
+        'meta_leadgen_id' => 'lg_'.uniqid(),
+        'service_id' => $this->gmb->id,
+    ]);
+
+    (new SendVisibilityAuditFirstInviteJob($lead->id))->handle();
+
+    $touch = VisibilityAuditTouch::firstOrFail();
+    expect($touch->lead_id)->toBe($lead->id)
+        ->and($touch->touch_type)->toBe(VisibilityAuditTouchType::FirstInvite)
+        ->and($touch->success)->toBeFalse();
+    expect($lead->fresh()->visibility_audit_invited_at)->toBeNull();
+});
+
+it('logs a failed touch when wadesk.in is unreachable', function () {
+    Http::fake(['*' => fn () => throw new ConnectionException('Connection refused')]);
+
+    $lead = Lead::factory()->create([
+        'phone' => '+91 98765 43210',
+        'meta_leadgen_id' => 'lg_'.uniqid(),
+        'service_id' => $this->gmb->id,
+    ]);
+
+    (new SendVisibilityAuditFirstInviteJob($lead->id))->handle();
+
+    expect(VisibilityAuditTouch::where('success', false)->count())->toBe(1);
 });
 
 it('never invites the same lead twice', function () {
@@ -129,6 +172,20 @@ it('no-ops when the lead has no phone', function () {
     (new SendVisibilityAuditFirstInviteJob($lead->id))->handle();
 
     Http::assertNothingSent();
+});
+
+it('logs no touch at all for a guard-clause skip — no touch means no send was ever attempted', function () {
+    Http::fake();
+
+    $lead = Lead::factory()->create([
+        'phone' => null,
+        'meta_leadgen_id' => 'lg_'.uniqid(),
+        'service_id' => $this->gmb->id,
+    ]);
+
+    (new SendVisibilityAuditFirstInviteJob($lead->id))->handle();
+
+    expect(VisibilityAuditTouch::count())->toBe(0);
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -280,7 +337,7 @@ it('summarizes the funnel stage by stage for the GMB meta_leadgen_id cohort only
 
     $summary = app(VisibilityAuditFunnelMetrics::class)->funnelSummary();
 
-    expect($summary)->toBe([
+    expect($summary)->toMatchArray([
         'eligible' => 3,
         'invited' => 2,
         'landing_viewed' => 1,

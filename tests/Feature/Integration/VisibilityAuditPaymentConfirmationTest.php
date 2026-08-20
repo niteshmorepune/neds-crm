@@ -1,9 +1,12 @@
 <?php
 
 use App\Enums\VisibilityAuditTier;
+use App\Enums\VisibilityAuditTouchType;
 use App\Jobs\RecordVisibilityAuditPurchase;
 use App\Jobs\SendVisibilityAuditPaymentConfirmationJob;
+use App\Models\Lead;
 use App\Models\VisibilityAuditPurchase;
+use App\Models\VisibilityAuditTouch;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
@@ -49,6 +52,42 @@ it('POSTs the normalized phone, marketing businessNumber, template name, and nam
             && $request['templateName'] === 'visibility_audit_payment_received'
             && $request['variables'] === ['Priya Shah', 'GBP Audit (₹120.00)'];
     });
+});
+
+it('logs a successful touch against the matched lead', function () {
+    Http::fake(['https://wadesk.test/api/send-template' => Http::response(['conversationId' => 'c1'], 201)]);
+
+    $lead = Lead::factory()->create();
+    $purchase = visibilityAuditPurchase(['lead_id' => $lead->id]);
+
+    (new SendVisibilityAuditPaymentConfirmationJob($purchase->id))->handle();
+
+    $touch = VisibilityAuditTouch::firstOrFail();
+    expect($touch->lead_id)->toBe($lead->id)
+        ->and($touch->touch_type)->toBe(VisibilityAuditTouchType::PaymentConfirmation)
+        ->and($touch->success)->toBeTrue();
+});
+
+it('logs no touch for an anonymous purchase with no matched lead', function () {
+    Http::fake(['https://wadesk.test/api/send-template' => Http::response(['conversationId' => 'c1'], 201)]);
+
+    $purchase = visibilityAuditPurchase(['lead_id' => null]);
+
+    (new SendVisibilityAuditPaymentConfirmationJob($purchase->id))->handle();
+
+    expect(VisibilityAuditTouch::count())->toBe(0);
+});
+
+it('logs a failed touch when wadesk.in returns an error, for a lead-matched purchase', function () {
+    Http::fake(['https://wadesk.test/api/send-template' => Http::response(['error' => 'Not found'], 404)]);
+
+    $lead = Lead::factory()->create();
+    $purchase = visibilityAuditPurchase(['lead_id' => $lead->id]);
+
+    (new SendVisibilityAuditPaymentConfirmationJob($purchase->id))->handle();
+
+    $touch = VisibilityAuditTouch::firstOrFail();
+    expect($touch->lead_id)->toBe($lead->id)->and($touch->success)->toBeFalse();
 });
 
 it('falls back to a generic greeting when the payer has no name', function () {

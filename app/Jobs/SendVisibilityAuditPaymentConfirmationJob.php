@@ -2,7 +2,9 @@
 
 namespace App\Jobs;
 
+use App\Enums\VisibilityAuditTouchType;
 use App\Models\VisibilityAuditPurchase;
+use App\Models\VisibilityAuditTouch;
 use App\Support\Money;
 use App\Support\Phone;
 use Illuminate\Bus\Queueable;
@@ -78,12 +80,37 @@ class SendVisibilityAuditPaymentConfirmationJob implements ShouldQueue
                     'status' => $response->status(),
                     'body' => $response->body(),
                 ]);
+
+                $this->logTouch($purchase, false, ['status' => $response->status()]);
+
+                return;
             }
         } catch (\Throwable $e) {
             Log::warning('SendVisibilityAuditPaymentConfirmationJob: HTTP call to wadesk.in failed', [
                 'purchase_id' => $this->purchaseId,
                 'error' => $e->getMessage(),
             ]);
+
+            $this->logTouch($purchase, false, ['error' => $e->getMessage()]);
+
+            return;
         }
+
+        $this->logTouch($purchase, true, ['template' => $templateName]);
+    }
+
+    /**
+     * Only lead-attributed purchases get a touch row — an anonymous
+     * checkout (never clicked through a tracked/attributed link) has no
+     * Lead to log the touch against, same "lead-attributed only" scope as
+     * every other VisibilityAuditFunnelMetrics figure.
+     */
+    private function logTouch(VisibilityAuditPurchase $purchase, bool $success, array $meta): void
+    {
+        if ($purchase->lead_id === null) {
+            return;
+        }
+
+        VisibilityAuditTouch::logSend($purchase->lead_id, VisibilityAuditTouchType::PaymentConfirmation, $success, $meta);
     }
 }
