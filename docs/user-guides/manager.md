@@ -416,12 +416,16 @@ Audit funnel the weekly digest summarizes (see "The company dashboard"
 above), with a pickable date range instead of a fixed 7 days:
 - **Stage counts + conversion %** — eligible → invited (WhatsApp) → viewed
   the offer page → reached checkout → paid, each stage showing what % of
-  the one before it converted, plus one overall paid/eligible figure.
+  the one before it converted, plus one overall paid/eligible figure. Click
+  any stage tile to see the actual leads behind that number (name, phone,
+  owner, status, a link to open each lead) — no more wondering "which 7
+  leads viewed the offer page."
 - **Daily trend chart** — the same five stages plotted per day, so you can
   spot exactly which day a drop-off started.
 - **Touches by channel** — how many WhatsApp sends the AI automation made
   vs. how many phone calls Sales/Telecaller logged against a funnel lead
-  (auto-counted from Call Log entries — no extra step for staff).
+  (auto-counted from Call Log entries — no extra step for staff). Click the
+  "AI (WhatsApp)" row to open the full **Message Log** below.
 - **AI-only vs. staff-assisted conversion** — of the leads who actually
   paid, how many got a phone call before they paid vs. converted from the
   automated WhatsApp messages alone. This is the number to watch if you're
@@ -429,6 +433,21 @@ above), with a pickable date range instead of a fixed 7 days:
 - **Awaiting service tag** — a callout for Meta leads that can't enter this
   funnel yet because nobody has tagged a service on them (they need the GMB
   service tag to qualify); links straight to those leads.
+- **Failed sends** — a red callout when any AI-WhatsApp message failed to
+  send in the window, linking straight to those leads so someone can follow
+  up manually. Only appears when there's something to act on.
+- **Not yet invited** — an amber callout for eligible leads the automation
+  hasn't reached yet (usually just a few seconds/minutes behind, but worth
+  a look if the count doesn't clear).
+
+**Message Log** ("Message log →" at the top of the dashboard) is the
+detailed "when and to whom" record behind the AI-WhatsApp numbers: every
+send attempt (first invite, recovery nudge, payment confirmation), the
+exact time, which lead, and whether it succeeded or failed — filterable by
+message type and outcome. Use this whenever something looks off in the
+funnel (a lead who should've been invited but wasn't, a stage that isn't
+converting) to check whether the automation actually tried and what
+happened.
 
 The **Visibility Audit Recovery** worklist (Sidebar → Lead Generation →
 the "Recovery worklist" link on this page) is where you or Sales/Telecaller
