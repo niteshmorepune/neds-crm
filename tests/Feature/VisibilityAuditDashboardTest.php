@@ -55,6 +55,30 @@ it('renders cleanly with zero data in the window', function () {
     $this->actingAs($manager)->get(route('reports.visibility-audit-funnel'))->assertOk();
 });
 
+it('shows an all-caught-up confirmation when every eligible lead has been invited', function () {
+    Queue::fake();
+    $gmb = Service::factory()->create(['name' => 'GMB', 'is_active' => true]);
+    Lead::factory()->create(['meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => $gmb->id, 'visibility_audit_invited_at' => now()]);
+    $manager = User::factory()->role(UserRole::Manager)->create();
+
+    $this->actingAs($manager)->get(route('reports.visibility-audit-funnel'))
+        ->assertOk()
+        ->assertSee('all caught up')
+        ->assertDontSee('been invited yet');
+});
+
+it('flags eligible leads not yet invited instead of the all-caught-up confirmation', function () {
+    Queue::fake();
+    $gmb = Service::factory()->create(['name' => 'GMB', 'is_active' => true]);
+    Lead::factory()->create(['meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => $gmb->id, 'visibility_audit_invited_at' => null]);
+    $manager = User::factory()->role(UserRole::Manager)->create();
+
+    $this->actingAs($manager)->get(route('reports.visibility-audit-funnel'))
+        ->assertOk()
+        ->assertSee('been invited yet')
+        ->assertDontSee('all caught up');
+});
+
 it('flags Meta leads awaiting a service tag', function () {
     Queue::fake();
     Lead::factory()->create(['meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => null]);

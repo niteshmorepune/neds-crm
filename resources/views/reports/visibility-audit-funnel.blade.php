@@ -35,6 +35,10 @@
                 <strong>{{ $notYetInvited }}</strong> eligible lead(s) in this window haven't been invited yet — likely still queued, but worth checking if it's been more than a few minutes.
                 <a href="{{ route('reports.visibility-audit-funnel.leads', ['stage' => 'not_invited', 'from' => $fromInput, 'to' => $toInput]) }}" class="underline">Review →</a>
             </div>
+        @else
+            <div class="rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800">
+                <strong>0</strong> eligible leads pending an invite — all caught up.
+            </div>
         @endif
 
         {{-- Funnel stage counts + stage-to-stage conversion --}}
