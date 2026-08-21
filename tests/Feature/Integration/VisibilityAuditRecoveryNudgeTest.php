@@ -142,6 +142,51 @@ it('skips sending when the lead paid after the job was queued but before it ran'
     expect($event->fresh()->nudged_at)->toBeNull();
 });
 
+it('skips sending when staff already replied over WhatsApp since the visit', function () {
+    // Regression test for a real incident (2026-08-21): the recovery-nudge
+    // command's own query already excludes a lead staff has replied to, but
+    // that's a dispatch-time snapshot — the database queue means real time
+    // passes before this job's handle() actually runs. A customer already
+    // mid-conversation with a human-sent proposal must not get the
+    // "still haven't claimed the offer" nudge.
+    Http::fake(['https://wadesk.test/api/send-template' => Http::response(['conversationId' => 'c1'], 201)]);
+
+    $lead = Lead::factory()->create(['phone' => '+91 98765 43210']);
+    $event = VisibilityAuditFunnelEvent::create([
+        'event_type' => VisibilityAuditFunnelEventType::PaymentViewed,
+        'lead_id' => $lead->id,
+    ]);
+    $lead->notes()->create([
+        'user_id' => null,
+        'body' => "[Sent via WhatsApp by Kiran Katte]\nYes we will create the proposal and share it with you soon",
+    ]);
+
+    (new SendVisibilityAuditRecoveryNudgeJob($lead->id, $event->id, VisibilityAuditFunnelEventType::PaymentViewed))->handle();
+
+    Http::assertNothingSent();
+    expect($event->fresh()->nudged_at)->toBeNull();
+});
+
+it('still sends when only the AI after-hours assistant has replied since the visit', function () {
+    // The AI's own holding reply is not a human taking over — it must not
+    // suppress the recovery nudge the way a real staff reply does.
+    Http::fake(['https://wadesk.test/api/send-template' => Http::response(['conversationId' => 'c1'], 201)]);
+
+    $lead = Lead::factory()->create(['phone' => '+91 98765 43210']);
+    $event = VisibilityAuditFunnelEvent::create([
+        'event_type' => VisibilityAuditFunnelEventType::PaymentViewed,
+        'lead_id' => $lead->id,
+    ]);
+    $lead->notes()->create([
+        'user_id' => null,
+        'body' => "[Sent via WhatsApp by AI Assistant (auto-reply)]\nThanks for your interest, our team will follow up soon.",
+    ]);
+
+    (new SendVisibilityAuditRecoveryNudgeJob($lead->id, $event->id, VisibilityAuditFunnelEventType::PaymentViewed))->handle();
+
+    Http::assertSent(fn ($request) => $request['templateName'] === 'va_recovery_checkout');
+});
+
 it('no-ops when the template for that stage is not configured', function () {
     config(['services.wadesk.visibility_audit_recovery_checkout_template_name' => null]);
     Http::fake();
@@ -200,6 +245,39 @@ it('excludes a lead who already paid from pending nudges', function () {
     $pending = app(VisibilityAuditFunnelMetrics::class)->pendingCheckoutNudges(now()->subHours(2))->pluck('id');
 
     expect($pending)->not->toContain($lead->id);
+});
+
+it('excludes a lead staff already replied to (over WhatsApp) since the visit from pending nudges', function () {
+    $lead = Lead::factory()->create();
+    $event = VisibilityAuditFunnelEvent::create(['event_type' => VisibilityAuditFunnelEventType::PaymentViewed, 'lead_id' => $lead->id]);
+    backdateEvent($event, now()->subHours(3));
+    $lead->notes()->create([
+        'user_id' => null,
+        'body' => "[Sent via WhatsApp by Kiran Katte]\nYes we will create the proposal and share it with you soon",
+    ]);
+
+    $pending = app(VisibilityAuditFunnelMetrics::class)->pendingCheckoutNudges(now()->subHours(2))->pluck('id');
+
+    expect($pending)->not->toContain($lead->id);
+});
+
+it('still includes a lead in pending nudges when a staff reply predates the stuck visit', function () {
+    // An old staff reply from a prior, already-resolved conversation
+    // shouldn't permanently silence the nudge for a fresh visit.
+    $lead = Lead::factory()->create();
+    $note = $lead->notes()->create([
+        'user_id' => null,
+        'body' => "[Sent via WhatsApp by Kiran Katte]\nHappy to help with your earlier query!",
+    ]);
+    $note->created_at = now()->subHours(4);
+    $note->save();
+
+    $event = VisibilityAuditFunnelEvent::create(['event_type' => VisibilityAuditFunnelEventType::PaymentViewed, 'lead_id' => $lead->id]);
+    backdateEvent($event, now()->subHours(3));
+
+    $pending = app(VisibilityAuditFunnelMetrics::class)->pendingCheckoutNudges(now()->subHours(2))->pluck('id');
+
+    expect($pending)->toContain($lead->id);
 });
 
 // ──────────────────────────────────────────────────────────────────────────────

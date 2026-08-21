@@ -53,14 +53,19 @@ class VisibilityAuditFunnelMetrics
      * stuckAtLanding(), narrowed to Leads whose latest landing_viewed event
      * hasn't been nudged yet and is older than $olderThan — used by
      * SendVisibilityAuditRecoveryNudges so a lead is only ever nudged once
-     * per visit, not once per scheduler run.
+     * per visit, not once per scheduler run. Also excludes a lead staff has
+     * already replied to (over WhatsApp) since that visit — real incident,
+     * 2026-08-21: a customer already mid-conversation with a human-sent
+     * custom proposal still got the automated "you haven't claimed the
+     * offer" nudge, since nothing previously checked for this.
      */
     public function pendingLandingNudges(Carbon $olderThan): Collection
     {
         return $this->stuckAtLanding()->filter(function (Lead $lead) use ($olderThan) {
             $latest = $lead->visibilityAuditFunnelEvents->first();
 
-            return $latest !== null && $latest->nudged_at === null && $latest->created_at->lte($olderThan);
+            return $latest !== null && $latest->nudged_at === null && $latest->created_at->lte($olderThan)
+                && ! $lead->hasStaffWhatsappReplySince($latest->created_at);
         })->values();
     }
 
@@ -72,7 +77,8 @@ class VisibilityAuditFunnelMetrics
         return $this->stuckAtCheckout()->filter(function (Lead $lead) use ($olderThan) {
             $latest = $lead->visibilityAuditFunnelEvents->first();
 
-            return $latest !== null && $latest->nudged_at === null && $latest->created_at->lte($olderThan);
+            return $latest !== null && $latest->nudged_at === null && $latest->created_at->lte($olderThan)
+                && ! $lead->hasStaffWhatsappReplySince($latest->created_at);
         })->values();
     }
 

@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 #[ObservedBy(LeadObserver::class)]
 class Lead extends Model
@@ -165,6 +166,24 @@ class Lead extends Model
     public function latestNote(): MorphOne
     {
         return $this->morphOne(Note::class, 'notable')->latestOfMany();
+    }
+
+    /**
+     * True when a human staff member has replied to this lead over WhatsApp
+     * at or after $since — captured as a Note by WhatsappWebhookController::
+     * noteBody(), the only place this exact "[Sent via WhatsApp by " prefix
+     * is written. Excludes the AI after-hours assistant's own auto-replies
+     * (same prefix, fixed "AI Assistant (auto-reply)" label) — a holding
+     * message from the AI isn't a human taking over the conversation, so it
+     * must not suppress a recovery nudge the way a real staff reply does.
+     */
+    public function hasStaffWhatsappReplySince(Carbon $since): bool
+    {
+        return $this->notes()
+            ->where('created_at', '>=', $since)
+            ->where('body', 'like', '[Sent via WhatsApp by %')
+            ->where('body', 'not like', '[Sent via WhatsApp by AI Assistant (auto-reply)]%')
+            ->exists();
     }
 
     public function callLogs(): MorphMany
