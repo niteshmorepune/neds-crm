@@ -82,6 +82,30 @@ class VisibilityAuditFunnelMetrics
         })->values();
     }
 
+    /**
+     * Eligible leads (meta_leadgen_id + GMB, see notYetInvitedCount()) whose
+     * first invite still hasn't gone out, older than $olderThan — used by
+     * SendVisibilityAuditFirstInviteSweep so a lead whose eligibility-time
+     * dispatch silently no-op'd (e.g. wadesk config briefly unset, a
+     * transient HTTP failure — SendVisibilityAuditFirstInviteJob never
+     * throws, so a queue worker never retries it on its own) still gets
+     * invited eventually instead of depending on someone noticing the
+     * "Not yet invited" dashboard callout. Real incident, 2026-08-21: 3
+     * leads (#234/#235/#236) sat eligible-but-uninvited for ~3 days with
+     * zero send attempts logged, only found by checking that callout by
+     * hand. Excludes a lead who already purchased — SendVisibilityAuditFirstInviteJob
+     * re-checks this again immediately before sending regardless, same
+     * dual-layer pattern as the recovery nudges' payment-race guard.
+     */
+    public function pendingFirstInvites(Carbon $olderThan): Collection
+    {
+        return $this->eligibleLeadsQuery(null, null)
+            ->whereNull('visibility_audit_invited_at')
+            ->whereDoesntHave('visibilityAuditPurchases')
+            ->where('created_at', '<=', $olderThan)
+            ->get();
+    }
+
     private function stuckQuery(VisibilityAuditFunnelEventType $type)
     {
         return Lead::query()

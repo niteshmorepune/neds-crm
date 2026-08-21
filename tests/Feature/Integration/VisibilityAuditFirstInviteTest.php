@@ -13,6 +13,7 @@ use App\Models\VisibilityAuditPurchase;
 use App\Models\VisibilityAuditTouch;
 use App\Services\VisibilityAuditFunnelMetrics;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 
@@ -357,4 +358,83 @@ it('bounds the funnel summary by lead creation date when a range is given', func
     $summary = app(VisibilityAuditFunnelMetrics::class)->funnelSummary(now()->subDays(7), now());
 
     expect($summary['eligible'])->toBe(1);
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// First-invite sweep — safety net for a one-shot dispatch that silently no-op'd
+// ──────────────────────────────────────────────────────────────────────────────
+
+it('surfaces an eligible, uninvited lead older than the wait threshold as pending', function () {
+    Queue::fake();
+
+    $lead = Lead::factory()->create(['meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => $this->gmb->id]);
+    $lead->created_at = now()->subMinutes(15);
+    $lead->saveQuietly();
+
+    $pending = app(VisibilityAuditFunnelMetrics::class)->pendingFirstInvites(now()->subMinutes(10))->pluck('id');
+
+    expect($pending)->toContain($lead->id);
+});
+
+it('does not surface an eligible lead still inside the wait threshold', function () {
+    Queue::fake();
+
+    $lead = Lead::factory()->create(['meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => $this->gmb->id]);
+
+    $pending = app(VisibilityAuditFunnelMetrics::class)->pendingFirstInvites(now()->subMinutes(10))->pluck('id');
+
+    expect($pending)->not->toContain($lead->id);
+});
+
+it('does not surface an already-invited lead', function () {
+    Queue::fake();
+
+    $lead = Lead::factory()->create([
+        'meta_leadgen_id' => 'lg_'.uniqid(),
+        'service_id' => $this->gmb->id,
+        'visibility_audit_invited_at' => now(),
+    ]);
+    $lead->created_at = now()->subMinutes(15);
+    $lead->saveQuietly();
+
+    $pending = app(VisibilityAuditFunnelMetrics::class)->pendingFirstInvites(now()->subMinutes(10))->pluck('id');
+
+    expect($pending)->not->toContain($lead->id);
+});
+
+it('does not surface a lead who already purchased despite never being marked invited', function () {
+    Queue::fake();
+
+    $lead = Lead::factory()->create(['meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => $this->gmb->id]);
+    $lead->created_at = now()->subMinutes(15);
+    $lead->saveQuietly();
+    VisibilityAuditPurchase::create([
+        'tier' => VisibilityAuditTier::Gbp,
+        'amount_paise' => 12000,
+        'razorpay_payment_id' => 'pay_va_sweep1',
+        'lead_id' => $lead->id,
+    ]);
+
+    $pending = app(VisibilityAuditFunnelMetrics::class)->pendingFirstInvites(now()->subMinutes(10))->pluck('id');
+
+    expect($pending)->not->toContain($lead->id);
+});
+
+it('dispatches the first-invite job for every pending lead when the sweep command runs', function () {
+    Queue::fake();
+
+    $stuck = Lead::factory()->create(['meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => $this->gmb->id]);
+    $stuck->created_at = now()->subDays(3);
+    $stuck->saveQuietly();
+
+    $fresh = Lead::factory()->create(['meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => $this->gmb->id]);
+
+    // Re-fake to discard the creation-time dispatches from LeadObserver above
+    // — this test is only about what the sweep command itself pushes.
+    Queue::fake();
+
+    Artisan::call('app:send-visibility-audit-first-invite-sweep');
+
+    Queue::assertPushed(SendVisibilityAuditFirstInviteJob::class, fn ($job) => $job->leadId === $stuck->id);
+    Queue::assertNotPushed(SendVisibilityAuditFirstInviteJob::class, fn ($job) => $job->leadId === $fresh->id);
 });

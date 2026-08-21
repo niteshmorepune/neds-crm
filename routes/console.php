@@ -78,6 +78,12 @@ Schedule::command('app:escalate-untouched-leads')->everyFiveMinutes();
 // until both WADESK_VISIBILITY_AUDIT_RECOVERY_*_TEMPLATE_NAME are set.
 Schedule::command('app:send-visibility-audit-recovery-nudges')->everyThirtyMinutes();
 
+// Visibility Audit first-invite sweep — safety net for a lead whose
+// one-shot eligibility dispatch silently no-op'd (see
+// SendVisibilityAuditFirstInviteSweep's own docblock for the real incident
+// this covers). 10 min matches the sweep's own wait threshold.
+Schedule::command('app:send-visibility-audit-first-invite-sweep')->everyTenMinutes();
+
 // Ticket SLA breach escalation — check hourly during the working day.
 Schedule::command('app:check-ticket-sla')->hourly();
 
