@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\VisibilityAuditFunnelEventType;
 use App\Enums\VisibilityAuditTouchChannel;
+use App\Enums\VisibilityAuditTouchType;
 use App\Models\Lead;
 use App\Models\Service;
 use App\Models\VisibilityAuditFunnelEvent;
@@ -178,6 +179,41 @@ class VisibilityAuditFunnelMetrics
     }
 
     /**
+     * The actual Leads behind one funnelSummary() stage count, for the
+     * dashboard's drill-down — e.g. "which 7 leads viewed the offer page".
+     * $stage is one of the funnelSummary() keys: eligible, invited,
+     * landing_viewed, checkout_viewed, paid. Each stage is evaluated
+     * independently (not narrowed to leads who also hit every earlier
+     * stage) so the returned count always matches the tile that was
+     * clicked — same "each stage a subset in spirit, not a strict funnel
+     * query" caveat documented on funnelSummary() itself.
+     *
+     * @return Collection<int, Lead>
+     */
+    public function leadsForStage(string $stage, ?Carbon $from = null, ?Carbon $to = null): Collection
+    {
+        $withPaid = fn ($q) => $q->with(['owner', 'visibilityAuditPurchases' => fn ($p) => $p->latest()]);
+
+        return match ($stage) {
+            'eligible' => $withPaid($this->eligibleLeadsQuery($from, $to))->latest('created_at')->get(),
+            'invited' => $withPaid($this->eligibleLeadsQuery($from, $to)->whereNotNull('visibility_audit_invited_at'))
+                ->latest('visibility_audit_invited_at')->get(),
+            'landing_viewed' => $withPaid($this->eligibleLeadsQuery($from, $to)
+                ->whereHas('visibilityAuditFunnelEvents', fn ($q) => $q->where('event_type', VisibilityAuditFunnelEventType::LandingViewed)))
+                ->latest('created_at')->get(),
+            'checkout_viewed' => $withPaid($this->eligibleLeadsQuery($from, $to)
+                ->whereHas('visibilityAuditFunnelEvents', fn ($q) => $q->where('event_type', VisibilityAuditFunnelEventType::PaymentViewed)))
+                ->latest('created_at')->get(),
+            'paid' => $withPaid($this->eligibleLeadsQuery($from, $to)
+                ->whereHas('visibilityAuditPurchases'))
+                ->latest('created_at')->get(),
+            'not_invited' => $withPaid($this->eligibleLeadsQuery($from, $to)->whereNull('visibility_audit_invited_at'))
+                ->latest('created_at')->get(),
+            default => throw new \InvalidArgumentException("Unknown funnel stage [{$stage}]."),
+        };
+    }
+
+    /**
      * How many touches each channel made in the window — the raw activity
      * count behind conversionByChannel()'s "does it actually convert" question.
      *
@@ -236,6 +272,59 @@ class VisibilityAuditFunnelMetrics
             'total' => $total,
             'staff_assisted_pct' => $this->pct($staffAssisted, $total),
         ];
+    }
+
+    /**
+     * Eligible leads (meta_leadgen_id + GMB) the AI first-invite job hasn't
+     * reached yet — the "who's supposed to get a WhatsApp message but
+     * hasn't" gap, distinct from awaitingServiceTag() below (which is leads
+     * that can't even become eligible yet). A lead sits here either because
+     * the invite is still queued (transient, seconds-scale) or because every
+     * send attempt so far failed (see failedTouchesCount()) — the message
+     * log distinguishes the two.
+     */
+    public function notYetInvitedCount(?Carbon $from = null, ?Carbon $to = null): int
+    {
+        return $this->eligibleLeadsQuery($from, $to)->whereNull('visibility_audit_invited_at')->count();
+    }
+
+    /**
+     * Every outbound AI-WhatsApp send *attempt* logged in the window — the
+     * detailed "when and to whom" report behind touchesByChannel()'s bare
+     * count, so the team can see exactly which message went to which lead
+     * and spot anything that needs manual follow-up. $touchType/$success
+     * narrow to one message type / outcome (used by the message-log page's
+     * own filters); omit either for everything. Always AI-WhatsApp only —
+     * a staff call's own detail already lives on the Lead's Call Log tab,
+     * so this report stays scoped to the channel nobody else already lists.
+     */
+    public function touchLogQuery(?Carbon $from = null, ?Carbon $to = null, ?VisibilityAuditTouchType $touchType = null, ?bool $success = null)
+    {
+        return VisibilityAuditTouch::query()
+            ->where('channel', VisibilityAuditTouchChannel::AiWhatsapp)
+            ->with(['lead' => fn ($q) => $q->withTrashed()->with('owner')])
+            ->when($from, fn ($q) => $q->where('occurred_at', '>=', $from))
+            ->when($to, fn ($q) => $q->where('occurred_at', '<=', $to))
+            ->when($touchType, fn ($q) => $q->where('touch_type', $touchType))
+            ->when($success !== null, fn ($q) => $q->where('success', $success))
+            ->latest('occurred_at');
+    }
+
+    /**
+     * How many AI-WhatsApp send attempts in the window failed outright — a
+     * failure is captured (not just Log::warning'd) precisely so this figure
+     * exists; a non-zero count here is the team's signal that a lead was
+     * *supposed* to get a message and didn't, distinct from
+     * notYetInvitedCount()'s "not attempted yet" gap.
+     */
+    public function failedTouchesCount(?Carbon $from = null, ?Carbon $to = null): int
+    {
+        return VisibilityAuditTouch::query()
+            ->where('channel', VisibilityAuditTouchChannel::AiWhatsapp)
+            ->where('success', false)
+            ->when($from, fn ($q) => $q->where('occurred_at', '>=', $from))
+            ->when($to, fn ($q) => $q->where('occurred_at', '<=', $to))
+            ->count();
     }
 
     /**

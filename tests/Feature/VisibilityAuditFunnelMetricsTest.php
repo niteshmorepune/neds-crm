@@ -98,6 +98,77 @@ it('does not mis-bucket a lead created just after IST midnight into the previous
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
+// leadsForStage()
+// ──────────────────────────────────────────────────────────────────────────────
+
+it('returns the actual leads behind each stage count', function () {
+    $paid = Lead::factory()->create(['meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => $this->gmb->id, 'visibility_audit_invited_at' => now()]);
+    VisibilityAuditFunnelEvent::create(['event_type' => VisibilityAuditFunnelEventType::LandingViewed, 'lead_id' => $paid->id]);
+    VisibilityAuditFunnelEvent::create(['event_type' => VisibilityAuditFunnelEventType::PaymentViewed, 'lead_id' => $paid->id]);
+    VisibilityAuditPurchase::create(['tier' => VisibilityAuditTier::Gbp, 'amount_paise' => 12000, 'razorpay_payment_id' => 'pay_stage1', 'lead_id' => $paid->id]);
+
+    $invitedOnly = Lead::factory()->create(['meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => $this->gmb->id, 'visibility_audit_invited_at' => now()]);
+    $notInvited = Lead::factory()->create(['meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => $this->gmb->id]);
+    Lead::factory()->create(); // out of cohort entirely
+
+    expect($this->metrics->leadsForStage('eligible')->pluck('id')->sort()->values()->all())
+        ->toBe(collect([$paid->id, $invitedOnly->id, $notInvited->id])->sort()->values()->all())
+        ->and($this->metrics->leadsForStage('invited')->pluck('id')->sort()->values()->all())
+        ->toBe(collect([$paid->id, $invitedOnly->id])->sort()->values()->all())
+        ->and($this->metrics->leadsForStage('landing_viewed')->pluck('id')->all())
+        ->toBe([$paid->id])
+        ->and($this->metrics->leadsForStage('checkout_viewed')->pluck('id')->all())
+        ->toBe([$paid->id])
+        ->and($this->metrics->leadsForStage('paid')->pluck('id')->all())
+        ->toBe([$paid->id]);
+});
+
+it('throws on an unknown stage key', function () {
+    $this->metrics->leadsForStage('bogus');
+})->throws(InvalidArgumentException::class);
+
+// ──────────────────────────────────────────────────────────────────────────────
+// notYetInvitedCount() / failedTouchesCount() / touchLogQuery()
+// ──────────────────────────────────────────────────────────────────────────────
+
+it('counts eligible leads with no invite sent yet', function () {
+    Lead::factory()->create(['meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => $this->gmb->id, 'visibility_audit_invited_at' => now()]);
+    Lead::factory()->create(['meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => $this->gmb->id]);
+    Lead::factory()->create(['meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => $this->gmb->id]);
+
+    expect($this->metrics->notYetInvitedCount())->toBe(2);
+});
+
+it('counts failed AI-WhatsApp send attempts, excluding staff-call and successful rows', function () {
+    $lead = Lead::factory()->create();
+
+    VisibilityAuditTouch::create(['lead_id' => $lead->id, 'touch_type' => VisibilityAuditTouchType::FirstInvite, 'channel' => VisibilityAuditTouchChannel::AiWhatsapp, 'occurred_at' => now(), 'success' => false]);
+    VisibilityAuditTouch::create(['lead_id' => $lead->id, 'touch_type' => VisibilityAuditTouchType::RecoveryNudgeLanding, 'channel' => VisibilityAuditTouchChannel::AiWhatsapp, 'occurred_at' => now(), 'success' => true]);
+    VisibilityAuditTouch::create(['lead_id' => $lead->id, 'touch_type' => VisibilityAuditTouchType::ManualOutreach, 'channel' => VisibilityAuditTouchChannel::StaffCall, 'occurred_at' => now(), 'success' => false]);
+
+    expect($this->metrics->failedTouchesCount())->toBe(1);
+});
+
+it('lists AI-WhatsApp touches with lead attached, filterable by type and outcome', function () {
+    $lead = Lead::factory()->create(['name' => 'Touch Log Lead']);
+
+    VisibilityAuditTouch::create(['lead_id' => $lead->id, 'touch_type' => VisibilityAuditTouchType::FirstInvite, 'channel' => VisibilityAuditTouchChannel::AiWhatsapp, 'occurred_at' => now(), 'success' => true]);
+    VisibilityAuditTouch::create(['lead_id' => $lead->id, 'touch_type' => VisibilityAuditTouchType::RecoveryNudgeLanding, 'channel' => VisibilityAuditTouchChannel::AiWhatsapp, 'occurred_at' => now(), 'success' => false, 'meta' => ['error' => 'timeout']]);
+    VisibilityAuditTouch::create(['lead_id' => $lead->id, 'touch_type' => VisibilityAuditTouchType::ManualOutreach, 'channel' => VisibilityAuditTouchChannel::StaffCall, 'occurred_at' => now(), 'success' => true]);
+
+    $all = $this->metrics->touchLogQuery()->get();
+    expect($all)->toHaveCount(2)
+        ->and($all->first()->lead->name)->toBe('Touch Log Lead');
+
+    $failedOnly = $this->metrics->touchLogQuery(null, null, null, false)->get();
+    expect($failedOnly)->toHaveCount(1)
+        ->and($failedOnly->first()->meta['error'])->toBe('timeout');
+
+    $firstInviteOnly = $this->metrics->touchLogQuery(null, null, VisibilityAuditTouchType::FirstInvite)->get();
+    expect($firstInviteOnly)->toHaveCount(1);
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
 // touchesByChannel() / conversionByChannel()
 // ──────────────────────────────────────────────────────────────────────────────
 

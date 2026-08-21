@@ -5,6 +5,7 @@
         <div class="flex flex-wrap items-center justify-between gap-2">
             <h1 class="text-xl font-semibold text-gray-900">Visibility Audit Funnel Dashboard</h1>
             <div class="flex items-center gap-3">
+                <a href="{{ route('reports.visibility-audit-funnel.messages', ['from' => $fromInput, 'to' => $toInput]) }}" class="text-sm font-medium text-indigo-600 hover:underline">Message log →</a>
                 <a href="{{ route('leads.visibility-audit-recovery') }}" class="text-sm font-medium text-indigo-600 hover:underline">Recovery worklist →</a>
                 <form method="GET" class="flex items-center gap-2">
                     <input type="date" name="from" value="{{ $fromInput }}" class="rounded-md border-gray-300 text-xs shadow-sm" />
@@ -22,37 +23,55 @@
             </div>
         @endif
 
+        @if ($failedTouches > 0)
+            <div class="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-900">
+                <strong>{{ $failedTouches }}</strong> AI-WhatsApp send(s) failed in this window — these leads didn't get their message and need a manual follow-up.
+                <a href="{{ route('reports.visibility-audit-funnel.messages', ['from' => $fromInput, 'to' => $toInput, 'outcome' => 'failed']) }}" class="underline">Review failed sends →</a>
+            </div>
+        @endif
+
+        @if ($notYetInvited > 0)
+            <div class="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                <strong>{{ $notYetInvited }}</strong> eligible lead(s) in this window haven't been invited yet — likely still queued, but worth checking if it's been more than a few minutes.
+                <a href="{{ route('reports.visibility-audit-funnel.leads', ['stage' => 'not_invited', 'from' => $fromInput, 'to' => $toInput]) }}" class="underline">Review →</a>
+            </div>
+        @endif
+
         {{-- Funnel stage counts + stage-to-stage conversion --}}
         <div>
             <h3 class="text-sm font-semibold uppercase tracking-wide text-gray-500 mb-2">
                 Meta lead-form → paid, GMB-tagged leads
             </h3>
             <div class="grid grid-cols-2 gap-3 sm:grid-cols-5">
-                <div class="rounded-lg bg-white p-4 shadow-sm">
+                @php
+                    $stageHref = fn (string $stage) => route('reports.visibility-audit-funnel.leads', ['stage' => $stage, 'from' => $fromInput, 'to' => $toInput]);
+                @endphp
+                <a href="{{ $stageHref('eligible') }}" class="rounded-lg bg-white p-4 shadow-sm hover:ring-1 hover:ring-indigo-300">
                     <div class="text-xs text-gray-500">Eligible leads</div>
-                    <div class="text-xl font-semibold">{{ $funnel['eligible'] }}</div>
-                </div>
-                <div class="rounded-lg bg-white p-4 shadow-sm">
+                    <div class="text-xl font-semibold text-indigo-600">{{ $funnel['eligible'] }}</div>
+                </a>
+                <a href="{{ $stageHref('invited') }}" class="rounded-lg bg-white p-4 shadow-sm hover:ring-1 hover:ring-indigo-300">
                     <div class="text-xs text-gray-500">Invited via WhatsApp</div>
-                    <div class="text-xl font-semibold">{{ $funnel['invited'] }}</div>
+                    <div class="text-xl font-semibold text-indigo-600">{{ $funnel['invited'] }}</div>
                     <div class="text-xs text-gray-400">{{ $funnel['invited_pct'] !== null ? $funnel['invited_pct'].'% of eligible' : '—' }}</div>
-                </div>
-                <div class="rounded-lg bg-white p-4 shadow-sm">
+                </a>
+                <a href="{{ $stageHref('landing_viewed') }}" class="rounded-lg bg-white p-4 shadow-sm hover:ring-1 hover:ring-indigo-300">
                     <div class="text-xs text-gray-500">Viewed offer page</div>
-                    <div class="text-xl font-semibold">{{ $funnel['landing_viewed'] }}</div>
+                    <div class="text-xl font-semibold text-indigo-600">{{ $funnel['landing_viewed'] }}</div>
                     <div class="text-xs text-gray-400">{{ $funnel['landing_pct'] !== null ? $funnel['landing_pct'].'% of invited' : '—' }}</div>
-                </div>
-                <div class="rounded-lg bg-white p-4 shadow-sm">
+                </a>
+                <a href="{{ $stageHref('checkout_viewed') }}" class="rounded-lg bg-white p-4 shadow-sm hover:ring-1 hover:ring-indigo-300">
                     <div class="text-xs text-gray-500">Reached checkout</div>
-                    <div class="text-xl font-semibold">{{ $funnel['checkout_viewed'] }}</div>
+                    <div class="text-xl font-semibold text-indigo-600">{{ $funnel['checkout_viewed'] }}</div>
                     <div class="text-xs text-gray-400">{{ $funnel['checkout_pct'] !== null ? $funnel['checkout_pct'].'% of viewed' : '—' }}</div>
-                </div>
-                <div class="rounded-lg bg-white p-4 shadow-sm">
+                </a>
+                <a href="{{ $stageHref('paid') }}" class="rounded-lg bg-white p-4 shadow-sm hover:ring-1 hover:ring-indigo-300">
                     <div class="text-xs text-gray-500">Paid</div>
-                    <div class="text-xl font-semibold">{{ $funnel['paid'] }}</div>
+                    <div class="text-xl font-semibold text-indigo-600">{{ $funnel['paid'] }}</div>
                     <div class="text-xs text-gray-400">{{ $funnel['paid_pct'] !== null ? $funnel['paid_pct'].'% of checkout' : '—' }}</div>
-                </div>
+                </a>
             </div>
+            <p class="mt-1 text-xs text-gray-400">Click a tile to see the leads behind that number.</p>
             <p class="mt-2 text-xs text-gray-500">Overall conversion (paid / eligible): <span class="font-medium text-gray-700">{{ $funnel['overall_pct'] !== null ? $funnel['overall_pct'].'%' : '—' }}</span></p>
         </div>
 
@@ -77,7 +96,9 @@
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         <tr>
-                            <td class="px-4 py-2 font-medium text-gray-900">AI (WhatsApp)</td>
+                            <td class="px-4 py-2 font-medium text-gray-900">
+                                <a href="{{ route('reports.visibility-audit-funnel.messages', ['from' => $fromInput, 'to' => $toInput]) }}" class="text-indigo-600 hover:underline">AI (WhatsApp) →</a>
+                            </td>
                             <td class="px-4 py-2 text-gray-700">{{ $touchesByChannel['ai_whatsapp'] }}</td>
                         </tr>
                         <tr>

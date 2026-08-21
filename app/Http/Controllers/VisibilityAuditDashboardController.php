@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\UserRole;
+use App\Enums\VisibilityAuditTouchType;
 use App\Services\VisibilityAuditFunnelMetrics;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -23,6 +24,15 @@ use Illuminate\View\View;
  */
 class VisibilityAuditDashboardController extends Controller
 {
+    private const STAGES = [
+        'eligible' => 'Eligible leads',
+        'invited' => 'Invited via WhatsApp',
+        'landing_viewed' => 'Viewed offer page',
+        'checkout_viewed' => 'Reached checkout',
+        'paid' => 'Paid',
+        'not_invited' => 'Not yet invited',
+    ];
+
     public function index(Request $request, VisibilityAuditFunnelMetrics $metrics): View
     {
         abort_unless($request->user()->hasRole(UserRole::Admin, UserRole::Manager), 403);
@@ -35,6 +45,65 @@ class VisibilityAuditDashboardController extends Controller
             'touchesByChannel' => $metrics->touchesByChannel($from, $to),
             'conversionByChannel' => $metrics->conversionByChannel($from, $to),
             'awaitingServiceTag' => $metrics->awaitingServiceTag($from, $to),
+            'notYetInvited' => $metrics->notYetInvitedCount($from, $to),
+            'failedTouches' => $metrics->failedTouchesCount($from, $to),
+            'fromInput' => $request->string('from')->value() ?: $from->copy()->timezone(config('app.display_timezone', 'Asia/Kolkata'))->toDateString(),
+            'toInput' => $request->string('to')->value() ?: $to->copy()->timezone(config('app.display_timezone', 'Asia/Kolkata'))->toDateString(),
+        ]);
+    }
+
+    /**
+     * Drill-down behind one funnel stage tile — "which N leads viewed the
+     * offer page". Same date-range parsing/defaulting as index() so the
+     * count on the list always matches the tile that was clicked.
+     */
+    public function leads(Request $request, VisibilityAuditFunnelMetrics $metrics): View
+    {
+        abort_unless($request->user()->hasRole(UserRole::Admin, UserRole::Manager), 403);
+
+        $stage = $request->string('stage')->value();
+        abort_unless(array_key_exists($stage, self::STAGES), 404);
+
+        [$from, $to] = $this->dateRange($request);
+
+        return view('reports.visibility-audit-funnel-leads', [
+            'stage' => $stage,
+            'stageLabel' => self::STAGES[$stage],
+            'leads' => $metrics->leadsForStage($stage, $from, $to),
+            'fromInput' => $request->string('from')->value() ?: $from->copy()->timezone(config('app.display_timezone', 'Asia/Kolkata'))->toDateString(),
+            'toInput' => $request->string('to')->value() ?: $to->copy()->timezone(config('app.display_timezone', 'Asia/Kolkata'))->toDateString(),
+        ]);
+    }
+
+    /**
+     * The detailed "when and to whom" report behind the AI-WhatsApp channel
+     * — every send attempt (success or failure) with lead/type/timestamp,
+     * filterable by message type and outcome, so the team can spot anything
+     * that needs manual follow-up (a failed send here, or a lead with no
+     * attempt at all — index()'s "Not yet invited" callout).
+     */
+    public function messages(Request $request, VisibilityAuditFunnelMetrics $metrics): View
+    {
+        abort_unless($request->user()->hasRole(UserRole::Admin, UserRole::Manager), 403);
+
+        [$from, $to] = $this->dateRange($request);
+
+        $touchType = $request->filled('type') ? VisibilityAuditTouchType::tryFrom($request->string('type')->value()) : null;
+        $success = match ($request->string('outcome')->value()) {
+            'success' => true,
+            'failed' => false,
+            default => null,
+        };
+
+        $touches = $metrics->touchLogQuery($from, $to, $touchType, $success)
+            ->paginate(50)
+            ->withQueryString();
+
+        return view('reports.visibility-audit-funnel-messages', [
+            'touches' => $touches,
+            'touchTypes' => VisibilityAuditTouchType::cases(),
+            'typeFilter' => $touchType,
+            'outcomeFilter' => $request->string('outcome')->value(),
             'fromInput' => $request->string('from')->value() ?: $from->copy()->timezone(config('app.display_timezone', 'Asia/Kolkata'))->toDateString(),
             'toInput' => $request->string('to')->value() ?: $to->copy()->timezone(config('app.display_timezone', 'Asia/Kolkata'))->toDateString(),
         ]);

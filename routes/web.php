@@ -326,6 +326,8 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
      */
     Route::middleware('menu.access:visibility-audit-funnel')->group(function () {
         Route::get('reports/visibility-audit-funnel', [VisibilityAuditDashboardController::class, 'index'])->name('reports.visibility-audit-funnel');
+        Route::get('reports/visibility-audit-funnel/leads', [VisibilityAuditDashboardController::class, 'leads'])->name('reports.visibility-audit-funnel.leads');
+        Route::get('reports/visibility-audit-funnel/messages', [VisibilityAuditDashboardController::class, 'messages'])->name('reports.visibility-audit-funnel.messages');
     });
 
     /*
