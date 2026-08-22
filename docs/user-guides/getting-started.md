@@ -279,7 +279,13 @@ than guessing.
   through a Recurring Invoice template, not a fresh invoice logged by hand
   against the Project every month. If a client's ongoing service only shows
   under Projects with no matching row under Recurring Services, that's
-  usually a sign a template still needs to be set up for it.
+  usually a sign a template still needs to be set up for it. One
+  exception: a **reseller-billed** client (see Manager guide → Reseller
+  billing) genuinely has an active template — it just won't show on that
+  client's own page at all unless the template is linked to the client's
+  own Project (Invoices → Recurring Invoices → Project field). Don't
+  assume "nothing under Recurring Services" always means "never set up"
+  for this kind of client — check whether they're reseller-billed first.
 
 ---
 Next: read the guide for your role — [Sales](sales.md), [Support](support.md),

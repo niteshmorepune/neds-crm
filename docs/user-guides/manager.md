@@ -671,6 +671,19 @@ being billed to. The client you originally picked stays linked for
 internal tracking (deals, projects, tasks) — only the actual GST bill-to
 party changes.
 
+**Where a reseller-billed client's own invoice/service actually shows
+up:** since the GST bill goes to the reseller, not the client, it never
+appears on that client's own Invoices/Services tabs unless the recurring
+invoice template (or the invoice itself) is linked to one of the
+client's own Projects — see Accounts guide → Recurring invoices → Project
+field. Once linked, that client's own Client page correctly lists it,
+tagged **Billed via {reseller}** in amber, alongside their real Health
+Score reflecting it too (an overdue reseller-billed invoice now trips the
+same Overdue Invoice flag as a directly-billed one). A client with no
+Project link at all will still look empty on their own page even though
+real billing exists for them — check the reseller's own Partner page
+(above) in that case, or add the Project link yourself.
+
 ## Notice Board
 **Notice Board** in the sidebar (Admin/Manager only) is for posting time-bound
 company notices — office closures, holidays, policy changes, service updates

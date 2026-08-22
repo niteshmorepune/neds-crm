@@ -327,6 +327,17 @@ that month — each row then shows that period's invoice number, status, and
 amount inline, so you can quickly answer "what did we bill in August" in
 one place instead of opening each template's own history.
 
+**Project field (optional):** when creating or editing a template, you can
+link it to one of the client's own Projects. This matters most for a
+**reseller-billed** client (see Manager guide → Reseller billing) — since
+those templates are GST-billed to the reseller's own customer record, not
+the client you actually picked, setting the Project is the only way that
+client's own Project page, and their own Client page's Invoices/Services
+tabs, can still show "yes, this is billed and active" (tagged **Billed via
+{reseller}**) instead of looking like nothing was ever set up for them. For
+a normal (non-reseller) client the Project field is optional and purely
+for cross-reference — invoicing already works correctly without it.
+
 **Viewing generated invoices:** click **Invoices** on any recurring template row
 to open its history — every invoice that has been auto-generated for that
 template, with status, balance, and action buttons.
