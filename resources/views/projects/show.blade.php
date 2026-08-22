@@ -34,6 +34,14 @@
                 </div>
                 <div class="flex items-center gap-2">
                     <a href="{{ route('projects.index') }}" class="text-sm text-gray-500 hover:text-gray-700">Back</a>
+                    @if ($project->customer)
+                        @can('create', \App\Models\Invoice::class)
+                            <a href="{{ route('invoices.create', ['customer_id' => $project->customer_id, 'project_id' => $project->id]) }}"
+                               class="rounded-md border border-indigo-200 px-3 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-50">
+                                Log Invoice
+                            </a>
+                        @endcan
+                    @endif
                     @can('update', $project)
                         <a href="{{ route('projects.edit', $project) }}" class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">Edit</a>
                     @endcan

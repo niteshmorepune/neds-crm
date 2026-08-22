@@ -16,21 +16,31 @@
                 <x-input-error :messages="$errors->get('invoice_number')" class="mt-1" />
             </div>
 
+            @php
+                $selectedCustomerId = old('customer_id', $prefillCustomerId);
+                $selectedProjectId = old('project_id', $prefillProjectId);
+            @endphp
+
             <div>
                 <x-input-label for="customer_id" value="Client *" />
                 <select id="customer_id" name="customer_id"
                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                        x-data x-on:change="
-                            let cid = $event.target.value;
-                            document.querySelectorAll('#deal_id option, #project_id option').forEach(o => {
-                                o.hidden = o.value !== '' && o.dataset.customer !== cid;
-                            });
-                            document.getElementById('deal_id').value = '';
-                            document.getElementById('project_id').value = '';
-                        ">
+                        x-data="{
+                            filterByCustomer(cid, resetSelection) {
+                                document.querySelectorAll('#deal_id option, #project_id option').forEach(o => {
+                                    o.hidden = o.value !== '' && o.dataset.customer !== cid;
+                                });
+                                if (resetSelection) {
+                                    document.getElementById('deal_id').value = '';
+                                    document.getElementById('project_id').value = '';
+                                }
+                            },
+                        }"
+                        x-init="if ($el.value) { filterByCustomer($el.value, false) }"
+                        x-on:change="filterByCustomer($event.target.value, true)">
                     <option value="">— Select client —</option>
                     @foreach ($customers as $customer)
-                        <option value="{{ $customer->id }}" @selected(old('customer_id') == $customer->id)>{{ $customer->company_name }}</option>
+                        <option value="{{ $customer->id }}" @selected($selectedCustomerId == $customer->id)>{{ $customer->company_name }}</option>
                     @endforeach
                 </select>
                 <x-input-error :messages="$errors->get('customer_id')" class="mt-1" />
@@ -57,7 +67,7 @@
                         <option value="">— None —</option>
                         @foreach ($projects as $project)
                             <option value="{{ $project->id }}" data-customer="{{ $project->customer_id }}"
-                                    @selected(old('project_id') == $project->id)>{{ $project->name }}</option>
+                                    @selected($selectedProjectId == $project->id)>{{ $project->name }}</option>
                         @endforeach
                     </select>
                     <x-input-error :messages="$errors->get('project_id')" class="mt-1" />

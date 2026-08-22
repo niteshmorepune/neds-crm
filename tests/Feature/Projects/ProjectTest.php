@@ -75,6 +75,26 @@ it('renders project index, create and show pages', function () {
     $this->actingAs($this->manager)->get(route('projects.show', $project))->assertOk()->assertSee($project->name)->assertSee('Project Manager:');
 });
 
+it('shows a Log Invoice link on the project page, preselecting this client and project', function () {
+    $customer = Customer::factory()->create();
+    $project = Project::factory()->create(['owner_id' => $this->manager->id, 'customer_id' => $customer->id]);
+
+    $html = $this->actingAs($this->manager)->get(route('projects.show', $project))->assertOk()->getContent();
+
+    expect($html)->toContain(route('invoices.create'))
+        ->toContain('customer_id='.$customer->id)
+        ->toContain('project_id='.$project->id);
+});
+
+it('hides the Log Invoice link from a role without invoice-create access, on the project page', function () {
+    $support = User::factory()->role(UserRole::Support)->create();
+    $project = Project::factory()->create(['owner_id' => $support->id]);
+
+    $html = $this->actingAs($support)->get(route('projects.show', $project))->assertOk()->getContent();
+
+    expect($html)->not->toContain('Log Invoice');
+});
+
 it('hides a project belonging to an inactive client from the project list', function () {
     $activeClient = Customer::factory()->create(['status' => 'active', 'company_name' => 'Active Co']);
     $inactiveClient = Customer::factory()->create(['status' => 'inactive', 'company_name' => 'Inactive Co']);

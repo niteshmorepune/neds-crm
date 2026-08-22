@@ -24,6 +24,22 @@ it('renders the create form for accounts', function () {
         ->assertSee('Log Invoice');
 });
 
+it('preselects the client and project when deep-linked from the client/project page', function () {
+    $project = Project::factory()->create(['customer_id' => $this->customer->id]);
+
+    $this->actingAs($this->accounts)
+        ->get(route('invoices.create', ['customer_id' => $this->customer->id, 'project_id' => $project->id]))
+        ->assertOk()
+        ->assertSee('value="'.$this->customer->id.'" selected', false)
+        ->assertSee('value="'.$project->id.'" selected', false);
+});
+
+it('ignores an invalid or unknown customer_id/project_id query param instead of erroring', function () {
+    $this->actingAs($this->accounts)
+        ->get(route('invoices.create', ['customer_id' => 'not-a-number', 'project_id' => 999999]))
+        ->assertOk();
+});
+
 it('logs an invoice with required fields', function () {
     $this->actingAs($this->accounts)
         ->post(route('invoices.store'), [

@@ -165,6 +165,11 @@
                     </ul>
                 </div>
                 <div x-show="tab === 'invoices'" x-cloak>
+                    @can('create', \App\Models\Invoice::class)
+                        <div class="mb-3 flex justify-end">
+                            <a href="{{ route('invoices.create', ['customer_id' => $client->id]) }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">+ Log Invoice</a>
+                        </div>
+                    @endcan
                     @if ($canViewAdvances)
                         @include('clients._advances', ['client' => $client])
                     @endif

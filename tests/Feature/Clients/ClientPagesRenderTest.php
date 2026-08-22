@@ -114,6 +114,23 @@ it('shows invoice data on the client tab to sales, who have invoice access by de
         ->assertDontSee('have access to invoices');
 });
 
+it('shows a Log Invoice link on the client invoices tab, preselecting this client', function () {
+    $client = Customer::factory()->create();
+
+    $html = $this->actingAs($this->admin)->get(route('clients.show', $client))->assertOk()->getContent();
+
+    expect($html)->toContain(route('invoices.create', ['customer_id' => $client->id]));
+});
+
+it('hides the Log Invoice link from a role without invoice-create access', function () {
+    $support = User::factory()->role(UserRole::Support)->create();
+    $client = Customer::factory()->create();
+
+    $html = $this->actingAs($support)->get(route('clients.show', $client))->assertOk()->getContent();
+
+    expect($html)->not->toContain('Log Invoice');
+});
+
 it('renders the services tab with recurring services and projects', function () {
     $service = Service::factory()->create(['name' => 'SEO']);
     $client = Customer::factory()->create(['company_name' => 'Services Co']);

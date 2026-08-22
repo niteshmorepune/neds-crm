@@ -59,7 +59,7 @@ class InvoiceController extends Controller
         ]);
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
         $this->authorize('create', Invoice::class);
 
@@ -67,6 +67,8 @@ class InvoiceController extends Controller
             'customers' => Customer::orderBy('company_name')->get(['id', 'company_name']),
             'deals' => Deal::whereNotIn('stage', ['lost'])->orderBy('title')->get(['id', 'title', 'customer_id']),
             'projects' => Project::whereNotIn('status', ['completed'])->orderBy('name')->get(['id', 'name', 'customer_id']),
+            'prefillCustomerId' => $request->integer('customer_id') ?: null,
+            'prefillProjectId' => $request->integer('project_id') ?: null,
         ]);
     }
 
