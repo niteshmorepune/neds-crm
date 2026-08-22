@@ -29,6 +29,16 @@ class InvoiceBuilder extends Component
     /** @var array<int, array{description:string, sac_code:?string, quantity:string, rate:string, gst_rate:string}> */
     public array $items = [];
 
+    /**
+     * Nearly every NEDS line item is Social Media Management-style monthly
+     * retainer work under this one SAC code at the standard services rate --
+     * defaulting a new row to these (instead of blank) is what the owner
+     * asked for; either field is still freely editable per line.
+     */
+    private const DEFAULT_SAC_CODE = '998314';
+
+    private const DEFAULT_GST_RATE = '18';
+
     public function mount(Invoice $invoice): void
     {
         abort_unless($invoice->exists, 404);
@@ -46,11 +56,21 @@ class InvoiceBuilder extends Component
             'rate' => (string) Money::toRupees($item->rate),
             'gst_rate' => (string) $item->gst_rate,
         ])->all();
+
+        if ($this->items === []) {
+            $this->addItem();
+        }
     }
 
     public function addItem(): void
     {
-        $this->items[] = ['description' => '', 'sac_code' => '', 'quantity' => '', 'rate' => '', 'gst_rate' => ''];
+        $this->items[] = [
+            'description' => '',
+            'sac_code' => self::DEFAULT_SAC_CODE,
+            'quantity' => '',
+            'rate' => '',
+            'gst_rate' => self::DEFAULT_GST_RATE,
+        ];
     }
 
     public function removeItem(int $index): void

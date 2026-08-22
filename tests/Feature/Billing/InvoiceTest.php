@@ -451,6 +451,40 @@ it('defaults the InvoiceBuilder GST-exempt toggle from the invoice\'s stored val
         ->assertSet('is_gst_exempt', true);
 });
 
+it('defaults a brand-new line item to SAC 998314 and 18% GST, not blank', function () {
+    // A Log-created invoice with no items yet -- mount() should auto-add
+    // one starter row (instead of leaving the form empty) already
+    // prefilled with the SAC/rate used on nearly every NEDS invoice.
+    $invoice = Invoice::factory()->create(['place_of_supply_state_code' => '27'])->refresh();
+    expect($invoice->items)->toBeEmpty();
+
+    $component = Livewire::actingAs($this->accounts)->test(InvoiceBuilder::class, ['invoice' => $invoice]);
+
+    expect($component->get('items'))->toHaveCount(1)
+        ->and($component->get('items.0.sac_code'))->toBe('998314')
+        ->and($component->get('items.0.gst_rate'))->toBe('18')
+        ->and($component->get('items.0.description'))->toBe('');
+
+    $component->call('addItem');
+    expect($component->get('items.1.sac_code'))->toBe('998314')
+        ->and($component->get('items.1.gst_rate'))->toBe('18');
+});
+
+it('still lets a line item override the default SAC/GST rate', function () {
+    $invoice = Invoice::factory()->create(['place_of_supply_state_code' => '27'])->refresh();
+
+    Livewire::actingAs($this->accounts)
+        ->test(InvoiceBuilder::class, ['invoice' => $invoice])
+        ->set('items', [[
+            'description' => 'Website Development', 'sac_code' => '998314',
+            'quantity' => '1', 'rate' => '20000', 'gst_rate' => '12',
+        ]])
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect($invoice->fresh()->items->first()->gst_rate)->toBe('12.00');
+});
+
 it('is reachable at invoices.items.edit and turns a flat Log Invoice total into a proper GST-itemized one', function () {
     // Mirrors exactly how a "Logged" invoice actually looks: a flat total,
     // no items, no place of supply -- nothing the flat screen ever collects.
