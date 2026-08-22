@@ -14,6 +14,7 @@ use App\Models\Payment;
 use App\Models\QuotationMilestone;
 use App\Models\User;
 use App\Services\MenuResolver;
+use App\Support\UpiQrCode;
 use Database\Seeders\MenuItemsSeeder;
 use Livewire\Livewire;
 
@@ -177,6 +178,43 @@ it('streams a PDF invoice', function () {
 
     $response->assertOk();
     expect($response->getContent())->toStartWith('%PDF');
+});
+
+it('shows a Scan to Pay QR code on the PDF when a UPI ID is configured and the invoice is unpaid', function () {
+    config(['company.upi_id' => 'niranjanenterprises@okhdfcbank']);
+    $invoice = invoiceWithLine();
+    $invoice->load(['customer', 'items']);
+
+    $html = view('invoices.pdf', ['invoice' => $invoice])->render();
+
+    expect($html)->toContain('Scan to Pay')
+        ->toContain('data:image/png;base64,');
+});
+
+it('omits the Scan to Pay QR code once the invoice is fully paid', function () {
+    config(['company.upi_id' => 'niranjanenterprises@okhdfcbank']);
+    $invoice = invoiceWithLine(['amount_paid' => 118000]);
+    $invoice->load(['customer', 'items']);
+
+    $html = view('invoices.pdf', ['invoice' => $invoice])->render();
+
+    expect($html)->not->toContain('Scan to Pay');
+});
+
+it('omits the Scan to Pay QR code when no UPI ID is configured', function () {
+    config(['company.upi_id' => '']);
+    $invoice = invoiceWithLine();
+    $invoice->load(['customer', 'items']);
+
+    $html = view('invoices.pdf', ['invoice' => $invoice])->render();
+
+    expect($html)->not->toContain('Scan to Pay');
+});
+
+it('encodes a correct UPI deep link into the Scan to Pay QR code', function () {
+    $uri = UpiQrCode::dataUri('niranjanenterprises@okhdfcbank', 'Niranjan Enterprises', 5900.00, '26 / 27 - 033');
+
+    expect($uri)->toStartWith('data:image/png;base64,');
 });
 
 it('renders the PDF template with non-GST wording and no tax breakup for a GST-exempt invoice', function () {

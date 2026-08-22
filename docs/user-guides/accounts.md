@@ -405,9 +405,13 @@ everything.
 Invoice emails sent to clients now have a **professional branded layout**: NEDS
 header, invoice summary card (number, amount, dates), amount in words, and —
 when bank details are configured — a **Payment Details** panel with account number,
-IFSC code, and UPI ID. The same details appear on the PDF. Bank details are set
-in the server `.env` (`COMPANY_BANK_NAME`, `COMPANY_ACCOUNT_NUMBER`, etc.) — ask
-your developer to update them.
+IFSC code, and UPI ID. The same details appear on the PDF, and whenever a UPI
+ID is set AND the invoice still has a balance due, the PDF also shows a **Scan
+to Pay QR code** pre-filled with the exact amount owed — the client's UPI app
+opens straight to the payment screen, nothing to type in. It disappears on its
+own once the invoice is fully paid. Bank/UPI details are set in the server
+`.env` (`COMPANY_BANK_NAME`, `COMPANY_ACCOUNT_NUMBER`, `COMPANY_UPI_ID`, etc.)
+— ask your developer to update them.
 
 ## Tips
 - **Assign the invoice number before sending** — the Send button is disabled until

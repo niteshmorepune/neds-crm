@@ -139,10 +139,19 @@
                     @if ($company['account_number'])<div><span style="color:#6b7280;">Account No:</span> <strong>{{ $company['account_number'] }}</strong></div>@endif
                     @if ($company['ifsc_code'])<div><span style="color:#6b7280;">IFSC:</span> <strong>{{ $company['ifsc_code'] }}</strong></div>@endif
                     @if ($company['account_type'])<div><span style="color:#6b7280;">Type:</span> {{ $company['account_type'] }}</div>@endif
-                </td>
-                <td style="vertical-align:top;">
                     @if ($company['upi_id'])<div><span style="color:#6b7280;">UPI:</span> <strong>{{ $company['upi_id'] }}</strong></div>@endif
                 </td>
+                @if ($company['upi_id'] && $invoice->balance() > 0)
+                <td style="width:110px;vertical-align:top;text-align:center;">
+                    <div style="color:#6b7280;margin-bottom:3px;">Scan to Pay</div>
+                    <img src="{{ \App\Support\UpiQrCode::dataUri(
+                        $company['upi_id'],
+                        $company['name'],
+                        \App\Support\Money::toRupees($invoice->balance()),
+                        $invoice->invoice_number ?? 'Invoice',
+                    ) }}" width="90" height="90">
+                </td>
+                @endif
             </tr>
         </table>
     </div>
