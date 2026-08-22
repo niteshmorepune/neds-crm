@@ -451,6 +451,91 @@ it('defaults the InvoiceBuilder GST-exempt toggle from the invoice\'s stored val
         ->assertSet('is_gst_exempt', true);
 });
 
+it('is reachable at invoices.items.edit and turns a flat Log Invoice total into a proper GST-itemized one', function () {
+    // Mirrors exactly how a "Logged" invoice actually looks: a flat total,
+    // no items, no place of supply -- nothing the flat screen ever collects.
+    $customer = Customer::factory()->create(['state_code' => '27']);
+    $invoice = Invoice::factory()->create([
+        'customer_id' => $customer->id,
+        'place_of_supply_state_code' => null,
+        'subtotal' => 500000, 'taxable_total' => 500000, 'total' => 500000,
+    ])->refresh();
+
+    $this->actingAs($this->accounts)->get(route('invoices.items.edit', $invoice))->assertOk();
+
+    Livewire::actingAs($this->accounts)
+        ->test(InvoiceBuilder::class, ['invoice' => $invoice])
+        ->set('items', [[
+            'description' => 'Social Media Management', 'sac_code' => '998314',
+            'quantity' => '1', 'rate' => '5000', 'gst_rate' => '18',
+        ]])
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $invoice->refresh();
+    expect($invoice->total)->toBe(590000) // ₹5,000 + 18% GST, not the old flat ₹5,000
+        ->and($invoice->cgst_total)->toBe(45000)
+        ->and($invoice->sgst_total)->toBe(45000)
+        ->and($invoice->items)->toHaveCount(1);
+});
+
+it('backfills place of supply from the customer\'s real state, not a silent intra-state default, when saving via InvoiceBuilder', function () {
+    // A Log-created invoice for an inter-state client with no place of
+    // supply set: without the fix, GstCalculator's "no state code -> treat
+    // as intra-state" fallback would wrongly charge CGST+SGST here.
+    $customer = Customer::factory()->create(['state_code' => '09']); // Uttar Pradesh
+    $invoice = Invoice::factory()->create([
+        'customer_id' => $customer->id,
+        'place_of_supply_state_code' => null,
+    ])->refresh();
+
+    Livewire::actingAs($this->accounts)
+        ->test(InvoiceBuilder::class, ['invoice' => $invoice])
+        ->set('items', [[
+            'description' => 'Consulting', 'sac_code' => '998314',
+            'quantity' => '1', 'rate' => '5000', 'gst_rate' => '18',
+        ]])
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $invoice->refresh();
+    expect($invoice->place_of_supply_state_code)->toBe('09')
+        ->and($invoice->is_intra_state)->toBeFalse()
+        ->and($invoice->igst_total)->toBe(90000)
+        ->and($invoice->cgst_total)->toBe(0)
+        ->and($invoice->sgst_total)->toBe(0);
+});
+
+it('shows an Add/Edit GST Line Items link on the invoice page, labeled by whether items already exist', function () {
+    $noItems = invoiceWithLine();
+    $noItems->items()->delete();
+
+    $this->actingAs($this->accounts)
+        ->get(route('invoices.show', $noItems))
+        ->assertOk()
+        ->assertSee('Add GST Line Items')
+        ->assertDontSee('Edit GST Line Items');
+
+    $withItems = invoiceWithLine();
+
+    $this->actingAs($this->accounts)
+        ->get(route('invoices.show', $withItems))
+        ->assertOk()
+        ->assertSee('Edit GST Line Items')
+        ->assertDontSee('Add GST Line Items');
+});
+
+it('hides the GST Line Items link once the invoice is no longer editable', function () {
+    $invoice = invoiceWithLine();
+    $invoice->payments()->create(['paid_on' => now(), 'mode' => 'cash', 'amount' => $invoice->total, 'recorded_by' => $this->accounts->id]);
+    $invoice->refreshPaymentStatus();
+
+    $this->actingAs($this->accounts)
+        ->get(route('invoices.show', $invoice))
+        ->assertOk()
+        ->assertDontSee('GST Line Items');
+});
+
 it('includes milestone installment details in the invoice email', function () {
     $invoice = invoiceWithLine();
     QuotationMilestone::factory()->create([

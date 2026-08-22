@@ -70,6 +70,7 @@ use App\Livewire\ClientImport;
 use App\Livewire\ContractRenewalDashboard;
 use App\Livewire\DealsBoard;
 use App\Livewire\HitechAttendanceImport;
+use App\Livewire\InvoiceBuilder;
 use App\Livewire\ManagerCalendar;
 use App\Livewire\MenuManager;
 use App\Livewire\QuotationBuilder;
@@ -270,6 +271,7 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
         Route::get('invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
         Route::get('invoices/{invoice}/edit', [InvoiceController::class, 'edit'])->name('invoices.edit');
         Route::put('invoices/{invoice}', [InvoiceController::class, 'update'])->name('invoices.update');
+        Route::get('invoices/{invoice}/items', InvoiceBuilder::class)->name('invoices.items.edit');
         Route::get('invoices/{invoice}/pdf', [InvoiceController::class, 'pdf'])->name('invoices.pdf');
         Route::post('invoices/{invoice}/send', [InvoiceController::class, 'send'])->name('invoices.send');
         Route::post('invoices/{invoice}/assign-number', [InvoiceController::class, 'assignNumber'])->name('invoices.assign-number');

@@ -104,10 +104,19 @@ class InvoiceBuilder extends Component
         ]);
 
         DB::transaction(function () use ($invoice) {
+            // Invoices created via the flat "Log Invoice" screen never had a
+            // place of supply set (that screen has no state field at all) --
+            // Invoice::recalculateTotals() reads this column, not the
+            // customer's own state_code, so without this the CGST/SGST-vs-IGST
+            // split saved here could silently disagree with the live preview
+            // above (which does use the customer's real state).
+            $customer = Customer::find($invoice->customer_id);
+
             $invoice->fill([
                 'due_date' => $this->due_date ?: null,
                 'discount' => Money::toPaise($this->discount ?: 0) ?? 0,
                 'is_gst_exempt' => $this->is_gst_exempt,
+                'place_of_supply_state_code' => $invoice->place_of_supply_state_code ?? $customer?->state_code,
             ])->save();
 
             $invoice->items()->delete();

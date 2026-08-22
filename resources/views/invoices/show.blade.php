@@ -52,6 +52,9 @@
                     @endcan
                     @can('update', $invoice)
                         <a href="{{ route('invoices.edit', $invoice) }}" class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Edit</a>
+                        <a href="{{ route('invoices.items.edit', $invoice) }}" class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            {{ $invoice->items->isEmpty() ? 'Add GST Line Items' : 'Edit GST Line Items' }}
+                        </a>
                     @endcan
                     @can('delete', $invoice)
                         <button type="submit" form="delete-invoice" class="text-sm font-medium text-red-600 hover:text-red-500"
