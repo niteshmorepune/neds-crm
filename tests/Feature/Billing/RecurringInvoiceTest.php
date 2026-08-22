@@ -197,6 +197,31 @@ it('leaves project_id null on a generated invoice when the template has no proje
     expect(Invoice::first()->project_id)->toBeNull();
 });
 
+it('carries a template\'s project_id onto an invoice generated via "Generate & Send Now" too', function () {
+    $this->seed(MenuItemsSeeder::class);
+    Mail::fake();
+    $project = Project::factory()->create();
+    $template = recurringWithLine(['project_id' => $project->id, 'next_run_on' => now()->addWeek()->toDateString()]);
+    $accounts = User::factory()->role(UserRole::Accounts)->create();
+
+    $this->actingAs($accounts)->post(route('recurring-invoices.generate-now', $template))->assertRedirect();
+
+    expect(Invoice::where('recurring_invoice_id', $template->id)->first()->project_id)->toBe($project->id);
+});
+
+it('shows the linked project on the Recurring Invoices list and detail pages', function () {
+    $this->seed(MenuItemsSeeder::class);
+    $manager = User::factory()->role(UserRole::Manager)->create();
+    $project = Project::factory()->create(['name' => 'Social Media Management - TMR']);
+    $template = recurringWithLine(['project_id' => $project->id]);
+
+    $this->actingAs($manager)->get(route('recurring-invoices.index'))
+        ->assertOk()->assertSee('Social Media Management - TMR');
+
+    $this->actingAs($manager)->get(route('recurring-invoices.show', $template))
+        ->assertOk()->assertSee('Social Media Management - TMR');
+});
+
 it('generates via "Generate & Send Now" billed to the reseller, proving the redirect at save-time is enough on its own', function () {
     $this->seed(MenuItemsSeeder::class);
     Mail::fake();

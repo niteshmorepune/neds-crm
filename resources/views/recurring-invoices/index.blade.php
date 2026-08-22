@@ -46,7 +46,12 @@
                 <tbody class="divide-y divide-gray-100">
                     @forelse ($recurring as $r)
                         <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-3 text-gray-700">{{ $r->customer?->company_name ?? 'Client removed' }}</td>
+                            <td class="px-4 py-3 text-gray-700">
+                                {{ $r->customer?->company_name ?? 'Client removed' }}
+                                @if ($r->project)
+                                    <a href="{{ route('projects.show', $r->project) }}" class="block text-xs text-amber-700 hover:underline">via {{ $r->project->name }}</a>
+                                @endif
+                            </td>
                             <td class="px-4 py-3 text-gray-600">{{ $r->frequency->label() }}</td>
                             <td class="px-4 py-3 text-gray-600">{{ $r->next_run_on->format('d M Y') }}</td>
                             <td class="px-4 py-3">

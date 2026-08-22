@@ -80,6 +80,12 @@
                     <dd class="mt-1 text-gray-900">{{ $recurring->service->name }}</dd>
                 </div>
                 @endif
+                @if($recurring->project)
+                <div>
+                    <dt class="text-xs font-medium uppercase tracking-wide text-gray-400">Project</dt>
+                    <dd class="mt-1"><a href="{{ route('projects.show', $recurring->project) }}" class="text-indigo-600 hover:underline">{{ $recurring->project->name }}</a></dd>
+                </div>
+                @endif
                 @if($recurring->end_date)
                 <div>
                     <dt class="text-xs font-medium uppercase tracking-wide text-gray-400">End date</dt>

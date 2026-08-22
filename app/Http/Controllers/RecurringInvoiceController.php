@@ -28,7 +28,7 @@ class RecurringInvoiceController extends Controller
             $month = '';
         }
 
-        $recurring = RecurringInvoice::with(['customer', 'service'])
+        $recurring = RecurringInvoice::with(['customer', 'service', 'project'])
             ->when(! $showEnded, fn ($q) => $q->notEnded())
             ->when($month, function ($q) use ($month) {
                 [$year, $monthNum] = explode('-', $month);
@@ -64,6 +64,7 @@ class RecurringInvoiceController extends Controller
     {
         $this->authorize('viewAny', Invoice::class);
 
+        $recurring->loadMissing(['customer', 'project']);
         $invoices = $recurring->invoices()->with('payments')->latest('issue_date')->paginate(10);
 
         return view('recurring-invoices.show', compact('recurring', 'invoices'));
@@ -90,6 +91,7 @@ class RecurringInvoiceController extends Controller
                 'invoice_number' => $numbers->generate($issueDate),
                 'financial_year' => $numbers->financialYear($issueDate),
                 'customer_id' => $recurring->customer_id,
+                'project_id' => $recurring->project_id,
                 'recurring_invoice_id' => $recurring->id,
                 'status' => InvoiceStatus::Sent->value,
                 'issue_date' => $issueDate->toDateString(),
