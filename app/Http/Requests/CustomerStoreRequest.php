@@ -67,6 +67,6 @@ class CustomerStoreRequest extends FormRequest
 
     protected function gstinUniqueRule(): Rule|string
     {
-        return Rule::unique('customers', 'gstin');
+        return Rule::unique('customers', 'gstin')->withoutTrashed();
     }
 }

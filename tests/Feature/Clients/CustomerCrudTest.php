@@ -170,6 +170,37 @@ it('rejects a duplicate GSTIN', function () {
         ->assertSessionHasErrors('gstin');
 });
 
+it('allows reusing a GSTIN that only a soft-deleted client holds', function () {
+    Customer::factory()->create(['gstin' => '27DUPXX9999X1Z1'])->delete();
+
+    $this->actingAs($this->admin)
+        ->post(route('clients.store'), [
+            'company_name' => 'Re-onboarded Co',
+            'gstin' => '27DUPXX9999X1Z1',
+            'country' => 'India',
+            'status' => CustomerStatus::Active->value,
+        ])
+        ->assertRedirect();
+
+    expect(Customer::where('gstin', '27DUPXX9999X1Z1')->count())->toBe(1);
+});
+
+it('allows editing a client to a GSTIN that only a soft-deleted client holds', function () {
+    Customer::factory()->create(['gstin' => '27DUPYY8888Y1Z2'])->delete();
+    $customer = Customer::factory()->create(['company_name' => 'Existing Co']);
+
+    $this->actingAs($this->admin)
+        ->put(route('clients.update', $customer), [
+            'company_name' => 'Existing Co',
+            'gstin' => '27DUPYY8888Y1Z2',
+            'country' => 'India',
+            'status' => CustomerStatus::Active->value,
+        ])
+        ->assertSessionDoesntHaveErrors('gstin');
+
+    expect($customer->fresh()->gstin)->toBe('27DUPYY8888Y1Z2');
+});
+
 it('requires a company name', function () {
     $this->actingAs($this->admin)
         ->post(route('clients.store'), ['status' => CustomerStatus::Active->value])

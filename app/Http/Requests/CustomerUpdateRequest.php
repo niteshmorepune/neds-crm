@@ -11,6 +11,6 @@ class CustomerUpdateRequest extends CustomerStoreRequest
      */
     protected function gstinUniqueRule(): Rule|string
     {
-        return Rule::unique('customers', 'gstin')->ignore($this->route('client'));
+        return Rule::unique('customers', 'gstin')->ignore($this->route('client'))->withoutTrashed();
     }
 }
