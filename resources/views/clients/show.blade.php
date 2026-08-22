@@ -113,7 +113,7 @@
 
             <div class="p-6">
                 <div x-show="tab === 'services'">
-                    @include('clients._services_tab', ['client' => $client, 'canViewInvoices' => $canViewInvoices])
+                    @include('clients._services_tab', ['client' => $client, 'canViewInvoices' => $canViewInvoices, 'reselleredRecurring' => $reselleredRecurring])
                 </div>
                 <div x-show="tab === 'notes'" x-cloak>
                     <livewire:client-notes :customer="$client" :can-manage="$canManage" />
@@ -174,11 +174,22 @@
                         @include('clients._advances', ['client' => $client])
                     @endif
                     @if ($canViewInvoices)
+                        @php
+                            // Includes reseller-billed invoices (customer_id points at
+                            // the billing customer, not this client) found via their
+                            // Project's project_id — see CustomerController::show().
+                            $allClientInvoices = $client->invoices->concat($reselleredInvoices)->sortByDesc('issue_date');
+                        @endphp
                         <ul class="divide-y divide-gray-100 text-sm">
-                            @forelse ($client->invoices as $invoice)
+                            @forelse ($allClientInvoices as $invoice)
                                 <li class="flex items-center justify-between py-2">
                                     <a href="{{ route('invoices.show', $invoice) }}" class="font-medium text-indigo-600 hover:underline">{{ $invoice->invoice_number }}</a>
-                                    <span class="text-gray-500">{{ \App\Support\Money::format($invoice->total) }} · {{ $invoice->status->label() }}</span>
+                                    <span class="text-gray-500">
+                                        @if ($invoice->customer_id !== $client->id)
+                                            <span class="text-amber-700">Billed via {{ $invoice->customer?->company_name ?? 'Client removed' }}</span> ·
+                                        @endif
+                                        {{ \App\Support\Money::format($invoice->total) }} · {{ $invoice->status->label() }}
+                                    </span>
                                 </li>
                             @empty
                                 <li class="py-2 text-gray-400">No invoices yet.</li>

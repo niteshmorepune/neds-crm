@@ -10,6 +10,7 @@ use App\Models\ClientAdvance;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\Partner;
+use App\Models\RecurringInvoice;
 use App\Models\User;
 use App\Services\ClientHealthMetrics;
 use App\Services\CollectionsMetrics;
@@ -124,11 +125,34 @@ class CustomerController extends Controller
 
         $client->loadCount(['notes', 'links']);
 
+        // A reseller-referred client's own invoices/recurring templates are
+        // billed to Customer::billingTarget() — a DIFFERENT Customer row —
+        // so they never show up via the customer_id-scoped relations above
+        // (see the 2026-08-16/2026-08-22 reseller-billing entries in
+        // CLAUDE.md's decisions log). The only honest way to find them is
+        // via project_id on one of this client's own Projects. Kept as
+        // SEPARATE collections — never merged into $client->invoices /
+        // recurringInvoices themselves — so $summary below (total_revenue /
+        // outstanding / mrr / next_renewal) keeps meaning exactly "billed
+        // directly to this client's own GSTIN". This is for VISIBILITY
+        // only (tab counts + listings); each row is tagged "Billed via X"
+        // in the view.
+        $projectIds = $client->projects->pluck('id');
+        $reselleredInvoices = ($canViewInvoices && $projectIds->isNotEmpty())
+            ? Invoice::whereIn('project_id', $projectIds)->where('customer_id', '!=', $client->id)->with('customer')->get()
+            : collect();
+        $reselleredRecurring = $projectIds->isNotEmpty()
+            ? RecurringInvoice::whereIn('project_id', $projectIds)->where('customer_id', '!=', $client->id)
+                ->with(['service', 'items', 'invoices', 'customer'])
+                ->get()
+                ->reject(fn (RecurringInvoice $r) => $r->isOrphaned())
+            : collect();
+
         // Mirrors the tab keys in clients/show.blade.php exactly. "services"
         // matches what _services_tab.blade.php actually lists (recurring
         // templates minus orphans, plus projects), not a raw relation count.
         $tabCounts = [
-            'services' => $client->nonOrphanedRecurringInvoices()->count() + $client->projects->count(),
+            'services' => $client->nonOrphanedRecurringInvoices()->count() + $reselleredRecurring->count() + $client->projects->count(),
             'notes' => $client->notes_count,
             'calls' => $client->callLogs->count(),
             'deals' => $client->deals->count(),
@@ -137,7 +161,7 @@ class CustomerController extends Controller
         ];
 
         if ($canViewInvoices) {
-            $tabCounts['invoices'] = $client->invoices->count();
+            $tabCounts['invoices'] = $client->invoices->count() + $reselleredInvoices->count();
         }
 
         // Client 360° summary strip. MRR/renewal are visible to everyone who
@@ -165,6 +189,8 @@ class CustomerController extends Controller
             'canViewAdvances' => $canViewAdvances,
             'tabCounts' => $tabCounts,
             'summary' => $summary,
+            'reselleredInvoices' => $reselleredInvoices,
+            'reselleredRecurring' => $reselleredRecurring,
             // Only meaningful for an Active client — Client Radar's own
             // flag detection (no_contact/overdue_invoice/etc.) only applies
             // to Active customers, same scoping this reuses.

@@ -6,7 +6,13 @@
     // deleted, never reactivated) are excluded — they'd otherwise show as a
     // misleading "On Hold" or "Ended" row for something that was retracted,
     // not a real ongoing or concluded service. See RecurringInvoice::isOrphaned().
+    // $reselleredRecurring: templates billed to a reseller's own Customer
+    // record but attributed back to this client via project_id — see
+    // CustomerController::show(). Merged here for visibility only, tagged
+    // "Billed via X" below; the top-of-page MRR/renewal tiles deliberately
+    // do NOT include these (they mean "billed directly to this client").
     $recurring  = $client->nonOrphanedRecurringInvoices()
+        ->concat($reselleredRecurring ?? [])
         ->sortBy(fn ($r) => $r->start_date)
         ->sortBy(fn ($r) => $r->service?->name);
     $projects   = $client->projects->sortBy(fn ($p) => $p->service?->name);
@@ -87,6 +93,9 @@
                     <tr class="hover:bg-gray-50">
                         <td class="px-4 py-3 font-medium text-gray-900">
                             {{ $r->service?->name ?? '—' }}
+                            @if ($r->customer_id !== $client->id)
+                                <span class="block text-xs font-normal text-amber-700">Billed via {{ $r->customer?->company_name ?? 'Client removed' }}</span>
+                            @endif
                         </td>
                         <td class="px-4 py-3 text-gray-600">
                             {{ $r->start_date?->format('d M Y') ?? '—' }}
