@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\Invoice;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class InvoiceLogStoreRequest extends FormRequest
 {
@@ -15,7 +16,7 @@ class InvoiceLogStoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'invoice_number' => ['required', 'string', 'max:100', 'unique:invoices,invoice_number'],
+            'invoice_number' => ['required', 'string', 'max:100', Rule::unique('invoices', 'invoice_number')->withoutTrashed()],
             'customer_id' => ['required', 'integer', 'exists:customers,id'],
             'deal_id' => ['nullable', 'integer', 'exists:deals,id'],
             'project_id' => ['nullable', 'integer', 'exists:projects,id'],

@@ -95,6 +95,21 @@ it('rejects a duplicate invoice number', function () {
         ->assertSessionHasErrors('invoice_number');
 });
 
+it('allows reusing an invoice number that only a soft-deleted invoice holds', function () {
+    Invoice::factory()->create(['invoice_number' => 'HT-DUPE-002', 'customer_id' => $this->customer->id])->delete();
+
+    $this->actingAs($this->accounts)
+        ->post(route('invoices.store'), [
+            'invoice_number' => 'HT-DUPE-002',
+            'customer_id' => $this->customer->id,
+            'issue_date' => '2026-07-01',
+            'amount' => '5000',
+        ])
+        ->assertSessionDoesntHaveErrors('invoice_number');
+
+    expect(Invoice::where('invoice_number', 'HT-DUPE-002')->count())->toBe(1);
+});
+
 it('edits a logged invoice', function () {
     $invoice = Invoice::factory()->create([
         'invoice_number' => 'HT-EDIT-001',
@@ -117,6 +132,32 @@ it('edits a logged invoice', function () {
 
     expect($invoice->fresh()->invoice_number)->toBe('HT-EDIT-001-REV')
         ->and($invoice->fresh()->total)->toBe(6000000);
+});
+
+it('allows editing an invoice to a number that only a soft-deleted invoice holds', function () {
+    Invoice::factory()->create(['invoice_number' => 'HT-DUPE-003', 'customer_id' => $this->customer->id])->delete();
+
+    $invoice = Invoice::factory()->create([
+        'invoice_number' => 'NEDS/2026-27/1115',
+        'customer_id' => $this->customer->id,
+        'issue_date' => '2026-07-01',
+        'total' => 5000000,
+        'subtotal' => 5000000,
+        'taxable_total' => 5000000,
+        'status' => InvoiceStatus::Sent,
+    ]);
+
+    $this->actingAs($this->accounts)
+        ->put(route('invoices.update', $invoice), [
+            'invoice_number' => 'HT-DUPE-003',
+            'customer_id' => $this->customer->id,
+            'issue_date' => '2026-07-05',
+            'amount' => '50000',
+        ])
+        ->assertSessionDoesntHaveErrors('invoice_number')
+        ->assertRedirect(route('invoices.show', $invoice));
+
+    expect($invoice->fresh()->invoice_number)->toBe('HT-DUPE-003');
 });
 
 it('renders the import form', function () {

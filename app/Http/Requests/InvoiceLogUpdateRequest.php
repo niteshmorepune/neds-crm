@@ -17,7 +17,7 @@ class InvoiceLogUpdateRequest extends FormRequest
         $invoiceId = $this->route('invoice')?->id;
 
         return [
-            'invoice_number' => ['required', 'string', 'max:100', Rule::unique('invoices', 'invoice_number')->ignore($invoiceId)],
+            'invoice_number' => ['required', 'string', 'max:100', Rule::unique('invoices', 'invoice_number')->ignore($invoiceId)->withoutTrashed()],
             'customer_id' => ['required', 'integer', 'exists:customers,id'],
             'deal_id' => ['nullable', 'integer', 'exists:deals,id'],
             'project_id' => ['nullable', 'integer', 'exists:projects,id'],
