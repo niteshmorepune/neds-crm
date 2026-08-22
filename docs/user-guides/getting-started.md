@@ -267,6 +267,19 @@ than guessing.
   specific unit of work inside a Project (or standalone) — what actually gets
   assigned to a person, tracked, and marked done. Deals and Leads themselves
   are never "worked" directly; the Tasks under a Project are.
+- **Recurring Services vs Projects (client's Services tab)** — a monthly or
+  yearly retainer (SEO, GMB, Social Media, Performance Marketing, AMC
+  Service) belongs under **Recurring Services**, set up as a Recurring
+  Invoice template (Invoices → Recurring Invoices) so it bills itself
+  automatically every cycle. **Projects** are for one-time or
+  milestone-billed work with a real end point (Website Design &
+  Development, Software Development, AI Automation). A retainer can still
+  have its own Project too if you want somewhere to track its ongoing task
+  list — that's fine — but the actual invoicing for it should always go
+  through a Recurring Invoice template, not a fresh invoice logged by hand
+  against the Project every month. If a client's ongoing service only shows
+  under Projects with no matching row under Recurring Services, that's
+  usually a sign a template still needs to be set up for it.
 
 ---
 Next: read the guide for your role — [Sales](sales.md), [Support](support.md),
