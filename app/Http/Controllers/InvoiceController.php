@@ -31,6 +31,7 @@ use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
 
@@ -64,7 +65,7 @@ class InvoiceController extends Controller
         $this->authorize('create', Invoice::class);
 
         return view('invoices.create', [
-            'customers' => Customer::orderBy('company_name')->get(['id', 'company_name']),
+            'customers' => Customer::orderBy('company_name')->get(['id', 'company_name', 'state_code']),
             'deals' => Deal::whereNotIn('stage', ['lost'])->orderBy('title')->get(['id', 'title', 'customer_id']),
             'projects' => Project::whereNotIn('status', ['completed'])->orderBy('name')->get(['id', 'name', 'customer_id']),
             'prefillCustomerId' => $request->integer('customer_id') ?: null,
@@ -74,26 +75,60 @@ class InvoiceController extends Controller
 
     public function store(InvoiceLogStoreRequest $request, InvoiceNumberGenerator $numbers): RedirectResponse
     {
-        $issueDate = Carbon::parse($request->validated()['issue_date']);
-        $total = Money::toPaise($request->validated()['amount']);
-
         $data = $request->validated();
+        $issueDate = Carbon::parse($data['issue_date']);
         $customer = Customer::findOrFail($data['customer_id'])->billingTarget();
 
-        $invoice = Invoice::create([
-            'invoice_number' => $data['invoice_number'],
-            'financial_year' => $numbers->financialYear($issueDate),
-            'customer_id' => $customer->id,
-            'deal_id' => $data['deal_id'] ?? null,
-            'project_id' => $data['project_id'] ?? null,
-            'status' => InvoiceStatus::Sent,
-            'issue_date' => $issueDate,
-            'due_date' => $data['due_date'] ?? null,
-            'subtotal' => $total,
-            'taxable_total' => $total,
-            'total' => $total,
-            'amount_paid' => 0,
-        ]);
+        $invoice = DB::transaction(function () use ($data, $issueDate, $customer, $numbers) {
+            $invoice = Invoice::create([
+                'invoice_number' => $data['invoice_number'],
+                'financial_year' => $numbers->financialYear($issueDate),
+                'customer_id' => $customer->id,
+                'deal_id' => $data['deal_id'] ?? null,
+                'project_id' => $data['project_id'] ?? null,
+                'status' => InvoiceStatus::Sent,
+                'issue_date' => $issueDate,
+                'due_date' => $data['due_date'] ?? null,
+                // Known at creation time regardless of mode -- set once here
+                // rather than leaving it null for a flat invoice to (maybe)
+                // pick up later if someone itemizes it via the GST Line
+                // Items editor.
+                'place_of_supply_state_code' => $customer->state_code,
+                'amount_paid' => 0,
+            ]);
+
+            if ($data['mode'] === 'items') {
+                $invoice->fill([
+                    'discount' => Money::toPaise($data['discount'] ?? 0) ?? 0,
+                    'is_gst_exempt' => (bool) ($data['is_gst_exempt'] ?? false),
+                ])->save();
+
+                foreach (array_values($data['items']) as $sort => $item) {
+                    $rate = Money::toPaise($item['rate']) ?? 0;
+                    $quantity = (float) $item['quantity'];
+                    $invoice->items()->create([
+                        'description' => $item['description'],
+                        'sac_code' => $item['sac_code'] ?: null,
+                        'quantity' => $quantity,
+                        'rate' => $rate,
+                        'gst_rate' => (float) $item['gst_rate'],
+                        'amount' => (int) round($quantity * $rate),
+                        'sort_order' => $sort,
+                    ]);
+                }
+
+                $invoice->refresh()->recalculateTotals();
+            } else {
+                $total = Money::toPaise($data['amount']);
+                $invoice->update([
+                    'subtotal' => $total,
+                    'taxable_total' => $total,
+                    'total' => $total,
+                ]);
+            }
+
+            return $invoice;
+        });
 
         return redirect()->route('invoices.show', $invoice)->with('status', 'Invoice logged.');
     }

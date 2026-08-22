@@ -24,6 +24,14 @@ it('renders the create form for accounts', function () {
         ->assertSee('Log Invoice');
 });
 
+it('renders the Add GST line items toggle and defaults new rows to SAC 998314 / 18%', function () {
+    $this->actingAs($this->accounts)
+        ->get(route('invoices.create'))
+        ->assertOk()
+        ->assertSee('Add GST line items now')
+        ->assertSee('998314');
+});
+
 it('preselects the client and project when deep-linked from the client/project page', function () {
     $project = Project::factory()->create(['customer_id' => $this->customer->id]);
 
@@ -96,6 +104,110 @@ it('logs a reseller-referred client\'s invoice to the reseller\'s own customer r
     $invoice = Invoice::where('invoice_number', 'HT-2026-0099')->firstOrFail();
 
     expect($invoice->customer_id)->toBe($billTo->id);
+});
+
+it('logs an invoice with GST line items in one submission, no separate Add GST Line Items step needed', function () {
+    $customer = Customer::factory()->create(['state_code' => '27']);
+
+    $this->actingAs($this->accounts)
+        ->post(route('invoices.store'), [
+            'invoice_number' => 'HT-2026-ITEMS-1',
+            'customer_id' => $customer->id,
+            'issue_date' => '2026-07-01',
+            'mode' => 'items',
+            'items' => [
+                ['description' => 'Social Media Management', 'sac_code' => '998314', 'quantity' => '1', 'rate' => '5000', 'gst_rate' => '18'],
+            ],
+        ])
+        ->assertRedirect();
+
+    $invoice = Invoice::where('invoice_number', 'HT-2026-ITEMS-1')->firstOrFail();
+
+    expect($invoice->items)->toHaveCount(1)
+        ->and($invoice->subtotal)->toBe(500000)
+        ->and($invoice->cgst_total)->toBe(45000)
+        ->and($invoice->sgst_total)->toBe(45000)
+        ->and($invoice->total)->toBe(590000)
+        ->and($invoice->place_of_supply_state_code)->toBe('27')
+        ->and($invoice->is_intra_state)->toBeTrue();
+});
+
+it('correctly charges IGST instead of CGST+SGST for an inter-state client logged with GST line items', function () {
+    $customer = Customer::factory()->create(['state_code' => '09']); // Uttar Pradesh
+
+    $this->actingAs($this->accounts)
+        ->post(route('invoices.store'), [
+            'invoice_number' => 'HT-2026-ITEMS-2',
+            'customer_id' => $customer->id,
+            'issue_date' => '2026-07-01',
+            'mode' => 'items',
+            'items' => [
+                ['description' => 'Consulting', 'sac_code' => '998314', 'quantity' => '1', 'rate' => '5000', 'gst_rate' => '18'],
+            ],
+        ])
+        ->assertRedirect();
+
+    $invoice = Invoice::where('invoice_number', 'HT-2026-ITEMS-2')->firstOrFail();
+
+    expect($invoice->is_intra_state)->toBeFalse()
+        ->and($invoice->igst_total)->toBe(90000)
+        ->and($invoice->cgst_total)->toBe(0)
+        ->and($invoice->sgst_total)->toBe(0);
+});
+
+it('logs a reseller-referred client\'s itemized invoice to the reseller\'s own customer record too', function () {
+    $billTo = Customer::factory()->create(['company_name' => 'Brand Whiz', 'state_code' => '27']);
+    $reseller = Partner::factory()->create(['name' => 'Brand-Whiz', 'billing_customer_id' => $billTo->id]);
+    $client = Customer::factory()->create(['company_name' => 'TMR', 'referring_partner_id' => $reseller->id, 'state_code' => '01']);
+
+    $this->actingAs($this->accounts)
+        ->post(route('invoices.store'), [
+            'invoice_number' => 'HT-2026-ITEMS-3',
+            'customer_id' => $client->id,
+            'issue_date' => '2026-07-01',
+            'mode' => 'items',
+            'items' => [
+                ['description' => 'Social Media Management', 'sac_code' => '998314', 'quantity' => '1', 'rate' => '5000', 'gst_rate' => '18'],
+            ],
+        ])
+        ->assertRedirect();
+
+    $invoice = Invoice::where('invoice_number', 'HT-2026-ITEMS-3')->firstOrFail();
+
+    // Billed to (and taxed by the state of) the reseller, not the referred client.
+    expect($invoice->customer_id)->toBe($billTo->id)
+        ->and($invoice->place_of_supply_state_code)->toBe('27')
+        ->and($invoice->is_intra_state)->toBeTrue();
+});
+
+it('sets place of supply from the customer even for a flat (non-itemized) logged invoice', function () {
+    $customer = Customer::factory()->create(['state_code' => '19']); // West Bengal
+
+    $this->actingAs($this->accounts)
+        ->post(route('invoices.store'), [
+            'invoice_number' => 'HT-2026-FLAT-POS',
+            'customer_id' => $customer->id,
+            'issue_date' => '2026-07-01',
+            'amount' => '5000',
+        ])
+        ->assertRedirect();
+
+    $invoice = Invoice::where('invoice_number', 'HT-2026-FLAT-POS')->firstOrFail();
+
+    expect($invoice->place_of_supply_state_code)->toBe('19');
+});
+
+it('rejects logging an invoice with mode=items but no items', function () {
+    $this->actingAs($this->accounts)
+        ->post(route('invoices.store'), [
+            'invoice_number' => 'HT-2026-BAD-ITEMS',
+            'customer_id' => $this->customer->id,
+            'issue_date' => '2026-07-01',
+            'mode' => 'items',
+        ])
+        ->assertSessionHasErrors('items');
+
+    expect(Invoice::where('invoice_number', 'HT-2026-BAD-ITEMS')->exists())->toBeFalse();
 });
 
 it('rejects a duplicate invoice number', function () {
