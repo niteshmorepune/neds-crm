@@ -33,4 +33,11 @@ return [
     'account_type' => env('COMPANY_ACCOUNT_TYPE', 'Current'),
     'upi_id' => env('COMPANY_UPI_ID', ''),
 
+    /*
+    | Printed on the invoice PDF's signature line. Blank prints a generic
+    | "Authorized Signatory" line with nothing above it -- a normal,
+    | GST-compliant default that needs no configuration.
+    */
+    'signatory_name' => env('COMPANY_SIGNATORY_NAME', ''),
+
 ];

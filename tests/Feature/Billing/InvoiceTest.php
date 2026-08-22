@@ -217,6 +217,52 @@ it('encodes a correct UPI deep link into the Scan to Pay QR code', function () {
     expect($uri)->toStartWith('data:image/png;base64,');
 });
 
+it('groups the HSN/SAC tax summary by code and rate, matching the invoice\'s own stored totals', function () {
+    $invoice = Invoice::factory()->create(['place_of_supply_state_code' => '27']);
+    $invoice->items()->create([
+        'description' => 'SEO', 'sac_code' => '998361',
+        'quantity' => 1, 'rate' => 100000, 'gst_rate' => 18, 'amount' => 100000, 'sort_order' => 1,
+    ]);
+    $invoice->items()->create([
+        'description' => 'GMB', 'sac_code' => '998361',
+        'quantity' => 1, 'rate' => 50000, 'gst_rate' => 18, 'amount' => 50000, 'sort_order' => 2,
+    ]);
+    $invoice->items()->create([
+        'description' => 'Website Dev', 'sac_code' => '998314',
+        'quantity' => 1, 'rate' => 200000, 'gst_rate' => 12, 'amount' => 200000, 'sort_order' => 3,
+    ]);
+    $invoice->refresh()->recalculateTotals();
+    $invoice->load('items');
+
+    $summary = $invoice->hsnSummary();
+
+    expect($summary)->toHaveCount(2);
+
+    $seoGroup = collect($summary)->firstWhere('sac_code', '998361');
+    expect($seoGroup['taxable'])->toBe(150000)
+        ->and($seoGroup['cgst'] + $seoGroup['sgst'])->toBe((int) round(150000 * 0.18));
+
+    $webGroup = collect($summary)->firstWhere('sac_code', '998314');
+    expect($webGroup['taxable'])->toBe(200000)
+        ->and($webGroup['cgst'] + $webGroup['sgst'])->toBe((int) round(200000 * 0.12));
+
+    $totalCgst = collect($summary)->sum('cgst');
+    $totalSgst = collect($summary)->sum('sgst');
+    expect($totalCgst)->toBe($invoice->cgst_total)
+        ->and($totalSgst)->toBe($invoice->sgst_total);
+});
+
+it('renders a bordered HSN/SAC-wise CGST+SGST summary table on the PDF for a GST invoice', function () {
+    $invoice = invoiceWithLine();
+    $invoice->load(['customer', 'items']);
+
+    $html = view('invoices.pdf', ['invoice' => $invoice])->render();
+
+    expect($html)->toContain('HSN/SAC')
+        ->toContain('Taxable Amount')
+        ->toContain('Total Tax Amount');
+});
+
 it('renders the PDF template with non-GST wording and no tax breakup for a GST-exempt invoice', function () {
     $invoice = invoiceWithLine(['is_gst_exempt' => true]);
     $invoice->load(['customer', 'items']);
