@@ -7,6 +7,7 @@ use App\Enums\SettlementAmountSource;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\Partner;
+use App\Models\Project;
 use App\Models\RecurringInvoice;
 use App\Models\ReferralSettlement;
 use App\Models\Service;
@@ -43,6 +44,40 @@ it('marks a NedsCollects month paid or pending based on the real invoice status'
     $currentMonthRow = collect($grid[0]['rows'])->firstWhere('period', now()->format('Y-m'));
     expect($currentMonthRow['billing_status'])->toBe('paid')
         ->and($currentMonthRow['amount'])->toBe(300000);
+});
+
+it('includes a reseller-billed template in a referred client\'s own settlement grid, found via project_id', function () {
+    $billTo = Customer::factory()->create();
+    $reseller = Partner::factory()->create(['billing_customer_id' => $billTo->id]);
+    $customer = Customer::factory()->create(['referring_partner_id' => $reseller->id]);
+    $project = Project::factory()->create(['customer_id' => $customer->id]);
+    $template = RecurringInvoice::factory()->create([
+        'customer_id' => $billTo->id, 'project_id' => $project->id,
+        'service_id' => $this->seo->id, 'start_date' => now()->subMonths(2),
+    ]);
+    Invoice::factory()->status(InvoiceStatus::Paid)->create([
+        'recurring_invoice_id' => $template->id, 'customer_id' => $billTo->id,
+        'issue_date' => now()->startOfMonth(), 'total' => 300000,
+    ]);
+
+    $customer->load(['recurringInvoices.service', 'recurringInvoices.items', 'recurringInvoices.invoices', 'referralSettlements']);
+    $grid = $this->service->gridForClient($customer);
+
+    expect($grid)->toHaveCount(1);
+    $currentMonthRow = collect($grid[0]['rows'])->firstWhere('period', now()->format('Y-m'));
+    expect($currentMonthRow['billing_status'])->toBe('paid')
+        ->and($currentMonthRow['amount'])->toBe(300000);
+});
+
+it('does not duplicate a client\'s own (non-reseller) template via the project_id bridge', function () {
+    $customer = Customer::factory()->create(['referring_partner_id' => $this->partner->id]);
+    $project = Project::factory()->create(['customer_id' => $customer->id]);
+    RecurringInvoice::factory()->create(['customer_id' => $customer->id, 'project_id' => $project->id, 'service_id' => $this->seo->id]);
+
+    $customer->load(['recurringInvoices.service', 'recurringInvoices.items', 'recurringInvoices.invoices', 'referralSettlements']);
+    $grid = $this->service->gridForClient($customer);
+
+    expect($grid)->toHaveCount(1);
 });
 
 it('marks a future month upcoming with no amount', function () {

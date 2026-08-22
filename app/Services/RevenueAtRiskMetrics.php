@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Customer;
+use App\Models\Project;
 use App\Models\RecurringInvoice;
 use Illuminate\Support\Collection;
 
@@ -95,14 +96,35 @@ class RevenueAtRiskMetrics
      * Customer::monthlyRecurringValue() (the same single source of truth
      * the Client 360 summary strip uses) — not ClientRadarService's own
      * eager-loaded customers, which don't carry recurringInvoices.items.
+     *
+     * monthlyRecurringValue() is deliberately customer_id-scoped (matches
+     * the Client 360 tile it's shared with — see the 2026-08-22
+     * reseller-billing entries in CLAUDE.md's decisions log), so it misses
+     * a flagged client's own value when billed to a reseller. Unlike the
+     * Client 360 tile, there's no "would double-count against another
+     * page" risk here — a reseller (e.g. Brand Whiz) isn't itself flagged
+     * just because a client it bills for is at risk — so that value is
+     * added back in via project_id, excluding anything already counted
+     * above (a template whose own customer_id is already in $flaggedIds).
      */
     private function atRiskClientMrr(): int
     {
         $flaggedIds = $this->radar->flaggedClients()->pluck('customer.id');
 
-        return (int) Customer::whereIn('id', $flaggedIds)
+        $direct = (int) Customer::whereIn('id', $flaggedIds)
             ->with('recurringInvoices.items')
             ->get()
             ->sum(fn (Customer $customer) => $customer->monthlyRecurringValue());
+
+        $projectIds = Project::whereIn('customer_id', $flaggedIds)->pluck('id');
+
+        $reseller = (int) RecurringInvoice::whereIn('project_id', $projectIds)
+            ->whereNotIn('customer_id', $flaggedIds)
+            ->where('is_active', true)
+            ->with('items')
+            ->get()
+            ->sum(fn (RecurringInvoice $template) => $template->monthlyEquivalentValue());
+
+        return $direct + $reseller;
     }
 }

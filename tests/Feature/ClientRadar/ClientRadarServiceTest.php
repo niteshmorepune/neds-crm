@@ -55,6 +55,45 @@ it('flags a client with an overdue invoice', function () {
     expect($rows->first()['flags'])->not->toHaveKey('no_contact');
 });
 
+it('flags a client with an overdue invoice billed to a reseller via one of the client\'s own projects', function () {
+    $billTo = Customer::factory()->create(['company_name' => 'Brand Whiz']);
+    $customer = Customer::factory()->create(['company_name' => 'TMR']);
+    $customer->notes()->create(['body' => 'Recent touch']);
+    $project = Project::factory()->create(['customer_id' => $customer->id]);
+    Invoice::factory()->create(['customer_id' => $billTo->id, 'project_id' => $project->id, 'status' => InvoiceStatus::Overdue->value, 'total' => 10000]);
+
+    $rows = app(ClientRadarService::class)->flaggedClients();
+
+    $tmrRow = $rows->first(fn ($row) => $row['customer']->is($customer));
+    expect($tmrRow['flags'])->toHaveKey('overdue_invoice')
+        ->and($tmrRow['flags']['overdue_invoice']['detail'])->toContain('reseller');
+});
+
+it('does not flag a reseller-billed client whose only invoice is not overdue', function () {
+    $billTo = Customer::factory()->create();
+    $billTo->notes()->create(['body' => 'Recent touch']); // avoid an unrelated no_contact flag on the reseller's own row
+    $customer = Customer::factory()->create();
+    $customer->notes()->create(['body' => 'Recent touch']);
+    $project = Project::factory()->create(['customer_id' => $customer->id]);
+    Invoice::factory()->create(['customer_id' => $billTo->id, 'project_id' => $project->id, 'status' => InvoiceStatus::Paid->value, 'total' => 10000]);
+
+    $rows = app(ClientRadarService::class)->flaggedClients();
+
+    expect($rows)->toHaveCount(0);
+});
+
+it('flags a reseller-billed overdue invoice via flagsForCustomer too, not just the bulk scan', function () {
+    $billTo = Customer::factory()->create();
+    $customer = Customer::factory()->create();
+    $customer->notes()->create(['body' => 'Recent touch']);
+    $project = Project::factory()->create(['customer_id' => $customer->id]);
+    Invoice::factory()->create(['customer_id' => $billTo->id, 'project_id' => $project->id, 'status' => InvoiceStatus::Overdue->value]);
+
+    $flags = app(ClientRadarService::class)->flagsForCustomer($customer);
+
+    expect($flags)->toHaveKey('overdue_invoice');
+});
+
 it('flags a single-service client as a growth opportunity when other active services exist', function () {
     $seo = Service::factory()->create(['name' => 'SEO']);
     Service::factory()->create(['name' => 'Google Ads']);

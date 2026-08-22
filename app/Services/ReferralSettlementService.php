@@ -54,7 +54,24 @@ class ReferralSettlementService
         $start = $today->copy()->subMonths($months - 1)->startOfMonth();
         $isPartnerCollected = $customer->isPartnerCollected();
 
-        $templates = $customer->nonOrphanedRecurringInvoices();
+        // A reseller-billed client's own templates carry the billing
+        // customer's id, not this client's (Customer::billingTarget()) —
+        // nonOrphanedRecurringInvoices() alone would show this client's row
+        // as empty even with real active billing. Found instead via
+        // project_id on this client's own Projects, same bridge used
+        // everywhere else this gap was fixed (see the 2026-08-22
+        // reseller-billing entries in CLAUDE.md's decisions log).
+        $customer->loadMissing('projects');
+        $projectIds = $customer->projects->pluck('id');
+        $reselleredTemplates = $projectIds->isNotEmpty()
+            ? RecurringInvoice::whereIn('project_id', $projectIds)
+                ->where('customer_id', '!=', $customer->id)
+                ->with(['service', 'invoices'])
+                ->get()
+                ->reject(fn (RecurringInvoice $r) => $r->isOrphaned())
+            : collect();
+
+        $templates = $customer->nonOrphanedRecurringInvoices()->concat($reselleredTemplates);
         $settlementsByKey = $customer->referralSettlements
             ->groupBy(fn (ReferralSettlement $s) => $s->recurring_invoice_id.'|'.$s->period_start->format('Y-m'));
 

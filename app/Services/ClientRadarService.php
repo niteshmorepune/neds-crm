@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\CustomerStatus;
 use App\Enums\InvoiceStatus;
 use App\Models\Customer;
+use App\Models\Invoice;
 use App\Models\Service;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -44,6 +45,7 @@ class ClientRadarService
     public function allActiveClientFlags(): Collection
     {
         $activeServiceCount = Service::active()->count();
+        $overdueProjectIds = $this->overdueInvoiceProjectIds();
 
         return Customer::query()
             ->where('status', CustomerStatus::Active)
@@ -51,7 +53,7 @@ class ClientRadarService
             ->get()
             ->map(fn (Customer $customer) => [
                 'customer' => $customer,
-                'flags' => $this->flagsFor($customer, $activeServiceCount),
+                'flags' => $this->flagsFor($customer, $activeServiceCount, $overdueProjectIds),
             ]);
     }
 
@@ -70,13 +72,30 @@ class ClientRadarService
     {
         $customer->loadMissing(['notes', 'callLogs', 'tickets.satisfactionRating', 'invoices', 'projects.service', 'recurringInvoices.service']);
 
-        return $this->flagsFor($customer, Service::active()->count());
+        return $this->flagsFor($customer, Service::active()->count(), $this->overdueInvoiceProjectIds());
     }
 
     /**
+     * project_id of every currently-overdue invoice, regardless of who it's
+     * billed to — the bridge for spotting a reseller-billed client's own
+     * overdue invoice, which Invoice::customer_id alone can't reveal (see
+     * Customer::billingTarget() / the 2026-08-22 reseller-billing entries
+     * in CLAUDE.md's decisions log). One query, reused across every
+     * customer in a single flagsFor() pass rather than queried per row.
+     */
+    private function overdueInvoiceProjectIds(): Collection
+    {
+        return Invoice::where('status', InvoiceStatus::Overdue)
+            ->whereNotNull('project_id')
+            ->pluck('project_id')
+            ->unique();
+    }
+
+    /**
+     * @param  Collection<int, int>  $overdueProjectIds
      * @return array<string, array{label: string, detail: string, ticket_id?: int}>
      */
-    private function flagsFor(Customer $customer, int $activeServiceCount): array
+    private function flagsFor(Customer $customer, int $activeServiceCount, Collection $overdueProjectIds): array
     {
         $flags = [];
 
@@ -100,10 +119,16 @@ class ClientRadarService
             ];
         }
 
-        if ($customer->invoices->contains(fn ($invoice) => $invoice->status === InvoiceStatus::Overdue)) {
+        $hasOwnOverdueInvoice = $customer->invoices->contains(fn ($invoice) => $invoice->status === InvoiceStatus::Overdue);
+        $hasResellerOverdueInvoice = ! $hasOwnOverdueInvoice
+            && $customer->projects->pluck('id')->intersect($overdueProjectIds)->isNotEmpty();
+
+        if ($hasOwnOverdueInvoice || $hasResellerOverdueInvoice) {
             $flags['overdue_invoice'] = [
                 'label' => 'Overdue Invoice',
-                'detail' => 'Has at least one overdue invoice',
+                'detail' => $hasOwnOverdueInvoice
+                    ? 'Has at least one overdue invoice'
+                    : 'Has at least one overdue invoice, billed via a reseller partner',
             ];
         }
 

@@ -6,6 +6,7 @@ use App\Enums\RecurringFrequency;
 use App\Enums\UserRole;
 use App\Models\Customer;
 use App\Models\Invoice;
+use App\Models\Project;
 use App\Models\RecurringInvoice;
 use App\Models\User;
 use App\Services\RevenueAtRiskMetrics;
@@ -69,6 +70,27 @@ it('sums MRR only for clients Client Radar has actually flagged', function () {
 
     $signal = $this->metrics->signals()->firstWhere('key', 'at_risk_client_mrr');
     expect($signal['amount'])->toBe(100000);
+});
+
+it('includes a flagged client\'s reseller-billed MRR too, not just what\'s under their own customer_id', function () {
+    $billTo = Customer::factory()->create();
+    $flagged = Customer::factory()->create(['status' => CustomerStatus::Active]);
+    Invoice::factory()->create(['customer_id' => $flagged->id, 'status' => InvoiceStatus::Overdue->value, 'total' => 50000, 'amount_paid' => 0]);
+    $project = Project::factory()->create(['customer_id' => $flagged->id]);
+    riskTemplate(['customer_id' => $billTo->id, 'project_id' => $project->id]);
+
+    $signal = $this->metrics->signals()->firstWhere('key', 'at_risk_client_mrr');
+    expect($signal['amount'])->toBe(100000);
+});
+
+it('does not double-count a normal (non-reseller) flagged client\'s own MRR via the project_id bridge', function () {
+    $flagged = Customer::factory()->create(['status' => CustomerStatus::Active]);
+    Invoice::factory()->create(['customer_id' => $flagged->id, 'status' => InvoiceStatus::Overdue->value, 'total' => 50000, 'amount_paid' => 0]);
+    $project = Project::factory()->create(['customer_id' => $flagged->id]);
+    riskTemplate(['customer_id' => $flagged->id, 'project_id' => $project->id]);
+
+    $signal = $this->metrics->signals()->firstWhere('key', 'at_risk_client_mrr');
+    expect($signal['amount'])->toBe(100000); // not 200000
 });
 
 it('sums all three buckets into the total without deduplicating overlap between them', function () {
