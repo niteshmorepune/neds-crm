@@ -42,7 +42,7 @@
                 <table class="no-border">
                     <tr>
                         @if ($logo)
-                            <td class="no-border" style="width:70px;vertical-align:top;"><img src="{{ $logo }}" width="60"></td>
+                            <td class="no-border" style="width:75px;vertical-align:top;"><img src="{{ $logo }}" width="65"></td>
                         @endif
                         <td class="no-border" style="vertical-align:top;">
                             <div class="brand">{{ $company['name'] }}</div>
@@ -239,24 +239,32 @@
                     @endif
                 </div>
                 @if ($company['account_number'] || $company['upi_id'])
-                    <div style="font-weight:bold;margin-bottom:3px;">Bank Details</div>
-                    @if ($company['bank_name'])<div>Bank Name: {{ $company['bank_name'] }}</div>@endif
-                    @if ($company['account_name'])<div>Name: {{ $company['account_name'] }}</div>@endif
-                    @if ($company['account_number'])<div>Account No: <strong>{{ $company['account_number'] }}</strong></div>@endif
-                    @if ($company['ifsc_code'])<div>Branch &amp; IFSC: <strong>{{ $company['ifsc_code'] }}</strong></div>@endif
-                    @if ($company['upi_id'])<div>UPI: <strong>{{ $company['upi_id'] }}</strong></div>@endif
+                    <table class="no-border">
+                        <tr>
+                            <td class="no-border" style="vertical-align:top;">
+                                <div style="font-weight:bold;margin-bottom:3px;">Bank Details</div>
+                                @if ($company['bank_name'])<div>Bank Name: {{ $company['bank_name'] }}</div>@endif
+                                @if ($company['account_name'])<div>Name: {{ $company['account_name'] }}</div>@endif
+                                @if ($company['account_number'])<div>Account No: <strong>{{ $company['account_number'] }}</strong></div>@endif
+                                @if ($company['ifsc_code'])<div>Branch &amp; IFSC: <strong>{{ $company['ifsc_code'] }}</strong></div>@endif
+                                @if ($company['upi_id'])<div>UPI: <strong>{{ $company['upi_id'] }}</strong></div>@endif
+                            </td>
+                            @if ($company['upi_id'] && $invoice->balance() > 0)
+                                <td class="no-border center" style="width:95px;vertical-align:top;">
+                                    <div class="muted" style="margin-bottom:3px;">Scan to Pay</div>
+                                    <img src="{{ \App\Support\UpiQrCode::dataUri(
+                                        $company['upi_id'],
+                                        $company['name'],
+                                        \App\Support\Money::toRupees($invoice->balance()),
+                                        $invoice->invoice_number ?? 'Invoice',
+                                    ) }}" width="85" height="85">
+                                </td>
+                            @endif
+                        </tr>
+                    </table>
                 @endif
             </td>
             <td class="pad no-border center" style="width:40%;vertical-align:top;">
-                @if ($company['upi_id'] && $invoice->balance() > 0)
-                    <div class="muted" style="margin-bottom:3px;">Scan to Pay</div>
-                    <img src="{{ \App\Support\UpiQrCode::dataUri(
-                        $company['upi_id'],
-                        $company['name'],
-                        \App\Support\Money::toRupees($invoice->balance()),
-                        $invoice->invoice_number ?? 'Invoice',
-                    ) }}" width="90" height="90">
-                @endif
                 <div style="margin-top:26px;">
                     <div>For {{ $company['name'] }}</div>
                     <div style="height:34px;"></div>

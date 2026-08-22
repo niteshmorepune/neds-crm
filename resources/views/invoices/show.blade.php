@@ -32,6 +32,7 @@
                     @endif
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
+                    <a href="{{ route('invoices.index') }}" class="text-sm text-gray-500 hover:text-gray-700">Back</a>
                     @if ($invoice->status === \App\Enums\InvoiceStatus::Draft)
                         <span class="inline-flex items-center rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800">Draft — not visible to client</span>
                     @endif

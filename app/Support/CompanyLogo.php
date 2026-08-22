@@ -18,7 +18,7 @@ class CompanyLogo
             return self::$cached;
         }
 
-        $path = public_path('images/neds-logo.png');
+        $path = public_path('images/neds-logo-square.png');
 
         if (! is_file($path)) {
             return null;

@@ -260,3 +260,13 @@ it('offers a Download PDF link on the invoice show page', function () {
         ->assertSee('Download PDF')
         ->assertSee(route('invoices.pdf', $invoice), false);
 });
+
+it('offers a Back link to the invoices index on the invoice show page', function () {
+    $invoice = Invoice::factory()->create(['customer_id' => $this->customer->id]);
+
+    $this->actingAs($this->accounts)
+        ->get(route('invoices.show', $invoice))
+        ->assertOk()
+        ->assertSee('Back')
+        ->assertSee(route('invoices.index'), false);
+});
