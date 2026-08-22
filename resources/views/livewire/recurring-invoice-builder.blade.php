@@ -32,6 +32,14 @@
             </select>
         </div>
         <div>
+            <x-input-label value="Project (optional)" />
+            <select wire:model="project_id" class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm">
+                <option value="">—</option>
+                @foreach ($projects as $project)<option value="{{ $project->id }}">{{ $project->name }}</option>@endforeach
+            </select>
+            <p class="mt-1 text-xs text-gray-500">Attributes generated invoices to this project so they stay findable there — useful when the client is billed via a reseller.</p>
+        </div>
+        <div>
             <x-input-label value="Frequency *" />
             <select wire:model="frequency" class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm">
                 @foreach ($frequencies as $f)<option value="{{ $f->value }}">{{ $f->label() }}</option>@endforeach

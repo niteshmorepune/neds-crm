@@ -10,6 +10,7 @@ use App\Enums\UserRole;
 use App\Http\Requests\ProjectStoreRequest;
 use App\Models\Customer;
 use App\Models\Deal;
+use App\Models\Invoice;
 use App\Models\Project;
 use App\Models\Service;
 use App\Models\User;
@@ -134,6 +135,11 @@ class ProjectController extends Controller
 
         $project->load(['customer', 'owner', 'assignees', 'service', 'deal']);
         $tasks = $project->tasks()->with('assignee')->latest()->get();
+        // Keyed on project_id, not customer_id — a reseller-billed client's
+        // invoices carry the billing customer's id (see Customer::
+        // billingTarget()), so this is the one reliable place to see every
+        // invoice actually for this project regardless of who it's billed to.
+        $invoices = Invoice::where('project_id', $project->id)->with('customer')->latest('issue_date')->get();
 
         $user = $this->user();
         $canManage = $user->can('update', $project);
@@ -145,6 +151,7 @@ class ProjectController extends Controller
         return view('projects.show', [
             'project' => $project,
             'tasks' => $tasks,
+            'invoices' => $invoices,
             'canManage' => $canManage,
             'canAddNotes' => $canAddNotes,
         ]);

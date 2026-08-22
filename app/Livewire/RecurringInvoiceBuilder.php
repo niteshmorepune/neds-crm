@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Enums\RecurringFrequency;
 use App\Models\Customer;
 use App\Models\Invoice;
+use App\Models\Project;
 use App\Models\Quotation;
 use App\Models\RecurringInvoice;
 use App\Models\Service;
@@ -28,6 +29,8 @@ class RecurringInvoiceBuilder extends Component
     public ?int $customer_id = null;
 
     public ?int $service_id = null;
+
+    public ?int $project_id = null;
 
     public string $frequency = 'monthly';
 
@@ -53,6 +56,7 @@ class RecurringInvoiceBuilder extends Component
             $this->quotationId = $recurring->quotation_id;
             $this->customer_id = $recurring->customer_id;
             $this->service_id = $recurring->service_id;
+            $this->project_id = $recurring->project_id;
             $this->frequency = $recurring->frequency->value;
             $this->start_date = $recurring->start_date->toDateString();
             $this->end_date = $recurring->end_date?->toDateString();
@@ -140,6 +144,7 @@ class RecurringInvoiceBuilder extends Component
         $this->validate([
             'customer_id' => ['required', Rule::exists('customers', 'id')],
             'service_id' => ['nullable', Rule::exists('services', 'id')],
+            'project_id' => ['nullable', Rule::exists('projects', 'id')],
             'frequency' => ['required', Rule::enum(RecurringFrequency::class)],
             'start_date' => ['required', 'date'],
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
@@ -162,6 +167,7 @@ class RecurringInvoiceBuilder extends Component
                 'customer_id' => $customer->id,
                 'quotation_id' => $this->quotationId,
                 'service_id' => $this->service_id,
+                'project_id' => $this->project_id,
                 'frequency' => $this->frequency,
                 'start_date' => $this->start_date,
                 'end_date' => $this->end_date ?: null,
@@ -209,6 +215,18 @@ class RecurringInvoiceBuilder extends Component
             'customers' => Customer::orderBy('company_name')->get(['id', 'company_name']),
             'services' => Service::active()->orderBy('sort_order')->get(),
             'frequencies' => RecurringFrequency::cases(),
+            // Scoped to the picked client, not the reseller billingTarget() ends
+            // up routed to at save time — a reseller-referred client's own
+            // projects should still be pickable here. The orWhere keeps an
+            // already-set project selected even if it belongs to a different
+            // client than currently shown (happens when editing a reseller-
+            // billed template, whose customer_id is the billing customer, not
+            // the client the project itself belongs to).
+            'projects' => $this->customer_id
+                ? Project::where('customer_id', $this->customer_id)
+                    ->when($this->project_id, fn ($q) => $q->orWhere('id', $this->project_id))
+                    ->orderBy('name')->get(['id', 'name'])
+                : collect(),
         ]);
     }
 }

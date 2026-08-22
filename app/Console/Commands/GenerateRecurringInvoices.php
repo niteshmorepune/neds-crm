@@ -45,6 +45,7 @@ class GenerateRecurringInvoices extends Command
                     'invoice_number' => $numbers->generate($issueDate),
                     'financial_year' => $numbers->financialYear($issueDate),
                     'customer_id' => $template->customer_id,
+                    'project_id' => $template->project_id,
                     'recurring_invoice_id' => $template->id,
                     'status' => InvoiceStatus::Sent->value,
                     'issue_date' => $issueDate->toDateString(),

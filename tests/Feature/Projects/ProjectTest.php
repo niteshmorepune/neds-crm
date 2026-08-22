@@ -6,6 +6,7 @@ use App\Enums\TaskStatus;
 use App\Enums\UserRole;
 use App\Models\Customer;
 use App\Models\Deal;
+use App\Models\Invoice;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\User;
@@ -84,6 +85,39 @@ it('shows a Log Invoice link on the project page, preselecting this client and p
     expect($html)->toContain(route('invoices.create'))
         ->toContain('customer_id='.$customer->id)
         ->toContain('project_id='.$project->id);
+});
+
+it('lists a project\'s own invoices, plainly, when billed directly to the project\'s own client', function () {
+    $customer = Customer::factory()->create();
+    $project = Project::factory()->create(['owner_id' => $this->manager->id, 'customer_id' => $customer->id]);
+    $invoice = Invoice::factory()->create(['customer_id' => $customer->id, 'project_id' => $project->id, 'invoice_number' => 'NEDS/2026-27/0001']);
+
+    $html = $this->actingAs($this->manager)->get(route('projects.show', $project))->assertOk()->getContent();
+
+    expect($html)->toContain('NEDS/2026-27/0001')
+        ->not->toContain('Billed via');
+});
+
+it('flags a project\'s invoice as "Billed via X" when it was reseller-billed to a different customer', function () {
+    $billTo = Customer::factory()->create(['company_name' => 'Brand Whiz']);
+    $client = Customer::factory()->create(['company_name' => 'TMR']);
+    $project = Project::factory()->create(['owner_id' => $this->manager->id, 'customer_id' => $client->id]);
+    Invoice::factory()->create(['customer_id' => $billTo->id, 'project_id' => $project->id, 'invoice_number' => 'NEDS/2026-27/0002']);
+
+    $html = $this->actingAs($this->manager)->get(route('projects.show', $project))->assertOk()->getContent();
+
+    expect($html)->toContain('NEDS/2026-27/0002')
+        ->toContain('Billed via Brand Whiz');
+});
+
+it('hides the Invoices section from a role without invoice-view access, on the project page', function () {
+    $support = User::factory()->role(UserRole::Support)->create();
+    $project = Project::factory()->create(['owner_id' => $support->id]);
+    Invoice::factory()->create(['customer_id' => $project->customer_id, 'project_id' => $project->id, 'invoice_number' => 'NEDS/2026-27/0003']);
+
+    $html = $this->actingAs($support)->get(route('projects.show', $project))->assertOk()->getContent();
+
+    expect($html)->not->toContain('NEDS/2026-27/0003');
 });
 
 it('hides the Log Invoice link from a role without invoice-create access, on the project page', function () {

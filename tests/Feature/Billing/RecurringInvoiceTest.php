@@ -8,6 +8,7 @@ use App\Mail\InvoiceIssued;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\Partner;
+use App\Models\Project;
 use App\Models\RecurringInvoice;
 use App\Models\User;
 use Database\Seeders\MenuItemsSeeder;
@@ -151,6 +152,49 @@ it('saves a reseller-referred client\'s recurring invoice template billed to the
         ->assertHasNoErrors();
 
     expect(RecurringInvoice::first()->customer_id)->toBe($billTo->id);
+});
+
+it('keeps a reseller-referred client\'s own project on the template even though customer_id becomes the billing customer', function () {
+    $admin = User::factory()->role(UserRole::Admin)->create();
+    $billTo = Customer::factory()->create(['company_name' => 'Brand Whiz', 'state_code' => '27']);
+    $reseller = Partner::factory()->create(['name' => 'Brand-Whiz', 'billing_customer_id' => $billTo->id]);
+    $client = Customer::factory()->create(['company_name' => 'TMR', 'state_code' => '27', 'referring_partner_id' => $reseller->id]);
+    $project = Project::factory()->create(['customer_id' => $client->id, 'name' => 'Social Media Management - TMR']);
+
+    Livewire::actingAs($admin)
+        ->test(RecurringInvoiceBuilder::class)
+        ->set('customer_id', $client->id)
+        ->assertSee('Social Media Management - TMR') // the project dropdown is scoped to the picked (referred) client, not the reseller
+        ->set('project_id', $project->id)
+        ->set('items', [[
+            'description' => 'Social Media Management for TMR', 'sac_code' => '998314',
+            'quantity' => '1', 'rate' => '5000', 'gst_rate' => '18',
+        ]])
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $recurring = RecurringInvoice::first();
+    expect($recurring->customer_id)->toBe($billTo->id) // billed to the reseller, as before
+        ->and($recurring->project_id)->toBe($project->id); // but still attributed to TMR's own project
+});
+
+it('carries a template\'s project_id onto every invoice it generates', function () {
+    Mail::fake();
+    $project = Project::factory()->create();
+    $template = recurringWithLine(['project_id' => $project->id, 'next_run_on' => now()->subDay()->toDateString()]);
+
+    $this->artisan('app:generate-recurring-invoices')->assertSuccessful();
+
+    expect(Invoice::first()->project_id)->toBe($project->id);
+});
+
+it('leaves project_id null on a generated invoice when the template has no project', function () {
+    Mail::fake();
+    recurringWithLine(['next_run_on' => now()->subDay()->toDateString()]);
+
+    $this->artisan('app:generate-recurring-invoices')->assertSuccessful();
+
+    expect(Invoice::first()->project_id)->toBeNull();
 });
 
 it('generates via "Generate & Send Now" billed to the reseller, proving the redirect at save-time is enough on its own', function () {

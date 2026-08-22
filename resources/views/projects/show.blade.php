@@ -75,6 +75,29 @@
             @endcan
         </div>
 
+        @can('viewAny', \App\Models\Invoice::class)
+            <div class="rounded-lg bg-white p-6 shadow-sm">
+                <h2 class="text-base font-semibold text-gray-900">Invoices</h2>
+                <ul class="mt-3 divide-y divide-gray-100 text-sm">
+                    @forelse ($invoices as $invoice)
+                        <li class="flex items-center justify-between py-2">
+                            <a href="{{ route('invoices.show', $invoice) }}" class="text-indigo-600 hover:underline">
+                                {{ $invoice->invoice_number ?? 'Pending #' }}
+                            </a>
+                            <span class="text-gray-500">
+                                @if ($invoice->customer_id !== $project->customer_id)
+                                    <span class="text-amber-700">Billed via {{ $invoice->customer?->company_name ?? 'Client removed' }}</span> ·
+                                @endif
+                                {{ $invoice->status->label() }} · {{ \App\Support\Money::format($invoice->total) }} · {{ $invoice->issue_date->format('d M Y') }}
+                            </span>
+                        </li>
+                    @empty
+                        <li class="py-2 text-gray-400">No invoices yet.</li>
+                    @endforelse
+                </ul>
+            </div>
+        @endcan
+
         @livewire('project-deliverables', ['project' => $project, 'canManage' => $canManage])
 
         {{-- Content Pieces --}}

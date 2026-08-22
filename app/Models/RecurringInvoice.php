@@ -18,7 +18,7 @@ class RecurringInvoice extends Model
     use HasFactory, LogsActivity;
 
     protected $fillable = [
-        'customer_id', 'quotation_id', 'service_id', 'frequency', 'day_of_month',
+        'customer_id', 'quotation_id', 'service_id', 'project_id', 'frequency', 'day_of_month',
         'start_date', 'end_date', 'next_run_on', 'is_active', 'renewal_status',
         'last_reminder_sent_at', 'renewal_reminder_sent_for', 'discount', 'is_gst_exempt', 'terms',
     ];
@@ -53,6 +53,17 @@ class RecurringInvoice extends Model
     public function service(): BelongsTo
     {
         return $this->belongsTo(Service::class);
+    }
+
+    /**
+     * Which Project this template's generated invoices should be attributed
+     * to, so they stay findable even when reseller billing (see
+     * Customer::billingTarget()) means the invoice's own customer_id is a
+     * different Customer than the one this work is actually for.
+     */
+    public function project(): BelongsTo
+    {
+        return $this->belongsTo(Project::class);
     }
 
     public function items(): HasMany
