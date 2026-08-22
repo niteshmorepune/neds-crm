@@ -250,3 +250,13 @@ it('show page renders with deal and project links', function () {
         ->assertSee($deal->title)
         ->assertSee($project->name);
 });
+
+it('offers a Download PDF link on the invoice show page', function () {
+    $invoice = Invoice::factory()->create(['customer_id' => $this->customer->id]);
+
+    $this->actingAs($this->accounts)
+        ->get(route('invoices.show', $invoice))
+        ->assertOk()
+        ->assertSee('Download PDF')
+        ->assertSee(route('invoices.pdf', $invoice), false);
+});

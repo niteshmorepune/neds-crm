@@ -35,6 +35,7 @@
                     @if ($invoice->status === \App\Enums\InvoiceStatus::Draft)
                         <span class="inline-flex items-center rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800">Draft — not visible to client</span>
                     @endif
+                    <a href="{{ route('invoices.pdf', $invoice) }}" target="_blank" class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Download PDF</a>
                     @if ($invoice->promiseBroken())
                         <span class="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-800">
                             Payment promise broken — was due {{ $invoice->payment_promised_date->format('d M Y') }}
