@@ -4,12 +4,16 @@ use App\Enums\LeadSource;
 use App\Enums\LeadStatus;
 use App\Enums\TicketStatus;
 use App\Enums\UserRole;
+use App\Enums\VisibilityAuditTouchChannel;
+use App\Enums\VisibilityAuditTouchType;
 use App\Jobs\ImportWhatsappTicketMedia;
 use App\Models\Contact;
 use App\Models\Customer;
 use App\Models\Lead;
+use App\Models\Service;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Models\VisibilityAuditTouch;
 use Illuminate\Support\Facades\Bus;
 
 beforeEach(function () {
@@ -615,4 +619,66 @@ it('leaves an inbound Lead message body unprefixed, same as before this feature'
     ], ['Authorization' => 'Bearer test-wa-token'])->assertOk();
 
     expect($lead->notes()->latest()->first()->body)->toBe('What are your charges for GMB?');
+});
+
+it('logs a VisibilityAuditTouch when a VA-cohort lead sends an inbound WhatsApp reply', function () {
+    $gmb = Service::factory()->create(['name' => 'GMB', 'is_active' => true]);
+    $lead = Lead::factory()->create([
+        'phone' => '919999999999',
+        'whatsapp_conversation_id' => 'conv_va_inbound',
+        'meta_leadgen_id' => 'lg_'.uniqid(),
+        'service_id' => $gmb->id,
+    ]);
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '919999999999',
+        'message' => 'How much does the audit cost?',
+        'conversation_id' => 'conv_va_inbound',
+        'message_id' => 'wa_msg_va_inbound',
+        'direction' => 'inbound',
+        'sender_type' => 'customer',
+    ], ['Authorization' => 'Bearer test-wa-token'])->assertOk();
+
+    $touch = VisibilityAuditTouch::where('lead_id', $lead->id)->first();
+    expect($touch)->not->toBeNull()
+        ->and($touch->touch_type)->toBe(VisibilityAuditTouchType::CustomerReply)
+        ->and($touch->channel)->toBe(VisibilityAuditTouchChannel::CustomerWhatsapp)
+        ->and($touch->success)->toBeTrue();
+});
+
+it('does not log a VisibilityAuditTouch for an outbound message, even on a VA-cohort lead', function () {
+    $gmb = Service::factory()->create(['name' => 'GMB', 'is_active' => true]);
+    $lead = Lead::factory()->create([
+        'phone' => '919999999999',
+        'whatsapp_conversation_id' => 'conv_va_outbound',
+        'meta_leadgen_id' => 'lg_'.uniqid(),
+        'service_id' => $gmb->id,
+    ]);
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '919999999999',
+        'message' => 'It is a discounted audit at a fixed price.',
+        'conversation_id' => 'conv_va_outbound',
+        'message_id' => 'wa_msg_va_outbound',
+        'direction' => 'outbound',
+        'sender_type' => 'agent',
+        'sender_name' => 'Kiran Katte',
+    ], ['Authorization' => 'Bearer test-wa-token'])->assertOk();
+
+    expect(VisibilityAuditTouch::where('lead_id', $lead->id)->exists())->toBeFalse();
+});
+
+it('does not log a VisibilityAuditTouch for an inbound reply from a lead outside the VA cohort', function () {
+    $lead = Lead::factory()->create(['phone' => '919999999999', 'whatsapp_conversation_id' => 'conv_non_va_inbound']);
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '919999999999',
+        'message' => 'Just a regular website enquiry.',
+        'conversation_id' => 'conv_non_va_inbound',
+        'message_id' => 'wa_msg_non_va_inbound',
+        'direction' => 'inbound',
+        'sender_type' => 'customer',
+    ], ['Authorization' => 'Bearer test-wa-token'])->assertOk();
+
+    expect(VisibilityAuditTouch::where('lead_id', $lead->id)->exists())->toBeFalse();
 });

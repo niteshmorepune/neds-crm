@@ -31,22 +31,45 @@ class VisibilityAuditFunnelMetrics
 {
     /**
      * Leads who reached the landing page (an attributed `landing_viewed`
-     * event) but never reached checkout and never paid.
+     * event) but never reached checkout and never paid. $ownerId narrows to
+     * one owner's own leads — used by the Recovery worklist's "Your Gaps"
+     * section so a Sales user sees only their own queue, distinct from the
+     * page's existing (unscoped, whole-team) tables above it.
      */
-    public function stuckAtLanding(): Collection
+    public function stuckAtLanding(?int $ownerId = null): Collection
     {
-        return $this->stuckQuery(VisibilityAuditFunnelEventType::LandingViewed)
+        return $this->stuckQuery(VisibilityAuditFunnelEventType::LandingViewed, $ownerId)
             ->whereDoesntHave('visibilityAuditFunnelEvents', fn ($q) => $q->where('event_type', VisibilityAuditFunnelEventType::PaymentViewed))
             ->get();
     }
 
     /**
      * Leads who reached checkout (an attributed `payment_viewed` event) but
-     * never completed a payment.
+     * never completed a payment. $ownerId — see stuckAtLanding() above.
      */
-    public function stuckAtCheckout(): Collection
+    public function stuckAtCheckout(?int $ownerId = null): Collection
     {
-        return $this->stuckQuery(VisibilityAuditFunnelEventType::PaymentViewed)->get();
+        return $this->stuckQuery(VisibilityAuditFunnelEventType::PaymentViewed, $ownerId)->get();
+    }
+
+    /**
+     * Narrows a stuckAtLanding()/stuckAtCheckout() collection to leads that
+     * genuinely still need a human follow-up — excludes anyone staff has
+     * already replied to (over WhatsApp) since their latest funnel event.
+     * Shared by the AI Activity Summary panel (Admin/Manager) and the
+     * Recovery worklist's "Your Gaps" section (whoever's viewing) so both
+     * apply the identical exclusion rule instead of drifting apart.
+     *
+     * @param  Collection<int, Lead>  $stuckLeads
+     * @return Collection<int, Lead>
+     */
+    public function needsFollowUp(Collection $stuckLeads): Collection
+    {
+        return $stuckLeads->reject(function (Lead $lead) {
+            $latestEvent = $lead->visibilityAuditFunnelEvents->first();
+
+            return $latestEvent === null || $lead->hasStaffWhatsappReplySince($latestEvent->created_at);
+        })->values();
     }
 
     /**
@@ -106,11 +129,12 @@ class VisibilityAuditFunnelMetrics
             ->get();
     }
 
-    private function stuckQuery(VisibilityAuditFunnelEventType $type)
+    private function stuckQuery(VisibilityAuditFunnelEventType $type, ?int $ownerId = null)
     {
         return Lead::query()
             ->whereHas('visibilityAuditFunnelEvents', fn ($q) => $q->where('event_type', $type))
             ->whereDoesntHave('visibilityAuditPurchases')
+            ->when($ownerId, fn ($q) => $q->where('owner_id', $ownerId))
             ->with(['owner', 'visibilityAuditFunnelEvents' => fn ($q) => $q->where('event_type', $type)->latest()]);
     }
 
@@ -327,8 +351,12 @@ class VisibilityAuditFunnelMetrics
      * own filters); omit either for everything. Always AI-WhatsApp only —
      * a staff call's own detail already lives on the Lead's Call Log tab,
      * so this report stays scoped to the channel nobody else already lists.
+     * $ownerId narrows to one owner's own leads — used by the Recovery
+     * worklist's "Your Message Log" section so a Sales user sees only sends
+     * to their own leads, distinct from the Admin/Manager dashboard's
+     * unscoped message log.
      */
-    public function touchLogQuery(?Carbon $from = null, ?Carbon $to = null, ?VisibilityAuditTouchType $touchType = null, ?bool $success = null)
+    public function touchLogQuery(?Carbon $from = null, ?Carbon $to = null, ?VisibilityAuditTouchType $touchType = null, ?bool $success = null, ?int $ownerId = null)
     {
         return VisibilityAuditTouch::query()
             ->where('channel', VisibilityAuditTouchChannel::AiWhatsapp)
@@ -337,6 +365,7 @@ class VisibilityAuditFunnelMetrics
             ->when($to, fn ($q) => $q->where('occurred_at', '<=', $to))
             ->when($touchType, fn ($q) => $q->where('touch_type', $touchType))
             ->when($success !== null, fn ($q) => $q->where('success', $success))
+            ->when($ownerId, fn ($q) => $q->whereHas('lead', fn ($lq) => $lq->where('owner_id', $ownerId)))
             ->latest('occurred_at');
     }
 
@@ -375,6 +404,87 @@ class VisibilityAuditFunnelMetrics
             ->when($from, fn ($q) => $q->where('created_at', '>=', $from))
             ->when($to, fn ($q) => $q->where('created_at', '<=', $to))
             ->count();
+    }
+
+    /**
+     * The actual Leads behind awaitingServiceTag()'s count, oldest first —
+     * so the AI Activity Summary panel can name the longest-waiting ones
+     * instead of only showing a bare number. Same eligibility rule
+     * (meta_leadgen_id set, service_id null), just returning rows instead
+     * of a count.
+     *
+     * $ownerId narrows to one owner's own leads — see stuckAtLanding()'s
+     * docblock for why (Recovery worklist "Your Gaps" section).
+     *
+     * @return Collection<int, Lead>
+     */
+    public function leadsAwaitingServiceTag(int $limit = 10, ?int $ownerId = null): Collection
+    {
+        return Lead::query()
+            ->whereNotNull('meta_leadgen_id')
+            ->whereNull('service_id')
+            ->when($ownerId, fn ($q) => $q->where('owner_id', $ownerId))
+            ->oldest('created_at')
+            ->limit($limit)
+            ->get(['id', 'name', 'created_at', 'owner_id']);
+    }
+
+    /**
+     * Every VisibilityAuditTouch (any channel/type, success or failure) that
+     * occurred outside office hours (9am-7pm Asia/Kolkata) since $since —
+     * the "what did AI handle overnight" feed behind the AI Activity
+     * Summary panel. Filtered in PHP (not SQL) since touch volume here is
+     * small (well under 100 rows even across the whole funnel's history as
+     * of this writing) and a hard 9/19 boundary in SQL would need a
+     * timezone-aware HOUR() expression MySQL's query builder doesn't give a
+     * clean cross-connection way to express.
+     *
+     * @return Collection<int, VisibilityAuditTouch>
+     */
+    public function afterHoursTouches(Carbon $since): Collection
+    {
+        $tz = config('app.display_timezone', 'Asia/Kolkata');
+
+        return VisibilityAuditTouch::query()
+            ->with(['lead' => fn ($q) => $q->withTrashed()])
+            ->where('occurred_at', '>=', $since)
+            ->orderBy('occurred_at')
+            ->get()
+            ->filter(function (VisibilityAuditTouch $touch) use ($tz) {
+                $hour = (int) $touch->occurred_at->copy()->timezone($tz)->format('G');
+
+                return $hour < 9 || $hour >= 19;
+            })
+            ->values();
+    }
+
+    /**
+     * The latest customer_reply touch per Lead (see
+     * WhatsappWebhookController::recordLeadMessage()) that's at least
+     * $olderThan old and still has no staff WhatsApp reply since — "a real
+     * customer sent something and nobody from staff has answered yet",
+     * distinct from stuckAtLanding()/stuckAtCheckout() (which track funnel
+     * *page* progress, not conversation replies). Reuses
+     * Lead::hasStaffWhatsappReplySince() so the same "AI's own after-hours
+     * holding reply doesn't count as answered" rule applies here too.
+     *
+     * $ownerId narrows to one owner's own leads — see stuckAtLanding()'s
+     * docblock for why (Recovery worklist "Your Gaps" section).
+     *
+     * @return Collection<int, VisibilityAuditTouch>
+     */
+    public function unansweredInboundReplies(Carbon $olderThan, ?int $ownerId = null): Collection
+    {
+        return VisibilityAuditTouch::query()
+            ->where('touch_type', VisibilityAuditTouchType::CustomerReply)
+            ->where('occurred_at', '<=', $olderThan)
+            ->when($ownerId, fn ($q) => $q->whereHas('lead', fn ($lq) => $lq->where('owner_id', $ownerId)))
+            ->with('lead.owner')
+            ->orderByDesc('occurred_at')
+            ->get()
+            ->unique('lead_id')
+            ->filter(fn (VisibilityAuditTouch $touch) => $touch->lead !== null && ! $touch->lead->hasStaffWhatsappReplySince($touch->occurred_at))
+            ->values();
     }
 
     /**

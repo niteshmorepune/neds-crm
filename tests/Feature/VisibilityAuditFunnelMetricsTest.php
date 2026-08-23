@@ -6,6 +6,7 @@ use App\Enums\VisibilityAuditTouchChannel;
 use App\Enums\VisibilityAuditTouchType;
 use App\Models\Lead;
 use App\Models\Service;
+use App\Models\User;
 use App\Models\VisibilityAuditFunnelEvent;
 use App\Models\VisibilityAuditPurchase;
 use App\Models\VisibilityAuditTouch;
@@ -256,4 +257,182 @@ it('treats an unrelated lead as out of cohort', function () {
     $lead = Lead::factory()->create();
 
     expect($this->metrics->isVisibilityAuditCohort($lead))->toBeFalse();
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// leadsAwaitingServiceTag()
+// ──────────────────────────────────────────────────────────────────────────────
+
+it('returns the actual leads awaiting a service tag, oldest first', function () {
+    $newer = Lead::factory()->create(['meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => null, 'name' => 'Newer']);
+    $newer->forceFill(['created_at' => now()->subHour()])->saveQuietly();
+
+    $older = Lead::factory()->create(['meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => null, 'name' => 'Older']);
+    $older->forceFill(['created_at' => now()->subDays(2)])->saveQuietly();
+
+    Lead::factory()->create(['meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => $this->gmb->id]); // tagged — excluded
+
+    expect($this->metrics->leadsAwaitingServiceTag()->pluck('name')->all())->toBe(['Older', 'Newer']);
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// afterHoursTouches()
+// ──────────────────────────────────────────────────────────────────────────────
+
+it('keeps only touches that occurred outside 9am-7pm Asia/Kolkata', function () {
+    $lead = Lead::factory()->create();
+    $tz = 'Asia/Kolkata';
+
+    $late = VisibilityAuditTouch::create(['lead_id' => $lead->id, 'touch_type' => VisibilityAuditTouchType::FirstInvite, 'channel' => VisibilityAuditTouchChannel::AiWhatsapp, 'occurred_at' => now(), 'success' => true]);
+    $late->forceFill(['occurred_at' => now($tz)->setTime(22, 0)->utc()])->saveQuietly();
+
+    $daytime = VisibilityAuditTouch::create(['lead_id' => $lead->id, 'touch_type' => VisibilityAuditTouchType::RecoveryNudgeLanding, 'channel' => VisibilityAuditTouchChannel::AiWhatsapp, 'occurred_at' => now(), 'success' => true]);
+    $daytime->forceFill(['occurred_at' => now($tz)->setTime(14, 0)->utc()])->saveQuietly();
+
+    $tooOld = VisibilityAuditTouch::create(['lead_id' => $lead->id, 'touch_type' => VisibilityAuditTouchType::FirstInvite, 'channel' => VisibilityAuditTouchChannel::AiWhatsapp, 'occurred_at' => now(), 'success' => true]);
+    $tooOld->forceFill(['occurred_at' => now($tz)->subDays(5)->setTime(23, 0)->utc()])->saveQuietly();
+
+    $result = $this->metrics->afterHoursTouches(now()->subHours(24));
+
+    expect($result->pluck('id')->all())->toBe([$late->id]);
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// unansweredInboundReplies()
+// ──────────────────────────────────────────────────────────────────────────────
+
+it('flags a lead whose customer reply has had no staff WhatsApp reply since', function () {
+    $lead = Lead::factory()->create();
+    $touch = VisibilityAuditTouch::create([
+        'lead_id' => $lead->id,
+        'touch_type' => VisibilityAuditTouchType::CustomerReply,
+        'channel' => VisibilityAuditTouchChannel::CustomerWhatsapp,
+        'occurred_at' => now()->subHours(3),
+        'success' => true,
+    ]);
+
+    $result = $this->metrics->unansweredInboundReplies(now()->subHours(2));
+
+    expect($result->pluck('lead_id')->all())->toBe([$lead->id])
+        ->and($result->first()->id)->toBe($touch->id);
+});
+
+it('excludes a lead whose customer reply already got a staff WhatsApp reply', function () {
+    $lead = Lead::factory()->create();
+    VisibilityAuditTouch::create([
+        'lead_id' => $lead->id,
+        'touch_type' => VisibilityAuditTouchType::CustomerReply,
+        'channel' => VisibilityAuditTouchChannel::CustomerWhatsapp,
+        'occurred_at' => now()->subHours(3),
+        'success' => true,
+    ]);
+    $lead->notes()->create(['user_id' => null, 'body' => "[Sent via WhatsApp by Kiran Katte]\nOn it, calling you now."]);
+
+    expect($this->metrics->unansweredInboundReplies(now()->subHours(2)))->toHaveCount(0);
+});
+
+it('does not count the AI after-hours holding reply as staff having answered', function () {
+    $lead = Lead::factory()->create();
+    VisibilityAuditTouch::create([
+        'lead_id' => $lead->id,
+        'touch_type' => VisibilityAuditTouchType::CustomerReply,
+        'channel' => VisibilityAuditTouchChannel::CustomerWhatsapp,
+        'occurred_at' => now()->subHours(3),
+        'success' => true,
+    ]);
+    $lead->notes()->create(['user_id' => null, 'body' => "[Sent via WhatsApp by AI Assistant (auto-reply)]\nThanks, someone will get back to you."]);
+
+    expect($this->metrics->unansweredInboundReplies(now()->subHours(2)))->toHaveCount(1);
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// $ownerId scoping — stuckAtLanding/stuckAtCheckout/leadsAwaitingServiceTag/
+// unansweredInboundReplies/touchLogQuery (Recovery worklist "Your gaps"/
+// "Your message log" sections)
+// ──────────────────────────────────────────────────────────────────────────────
+
+it('scopes stuckAtCheckout/stuckAtLanding to one owner when $ownerId is given', function () {
+    $owner = User::factory()->create();
+    $other = User::factory()->create();
+
+    $mineCheckout = Lead::factory()->create(['owner_id' => $owner->id]);
+    VisibilityAuditFunnelEvent::create(['event_type' => VisibilityAuditFunnelEventType::PaymentViewed, 'lead_id' => $mineCheckout->id]);
+    $theirsCheckout = Lead::factory()->create(['owner_id' => $other->id]);
+    VisibilityAuditFunnelEvent::create(['event_type' => VisibilityAuditFunnelEventType::PaymentViewed, 'lead_id' => $theirsCheckout->id]);
+
+    $mineLanding = Lead::factory()->create(['owner_id' => $owner->id]);
+    VisibilityAuditFunnelEvent::create(['event_type' => VisibilityAuditFunnelEventType::LandingViewed, 'lead_id' => $mineLanding->id]);
+    $theirsLanding = Lead::factory()->create(['owner_id' => $other->id]);
+    VisibilityAuditFunnelEvent::create(['event_type' => VisibilityAuditFunnelEventType::LandingViewed, 'lead_id' => $theirsLanding->id]);
+
+    expect($this->metrics->stuckAtCheckout($owner->id)->pluck('id')->all())->toBe([$mineCheckout->id])
+        ->and($this->metrics->stuckAtLanding($owner->id)->pluck('id')->all())->toBe([$mineLanding->id]);
+});
+
+it('scopes leadsAwaitingServiceTag to one owner when $ownerId is given', function () {
+    $owner = User::factory()->create();
+    $other = User::factory()->create();
+
+    $mine = Lead::factory()->create(['owner_id' => $owner->id, 'meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => null]);
+    Lead::factory()->create(['owner_id' => $other->id, 'meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => null]);
+
+    expect($this->metrics->leadsAwaitingServiceTag(10, $owner->id)->pluck('id')->all())->toBe([$mine->id]);
+});
+
+it('scopes unansweredInboundReplies to one owner when $ownerId is given', function () {
+    $owner = User::factory()->create();
+    $other = User::factory()->create();
+
+    $mine = Lead::factory()->create(['owner_id' => $owner->id]);
+    VisibilityAuditTouch::create(['lead_id' => $mine->id, 'touch_type' => VisibilityAuditTouchType::CustomerReply, 'channel' => VisibilityAuditTouchChannel::CustomerWhatsapp, 'occurred_at' => now()->subHours(3), 'success' => true]);
+
+    $theirs = Lead::factory()->create(['owner_id' => $other->id]);
+    VisibilityAuditTouch::create(['lead_id' => $theirs->id, 'touch_type' => VisibilityAuditTouchType::CustomerReply, 'channel' => VisibilityAuditTouchChannel::CustomerWhatsapp, 'occurred_at' => now()->subHours(3), 'success' => true]);
+
+    expect($this->metrics->unansweredInboundReplies(now()->subHours(2), $owner->id)->pluck('lead_id')->all())->toBe([$mine->id]);
+});
+
+it('scopes touchLogQuery to one owner when $ownerId is given', function () {
+    $owner = User::factory()->create();
+    $other = User::factory()->create();
+
+    $mine = Lead::factory()->create(['owner_id' => $owner->id]);
+    VisibilityAuditTouch::create(['lead_id' => $mine->id, 'touch_type' => VisibilityAuditTouchType::FirstInvite, 'channel' => VisibilityAuditTouchChannel::AiWhatsapp, 'occurred_at' => now(), 'success' => true]);
+
+    $theirs = Lead::factory()->create(['owner_id' => $other->id]);
+    VisibilityAuditTouch::create(['lead_id' => $theirs->id, 'touch_type' => VisibilityAuditTouchType::FirstInvite, 'channel' => VisibilityAuditTouchChannel::AiWhatsapp, 'occurred_at' => now(), 'success' => true]);
+
+    $result = $this->metrics->touchLogQuery(ownerId: $owner->id)->get();
+
+    expect($result->pluck('lead_id')->all())->toBe([$mine->id]);
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// needsFollowUp()
+// ──────────────────────────────────────────────────────────────────────────────
+
+it('needsFollowUp excludes a stuck lead already replied to by staff since its latest event', function () {
+    $handled = Lead::factory()->create();
+    $event = VisibilityAuditFunnelEvent::create(['event_type' => VisibilityAuditFunnelEventType::LandingViewed, 'lead_id' => $handled->id]);
+    $event->forceFill(['created_at' => now()->subHours(5)])->saveQuietly();
+    $handled->notes()->create(['user_id' => null, 'body' => "[Sent via WhatsApp by Kiran Katte]\nOn it."]);
+
+    $untouched = Lead::factory()->create();
+    VisibilityAuditFunnelEvent::create(['event_type' => VisibilityAuditFunnelEventType::LandingViewed, 'lead_id' => $untouched->id]);
+
+    $stuck = $this->metrics->stuckAtLanding();
+    $result = $this->metrics->needsFollowUp($stuck);
+
+    expect($result->pluck('id')->all())->toBe([$untouched->id]);
+});
+
+it('only reports the latest unanswered reply per lead, not every historical one', function () {
+    $lead = Lead::factory()->create();
+    VisibilityAuditTouch::create(['lead_id' => $lead->id, 'touch_type' => VisibilityAuditTouchType::CustomerReply, 'channel' => VisibilityAuditTouchChannel::CustomerWhatsapp, 'occurred_at' => now()->subDays(2), 'success' => true]);
+    $latest = VisibilityAuditTouch::create(['lead_id' => $lead->id, 'touch_type' => VisibilityAuditTouchType::CustomerReply, 'channel' => VisibilityAuditTouchChannel::CustomerWhatsapp, 'occurred_at' => now()->subHours(3), 'success' => true]);
+
+    $result = $this->metrics->unansweredInboundReplies(now()->subHours(2));
+
+    expect($result)->toHaveCount(1)
+        ->and($result->first()->id)->toBe($latest->id);
 });

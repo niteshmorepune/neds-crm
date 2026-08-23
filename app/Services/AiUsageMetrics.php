@@ -244,6 +244,7 @@ class AiUsageMetrics
             'quotation_line_item_suggestion' => 'Quotation Line Item Suggestion',
             'crm_query_classify' => 'Ask the CRM (classify)',
             'crm_query_answer' => 'Ask the CRM (answer)',
+            'visibility_audit_activity_summary' => 'VA Funnel Activity Summary',
             default => ucwords(str_replace('_', ' ', $feature)),
         };
     }

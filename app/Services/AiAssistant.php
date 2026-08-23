@@ -979,6 +979,70 @@ class AiAssistant
     }
 
     /**
+     * The VA Funnel Dashboard's on-demand AI panel: a two-part briefing for
+     * Admin/Manager splitting what AI handled outside office hours from
+     * what the team should act on right now — grounded ONLY in the lines
+     * given (same discipline as summarizeTeamPerformance/
+     * suggestTeamProductivityGaps), never inventing a lead name or number
+     * not present in either list. Callers assemble both lists from
+     * VisibilityAuditFunnelMetrics (afterHoursTouches(), stuckAtLanding()/
+     * stuckAtCheckout() filtered to no staff reply since,
+     * leadsAwaitingServiceTag(), unansweredInboundReplies()) — nothing new
+     * computed here.
+     *
+     * @param  list<string>  $afterHoursLines
+     * @param  list<string>  $gapLines
+     */
+    public function summarizeVisibilityAuditActivity(array $afterHoursLines, array $gapLines): ?string
+    {
+        if (! Ai::enabled()) {
+            return null;
+        }
+
+        $system = <<<'PROMPT'
+        You brief the team at a digital-solutions agency in India on their
+        Visibility Audit lead funnel — a low-ticket Google Business Profile
+        (GBP) audit offer sent via WhatsApp to Meta Ads leads. Base your
+        briefing ONLY on the lines given below; never invent a lead name,
+        number, or reason not evidenced there. These leads are mostly local,
+        walk-in-dependent small business owners (shops, clinics,
+        professionals) who care about being found on Google locally, trust
+        WhatsApp over email, and respond far better to a fast personal call
+        than to yet another automated message once one has already gone
+        unanswered.
+
+        Write exactly two short labeled sections, each 2-4 sentences, plain
+        text, no markdown:
+
+        AFTER HOURS: what AI handled automatically outside office hours
+        (9am-7pm IST) — WhatsApp sends and any customer replies. If nothing
+        happened, say so in one sentence.
+
+        TEAM ACTION NEEDED: the concrete things the team should do right
+        now, ranked by urgency, naming specific leads and owners when given.
+        If a lead has already had an AI nudge and a staff touch with no
+        progress, recommend a personal call over another WhatsApp message.
+        If any Meta leads are sitting with no service tagged, call that out
+        as the single highest-leverage action — tagging the service is what
+        turns the AI invite on at all, so an untagged lead gets no
+        automation whatsoever until someone does this.
+
+        Output only the two labeled sections.
+        PROMPT;
+
+        $prompt = "AFTER-HOURS ACTIVITY (outside 9am-7pm IST):\n"
+            .($afterHoursLines === [] ? '- Nothing to report.' : implode("\n", $afterHoursLines))
+            ."\n\nOFFICE-HOURS GAPS:\n"
+            .($gapLines === [] ? '- Nothing outstanding.' : implode("\n", $gapLines));
+
+        return $this->trimmed($this->client->message(
+            feature: 'visibility_audit_activity_summary',
+            prompt: $prompt,
+            system: $system,
+        ));
+    }
+
+    /**
      * Formats a RoleTargetMetrics::progressForUser() row into one prompt
      * fragment, leading with a comma so it appends cleanly onto an existing
      * line (suggestTeamProductivityGaps()) — callers ltrim(', ') it off when
