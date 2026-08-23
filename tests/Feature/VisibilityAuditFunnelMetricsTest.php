@@ -260,6 +260,49 @@ it('treats an unrelated lead as out of cohort', function () {
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
+// funnelStatusFor()
+// ──────────────────────────────────────────────────────────────────────────────
+
+it('returns null for a lead outside the VA cohort', function () {
+    $lead = Lead::factory()->create();
+
+    expect($this->metrics->funnelStatusFor($lead))->toBeNull();
+});
+
+it('reports "eligible, not yet invited" for a cohort lead with no invite sent', function () {
+    $lead = Lead::factory()->create(['meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => $this->gmb->id]);
+
+    expect($this->metrics->funnelStatusFor($lead))
+        ->toBe(['stage' => 'eligible', 'label' => 'Eligible for the Visibility Audit invite, not yet sent', 'tone' => 'gray', 'since' => null]);
+});
+
+it('reports "invited" once invited_at is set but no funnel event exists yet', function () {
+    $invitedAt = now()->subHour();
+    $lead = Lead::factory()->create(['meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => $this->gmb->id, 'visibility_audit_invited_at' => $invitedAt]);
+
+    $status = $this->metrics->funnelStatusFor($lead);
+
+    expect($status['stage'])->toBe('invited')
+        ->and($status['since']->toDateTimeString())->toBe($invitedAt->toDateTimeString());
+});
+
+it('reports the checkout stage over the landing stage when a lead reached both', function () {
+    $lead = Lead::factory()->create();
+    VisibilityAuditFunnelEvent::create(['event_type' => VisibilityAuditFunnelEventType::LandingViewed, 'lead_id' => $lead->id]);
+    VisibilityAuditFunnelEvent::create(['event_type' => VisibilityAuditFunnelEventType::PaymentViewed, 'lead_id' => $lead->id]);
+
+    expect($this->metrics->funnelStatusFor($lead)['stage'])->toBe('checkout_stuck');
+});
+
+it('reports "paid" even for a lead who also has a checkout event, since paid outranks everything', function () {
+    $lead = Lead::factory()->create();
+    VisibilityAuditFunnelEvent::create(['event_type' => VisibilityAuditFunnelEventType::PaymentViewed, 'lead_id' => $lead->id]);
+    VisibilityAuditPurchase::create(['tier' => VisibilityAuditTier::Gbp, 'amount_paise' => 12000, 'razorpay_payment_id' => 'pay_status1', 'lead_id' => $lead->id]);
+
+    expect($this->metrics->funnelStatusFor($lead)['stage'])->toBe('paid');
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
 // leadsAwaitingServiceTag()
 // ──────────────────────────────────────────────────────────────────────────────
 

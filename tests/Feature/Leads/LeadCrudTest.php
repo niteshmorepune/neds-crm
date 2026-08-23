@@ -3,8 +3,12 @@
 use App\Enums\LeadSource;
 use App\Enums\LeadStatus;
 use App\Enums\UserRole;
+use App\Enums\VisibilityAuditFunnelEventType;
+use App\Enums\VisibilityAuditTier;
 use App\Models\Lead;
 use App\Models\User;
+use App\Models\VisibilityAuditFunnelEvent;
+use App\Models\VisibilityAuditPurchase;
 use Database\Seeders\MenuItemsSeeder;
 use Illuminate\Support\Str;
 
@@ -83,6 +87,61 @@ it('shows "No calls logged" on a lead with no call history', function () {
     $this->actingAs($this->admin)->get(route('leads.show', $lead))
         ->assertOk()
         ->assertSee('No calls logged');
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Visibility Audit funnel status badge on the lead's own page
+// ──────────────────────────────────────────────────────────────────────────────
+
+it('shows the Visibility Audit checkout-stuck status on the lead\'s own page, not just the Recovery worklist', function () {
+    $lead = Lead::factory()->create(['name' => 'Dineshshelke5239']);
+    VisibilityAuditFunnelEvent::create([
+        'event_type' => VisibilityAuditFunnelEventType::PaymentViewed,
+        'lead_id' => $lead->id,
+    ]);
+
+    $this->actingAs($this->admin)->get(route('leads.show', $lead))
+        ->assertOk()
+        ->assertSee('Visibility Audit:')
+        ->assertSee('Reached checkout, hasn', false);
+});
+
+it('shows the Visibility Audit landing-stuck status on the lead\'s own page', function () {
+    $lead = Lead::factory()->create();
+    VisibilityAuditFunnelEvent::create([
+        'event_type' => VisibilityAuditFunnelEventType::LandingViewed,
+        'lead_id' => $lead->id,
+    ]);
+
+    $this->actingAs($this->admin)->get(route('leads.show', $lead))
+        ->assertOk()
+        ->assertSee('Viewed the offer page, no checkout yet');
+});
+
+it('shows the paid status even after later stages, taking priority over a checkout event', function () {
+    $lead = Lead::factory()->create();
+    VisibilityAuditFunnelEvent::create([
+        'event_type' => VisibilityAuditFunnelEventType::PaymentViewed,
+        'lead_id' => $lead->id,
+    ]);
+    VisibilityAuditPurchase::create([
+        'tier' => VisibilityAuditTier::Gbp,
+        'amount_paise' => 12000,
+        'razorpay_payment_id' => 'pay_showpage1',
+        'lead_id' => $lead->id,
+    ]);
+
+    $this->actingAs($this->admin)->get(route('leads.show', $lead))
+        ->assertOk()
+        ->assertSee('Paid — Visibility Audit purchased');
+});
+
+it('does not show any Visibility Audit status for a lead outside the VA cohort', function () {
+    $lead = Lead::factory()->create();
+
+    $this->actingAs($this->admin)->get(route('leads.show', $lead))
+        ->assertOk()
+        ->assertDontSee('Visibility Audit:');
 });
 
 it('filters leads to those with a due follow-up via the follow_up_due flag', function () {

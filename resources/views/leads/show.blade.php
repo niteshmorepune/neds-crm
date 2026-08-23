@@ -59,6 +59,23 @@
                             @endif
                         </div>
                     @endif
+
+                    @if ($vaFunnelStatus)
+                        @php
+                            $vaTone = [
+                                'green' => 'border-green-200 bg-green-50 text-green-800',
+                                'red' => 'border-red-200 bg-red-50 text-red-900',
+                                'amber' => 'border-amber-200 bg-amber-50 text-amber-900',
+                                'gray' => 'border-gray-200 bg-gray-50 text-gray-700',
+                            ][$vaFunnelStatus['tone']];
+                        @endphp
+                        <div class="mt-3 rounded-md border px-3 py-2 text-sm {{ $vaTone }}">
+                            <span class="font-medium">Visibility Audit:</span> {{ $vaFunnelStatus['label'] }}
+                            @if ($vaFunnelStatus['since'])
+                                <span class="text-xs opacity-75">({{ $vaFunnelStatus['since']->diffForHumans() }})</span>
+                            @endif
+                        </div>
+                    @endif
                 </div>
 
                 <div class="flex items-center gap-2 flex-wrap">

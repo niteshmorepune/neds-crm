@@ -504,6 +504,52 @@ class VisibilityAuditFunnelMetrics
         return $lead->visibilityAuditFunnelEvents()->exists();
     }
 
+    /**
+     * This one Lead's current Visibility Audit funnel stage, for display on
+     * the Lead's own page — a real gap found 2026-08-23: the Recovery
+     * worklist/dashboard already show "reached checkout, didn't pay" for a
+     * lead, but opening that exact lead's own record showed nothing of the
+     * kind, since nothing surfaced this funnel-stage information there.
+     * Returns null for a lead outside the VA cohort entirely (nothing to
+     * show). Checked in the same priority order funnelSummary()'s stages
+     * imply — paid outranks stuck-at-checkout outranks stuck-at-landing,
+     * etc. — so a lead only ever gets its furthest-reached stage, not every
+     * stage it passed through.
+     *
+     * @return array{stage: string, label: string, tone: string, since: ?Carbon}|null
+     */
+    public function funnelStatusFor(Lead $lead): ?array
+    {
+        if (! $this->isVisibilityAuditCohort($lead)) {
+            return null;
+        }
+
+        $purchase = $lead->visibilityAuditPurchases()->latest()->first();
+        if ($purchase !== null) {
+            return ['stage' => 'paid', 'label' => 'Paid — Visibility Audit purchased', 'tone' => 'green', 'since' => $purchase->created_at];
+        }
+
+        $checkoutEvent = $lead->visibilityAuditFunnelEvents()
+            ->where('event_type', VisibilityAuditFunnelEventType::PaymentViewed)
+            ->latest()->first();
+        if ($checkoutEvent !== null) {
+            return ['stage' => 'checkout_stuck', 'label' => "Reached checkout, hasn't paid", 'tone' => 'red', 'since' => $checkoutEvent->created_at];
+        }
+
+        $landingEvent = $lead->visibilityAuditFunnelEvents()
+            ->where('event_type', VisibilityAuditFunnelEventType::LandingViewed)
+            ->latest()->first();
+        if ($landingEvent !== null) {
+            return ['stage' => 'landing_stuck', 'label' => 'Viewed the offer page, no checkout yet', 'tone' => 'amber', 'since' => $landingEvent->created_at];
+        }
+
+        if ($lead->visibility_audit_invited_at !== null) {
+            return ['stage' => 'invited', 'label' => "Invited via WhatsApp, hasn't viewed the offer page yet", 'tone' => 'gray', 'since' => $lead->visibility_audit_invited_at];
+        }
+
+        return ['stage' => 'eligible', 'label' => 'Eligible for the Visibility Audit invite, not yet sent', 'tone' => 'gray', 'since' => null];
+    }
+
     private function eligibleLeadsQuery(?Carbon $from, ?Carbon $to)
     {
         return Lead::query()

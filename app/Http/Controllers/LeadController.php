@@ -15,6 +15,7 @@ use App\Http\Requests\LeadUpdateRequest;
 use App\Models\Lead;
 use App\Models\Service;
 use App\Models\User;
+use App\Services\VisibilityAuditFunnelMetrics;
 use App\Support\Money;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
@@ -200,7 +201,7 @@ class LeadController extends Controller
         return redirect()->route('leads.show', $lead)->with('status', 'Lead created.');
     }
 
-    public function show(Lead $lead): View
+    public function show(Lead $lead, VisibilityAuditFunnelMetrics $vaMetrics): View
     {
         $this->authorize('view', $lead);
 
@@ -216,6 +217,7 @@ class LeadController extends Controller
             'canReassign' => $canReassign,
             'reassignTargets' => $canReassign ? $this->reassignTargets($this->user()) : new Collection,
             'reassignReasons' => LeadReassignmentReason::cases(),
+            'vaFunnelStatus' => $vaMetrics->funnelStatusFor($lead),
         ]);
     }
 
