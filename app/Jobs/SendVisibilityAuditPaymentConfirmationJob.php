@@ -96,7 +96,9 @@ class SendVisibilityAuditPaymentConfirmationJob implements ShouldQueue
             return;
         }
 
-        $this->logTouch($purchase, true, ['template' => $templateName]);
+        // wadesk_message_id — see SendVisibilityAuditFirstInviteJob's own
+        // comment on this same field for why it's captured.
+        $this->logTouch($purchase, true, ['template' => $templateName, 'wadesk_message_id' => $response->json('messageId')]);
     }
 
     /**

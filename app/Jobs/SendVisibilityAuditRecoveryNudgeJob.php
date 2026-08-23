@@ -135,7 +135,7 @@ class SendVisibilityAuditRecoveryNudgeJob implements ShouldQueue
             return;
         }
 
-        VisibilityAuditTouch::logSend($this->leadId, $this->touchType(), true, ['template' => $templateName]);
+        VisibilityAuditTouch::logSend($this->leadId, $this->touchType(), true, ['template' => $templateName, 'wadesk_message_id' => $response->json('messageId')]);
 
         $event->update(['nudged_at' => now()]);
     }

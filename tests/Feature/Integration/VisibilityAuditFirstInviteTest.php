@@ -41,7 +41,7 @@ beforeEach(function () {
 // ──────────────────────────────────────────────────────────────────────────────
 
 it('sends the first-invite template with the enter link and marks the lead invited', function () {
-    Http::fake(['https://wadesk.test/api/send-template' => Http::response(['conversationId' => 'c1'], 201)]);
+    Http::fake(['https://wadesk.test/api/send-template' => Http::response(['conversationId' => 'c1', 'messageId' => 'wamsg_123'], 201)]);
 
     $lead = Lead::factory()->create([
         'name' => 'Priya Shah',
@@ -67,7 +67,8 @@ it('sends the first-invite template with the enter link and marks the lead invit
         ->and($touch->touch_type)->toBe(VisibilityAuditTouchType::FirstInvite)
         ->and($touch->channel)->toBe(VisibilityAuditTouchChannel::AiWhatsapp)
         ->and($touch->actor_user_id)->toBeNull()
-        ->and($touch->success)->toBeTrue();
+        ->and($touch->success)->toBeTrue()
+        ->and($touch->meta['wadesk_message_id'])->toBe('wamsg_123');
 });
 
 it('logs a failed touch, not a silently dropped one, when wadesk.in returns non-2xx', function () {

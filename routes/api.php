@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\MetaLeadsWebhookController;
 use App\Http\Controllers\Api\RazorpayVisibilityAuditWebhookController;
 use App\Http\Controllers\Api\RazorpayWebhookController;
 use App\Http\Controllers\Api\SmdostWebhookController;
+use App\Http\Controllers\Api\WadeskMessageStatusController;
 use App\Http\Controllers\Api\WhatsappWebhookController;
 use App\Http\Middleware\VerifyBiometricBridgeToken;
 use App\Http\Middleware\VerifyDrishtiWebhookSignature;
@@ -41,6 +42,15 @@ Route::post('/webhook/whatsapp', [WhatsappWebhookController::class, 'handle'])
 Route::get('/leads/context', [LeadContextController::class, 'show'])
     ->middleware(['throttle:120,1', VerifyWhatsappWebhookToken::class])
     ->name('api.leads.context');
+
+// wadesk.in → CRM bridge. Called when a message wadesk.in sent via
+// /api/send-template (a Visibility Audit touch) later flips to FAILED via
+// Meta's own async delivery-status webhook — see
+// WadeskMessageStatusController's docblock for the full "sent ≠ delivered"
+// gap this closes. Same Bearer token, same wadesk.in trust boundary.
+Route::post('/webhooks/wadesk/message-failed', [WadeskMessageStatusController::class, 'handle'])
+    ->middleware(['throttle:120,1', VerifyWhatsappWebhookToken::class])
+    ->name('api.webhooks.wadesk.message-failed');
 
 // socialmediadost.com → CRM bridge. Called when all content in a brief is
 // approved. Creates a draft invoice for the accounts team to price and send.

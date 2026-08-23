@@ -106,7 +106,11 @@ class SendVisibilityAuditFirstInviteJob implements ShouldQueue
             return;
         }
 
-        VisibilityAuditTouch::logSend($this->leadId, VisibilityAuditTouchType::FirstInvite, true, ['template' => $templateName]);
+        // wadesk_message_id lets Api\WadeskMessageStatusController find this
+        // exact touch back later, if Meta's own async status webhook reports
+        // it FAILED after wadesk.in already accepted the send request here —
+        // see that controller's docblock for the full "sent ≠ delivered" story.
+        VisibilityAuditTouch::logSend($this->leadId, VisibilityAuditTouchType::FirstInvite, true, ['template' => $templateName, 'wadesk_message_id' => $response->json('messageId')]);
 
         $lead->forceFill(['visibility_audit_invited_at' => now()])->saveQuietly();
     }
