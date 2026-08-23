@@ -10,7 +10,6 @@ use App\Services\AiAssistant;
 use App\Services\VisibilityAuditFunnelMetrics;
 use App\Support\Ai;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Collection;
 use Livewire\Component;
 
 /**
@@ -73,12 +72,12 @@ class VisibilityAuditActivitySummary extends Component
             $lines[] = "- {$awaitingCount} Meta lead(s) have no service tagged and cannot enter this funnel at all (no automation runs until tagged). Oldest waiting: {$oldest}.";
         }
 
-        foreach ($this->unhandledStuckLeads($metrics->stuckAtCheckout()) as $lead) {
+        foreach ($metrics->needsFollowUp($metrics->stuckAtCheckout()) as $lead) {
             $hours = $this->hoursSince($lead->visibilityAuditFunnelEvents->first()?->created_at);
             $lines[] = "- {$lead->name} (owner: {$lead->owner?->name}) reached checkout {$hours}h ago, no staff follow-up since, hasn't paid.";
         }
 
-        foreach ($this->unhandledStuckLeads($metrics->stuckAtLanding()) as $lead) {
+        foreach ($metrics->needsFollowUp($metrics->stuckAtLanding()) as $lead) {
             $hours = $this->hoursSince($lead->visibilityAuditFunnelEvents->first()?->created_at);
             $lines[] = "- {$lead->name} (owner: {$lead->owner?->name}) viewed the offer page {$hours}h ago, no staff follow-up since.";
         }
@@ -89,22 +88,6 @@ class VisibilityAuditActivitySummary extends Component
         }
 
         return $lines;
-    }
-
-    /**
-     * stuckAtLanding()/stuckAtCheckout() track funnel *page* progress only
-     * — they don't already exclude a lead staff has since replied to (only
-     * the recovery-nudge queries do that, to decide whether to send another
-     * automated message). Apply that same exclusion here so this panel
-     * never flags a lead someone is already mid-conversation with.
-     */
-    private function unhandledStuckLeads(Collection $leads): Collection
-    {
-        return $leads->reject(function ($lead) {
-            $latestEvent = $lead->visibilityAuditFunnelEvents->first();
-
-            return $latestEvent === null || $lead->hasStaffWhatsappReplySince($latestEvent->created_at);
-        })->values();
     }
 
     private function describeTouch(VisibilityAuditTouch $touch, string $tz): string

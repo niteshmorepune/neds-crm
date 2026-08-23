@@ -3,11 +3,14 @@
 use App\Enums\UserRole;
 use App\Enums\VisibilityAuditFunnelEventType;
 use App\Enums\VisibilityAuditTier;
+use App\Enums\VisibilityAuditTouchChannel;
+use App\Enums\VisibilityAuditTouchType;
 use App\Models\Lead;
 use App\Models\Service;
 use App\Models\User;
 use App\Models\VisibilityAuditFunnelEvent;
 use App\Models\VisibilityAuditPurchase;
+use App\Models\VisibilityAuditTouch;
 use App\Services\VisibilityAuditFunnelMetrics;
 use Database\Seeders\MenuItemsSeeder;
 use Illuminate\Support\Facades\Queue;
@@ -108,4 +111,72 @@ it('does not attribute an anonymous funnel event (no lead_id) to any lead', func
 
     expect($metrics->stuckAtLanding())->toBeEmpty();
     expect($metrics->stuckAtCheckout())->toBeEmpty();
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// "Your gaps" / "Your message log" — personal, owner-scoped sections
+// ──────────────────────────────────────────────────────────────────────────────
+
+it('shows a Sales user their own stuck-at-checkout lead in "Your gaps"', function () {
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    $mine = Lead::factory()->create(['name' => 'My Stuck Lead', 'owner_id' => $sales->id]);
+    VisibilityAuditFunnelEvent::create(['event_type' => VisibilityAuditFunnelEventType::PaymentViewed, 'lead_id' => $mine->id]);
+
+    $this->actingAs($sales)
+        ->get(route('leads.visibility-audit-recovery'))
+        ->assertOk()
+        ->assertSee('My Stuck Lead')
+        ->assertSee('Reached checkout, hasn\'t paid — call them', false);
+});
+
+it('excludes a "your gaps" lead already handled by a staff WhatsApp reply', function () {
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    $handled = Lead::factory()->create(['name' => 'Handled By Me', 'owner_id' => $sales->id]);
+    $event = VisibilityAuditFunnelEvent::create(['event_type' => VisibilityAuditFunnelEventType::LandingViewed, 'lead_id' => $handled->id]);
+    $event->forceFill(['created_at' => now()->subHours(5)])->saveQuietly();
+    $handled->notes()->create(['user_id' => null, 'body' => "[Sent via WhatsApp by {$sales->name}]\nCalling you now."]);
+
+    $response = $this->actingAs($sales)->get(route('leads.visibility-audit-recovery'))->assertOk();
+    $response->assertSee('Nothing outstanding on your own leads.');
+});
+
+it('shows a Sales user their own untagged Meta lead in "Your gaps"', function () {
+    Queue::fake();
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    Lead::factory()->create(['name' => 'My Untagged Lead', 'owner_id' => $sales->id, 'meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => null]);
+
+    $this->actingAs($sales)
+        ->get(route('leads.visibility-audit-recovery'))
+        ->assertOk()
+        ->assertSee('My Untagged Lead')
+        ->assertSee('Tag a service');
+});
+
+it('shows a Sales user their own AI-WhatsApp sends in "Your message log", scoped to their own leads', function () {
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    $otherSales = User::factory()->role(UserRole::Sales)->create();
+
+    $mine = Lead::factory()->create(['name' => 'My Log Lead', 'owner_id' => $sales->id]);
+    VisibilityAuditTouch::create([
+        'lead_id' => $mine->id,
+        'touch_type' => VisibilityAuditTouchType::FirstInvite,
+        'channel' => VisibilityAuditTouchChannel::AiWhatsapp,
+        'occurred_at' => now(),
+        'success' => true,
+    ]);
+
+    $theirs = Lead::factory()->create(['name' => 'Their Log Lead', 'owner_id' => $otherSales->id]);
+    VisibilityAuditTouch::create([
+        'lead_id' => $theirs->id,
+        'touch_type' => VisibilityAuditTouchType::FirstInvite,
+        'channel' => VisibilityAuditTouchChannel::AiWhatsapp,
+        'occurred_at' => now(),
+        'success' => true,
+    ]);
+
+    $this->actingAs($sales)
+        ->get(route('leads.visibility-audit-recovery'))
+        ->assertOk()
+        ->assertSee('My Log Lead')
+        ->assertDontSee('Their Log Lead');
 });
