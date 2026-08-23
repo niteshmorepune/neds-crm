@@ -140,6 +140,14 @@ row links straight to that lead's own page so you can act with the usual
 tools — a lead who converts from either automatic message simply
 disappears off the list, nothing extra to do there.
 
+Below that whole-team queue, two more sections show just **your own**
+leads: **Your gaps** (your leads missing a service tag, stuck waiting on a
+call, or who replied on WhatsApp with no response from you yet — each
+with an "Open lead" link) and **Your message log** (every AI-WhatsApp send
+to your own leads, with the outcome). If a lead needs a service tag,
+tagging it (Edit → Service → GMB) is what actually turns the automated
+invite on — it does nothing at all until that's set.
+
 **Automatic nurture follow-ups:** if a New lead sits with no note or logged
 call from you for **1, 3, or 7 days**, the CRM drafts a follow-up message for
 you automatically — it appears as an "✨ AI-drafted follow-up (touch N/3)"

@@ -439,6 +439,12 @@ above), with a pickable date range instead of a fixed 7 days:
 - **Not yet invited** — an amber callout for eligible leads the automation
   hasn't reached yet (usually just a few seconds/minutes behind, but worth
   a look if the count doesn't clear).
+- **✨ AI Activity Summary** — click to generate a two-part AI briefing on
+  demand: what the AI handled outside office hours (9am-7pm IST — WhatsApp
+  sends and any customer replies), and concrete gaps the team should close
+  right now (untagged leads, a stuck lead nobody's followed up with, an
+  unanswered WhatsApp reply). Nothing is sent automatically and nothing is
+  saved — regenerate any time; it always reflects the current state.
 
 **Message Log** ("Message log →" at the top of the dashboard) is the
 detailed "when and to whom" record behind the AI-WhatsApp numbers: every
@@ -449,10 +455,14 @@ funnel (a lead who should've been invited but wasn't, a stage that isn't
 converting) to check whether the automation actually tried and what
 happened.
 
-The **Visibility Audit Recovery** worklist (Sidebar → Lead Generation →
-the "Recovery worklist" link on this page) is where you or Sales/Telecaller
-actually work a stuck lead one at a time — this dashboard is the oversight
-view, not a place to take action from directly.
+The **Visibility Audit Recovery** worklist (Lead Generation → the "Audit
+Recovery" button) is where you or Sales/Telecaller actually work a stuck
+lead one at a time — this dashboard is the oversight view, not a place to
+take action from directly. That worklist also carries two sections
+personal to whoever's viewing it — **Your gaps** and **Your message
+log** — so a Sales/Telecaller user gets the same "what's stuck" and
+"what was sent" visibility you have here, scoped to just their own leads,
+without needing access to this Admin/Manager-only page.
 
 ## Employee 360°
 Sidebar → **Employee 360°** — one consolidated page per employee: this

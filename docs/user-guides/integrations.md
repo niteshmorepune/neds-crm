@@ -427,6 +427,29 @@ button (Admin only) to pull the latest name/body/category/approval status
 (and, as of the first-invite template, whether it has a Dynamic-URL
 button) straight from Meta instead of re-entering it by hand.
 
+**Delivery-failure feedback loop (added 2026-08-23):** wadesk.in's
+`POST /api/send-template` response only confirms it *accepted* the send
+request — WhatsApp's real delivery outcome (e.g. Meta's "healthy
+ecosystem engagement" quality throttle, error 131049) arrives later,
+asynchronously, via Meta's own status webhook. Real incident that
+surfaced this: a first-invite to a Meta lead was accepted by wadesk.in
+but rejected by Meta minutes later, and the CRM's funnel dashboard kept
+showing it as a clean "Sent" forever, since nothing told it otherwise.
+Fixed on both sides: the 3 VA-funnel jobs (`SendVisibilityAudit
+FirstInviteJob`/`RecoveryNudgeJob`/`PaymentConfirmationJob`) now persist
+wadesk.in's own `Message.id` (returned in `/api/send-template`'s response)
+as `meta.wadesk_message_id` on their `VisibilityAuditTouch` row; wadesk.in's
+`handleStatusUpdate()` now calls back to a new CRM endpoint,
+`POST /api/webhooks/wadesk/message-failed` (`App\Http\Controllers\Api\
+WadeskMessageStatusController`, same Bearer-token trust boundary as the
+existing webhook), whenever a message it sent flips to `FAILED` —
+matched back to the exact touch by `wadesk_message_id` and downgraded to
+`success = false` with the real error attached. **Requires
+`CRM_MESSAGE_FAILED_URL` set in wadesk.in's `.env`** (reuses the existing
+`CRM_WEBHOOK_TOKEN`, no new secret) — without it, this silently no-ops
+and the gap this closes reopens (the rest of the funnel keeps working
+normally either way).
+
 ## Integration 13 — Lead context for the wadesk.in after-hours AI assistant
 
 **What it does:** before wadesk.in's after-hours AI assistant drafts a
@@ -470,6 +493,7 @@ All integration events leave a trace in the CRM:
 | Lead Generation → source filter | Leads auto-created from Website, WhatsApp (both lines), and Meta Ads |
 | Lead → notes → green "Sent via WhatsApp" badge | Outbound Marketing-line WhatsApp replies sent from a lead |
 | Lead Generation → Audit Recovery | Leads currently stuck at the Visibility Audit landing page or checkout |
+| VA Funnel Analytics → Message log | A "Failed" row with a real Meta error reason (not just a bare wadesk.in HTTP error) confirms the delivery-failure feedback loop is working |
 
 If any integration stops working, the most common causes are:
 1. **Server `.env` out of date** — a key (`DRISHTI_SERVICE_KEY`,
