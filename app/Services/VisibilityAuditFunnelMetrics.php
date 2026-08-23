@@ -378,6 +378,79 @@ class VisibilityAuditFunnelMetrics
     }
 
     /**
+     * The actual Leads behind awaitingServiceTag()'s count, oldest first —
+     * so the AI Activity Summary panel can name the longest-waiting ones
+     * instead of only showing a bare number. Same eligibility rule
+     * (meta_leadgen_id set, service_id null), just returning rows instead
+     * of a count.
+     *
+     * @return Collection<int, Lead>
+     */
+    public function leadsAwaitingServiceTag(int $limit = 10): Collection
+    {
+        return Lead::query()
+            ->whereNotNull('meta_leadgen_id')
+            ->whereNull('service_id')
+            ->oldest('created_at')
+            ->limit($limit)
+            ->get(['id', 'name', 'created_at']);
+    }
+
+    /**
+     * Every VisibilityAuditTouch (any channel/type, success or failure) that
+     * occurred outside office hours (9am-7pm Asia/Kolkata) since $since —
+     * the "what did AI handle overnight" feed behind the AI Activity
+     * Summary panel. Filtered in PHP (not SQL) since touch volume here is
+     * small (well under 100 rows even across the whole funnel's history as
+     * of this writing) and a hard 9/19 boundary in SQL would need a
+     * timezone-aware HOUR() expression MySQL's query builder doesn't give a
+     * clean cross-connection way to express.
+     *
+     * @return Collection<int, VisibilityAuditTouch>
+     */
+    public function afterHoursTouches(Carbon $since): Collection
+    {
+        $tz = config('app.display_timezone', 'Asia/Kolkata');
+
+        return VisibilityAuditTouch::query()
+            ->with(['lead' => fn ($q) => $q->withTrashed()])
+            ->where('occurred_at', '>=', $since)
+            ->orderBy('occurred_at')
+            ->get()
+            ->filter(function (VisibilityAuditTouch $touch) use ($tz) {
+                $hour = (int) $touch->occurred_at->copy()->timezone($tz)->format('G');
+
+                return $hour < 9 || $hour >= 19;
+            })
+            ->values();
+    }
+
+    /**
+     * The latest customer_reply touch per Lead (see
+     * WhatsappWebhookController::recordLeadMessage()) that's at least
+     * $olderThan old and still has no staff WhatsApp reply since — "a real
+     * customer sent something and nobody from staff has answered yet",
+     * distinct from stuckAtLanding()/stuckAtCheckout() (which track funnel
+     * *page* progress, not conversation replies). Reuses
+     * Lead::hasStaffWhatsappReplySince() so the same "AI's own after-hours
+     * holding reply doesn't count as answered" rule applies here too.
+     *
+     * @return Collection<int, VisibilityAuditTouch>
+     */
+    public function unansweredInboundReplies(Carbon $olderThan): Collection
+    {
+        return VisibilityAuditTouch::query()
+            ->where('touch_type', VisibilityAuditTouchType::CustomerReply)
+            ->where('occurred_at', '<=', $olderThan)
+            ->with('lead.owner')
+            ->orderByDesc('occurred_at')
+            ->get()
+            ->unique('lead_id')
+            ->filter(fn (VisibilityAuditTouch $touch) => $touch->lead !== null && ! $touch->lead->hasStaffWhatsappReplySince($touch->occurred_at))
+            ->values();
+    }
+
+    /**
      * Whether a Lead belongs to the Visibility Audit cohort at all — either
      * it matches the eligibility rule (meta_leadgen_id + GMB) directly, or
      * it already has at least one funnel event (it clicked through a

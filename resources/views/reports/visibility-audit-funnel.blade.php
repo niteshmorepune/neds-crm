@@ -41,6 +41,8 @@
             </div>
         @endif
 
+        <livewire:visibility-audit-activity-summary />
+
         {{-- Funnel stage counts + stage-to-stage conversion --}}
         <div>
             <h3 class="text-sm font-semibold uppercase tracking-wide text-gray-500 mb-2">

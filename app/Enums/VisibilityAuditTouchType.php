@@ -9,6 +9,7 @@ enum VisibilityAuditTouchType: string
     case RecoveryNudgeCheckout = 'recovery_nudge_checkout';
     case PaymentConfirmation = 'payment_confirmation';
     case ManualOutreach = 'manual_outreach';
+    case CustomerReply = 'customer_reply';
 
     public function label(): string
     {
@@ -18,6 +19,7 @@ enum VisibilityAuditTouchType: string
             self::RecoveryNudgeCheckout => 'Recovery nudge (checkout)',
             self::PaymentConfirmation => 'Payment confirmation',
             self::ManualOutreach => 'Manual outreach',
+            self::CustomerReply => 'Customer reply',
         };
     }
 }
