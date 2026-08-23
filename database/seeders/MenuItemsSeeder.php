@@ -62,7 +62,7 @@ class MenuItemsSeeder extends Seeder
             ['key' => 'project-health',   'label' => 'Project Health',   'group' => MenuGroup::TeamInsights,    'route' => 'project-health.index', 'icon' => 'heart', 'roles' => [UserRole::Manager]],
             ['key' => 'revenue-at-risk',  'label' => 'Revenue at Risk',  'group' => MenuGroup::TeamInsights,    'route' => 'revenue-at-risk.index', 'icon' => 'exclamation-triangle', 'roles' => [UserRole::Manager]],
             ['key' => 'client-radar',     'label' => 'Client Radar',     'group' => MenuGroup::TeamInsights,    'route' => 'client-radar.index', 'icon' => 'radar',    'roles' => [UserRole::Manager]],
-            ['key' => 'visibility-audit-funnel', 'label' => 'VA Funnel', 'group' => MenuGroup::TeamInsights,   'route' => 'reports.visibility-audit-funnel', 'icon' => 'funnel', 'roles' => [UserRole::Manager]],
+            ['key' => 'visibility-audit-funnel', 'label' => 'VA Funnel Analytics', 'group' => MenuGroup::TeamInsights,   'route' => 'reports.visibility-audit-funnel', 'icon' => 'funnel', 'roles' => [UserRole::Manager]],
             ['key' => 'employee-360',     'label' => 'Employee 360°',    'group' => MenuGroup::TeamInsights,    'route' => 'employees.index',  'icon' => 'identification', 'roles' => [UserRole::Manager]],
             ['key' => 'team-targets',     'label' => 'Team Targets',     'group' => MenuGroup::TeamInsights,    'route' => 'role-targets.index', 'icon' => 'flag', 'roles' => [UserRole::Manager]],
             ['key' => 'manager-calendar', 'label' => 'Manager Calendar', 'group' => MenuGroup::TeamInsights,    'route' => 'manager-calendar.index', 'icon' => 'calendar-days', 'roles' => [UserRole::Manager]],

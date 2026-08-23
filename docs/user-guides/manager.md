@@ -411,7 +411,7 @@ ticket that was rated poorly (not just the generic flag). Review and
 personalize it before sending; nothing goes out automatically.
 
 ## Visibility Audit Funnel Dashboard
-Sidebar → **VA Funnel** — a full analytics view over the same Visibility
+Sidebar → **VA Funnel Analytics** — a full analytics view over the same Visibility
 Audit funnel the weekly digest summarizes (see "The company dashboard"
 above), with a pickable date range instead of a fixed 7 days:
 - **Stage counts + conversion %** — eligible → invited (WhatsApp) → viewed
