@@ -462,7 +462,11 @@ take action from directly. That worklist also carries two sections
 personal to whoever's viewing it — **Your gaps** and **Your message
 log** — so a Sales/Telecaller user gets the same "what's stuck" and
 "what was sent" visibility you have here, scoped to just their own leads,
-without needing access to this Admin/Manager-only page.
+without needing access to this Admin/Manager-only page. Every lead in
+the funnel also carries a colored **"Visibility Audit:"** status badge
+on its own page (e.g. "Reached checkout, hasn't paid") — the same stage
+this dashboard and the worklist already track, just visible without
+needing either one open.
 
 ## Employee 360°
 Sidebar → **Employee 360°** — one consolidated page per employee: this

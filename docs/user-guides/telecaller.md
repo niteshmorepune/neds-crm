@@ -68,7 +68,9 @@ nudges again a few hours later if they stall, so someone already on this
 list may convert before you even get to them. Below that whole-team
 queue, **Your gaps** and **Your message log** show just your own leads —
 who's stuck or missing a service tag, and every AI-WhatsApp send to your
-own leads.
+own leads. A lead's own page also shows a colored **"Visibility Audit:"**
+badge right under its name, so opening the lead directly tells you the
+same thing this queue does.
 
 ## 4. Calling
 Use **☎ Log a call** (top bar) or **Calling** to record every call you make.

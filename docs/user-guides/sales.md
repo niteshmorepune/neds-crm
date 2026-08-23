@@ -138,7 +138,10 @@ leads is created; if they stall after that, a separate recovery nudge goes
 out 2–4 hours later, both "Stop promotions"-gated templates. Each queued
 row links straight to that lead's own page so you can act with the usual
 tools — a lead who converts from either automatic message simply
-disappears off the list, nothing extra to do there.
+disappears off the list, nothing extra to do there. That lead's own page
+also shows a colored **"Visibility Audit:"** badge (e.g. "Reached
+checkout, hasn't paid") right under its name, so you don't need to come
+back to this list to remember why a lead needs a call.
 
 Below that whole-team queue, two more sections show just **your own**
 leads: **Your gaps** (your leads missing a service tag, stuck waiting on a
