@@ -86,6 +86,7 @@
                             @php($invoiceDeleted = ! empty($data['invoice_id']) && $deletedInvoiceIds->contains($data['invoice_id']))
                             @php($dealDeleted = ! empty($data['deal_id']) && $deletedDealIds->contains($data['deal_id']))
                             @php($leadDeleted = ! empty($data['lead_id']) && $deletedLeadIds->contains($data['lead_id']))
+                            @php($resolvedQuotation = $type === 'quotation_needs_approval' && ! empty($data['quotation_id']) ? $resolvedQuotations->get($data['quotation_id']) : null)
                             <p class="text-sm font-medium text-gray-900">
                                 {{ $typeIcon }}
                                 @if ($invoiceDeleted)
@@ -97,6 +98,11 @@
                                 @elseif ($leadDeleted)
                                     <span class="text-gray-500">{{ $data['message'] }}</span>
                                     <span class="ml-1 text-xs italic text-gray-400">(lead deleted)</span>
+                                @elseif ($resolvedQuotation)
+                                    <span class="text-gray-500">{{ $data['message'] }}</span>
+                                    <span class="ml-1 text-xs italic text-gray-400">
+                                        ({{ strtolower($resolvedQuotation->approval_status->label()) }}{{ $resolvedQuotation->approvedBy ? ' by '.$resolvedQuotation->approvedBy->name : '' }})
+                                    </span>
                                 @elseif (! empty($data['url']))
                                     <a href="{{ $data['url'] }}" class="text-indigo-600 hover:underline">{{ $data['message'] }}</a>
                                 @else

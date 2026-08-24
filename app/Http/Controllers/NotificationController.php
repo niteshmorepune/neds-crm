@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\QuotationApprovalStatus;
 use App\Models\Deal;
 use App\Models\Invoice;
 use App\Models\Lead;
+use App\Models\Quotation;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -43,7 +45,21 @@ class NotificationController extends Controller
             ? collect()
             : Lead::onlyTrashed()->whereIn('id', $leadIds)->pluck('id');
 
-        return view('notifications.index', compact('notifications', 'deletedInvoiceIds', 'deletedDealIds', 'deletedLeadIds'));
+        $pendingApprovalQuotationIds = $notifications->getCollection()
+            ->filter(fn ($notification) => ($notification->data['type'] ?? null) === 'quotation_needs_approval')
+            ->map(fn ($notification) => $notification->data['quotation_id'] ?? null)
+            ->filter()
+            ->unique();
+
+        $resolvedQuotations = $pendingApprovalQuotationIds->isEmpty()
+            ? collect()
+            : Quotation::with('approvedBy')
+                ->whereIn('id', $pendingApprovalQuotationIds)
+                ->where('approval_status', '!=', QuotationApprovalStatus::Pending->value)
+                ->get()
+                ->keyBy('id');
+
+        return view('notifications.index', compact('notifications', 'deletedInvoiceIds', 'deletedDealIds', 'deletedLeadIds', 'resolvedQuotations'));
     }
 
     public function destroy(Request $request, string $id): RedirectResponse

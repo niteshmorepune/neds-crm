@@ -1,15 +1,18 @@
 <?php
 
+use App\Enums\QuotationApprovalStatus;
 use App\Enums\UserRole;
 use App\Models\Deal;
 use App\Models\Invoice;
 use App\Models\Lead;
 use App\Models\Meeting;
+use App\Models\Quotation;
 use App\Models\User;
 use App\Notifications\DealWonNotification;
 use App\Notifications\LeadEscalatedToManagerNotification;
 use App\Notifications\MeetingInvitation;
 use App\Notifications\NewInvoiceNotification;
+use App\Notifications\QuotationNeedsApproval;
 use Illuminate\Support\Str;
 
 beforeEach(function () {
@@ -126,4 +129,49 @@ it('shows a clickable link for a lead-escalated notification pointing to a live 
     $response->assertOk()
         ->assertSee(route('leads.show', $lead), false)
         ->assertDontSee('lead deleted');
+});
+
+it('shows a still-actionable link for a quotation-needs-approval notification while the quotation is still pending', function () {
+    $quotation = Quotation::factory()->create(['approval_status' => QuotationApprovalStatus::Pending]);
+    $this->user->notify(new QuotationNeedsApproval($quotation));
+
+    $response = $this->actingAs($this->user)->get(route('notifications.index'));
+
+    $response->assertOk()
+        ->assertSee(route('quotations.show', $quotation), false)
+        ->assertDontSee('approved by');
+});
+
+it('relabels a quotation-needs-approval notification once another admin/manager has already approved it (2026-08-24 regression)', function () {
+    // Reported: Admin still saw "Quotation needs approval: NSS Business Group"
+    // in their own notifications list after Manager Manali had already
+    // approved it — approve()/reject()/requestChanges() never touched any
+    // other recipient's copy of the notification, so it sat there forever
+    // looking identically actionable to a genuinely-pending one.
+    $approver = User::factory()->role(UserRole::Manager)->create(['name' => 'Manali Deshpande']);
+    $quotation = Quotation::factory()->create(['approval_status' => QuotationApprovalStatus::Pending]);
+    $this->user->notify(new QuotationNeedsApproval($quotation));
+
+    $quotation->update([
+        'approval_status' => QuotationApprovalStatus::Approved,
+        'approved_by' => $approver->id,
+        'approved_at' => now(),
+    ]);
+
+    $response = $this->actingAs($this->user)->get(route('notifications.index'));
+
+    $response->assertOk()
+        ->assertSee('approved by Manali Deshpande')
+        ->assertDontSee(route('quotations.show', $quotation), false);
+});
+
+it('relabels a quotation-needs-approval notification once the quotation has been rejected, without an approver name', function () {
+    $quotation = Quotation::factory()->create(['approval_status' => QuotationApprovalStatus::Pending]);
+    $this->user->notify(new QuotationNeedsApproval($quotation));
+
+    $quotation->update(['approval_status' => QuotationApprovalStatus::Rejected]);
+
+    $response = $this->actingAs($this->user)->get(route('notifications.index'));
+
+    $response->assertOk()->assertSee('(rejected)', false);
 });
