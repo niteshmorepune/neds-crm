@@ -86,6 +86,7 @@
                 <thead class="bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
                     <tr>
                         <th class="px-4 py-3">Company</th>
+                        <th class="px-4 py-3">Services</th>
                         <th class="px-4 py-3">Primary contact</th>
                         <th class="px-4 py-3">Location</th>
                         <th class="px-4 py-3">Owner</th>
@@ -104,6 +105,35 @@
                                 <div class="text-xs text-gray-400">
                                     {{ $customer->gstin ?? 'No GSTIN' }} · {{ $customer->contacts_count }} contact(s)
                                 </div>
+                            </td>
+                            <td class="px-4 py-3">
+                                @php($services = $customer->activeServiceNames())
+                                @if ($services->isEmpty())
+                                    <span class="text-gray-400">—</span>
+                                @else
+                                    <div x-data="{ expanded: false }">
+                                        <div x-show="!expanded" class="flex flex-wrap items-center gap-1">
+                                            @foreach ($services->take(2) as $name)
+                                                <span class="inline-flex rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">{{ $name }}</span>
+                                            @endforeach
+                                            @if ($services->count() > 2)
+                                                <button type="button" @click="expanded = true"
+                                                        title="{{ $services->implode(', ') }}"
+                                                        class="text-xs font-medium text-indigo-600 hover:underline">
+                                                    +{{ $services->count() - 2 }} more
+                                                </button>
+                                            @endif
+                                        </div>
+                                        @if ($services->count() > 2)
+                                            <div x-show="expanded" x-cloak class="flex flex-wrap items-center gap-1">
+                                                @foreach ($services as $name)
+                                                    <span class="inline-flex rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">{{ $name }}</span>
+                                                @endforeach
+                                                <button type="button" @click="expanded = false" class="text-xs text-gray-400 hover:underline">Show less</button>
+                                            </div>
+                                        @endif
+                                    </div>
+                                @endif
                             </td>
                             <td class="px-4 py-3 text-gray-600">
                                 {{ $customer->primaryContact?->name ?? '—' }}
@@ -130,7 +160,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-4 py-10 text-center text-gray-400">No clients found.</td>
+                            <td colspan="8" class="px-4 py-10 text-center text-gray-400">No clients found.</td>
                         </tr>
                     @endforelse
                 </tbody>

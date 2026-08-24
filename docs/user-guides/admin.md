@@ -17,6 +17,14 @@ The Clients list defaults to showing Active clients. Use the status filter to
 view Prospects, Inactive, or all. You can also set the status manually on the
 client's edit page.
 
+**Services column:** the Clients list shows each client's currently active
+services (a badge per service, e.g. "SEO", "GMB") — this is never manually
+entered. It's derived live from that client's active recurring service
+templates and non-completed projects, so it always matches what's actually
+on their Services tab. Adding, pausing, or completing a service updates this
+column automatically. Three or more services show as the first two plus a
+"+N more" — hover it to see the full list, or click to expand it inline.
+
 **Import (Clients → Import):** upload a CSV. The template (downloadable from the
 import page) has 13 columns including `address_line2`, `owner` (user's full name),
 and `tags` (comma-separated). Leave `owner` blank to assign the client to the

@@ -31,7 +31,7 @@ class CustomerController extends Controller
 
         $customers = Customer::query()
             ->visibleTo($request->user())
-            ->with(['owner', 'primaryContact'])
+            ->with(['owner', 'primaryContact', 'recurringInvoices.service', 'projects.service'])
             ->withCount('contacts')
             ->when($request->string('search')->trim()->value(), function ($query, $search) {
                 $query->where(function ($q) use ($search) {
