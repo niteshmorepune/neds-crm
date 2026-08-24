@@ -26,6 +26,7 @@ class DashboardWidgets
                 'clients_inactive' => 'Inactive Clients',
                 'leads_total' => 'Total Leads',
                 'tasks_overview' => 'Tasks Overview',
+                'pending_approvals' => 'Pending Approvals',
                 'services_overview' => 'Services Overview',
                 'task_summary' => 'Task Summary',
                 'daily_reports_links' => 'Daily Reports links',

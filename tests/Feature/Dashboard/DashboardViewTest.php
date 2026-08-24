@@ -3,11 +3,13 @@
 use App\Enums\CustomerStatus;
 use App\Enums\DealStage;
 use App\Enums\LeadStatus;
+use App\Enums\LeaveRequestStatus;
 use App\Enums\TaskStatus;
 use App\Enums\UserRole;
 use App\Models\Customer;
 use App\Models\Deal;
 use App\Models\Festival;
+use App\Models\LeaveRequest;
 use App\Models\User;
 use Database\Seeders\MenuItemsSeeder;
 
@@ -282,4 +284,28 @@ it('keeps showing the support panel even when Sales is granted as an additional 
     $this->actingAs($support)->get(route('dashboard'))->assertOk()
         ->assertSee('Open tickets by priority')
         ->assertDontSee('Open pipeline by stage');
+});
+
+it('shows the pending approvals count on the admin dashboard, linking to the Approval Center', function () {
+    $admin = User::factory()->role(UserRole::Admin)->create();
+    LeaveRequest::factory()->for($admin)->create(['status' => LeaveRequestStatus::Pending]);
+
+    $this->actingAs($admin)->get(route('dashboard'))->assertOk()
+        ->assertSee('Pending Approvals')
+        ->assertSee('1')
+        ->assertSee(route('approval-center.index'), false);
+});
+
+it('shows a zero-state message on the pending approvals tile when nothing is pending', function () {
+    $admin = User::factory()->role(UserRole::Admin)->create();
+
+    $this->actingAs($admin)->get(route('dashboard'))->assertOk()
+        ->assertSee('Pending Approvals')
+        ->assertSee('Nothing waiting on you');
+});
+
+it('shows the pending approvals tile to a manager as well as an admin', function () {
+    $manager = User::factory()->role(UserRole::Manager)->create();
+
+    $this->actingAs($manager)->get(route('dashboard'))->assertOk()->assertSee('Pending Approvals');
 });

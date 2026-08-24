@@ -30,6 +30,21 @@
     </div>
 @endif
 
+{{-- Row 1.5: Pending Approvals --}}
+@if (in_array('pending_approvals', $visibleWidgets))
+    <a href="{{ route('approval-center.index') }}" class="block rounded-lg bg-white p-5 shadow-sm hover:shadow-md sm:max-w-xs">
+        <p class="text-sm text-gray-500">Pending Approvals</p>
+        <p @class([
+            'mt-2 text-3xl font-semibold',
+            'text-amber-600' => $pendingApprovals > 0,
+            'text-gray-900' => $pendingApprovals === 0,
+        ])>{{ number_format($pendingApprovals) }}</p>
+        <p class="mt-3 text-sm text-indigo-600">
+            {{ $pendingApprovals > 0 ? 'Review pending approvals →' : 'Nothing waiting on you →' }}
+        </p>
+    </a>
+@endif
+
 {{-- Row 2: Services Overview donut + Task Summary --}}
 @if (in_array('services_overview', $visibleWidgets) || in_array('task_summary', $visibleWidgets))
     <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
