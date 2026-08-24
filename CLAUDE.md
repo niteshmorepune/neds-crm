@@ -1331,3 +1331,25 @@ Record every "we chose X because Y" here — this is the project's memory.
   the Team" in `manager.md` — 3 PDFs regenerated (the ones with an actual
   handout; Intern has none, a pre-existing gap noted in Phase 2's entry,
   not touched here).
+- **2026-08-24 — Fixed: a "Quotation needs approval" notification never
+  reflected another admin/manager having already approved/rejected it.**
+  Owner reported (screenshot) still seeing "Quotation needs approval: NSS
+  Business Group" after Manager Manali had already approved it.
+  `QuotationController::approve()`/`reject()`/`requestChanges()` only ever
+  updated the quotation's own `approval_status` — they never touched any
+  other recipient's copy of the `QuotationNeedsApproval` database
+  notification broadcast to every Admin/Manager, so a resolved quotation
+  kept showing an identically-worded, identically-clickable "needs
+  approval" link to everyone who hadn't personally acted on it. Same
+  "relabel a resolved/removed record instead of leaving a stale link"
+  treatment already used for deleted invoices/deals/leads (2026-07-24/
+  2026-07-29 entries above): `NotificationController::index()` now
+  batch-checks the current page's `quotation_needs_approval` notifications
+  against each referenced quotation's live `approval_status`, and the view
+  renders a resolved one as plain text — `(approved by Manali Deshpande)` /
+  `(rejected)` / `(changes requested by …)` — instead of a link. 3 new
+  Pest tests in `tests/Feature/NotificationsTest.php`; full suite 2314
+  green (one pre-existing, unrelated `MeetingRequestTest` IST-window
+  flake, not this change — see [[feedback-gotchas]]). Pint clean. Direct
+  push to master (`7b4e528`, no PR — one-file-class bug fix, same
+  precedent as the portal-invite-404 and notification-dead-link fixes).
