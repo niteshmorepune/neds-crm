@@ -12,6 +12,7 @@ use App\Models\Invoice;
 use App\Models\User;
 use App\Notifications\ClientAdvanceRecorded;
 use App\Notifications\PaymentRecordedNotification;
+use App\Services\NewClientOnboardingNotifier;
 use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
@@ -36,7 +37,7 @@ class ClientAdvanceController extends Controller
         return redirect()->route('clients.show', $client)->with('status', 'Advance recorded.');
     }
 
-    public function apply(ClientAdvanceApplyRequest $request, Invoice $invoice, ClientAdvance $advance): RedirectResponse
+    public function apply(ClientAdvanceApplyRequest $request, Invoice $invoice, ClientAdvance $advance, NewClientOnboardingNotifier $onboardingNotifier): RedirectResponse
     {
         $this->authorize('apply', $advance);
         abort_if($advance->customer_id !== $invoice->customer_id, 404);
@@ -60,6 +61,7 @@ class ClientAdvanceController extends Controller
 
         $invoice->refreshPaymentStatus();
         $advance->refreshAppliedStatus();
+        $onboardingNotifier->notifyIfFirstPayment($invoice, $payment);
 
         $recorder = $request->user();
         $notification = new PaymentRecordedNotification($invoice, $payment);

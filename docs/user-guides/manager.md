@@ -799,6 +799,14 @@ As a manager, you receive bell notifications for:
   (no note, call, or edit) an hour after it landed with its owner, you're
   notified — its owner already got their own reminder at 20 minutes. Worth
   a nudge to the rep, or reassigning it (see below) if they're unavailable.
+- 🆕 **New client onboarded** — the first time any payment lands against a
+  client (staff-recorded, an advance applied, or an online Razorpay
+  payment), you and all admins are notified once with the client's name,
+  their active services, and the amount paid — a one-time milestone, not
+  fired again on later payments from the same client. Also see the
+  **Pending Approvals** tile on your Dashboard, which links straight to
+  the Approval Center's queue of leave requests, quotations, and project
+  updates waiting on you.
 
 ## Email alerts
 **Morning digest (9 AM daily)** — your own personalised summary: overdue tasks,

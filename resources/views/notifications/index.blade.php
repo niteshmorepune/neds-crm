@@ -68,6 +68,7 @@
                                 'deal_won'                    => '🏆',
                                 'new_invoice'                 => '🧾',
                                 'payment_recorded'            => '💰',
+                                'new_client_onboarded'         => '🆕',
                                 'client_advance_recorded'     => '🏦',
                                 'recurring_invoice_due_soon'  => '⚠️',
                                 'contract_renewal_due_soon'   => '📅',

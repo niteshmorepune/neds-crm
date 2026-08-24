@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\CustomerStatus;
 use App\Enums\PartnerCollectionMode;
+use App\Enums\ProjectStatus;
 use App\Enums\ReferralShareType;
 use App\Enums\UserRole;
 use App\Models\Concerns\LogsActivity;
@@ -263,6 +264,37 @@ class Customer extends Model
     public function nonOrphanedRecurringInvoices(): Collection
     {
         return $this->recurringInvoices->reject(fn (RecurringInvoice $r) => $r->isOrphaned());
+    }
+
+    /**
+     * Unique, sorted list of Service names this client is currently active
+     * on — an is_active recurring template, or a project that isn't yet
+     * Completed. The single source of truth for "what is this client
+     * actually signed up for right now" (used by the Client List's Services
+     * column and the new-client-onboarded notification) — never manually
+     * entered, always derived live from the same rows the Services tab
+     * itself renders. Requires recurringInvoices/projects (and each row's
+     * service) to already be loaded/available to avoid an N+1.
+     *
+     * @return Collection<int, string>
+     */
+    public function activeServiceNames(): Collection
+    {
+        // ->toBase() before ->map(): once mapped to plain service-name
+        // strings these are no longer Eloquent models, but map() on an
+        // Eloquent Collection still returns `new static` (EloquentCollection)
+        // — its merge()/dictionary logic then assumes model items and calls
+        // getKey() on a string. toBase() drops to a plain Support Collection
+        // first, where merge() just concatenates.
+        $recurring = $this->recurringInvoices->toBase()
+            ->where('is_active', true)
+            ->map(fn (RecurringInvoice $r) => $r->service?->name);
+
+        $projects = $this->projects->toBase()
+            ->where('status', '!=', ProjectStatus::Completed)
+            ->map(fn (Project $p) => $p->service?->name);
+
+        return $recurring->merge($projects)->filter()->unique()->sort()->values();
     }
 
     /**

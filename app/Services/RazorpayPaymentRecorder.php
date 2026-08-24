@@ -21,6 +21,8 @@ use Illuminate\Support\Facades\Mail;
  */
 class RazorpayPaymentRecorder
 {
+    public function __construct(private NewClientOnboardingNotifier $onboardingNotifier) {}
+
     public function record(Invoice $invoice, string $orderId, string $paymentId, int $amountPaise): ?Payment
     {
         $existing = Payment::where('gateway_payment_id', $paymentId)->first();
@@ -47,6 +49,7 @@ class RazorpayPaymentRecorder
         }
 
         $invoice->refreshPaymentStatus();
+        $this->onboardingNotifier->notifyIfFirstPayment($invoice, $payment);
 
         $this->notifyStaff($invoice, $payment);
         $this->sendReceipt($invoice, $payment);

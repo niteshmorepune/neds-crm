@@ -25,6 +25,7 @@ use App\Notifications\InvoiceSentNotification;
 use App\Notifications\PaymentRecordedNotification;
 use App\Services\CollectionsMetrics;
 use App\Services\InvoiceNumberGenerator;
+use App\Services\NewClientOnboardingNotifier;
 use App\Support\Money;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -352,7 +353,7 @@ class InvoiceController extends Controller
         return back()->with('status', "Invoice sent to {$email}.");
     }
 
-    public function storePayment(PaymentStoreRequest $request, Invoice $invoice): RedirectResponse
+    public function storePayment(PaymentStoreRequest $request, Invoice $invoice, NewClientOnboardingNotifier $onboardingNotifier): RedirectResponse
     {
         $this->authorize('recordPayment', $invoice);
 
@@ -373,6 +374,7 @@ class InvoiceController extends Controller
         ]);
 
         $invoice->refreshPaymentStatus();
+        $onboardingNotifier->notifyIfFirstPayment($invoice, $payment);
 
         // Notify accounts staff + client's sales rep (skip the person who recorded it).
         $recorder = $request->user();

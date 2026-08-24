@@ -220,6 +220,13 @@ notification is sent to all accounts staff (except the person who recorded it)
 and to the client's assigned sales person. No action needed — it's purely
 informational so everyone stays aware of cash coming in.
 
+**Bell notification — new client onboarded:** the very first time a payment
+of any kind lands against a client (a manually recorded payment, an advance
+applied, or an online Razorpay payment), a separate 🆕 notification goes to
+Admin and Manager — not on every payment, only that first one. It names the
+client, lists their currently active services, and the amount paid, and
+links straight to the client's profile.
+
 **Correcting a mistaken payment date, mode, or reference:** click **Edit** next
 to any payment already listed on the invoice page to fix a typo without
 deleting and re-recording it — an inline form lets you change the **date**,
