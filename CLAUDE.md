@@ -1353,3 +1353,30 @@ Record every "we chose X because Y" here — this is the project's memory.
   flake, not this change — see [[feedback-gotchas]]). Pint clean. Direct
   push to master (`7b4e528`, no PR — one-file-class bug fix, same
   precedent as the portal-invite-404 and notification-dead-link fixes).
+- **2026-08-25 — Leave Management: Team Leave Records (full, filterable
+  history) + a Pending/Approved/Rejected/Currently-On-Leave summary strip
+  for Admin/Manager; Cancelled is now a visible status, not a hard
+  delete.** Sourced from a sales/leadership requirements doc audited item
+  by item against the actual codebase first (a Claude Artifact gap
+  analysis, not assumed from the doc's own framing of what "currently"
+  exists) — the apply→approve/reject→notify pipeline, `reviewed_by`/
+  `reviewed_at`/`review_notes`, and the pending-only `/leave-requests/
+  approvals` queue already existed; what the doc actually asked for and
+  didn't exist yet was the reporting layer. New `LeaveRequestController::
+  team()` (`/leave-requests/team`, same `viewApprovalQueue` Policy gate as
+  approvals — a browse/filter view with no approve/reject actions of its
+  own, deliberately distinct from the approvals queue) filters by
+  employee/type/status/date-range. New `App\Services\LeaveRequestMetrics::
+  summary()` computes the four-count strip once, shared by both the
+  approvals queue and the new team page so they can never silently
+  disagree on the same numbers — same "single source of truth" precedent
+  as `CollectionsMetrics::outstandingInvoicesQuery()` (2026-07-24 entry
+  above). `LeaveRequestStatus` gained a `Cancelled` case;
+  `LeaveRequestController::destroy()` now relabels to Cancelled instead of
+  deleting the row, so a cancelled request stays permanently visible in
+  the employee's own history — same "relabel a real record instead of
+  making it disappear" convention used throughout this app (soft-deleted
+  clients/projects, stale notification links, etc.), applied here to a
+  request that was never soft-deleted at all, just silently removed.
+  19 Pest tests (10 new, covering the team-history filters, the summary
+  strip's counts, and the cancelled-stays-visible behavior), Pint clean.
