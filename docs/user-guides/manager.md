@@ -221,9 +221,33 @@ straight to that client's Invoices tab). The Health Score badge next to
 the client's status (see Client Radar above) sits right alongside these.
 
 **Seeing who services which client:** open any client's profile and click the
-**Services** tab. The **Projects** table now has a **Team** column showing the
+**Services** tab. The **Projects** table has a **Team** column showing the
 Lead and any additional team members for each project/service. This is the
 fastest way to answer "which of our team handles GMB for ABC Corp?"
+
+The **Recurring Services** table now has a **Team** column too, for retainer
+services (SEO, GMB, social media…) that have no Project of their own — click
+**Assign** (Admin/Manager/Sales/Support) to pick one responsible employee per
+service. If that same service also has a live Project, the Project's own
+team is shown instead — a service only ever shows one answer for "who's
+working on this," never two.
+
+Below the two tables, **Service Links** holds service-specific URLs (Website
+URL, GBP link, Instagram/Facebook handles, Search Console…) — click
+**Add link**, pick the service, and give it any label you like. This is
+separate from the general company-wide **Links** tab, which still works the
+same as before.
+
+**Requirements** and **Assets** are two new tabs on every client's profile:
+- **Requirements** tracks what a client still needs to send per service —
+  title, instructions, requested/due/received dates, and who's chasing it.
+  Marking one **Received** can attach the file it came with (**Attach
+  file**), which also files it into that client's **Assets** tab — the same
+  file, not a second copy.
+- **Assets** is a categorized document library per client (Brand Assets,
+  Website Content, Social Assets, Business Documents, Other). Uploading over
+  an existing asset (**Replace**) keeps every prior version downloadable —
+  nothing is silently overwritten.
 
 Every project also has a **Project Manager** (set on the project's Edit page)
 who is ultimately accountable for it — a different person can be the Project

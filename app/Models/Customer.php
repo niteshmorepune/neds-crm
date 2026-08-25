@@ -200,6 +200,30 @@ class Customer extends Model
         return $this->hasMany(RecurringInvoice::class);
     }
 
+    /** One responsible employee per (customer, service) — see ServiceAssignment. */
+    public function serviceAssignments(): HasMany
+    {
+        return $this->hasMany(ServiceAssignment::class);
+    }
+
+    /** Service-specific links (Website URL, GBP link, social handles…). */
+    public function clientServiceLinks(): HasMany
+    {
+        return $this->hasMany(ClientServiceLink::class);
+    }
+
+    /** The client's categorized Assets & Documents library. */
+    public function clientAssets(): HasMany
+    {
+        return $this->hasMany(ClientAsset::class);
+    }
+
+    /** Per-client-service requirement checklist — see ClientRequirement. */
+    public function clientRequirements(): HasMany
+    {
+        return $this->hasMany(ClientRequirement::class);
+    }
+
     public function referralSettlements(): HasMany
     {
         return $this->hasMany(ReferralSettlement::class);

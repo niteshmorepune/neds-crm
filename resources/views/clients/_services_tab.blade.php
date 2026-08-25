@@ -25,6 +25,17 @@
 
     $nextBill = $recurring->where('is_active', true)
         ->min('next_run_on');
+
+    // Team column for Recurring Services: a live (non-Completed) Project for
+    // the same service always wins (its own owner/assignees, shown exactly
+    // like the Projects table below) — the new per-service assignment only
+    // fills in when no such Project exists, so a service never shows two
+    // competing "who's working on this" answers. See CustomerPolicy::
+    // manageServices() / ServiceAssignmentController.
+    $liveProjectsByService = $client->projects
+        ->reject(fn ($p) => $p->status === \App\Enums\ProjectStatus::Completed)
+        ->groupBy('service_id');
+    $assignmentsByService = $client->serviceAssignments->keyBy('service_id');
 @endphp
 
 {{-- Summary strip --}}
@@ -69,6 +80,7 @@
                         <th class="px-4 py-2 text-right">Est. / cycle</th>
                         <th class="px-4 py-2">Next bill</th>
                     @endif
+                    <th class="px-4 py-2">Team</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100 bg-white">
@@ -128,6 +140,61 @@
                                 @endif
                             </td>
                         @endif
+                        <td class="px-4 py-3">
+                            @php
+                                $liveProjects = $liveProjectsByService->get($r->service_id);
+                            @endphp
+                            @if ($liveProjects && $liveProjects->isNotEmpty())
+                                <div class="flex flex-wrap gap-1.5">
+                                    @foreach ($liveProjects as $liveProject)
+                                        @if ($liveProject->owner)
+                                            <span class="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">
+                                                {{ $liveProject->owner->name }}
+                                                <span class="rounded bg-indigo-200 px-1 text-indigo-800">Lead</span>
+                                            </span>
+                                        @endif
+                                        @foreach ($liveProject->assignees as $member)
+                                            <span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
+                                                {{ $member->name }}
+                                                <span class="rounded bg-gray-200 px-1 text-gray-600">{{ ucfirst($member->pivot->role) }}</span>
+                                            </span>
+                                        @endforeach
+                                    @endforeach
+                                </div>
+                            @else
+                                @php
+                                    $assignment = $assignmentsByService->get($r->service_id);
+                                @endphp
+                                <div x-data="{ editing: false }">
+                                    <div class="flex items-center gap-2" x-show="!editing">
+                                        <span class="text-gray-600">{{ $assignment?->user?->name ?? '—' }}</span>
+                                        @if ($canManageServices)
+                                            <button type="button" @click="editing = true" class="text-xs text-indigo-600 hover:underline">{{ $assignment ? 'Change' : 'Assign' }}</button>
+                                            @if ($assignment)
+                                                <form method="POST" action="{{ route('service-assignments.destroy', $assignment) }}" class="inline">
+                                                    @csrf @method('DELETE')
+                                                    <button type="submit" class="text-xs text-red-500 hover:text-red-600">Remove</button>
+                                                </form>
+                                            @endif
+                                        @endif
+                                    </div>
+                                    @if ($canManageServices)
+                                        <form method="POST" action="{{ route('service-assignments.store', $client) }}" x-show="editing" x-cloak class="mt-1 flex items-center gap-2">
+                                            @csrf
+                                            <input type="hidden" name="service_id" value="{{ $r->service_id }}">
+                                            <select name="user_id" class="rounded-md border-gray-300 text-xs shadow-sm" required>
+                                                <option value="">Select</option>
+                                                @foreach ($staff as $person)
+                                                    <option value="{{ $person->id }}" @selected($assignment?->user_id === $person->id)>{{ $person->name }}</option>
+                                                @endforeach
+                                            </select>
+                                            <button type="submit" class="text-xs text-indigo-600 hover:underline">Save</button>
+                                            <button type="button" @click="editing = false" class="text-xs text-gray-400 hover:text-gray-600">Cancel</button>
+                                        </form>
+                                    @endif
+                                </div>
+                            @endif
+                        </td>
                     </tr>
                 @endforeach
             </tbody>
@@ -206,3 +273,7 @@
         </table>
     </div>
 @endif
+
+<div class="mt-8 border-t border-gray-100 pt-6">
+    <livewire:client-service-links :customer="$client" :can-manage="$canManageServices" />
+</div>

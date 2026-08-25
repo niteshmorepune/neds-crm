@@ -107,6 +107,18 @@ class CustomerPolicy
         return $user->hasRole(UserRole::Admin, UserRole::Manager, UserRole::Sales, UserRole::Support);
     }
 
+    /**
+     * Create/edit/delete service assignments, service-specific links, Client
+     * Requirements, and Client Assets & Documents on this client — same
+     * "shared client resource, not sales-owned relationship data" reasoning
+     * as manageMeetings()/manageLinks(), and deliberately one gate covering
+     * all four rather than four near-identical policy methods.
+     */
+    public function manageServices(User $user, Customer $customer): bool
+    {
+        return $user->hasRole(UserRole::Admin, UserRole::Manager, UserRole::Sales, UserRole::Support);
+    }
+
     private function salesOwnsOrUnassigned(User $user, Customer $customer): bool
     {
         return $customer->owner_id === $user->id || $customer->owner_id === null;

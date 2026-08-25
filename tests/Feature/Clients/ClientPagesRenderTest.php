@@ -51,6 +51,18 @@ it('renders the client detail page with contacts and tabs', function () {
         ->assertSee('Notes');
 });
 
+it('renders the new Requirements and Assets tabs on the client detail page', function () {
+    $client = Customer::factory()->create();
+
+    $this->actingAs($this->admin)
+        ->get(route('clients.show', $client))
+        ->assertOk()
+        ->assertSee('Requirements')
+        ->assertSee('Client Requirements')
+        ->assertSee('Assets')
+        ->assertSee('Assets &amp; Documents', false);
+});
+
 it('shows real deals and tickets data on the client tabs', function () {
     $client = Customer::factory()->create(['company_name' => 'Render Co']);
     $deal = Deal::factory()->create(['customer_id' => $client->id, 'title' => 'Website Revamp']);

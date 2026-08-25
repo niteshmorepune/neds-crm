@@ -103,7 +103,7 @@
         <div class="rounded-lg bg-white shadow-sm">
             <div class="border-b border-gray-200 px-6">
                 <nav class="-mb-px flex gap-6 text-sm font-medium">
-                    @foreach (['services' => 'Services', 'notes' => 'Notes', 'calls' => 'Calls', 'deals' => 'Deals', 'invoices' => 'Invoices', 'tickets' => 'Tickets', 'links' => 'Links'] as $key => $label)
+                    @foreach (['services' => 'Services', 'requirements' => 'Requirements', 'assets' => 'Assets', 'notes' => 'Notes', 'calls' => 'Calls', 'deals' => 'Deals', 'invoices' => 'Invoices', 'tickets' => 'Tickets', 'links' => 'Links'] as $key => $label)
                         <button type="button" @click="tab = '{{ $key }}'"
                                 :class="tab === '{{ $key }}' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
                                 class="border-b-2 py-3">{{ $label }}@if (isset($tabCounts[$key])) ({{ $tabCounts[$key] }})@endif</button>
@@ -113,7 +113,13 @@
 
             <div class="p-6">
                 <div x-show="tab === 'services'">
-                    @include('clients._services_tab', ['client' => $client, 'canViewInvoices' => $canViewInvoices, 'reselleredRecurring' => $reselleredRecurring])
+                    @include('clients._services_tab', ['client' => $client, 'canViewInvoices' => $canViewInvoices, 'reselleredRecurring' => $reselleredRecurring, 'canManageServices' => $canManageServices, 'staff' => $staff])
+                </div>
+                <div x-show="tab === 'requirements'" x-cloak>
+                    <livewire:client-requirements :customer="$client" :can-manage="$canManageServices" />
+                </div>
+                <div x-show="tab === 'assets'" x-cloak>
+                    <livewire:client-assets :customer="$client" :can-manage="$canManageServices" />
                 </div>
                 <div x-show="tab === 'notes'" x-cloak>
                     <livewire:client-notes :customer="$client" :can-manage="$canManage" />

@@ -8,6 +8,7 @@ use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\Auth\TwoFactorChallengeController;
 use App\Http\Controllers\CallLogController;
 use App\Http\Controllers\ClientAdvanceController;
+use App\Http\Controllers\ClientAssetController;
 use App\Http\Controllers\ClientRadarController;
 use App\Http\Controllers\ContentPieceController;
 use App\Http\Controllers\CustomerController;
@@ -53,6 +54,7 @@ use App\Http\Controllers\RoleTargetController;
 use App\Http\Controllers\SalesDashboardController;
 use App\Http\Controllers\SalesTargetController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\ServiceAssignmentController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\TaskController;
@@ -168,6 +170,18 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
         // Policy-gated to accounts team regardless of who can reach this page.
         Route::post('clients/{client}/advances', [ClientAdvanceController::class, 'store'])->name('advances.store');
         Route::post('advances/{advance}/cancel', [ClientAdvanceController::class, 'cancel'])->name('advances.cancel');
+
+        // Client Profile — Services tab overhaul. Service assignment is a
+        // plain controller + inline Alpine form (too small for Livewire, see
+        // ServiceAssignmentController); service links, Client Requirements,
+        // and Client Assets & Documents are Livewire components mounted
+        // directly on clients/show.blade.php, same as ImportantLinksManager/
+        // ProjectDeliverables — no CRUD routes needed for those, only
+        // downloads.
+        Route::post('clients/{client}/service-assignments', [ServiceAssignmentController::class, 'store'])->name('service-assignments.store');
+        Route::delete('service-assignments/{serviceAssignment}', [ServiceAssignmentController::class, 'destroy'])->name('service-assignments.destroy');
+        Route::get('client-assets/{clientAsset}/download', [ClientAssetController::class, 'download'])->name('client-assets.download');
+        Route::get('client-asset-versions/{clientAssetVersion}/download', [ClientAssetController::class, 'downloadVersion'])->name('client-asset-versions.download');
     });
 
     /*

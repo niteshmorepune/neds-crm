@@ -109,6 +109,8 @@ class CustomerController extends Controller
             'projects.assignees',
             'recurringInvoices.service',
             'recurringInvoices.items',
+            'serviceAssignments.user',
+            'serviceAssignments.service',
         ]);
 
         $canViewInvoices = $this->user()->can('viewAny', Invoice::class);
@@ -123,7 +125,7 @@ class CustomerController extends Controller
             $client->load('clientAdvances');
         }
 
-        $client->loadCount(['notes', 'links']);
+        $client->loadCount(['notes', 'links', 'clientRequirements', 'clientAssets']);
 
         // A reseller-referred client's own invoices/recurring templates are
         // billed to Customer::billingTarget() — a DIFFERENT Customer row —
@@ -153,6 +155,8 @@ class CustomerController extends Controller
         // templates minus orphans, plus projects), not a raw relation count.
         $tabCounts = [
             'services' => $client->nonOrphanedRecurringInvoices()->count() + $reselleredRecurring->count() + $client->projects->count(),
+            'requirements' => $client->client_requirements_count,
+            'assets' => $client->client_assets_count,
             'notes' => $client->notes_count,
             'calls' => $client->callLogs->count(),
             'deals' => $client->deals->count(),
@@ -185,6 +189,8 @@ class CustomerController extends Controller
             'canManage' => $this->user()->can('manage', $client),
             'canManageMeetings' => $this->user()->can('manageMeetings', $client),
             'canManageLinks' => $this->user()->can('manageLinks', $client),
+            'canManageServices' => $this->user()->can('manageServices', $client),
+            'staff' => User::where('is_active', true)->orderBy('name')->get(['id', 'name']),
             'canViewInvoices' => $canViewInvoices,
             'canViewAdvances' => $canViewAdvances,
             'tabCounts' => $tabCounts,
