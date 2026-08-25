@@ -397,6 +397,17 @@ Invoices tab) — plus a **Health Score** badge (0–100) next to their status,
 worst clients scoring lowest. If a client's score has dropped, that's your
 cue to check what's changed before it becomes a bigger problem.
 
+**Services tab — who's working on what:** the **Services** tab on a client's
+page shows a **Team** column on the Recurring Services table (retainer
+services like SEO/GMB with no project) — click **Assign** to pick who's
+responsible. Below the tables, **Service Links** holds service-specific
+URLs (Website URL, GBP link, social handles…). Two more tabs,
+**Requirements** and **Assets**, track what a client still needs to send
+per service (with due dates) and store their brand assets, website
+content, and documents in a categorized library — uploading over an
+existing file with **Replace** keeps the earlier version downloadable
+instead of losing it.
+
 **Adding clients:** use **Clients → Add** for a single client, or **Clients → Import**
 to upload a CSV file in bulk. Download the template from the Import page — it
 includes columns for address, owner (type a user's name exactly), and tags

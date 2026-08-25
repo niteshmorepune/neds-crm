@@ -152,6 +152,12 @@ items.
 on a client profile — that is handled by the Sales team. You can view client and
 contact details but not change them.
 
+You **can** manage a client's **Services** tab, though: assign a responsible
+employee to a retainer service with no project (the **Team** column on
+Recurring Services), add **Service Links**, and add/update items on the
+**Requirements** and **Assets** tabs (including **Replace**-ing a file on
+Assets, which keeps the earlier version downloadable).
+
 **WhatsApp tickets:** if a client messages the **Support** WhatsApp number
 specifically, the CRM automatically creates a ticket with a green
 **WhatsApp** badge on the tickets list. Handle it like any other ticket —
