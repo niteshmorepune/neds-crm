@@ -92,6 +92,28 @@ it('excludes a completed project from the health list entirely', function () {
         ->and($rows->contains(fn (array $r) => $r['project']->id === $active->id))->toBeTrue();
 });
 
+it('picks the soonest-due not-done task as the current task, with undated tasks sorting last', function () {
+    $project = Project::factory()->create();
+    $later = Task::factory()->create(['project_id' => $project->id, 'status' => TaskStatus::Todo->value, 'due_date' => now()->addDays(5)]);
+    $sooner = Task::factory()->create(['project_id' => $project->id, 'status' => TaskStatus::Todo->value, 'due_date' => now()->addDay()]);
+    Task::factory()->create(['project_id' => $project->id, 'status' => TaskStatus::Todo->value, 'due_date' => null]);
+    Task::factory()->create(['project_id' => $project->id, 'status' => TaskStatus::Done->value, 'due_date' => now()]);
+
+    $row = $this->metrics->healthByProject()->firstWhere(fn (array $r) => $r['project']->id === $project->id);
+
+    expect($row['current_task']->id)->toBe($sooner->id)
+        ->and($row['current_task']->id)->not->toBe($later->id);
+});
+
+it('reports a null current task once every task on the project is Done', function () {
+    $project = Project::factory()->create();
+    Task::factory()->create(['project_id' => $project->id, 'status' => TaskStatus::Done->value]);
+
+    $row = $this->metrics->healthByProject()->firstWhere(fn (array $r) => $r['project']->id === $project->id);
+
+    expect($row['current_task'])->toBeNull();
+});
+
 it('sorts red before orange before yellow before green', function () {
     $admin = User::factory()->role(UserRole::Admin)->create();
     $green = Project::factory()->create(['name' => 'Green Co', 'start_date' => now(), 'end_date' => now()->addMonths(3)]);

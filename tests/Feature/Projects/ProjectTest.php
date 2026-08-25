@@ -2,6 +2,7 @@
 
 use App\Actions\CreateProjectFromDeal;
 use App\Enums\DealStage;
+use App\Enums\DeliverableStatus;
 use App\Enums\TaskStatus;
 use App\Enums\UserRole;
 use App\Models\Customer;
@@ -55,6 +56,32 @@ it('creates a project via the form and syncs assignees', function () {
 
     $project = Project::firstWhere('name', 'Website build');
     expect($project->assignees()->whereKey($a->id)->exists())->toBeTrue();
+});
+
+it('defaults a new project\'s client requirement status to Pending, and lets it be set explicitly on update', function () {
+    $customer = Customer::factory()->create();
+
+    $this->actingAs($this->manager)->post(route('projects.store'), [
+        'name' => 'Requirement Status Co', 'customer_id' => $customer->id, 'status' => 'active',
+    ])->assertRedirect();
+
+    $project = Project::firstWhere('name', 'Requirement Status Co');
+    expect($project->requirement_status)->toBe(DeliverableStatus::Pending);
+
+    $this->actingAs($this->manager)->put(route('projects.update', $project), [
+        'name' => $project->name, 'customer_id' => $customer->id, 'status' => 'active',
+        'requirement_status' => 'received',
+    ])->assertRedirect();
+
+    expect($project->fresh()->requirement_status)->toBe(DeliverableStatus::Received);
+});
+
+it('shows the Client Requirement Status badge on the project page', function () {
+    $project = Project::factory()->create(['requirement_status' => 'submitted']);
+
+    $this->actingAs($this->manager)->get(route('projects.show', $project))->assertOk()
+        ->assertSee('Client Requirement Status')
+        ->assertSee('Submitted');
 });
 
 it('restricts project visibility for non-managers to owned/assigned', function () {

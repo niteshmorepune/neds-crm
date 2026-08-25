@@ -2,6 +2,7 @@
 
 use App\Enums\CustomerStatus;
 use App\Enums\DealStage;
+use App\Enums\InvoiceStatus;
 use App\Enums\LeadStatus;
 use App\Enums\LeaveRequestStatus;
 use App\Enums\TaskStatus;
@@ -9,7 +10,10 @@ use App\Enums\UserRole;
 use App\Models\Customer;
 use App\Models\Deal;
 use App\Models\Festival;
+use App\Models\Invoice;
 use App\Models\LeaveRequest;
+use App\Models\Project;
+use App\Models\Task;
 use App\Models\User;
 use Database\Seeders\MenuItemsSeeder;
 
@@ -308,4 +312,33 @@ it('shows the pending approvals tile to a manager as well as an admin', function
     $manager = User::factory()->role(UserRole::Manager)->create();
 
     $this->actingAs($manager)->get(route('dashboard'))->assertOk()->assertSee('Pending Approvals');
+});
+
+it('shows the Ongoing Projects widget on the admin dashboard, with the current task and its assignee', function () {
+    $admin = User::factory()->role(UserRole::Admin)->create();
+    $assignee = User::factory()->role(UserRole::Support)->create(['name' => 'Priya Support']);
+    $project = Project::factory()->create(['name' => 'Website Revamp']);
+    Task::factory()->create([
+        'project_id' => $project->id, 'title' => 'Fix homepage banner', 'assignee_id' => $assignee->id,
+        'status' => TaskStatus::Todo->value, 'due_date' => now()->addDay(),
+    ]);
+
+    $this->actingAs($admin)->get(route('dashboard'))->assertOk()
+        ->assertSee('Ongoing Projects')
+        ->assertSee('Website Revamp')
+        ->assertSee('Fix homepage banner')
+        ->assertSee('Priya Support');
+});
+
+it('shows the Upcoming Payments & Renewals widget on the admin dashboard, bucketing an overdue invoice', function () {
+    $admin = User::factory()->role(UserRole::Admin)->create();
+    $customer = Customer::factory()->create(['company_name' => 'Overdue Client Co']);
+    Invoice::factory()->create([
+        'customer_id' => $customer->id, 'status' => InvoiceStatus::Overdue,
+        'due_date' => now()->subDays(2), 'total' => 25000,
+    ]);
+
+    $this->actingAs($admin)->get(route('dashboard'))->assertOk()
+        ->assertSee('Upcoming Payments & Renewals')
+        ->assertSee('Overdue Client Co');
 });

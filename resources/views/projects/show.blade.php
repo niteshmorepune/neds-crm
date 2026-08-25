@@ -19,6 +19,9 @@
                             @endif
                         </div>
                         <div><span class="text-gray-400">Status:</span> {{ $project->status->label() }}</div>
+                        <div><span class="text-gray-400">Client Requirement Status:</span>
+                            <span class="inline-flex rounded px-1.5 py-0.5 text-xs {{ $project->requirement_status->badgeClass() }}">{{ $project->requirement_status->label() }}</span>
+                        </div>
                         <div><span class="text-gray-400">Project Manager:</span> {{ $project->owner?->name ?? '—' }}</div>
                         <div><span class="text-gray-400">Service:</span> {{ $project->service?->name ?? '—' }}</div>
                         <div><span class="text-gray-400">Timeline:</span> {{ $project->start_date?->format('d M Y') ?? '—' }} → {{ $project->end_date?->format('d M Y') ?? '—' }}</div>

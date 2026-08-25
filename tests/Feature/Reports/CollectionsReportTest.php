@@ -2,6 +2,7 @@
 
 use App\Enums\InvoiceStatus;
 use App\Enums\MilestoneStatus;
+use App\Enums\PartnerCollectionMode;
 use App\Enums\ProjectStatus;
 use App\Enums\QuotationStatus;
 use App\Enums\TaskStatus;
@@ -296,6 +297,62 @@ it('agrees with billedByClient on the total for the same window', function () {
     $clientTotal = $this->metrics->billedByClient($partner->id)->sum('amount');
 
     expect($monthlyTotal)->toBe($clientTotal)->toBe(75000);
+});
+
+// --- upcomingPaymentsAndRenewals (Dashboard widget) --------------------------
+
+it('buckets a past-due invoice as overdue and a soon-due invoice as due_7', function () {
+    $customer = Customer::factory()->create();
+    Invoice::factory()->create(['customer_id' => $customer->id, 'status' => InvoiceStatus::Overdue, 'due_date' => now()->subDays(3), 'total' => 50000]);
+    Invoice::factory()->create(['customer_id' => $customer->id, 'status' => InvoiceStatus::Sent, 'due_date' => now()->addDays(5), 'total' => 30000]);
+
+    $buckets = $this->metrics->upcomingPaymentsAndRenewals();
+
+    expect($buckets['overdue']->count())->toBe(1)
+        ->and($buckets['overdue']->first()['amount'])->toBe(50000)
+        ->and($buckets['due_7']->count())->toBe(1)
+        ->and($buckets['due_30']->count())->toBe(0);
+});
+
+it('buckets an active recurring template renewal by its next_run_on date', function () {
+    $customer = Customer::factory()->create();
+    RecurringInvoice::factory()->create(['customer_id' => $customer->id, 'is_active' => true, 'next_run_on' => now()->addDays(20)]);
+
+    $buckets = $this->metrics->upcomingPaymentsAndRenewals();
+
+    expect($buckets['due_30']->count())->toBe(1)
+        ->and($buckets['due_30']->first()['type'])->toBe('renewal');
+});
+
+it('excludes a paused recurring template and one further out than the 60-day horizon', function () {
+    $customer = Customer::factory()->create();
+    RecurringInvoice::factory()->create(['customer_id' => $customer->id, 'is_active' => false, 'next_run_on' => now()->addDays(10)]);
+    RecurringInvoice::factory()->create(['customer_id' => $customer->id, 'is_active' => true, 'next_run_on' => now()->addDays(90)]);
+
+    $buckets = $this->metrics->upcomingPaymentsAndRenewals();
+    $total = collect($buckets)->sum(fn ($rows) => $rows->count());
+
+    expect($total)->toBe(0);
+});
+
+it('excludes a PartnerCollects client renewal, since NEDS never actually bills it', function () {
+    $customer = Customer::factory()->create(['partner_collection_mode' => PartnerCollectionMode::PartnerCollects]);
+    RecurringInvoice::factory()->create(['customer_id' => $customer->id, 'is_active' => true, 'next_run_on' => now()->addDays(5)]);
+
+    $buckets = $this->metrics->upcomingPaymentsAndRenewals();
+
+    expect($buckets['due_7']->count())->toBe(0);
+});
+
+it('excludes an invoice further out than the horizon and one already paid off', function () {
+    $customer = Customer::factory()->create();
+    Invoice::factory()->create(['customer_id' => $customer->id, 'status' => InvoiceStatus::Sent, 'due_date' => now()->addDays(90), 'total' => 50000]);
+    Invoice::factory()->create(['customer_id' => $customer->id, 'status' => InvoiceStatus::Paid, 'due_date' => now()->addDays(5), 'total' => 50000, 'amount_paid' => 50000]);
+
+    $buckets = $this->metrics->upcomingPaymentsAndRenewals();
+    $total = collect($buckets)->sum(fn ($rows) => $rows->count());
+
+    expect($total)->toBe(0);
 });
 
 // --- Route access control ----------------------------------------------------

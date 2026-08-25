@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Announcement;
 use App\Services\ApprovalCenterMetrics;
 use App\Services\CallPriorityService;
+use App\Services\CollectionsMetrics;
 use App\Services\DashboardMetrics;
+use App\Services\ProjectHealthMetrics;
 use App\Services\RoleTargetMetrics;
 use App\Support\DashboardWidgets;
 use Illuminate\Http\Request;
@@ -14,7 +16,7 @@ use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function index(Request $request, DashboardMetrics $metrics, CallPriorityService $callPriority, RoleTargetMetrics $roleTargets, ApprovalCenterMetrics $approvalCenter): View
+    public function index(Request $request, DashboardMetrics $metrics, CallPriorityService $callPriority, RoleTargetMetrics $roleTargets, ApprovalCenterMetrics $approvalCenter, ProjectHealthMetrics $projectHealth, CollectionsMetrics $collections): View
     {
         $user = $request->user();
         $announcements = Announcement::active()->forStaff()->newestFirst()->get();
@@ -45,6 +47,8 @@ class DashboardController extends Controller
                 'services' => $metrics->servicesOverview(),
                 'tasks' => $metrics->taskSummary(),
                 'pendingApprovals' => $approvalCenter->totalCount(),
+                'ongoingProjects' => $projectHealth->healthByProject(),
+                'upcomingPayments' => $collections->upcomingPaymentsAndRenewals(),
             ],
             'sales' => [
                 'stats' => $metrics->salesStats($user, $selectedMonth),

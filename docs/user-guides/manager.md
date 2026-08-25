@@ -13,6 +13,15 @@ Your dashboard shows the whole business at a glance:
 - **Services Overview** — a donut of projects by service line (SEO, GMB, Website,
   Social, Ads…).
 - **Task Summary** — Assigned / Pending / Overdue / Completed.
+- **Ongoing Projects** — the riskiest active/on-hold projects first (red/orange/
+  yellow/green, same scoring as the full **Project Health** page), each showing
+  the client, % complete, and the current open task with who it's assigned to.
+  A "View all →" link goes to the full Project Health page.
+- **Upcoming Payments & Renewals** — every outstanding invoice due date and
+  every active recurring-billing renewal date, combined into one list and
+  bucketed **Overdue / Next 7 days / Next 30 days / Next 60 days**, so you
+  don't have to check the Receivables Report and Recurring Invoices
+  separately to see what's coming due.
 - **My Meeting Invitations** — if a colleague has scheduled a Google Meet call
   and added you as an internal attendee (see **Create Meeting** below), it
   shows here with **Accept**/**Decline** buttons and a direct **Join Google
@@ -220,6 +229,11 @@ Every project also has a **Project Manager** (set on the project's Edit page)
 who is ultimately accountable for it — a different person can be the Project
 Manager on every project, and one person can be the Project Manager on as
 many projects as needed.
+
+Every project also has a **Client Requirement Status** (Pending / Submitted /
+Received, set on the project's Edit page and shown on its own page) — a quick
+signal for whether the client has sent what your team is waiting on to move
+the project forward.
 
 **Project Updates → My Services:** the Project Updates page has a new **My Services**
 toggle that filters the list to only projects where you are the Lead or a team member.

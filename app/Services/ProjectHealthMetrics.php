@@ -37,11 +37,11 @@ class ProjectHealthMetrics
     private const STATUS_ORDER = ['red' => 0, 'orange' => 1, 'yellow' => 2, 'green' => 3];
 
     /**
-     * @return Collection<int, array{project: Project, status: string, completion: ?int, overdue_tasks: int}>
+     * @return Collection<int, array{project: Project, status: string, completion: ?int, overdue_tasks: int, current_task: ?Task}>
      */
     public function healthByProject(): Collection
     {
-        return Project::with(['customer', 'tasks'])
+        return Project::with(['customer', 'tasks.assignee'])
             ->where('status', '!=', ProjectStatus::Completed->value)
             ->get()
             ->map(fn (Project $project) => [
@@ -49,9 +49,30 @@ class ProjectHealthMetrics
                 'status' => $this->statusFor($project),
                 'completion' => $project->completionPercentage(),
                 'overdue_tasks' => $this->overdueTaskCount($project),
+                'current_task' => $this->currentTaskFor($project),
             ])
             ->sortBy(fn (array $row) => self::STATUS_ORDER[$row['status']])
             ->values();
+    }
+
+    /**
+     * "What's being worked on right now" for the Dashboard's Ongoing
+     * Projects widget — the soonest-due not-yet-Done task (undated tasks
+     * sort last, since a task with no due date is less urgent than one
+     * with a real deadline, not more), tie-broken by creation order.
+     * Requires `tasks.assignee` already eager-loaded (see healthByProject())
+     * — uses the in-memory collection, not a fresh query, so this stays
+     * N+1-safe when called per project in a loop.
+     */
+    private function currentTaskFor(Project $project): ?Task
+    {
+        return $project->tasks
+            ->where('status', '!=', TaskStatus::Done)
+            ->sortBy([
+                fn (Task $a, Task $b) => ($a->due_date?->timestamp ?? PHP_INT_MAX) <=> ($b->due_date?->timestamp ?? PHP_INT_MAX),
+                fn (Task $a, Task $b) => $a->created_at <=> $b->created_at,
+            ])
+            ->first();
     }
 
     public function statusFor(Project $project): string

@@ -45,6 +45,95 @@
     </a>
 @endif
 
+{{-- Row 1.7: Ongoing Projects + Upcoming Payments & Renewals --}}
+@if (in_array('ongoing_projects', $visibleWidgets) || in_array('upcoming_payments', $visibleWidgets))
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        @if (in_array('ongoing_projects', $visibleWidgets))
+            <div class="rounded-lg bg-white p-6 shadow-sm">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-base font-semibold text-gray-900">Ongoing Projects</h3>
+                    <a href="{{ route('project-health.index') }}" class="text-sm text-indigo-600 hover:underline">View all {{ $ongoingProjects->count() }} →</a>
+                </div>
+                @if ($ongoingProjects->isNotEmpty())
+                    <ul class="mt-4 divide-y divide-gray-100">
+                        @foreach ($ongoingProjects->take(6) as $row)
+                            @php
+                                $project = $row['project'];
+                            @endphp
+                            <li class="flex items-start gap-3 py-2.5 first:pt-0 last:pb-0">
+                                <span class="mt-0.5 text-sm leading-none">
+                                    @switch($row['status'])
+                                        @case('red') 🔴 @break
+                                        @case('orange') 🟠 @break
+                                        @case('yellow') 🟡 @break
+                                        @default 🟢
+                                    @endswitch
+                                </span>
+                                <div class="min-w-0 flex-1">
+                                    <a href="{{ route('projects.show', $project) }}" class="block truncate text-sm font-medium text-gray-900 hover:underline">{{ $project->name }}</a>
+                                    <p class="truncate text-xs text-gray-500">{{ $project->customer->company_name }} · {{ $row['completion'] !== null ? $row['completion'].'% done' : 'No tasks yet' }}</p>
+                                    <p class="truncate text-xs text-gray-400">
+                                        @if ($row['current_task'])
+                                            Current: {{ $row['current_task']->title }} — {{ $row['current_task']->assignee?->name ?? 'Unassigned' }}
+                                        @else
+                                            No open tasks
+                                        @endif
+                                    </p>
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
+                @else
+                    <p class="mt-6 text-sm text-gray-400">No active or on-hold projects.</p>
+                @endif
+            </div>
+        @endif
+
+        @if (in_array('upcoming_payments', $visibleWidgets))
+            @php
+                $paymentBuckets = [
+                    ['overdue', 'Overdue', 'text-red-600'],
+                    ['due_7', 'Next 7 days', 'text-amber-600'],
+                    ['due_30', 'Next 30 days', 'text-gray-700'],
+                    ['due_60', 'Next 60 days', 'text-gray-700'],
+                ];
+                $allUpcoming = collect($upcomingPayments)->flatten(1);
+            @endphp
+            <div class="rounded-lg bg-white p-6 shadow-sm">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-base font-semibold text-gray-900">Upcoming Payments &amp; Renewals</h3>
+                    <a href="{{ route('reports.receivables') }}" class="text-sm text-indigo-600 hover:underline">Receivables report →</a>
+                </div>
+                <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    @foreach ($paymentBuckets as [$key, $label, $fg])
+                        <div>
+                            <p class="{{ $fg }} text-xl font-semibold">{{ $upcomingPayments[$key]->count() }}</p>
+                            <p class="text-xs text-gray-500">{{ $label }}</p>
+                            <p class="text-xs text-gray-400">{{ \App\Support\Money::format((int) $upcomingPayments[$key]->sum('amount')) }}</p>
+                        </div>
+                    @endforeach
+                </div>
+                @if ($allUpcoming->isNotEmpty())
+                    <ul class="mt-4 divide-y divide-gray-100">
+                        @foreach ($allUpcoming->take(6) as $item)
+                            <li class="flex items-center justify-between gap-3 py-2 text-sm first:pt-0 last:pb-0">
+                                <a href="{{ $item['href'] }}" class="min-w-0 flex-1 truncate hover:underline">
+                                    <span class="text-gray-900">{{ $item['customer']?->company_name ?? 'Client removed' }}</span>
+                                    <span class="text-gray-400">· {{ $item['label'] }}</span>
+                                </a>
+                                <span class="shrink-0 text-xs text-gray-500">{{ $item['date']->format('d M') }}</span>
+                                <span class="shrink-0 text-xs font-medium text-gray-700">{{ \App\Support\Money::format($item['amount']) }}</span>
+                            </li>
+                        @endforeach
+                    </ul>
+                @else
+                    <p class="mt-6 text-sm text-gray-400">Nothing due in the next 60 days.</p>
+                @endif
+            </div>
+        @endif
+    </div>
+@endif
+
 {{-- Row 2: Services Overview donut + Task Summary --}}
 @if (in_array('services_overview', $visibleWidgets) || in_array('task_summary', $visibleWidgets))
     <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">

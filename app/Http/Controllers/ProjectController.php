@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Actions\CreateProjectFromDeal;
 use App\Enums\CustomerStatus;
 use App\Enums\DealStage;
+use App\Enums\DeliverableStatus;
 use App\Enums\ProjectStatus;
 use App\Enums\UserRole;
 use App\Http\Requests\ProjectStoreRequest;
@@ -97,7 +98,10 @@ class ProjectController extends Controller
     {
         $this->authorize('create', Project::class);
 
-        return view('projects.create', $this->formData() + ['project' => new Project(['status' => ProjectStatus::Active->value])]);
+        return view('projects.create', $this->formData() + ['project' => new Project([
+            'status' => ProjectStatus::Active->value,
+            'requirement_status' => DeliverableStatus::Pending->value,
+        ])]);
     }
 
     public function store(ProjectStoreRequest $request): RedirectResponse
@@ -196,6 +200,7 @@ class ProjectController extends Controller
             'services' => Service::active()->orderBy('sort_order')->get(),
             'staff' => User::orderBy('name')->get(['id', 'name']),
             'statuses' => ProjectStatus::cases(),
+            'requirementStatuses' => DeliverableStatus::cases(),
         ];
     }
 

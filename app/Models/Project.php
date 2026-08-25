@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\DeliverableStatus;
 use App\Enums\ProjectStatus;
 use App\Enums\RecurringFrequency;
 use App\Enums\TaskStatus;
@@ -22,7 +23,7 @@ class Project extends Model
 
     protected $fillable = [
         'name', 'customer_id', 'deal_id', 'service_id', 'owner_id',
-        'status', 'start_date', 'end_date', 'description',
+        'status', 'requirement_status', 'start_date', 'end_date', 'description',
         'google_drive_folder_link',
     ];
 
@@ -30,6 +31,7 @@ class Project extends Model
     {
         return [
             'status' => ProjectStatus::class,
+            'requirement_status' => DeliverableStatus::class,
             'start_date' => 'date',
             'end_date' => 'date',
         ];

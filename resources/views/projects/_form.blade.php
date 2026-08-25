@@ -48,6 +48,16 @@
     </div>
 
     <div>
+        <x-input-label for="requirement_status" value="Client Requirement Status" />
+        <select id="requirement_status" name="requirement_status" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+            @foreach ($requirementStatuses as $reqStatus)
+                <option value="{{ $reqStatus->value }}" @selected(old('requirement_status', $project->requirement_status?->value) === $reqStatus->value)>{{ $reqStatus->label() }}</option>
+            @endforeach
+        </select>
+        <p class="mt-1 text-xs text-gray-400">Has the client submitted what's needed to move this project forward?</p>
+    </div>
+
+    <div>
         <x-input-label for="start_date" value="Start date" />
         <x-text-input id="start_date" name="start_date" type="date" class="mt-1 block w-full" :value="old('start_date', $project->start_date?->toDateString())" />
     </div>

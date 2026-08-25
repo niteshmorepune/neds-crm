@@ -27,6 +27,8 @@ class DashboardWidgets
                 'leads_total' => 'Total Leads',
                 'tasks_overview' => 'Tasks Overview',
                 'pending_approvals' => 'Pending Approvals',
+                'ongoing_projects' => 'Ongoing Projects',
+                'upcoming_payments' => 'Upcoming Payments & Renewals',
                 'services_overview' => 'Services Overview',
                 'task_summary' => 'Task Summary',
                 'daily_reports_links' => 'Daily Reports links',

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\InvoiceStatus;
+use App\Enums\PartnerCollectionMode;
 use App\Enums\ProjectStatus;
 use App\Enums\QuotationStatus;
 use App\Models\Customer;
@@ -10,6 +11,7 @@ use App\Models\Invoice;
 use App\Models\Project;
 use App\Models\Quotation;
 use App\Models\QuotationMilestone;
+use App\Models\RecurringInvoice;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -271,5 +273,81 @@ class CollectionsMetrics
             InvoiceStatus::Draft->value, InvoiceStatus::Sent->value,
             InvoiceStatus::PartiallyPaid->value, InvoiceStatus::Overdue->value,
         ]);
+    }
+
+    /**
+     * Dashboard "Upcoming Payments & Renewals" widget — merges outstanding
+     * Invoice due dates with active RecurringInvoice next_run_on dates into
+     * one urgency-bucketed list, since today these live on two separate
+     * reports with no combined view. Bucketed by comparing each row's date
+     * against today: 'overdue' (date already passed), 'due_7'/'due_30'/
+     * 'due_60' (within that many days), everything further out is dropped —
+     * this is a "what needs attention soon" widget, not a full ledger.
+     *
+     * A recurring template's row is a projection, not a real invoice yet
+     * (GenerateRecurringInvoices hasn't run for it), so it's excluded for
+     * any client on PartnerCollects — RecurringInvoice::scopeDue() already
+     * never generates a real NEDS invoice for those, and showing a
+     * "payment due" date NEDS will never actually collect on would be
+     * misleading here.
+     *
+     * @return array{
+     *     overdue: Collection<int, array<string, mixed>>,
+     *     due_7: Collection<int, array<string, mixed>>,
+     *     due_30: Collection<int, array<string, mixed>>,
+     *     due_60: Collection<int, array<string, mixed>>,
+     * }
+     */
+    public function upcomingPaymentsAndRenewals(int $horizonDays = 60): array
+    {
+        $today = Carbon::today();
+        $horizon = $today->copy()->addDays($horizonDays);
+
+        $invoiceRows = $this->outstandingInvoicesQuery()
+            ->whereNotNull('due_date')
+            ->where('due_date', '<=', $horizon)
+            ->with('customer')
+            ->get()
+            ->map(fn (Invoice $invoice) => [
+                'type' => 'invoice',
+                'customer' => $invoice->customer,
+                'label' => 'Invoice '.$invoice->invoice_number,
+                'date' => $invoice->due_date,
+                'amount' => $invoice->balance(),
+                'href' => route('invoices.show', $invoice),
+            ]);
+
+        $renewalRows = RecurringInvoice::query()
+            ->where('is_active', true)
+            ->whereNotNull('next_run_on')
+            ->where('next_run_on', '<=', $horizon)
+            ->whereDoesntHave('customer', fn (Builder $q) => $q->where(
+                'partner_collection_mode', PartnerCollectionMode::PartnerCollects->value
+            ))
+            ->with(['customer', 'service', 'items'])
+            ->get()
+            ->map(fn (RecurringInvoice $recurring) => [
+                'type' => 'renewal',
+                'customer' => $recurring->customer,
+                'label' => ($recurring->service?->name ?? 'Recurring').' renewal',
+                'date' => $recurring->next_run_on,
+                'amount' => $recurring->monthlyEquivalentValue(),
+                'href' => route('recurring-invoices.show', $recurring),
+            ]);
+
+        $buckets = ['overdue' => [], 'due_7' => [], 'due_30' => [], 'due_60' => []];
+
+        foreach ($invoiceRows->concat($renewalRows)->sortBy('date') as $row) {
+            $days = $today->diffInDays($row['date'], false);
+            $bucketKey = match (true) {
+                $days < 0 => 'overdue',
+                $days <= 7 => 'due_7',
+                $days <= 30 => 'due_30',
+                default => 'due_60',
+            };
+            $buckets[$bucketKey][] = $row;
+        }
+
+        return array_map(fn (array $rows) => collect($rows), $buckets);
     }
 }
