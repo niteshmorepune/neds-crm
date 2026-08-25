@@ -1380,3 +1380,51 @@ Record every "we chose X because Y" here — this is the project's memory.
   request that was never soft-deleted at all, just silently removed.
   19 Pest tests (10 new, covering the team-history filters, the summary
   strip's counts, and the cancelled-stays-visible behavior), Pint clean.
+- **2026-08-25 — Dashboard: Ongoing Projects + Upcoming Payments & Renewals
+  widgets, plus a per-project Client Requirement Status field.** Last of the
+  requirements doc's 7 items to be genuinely unbuilt (audited via a Claude
+  Artifact gap analysis — 5 of the 7 items turned out to already be built
+  when re-checked against `git log` mid-session, including three the
+  artifact itself had called "Not started"). Reused `ProjectHealthMetrics::
+  healthByProject()` (already existed at `/project-health`) and a new
+  `CollectionsMetrics::upcomingPaymentsAndRenewals()` rather than building
+  new aggregation from scratch. `healthByProject()` gained a `current_task`
+  key (soonest-due not-Done task, undated tasks sort last, tie-broken by
+  creation order) — the doc's "current task / employee assigned" ask,
+  which the existing `/project-health` page never showed. `Project` gained
+  `requirement_status` (reuses `App\Enums\DeliverableStatus` — Pending/
+  Submitted/Received — rather than a near-duplicate enum, since
+  `ProjectDeliverable` already uses the exact same three values for its own
+  per-item status), nullable-on-write to stay backward-compatible with
+  every existing project-form test, defaulting to Pending at the DB level.
+  `upcomingPaymentsAndRenewals()` merges outstanding-invoice due dates
+  (via the existing `outstandingInvoicesQuery()`) with active recurring
+  templates' `next_run_on`, excluding PartnerCollects clients (NEDS never
+  actually generates a real invoice for those — `RecurringInvoice::
+  scopeDue()`'s own exclusion, applied here too so the widget never shows
+  a "payment due" date that will never really bill), bucketed Overdue/
+  7d/30d/60d by comparing each row's date to today. Both widgets follow
+  the existing hideable-widget convention (`DashboardWidgets` catalog,
+  `pending_approvals`'s own 2026-08-24 precedent) rather than always-on
+  additions. **Real Blade gotcha hit while building**: an inline
+  `@php($project = $row['project'])` directive, nested 4 levels deep
+  inside Livewire's ExtendBlade precompiler wrapping (`@if` > `@if` >
+  `@if` > `@foreach`), compiled without its closing `?>` — silently
+  corrupting everything after it in the compiled file into raw (unparsed)
+  PHP until a later stray `<?php endif; ?>` finally threw a parse error
+  far downstream, `View: ...admin.blade.php`. The identical inline form
+  works fine at shallow nesting elsewhere in this app (`project-health/
+  index.blade.php`) — switching to the block form (`@php ... @endphp`)
+  fixed it outright. Worth remembering if a future deeply-nested widget
+  hits a mysterious "unexpected token endif" — check for an inline
+  `@php(...)` first before assuming the `@if`/`@endif` count is wrong.
+  17 files changed, 12 new Pest tests, full suite 2354 (up from 2338)
+  green except the one pre-existing unrelated `MeetingRequestTest`
+  IST-window flake (see [[feedback-gotchas]]). Pint clean, migrated
+  against local MySQL. `docs/user-guides/manager.md` updated (new
+  bullets in the dashboard list + the Projects section) and its PDF
+  regenerated — the other 8 PDFs `make-handouts.mjs` also touches were
+  discarded via `git checkout --` since their source `.md` files hadn't
+  actually changed (headless-Chrome PDF generation isn't byte-stable
+  even for unchanged content, so a blind `npm run handouts` re-run always
+  dirties every PDF regardless of what actually changed).
