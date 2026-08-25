@@ -1428,3 +1428,74 @@ Record every "we chose X because Y" here — this is the project's memory.
   actually changed (headless-Chrome PDF generation isn't byte-stable
   even for unchanged content, so a blind `npm run handouts` re-run always
   dirties every PDF regardless of what actually changed).
+- **2026-08-25 — Client Profile: Services tab overhaul (requirements-doc
+  item #4, the last of the 7 — everything else was already shipped earlier
+  this same day; see the Dashboard-widgets entry above).** Four sub-
+  features, all additive: service-wise employee assignment for retainer
+  services with no `Project`, service-specific links, a categorized Client
+  Assets & Documents library with real version history, and per-client-
+  service Client Requirements tracking. Planned via 3 parallel Explore
+  research agents (Attachment/TeamResource/file-upload patterns,
+  Client Profile/Customer/Service model shape, ProjectDeliverable/Policy/
+  Livewire-CRUD conventions) before writing any code, then 3
+  AskUserQuestion decisions confirmed before the plan was finalized: real
+  version history for Assets (not a bare replace — new `client_asset_versions`
+  table, the first file-versioning precedent anywhere in this codebase);
+  free-text link labels, not a curated per-service-type field list (this
+  app has already been burned once by a service-taxonomy rename — 2026-07-06
+  Google Ads → Performance Marketing — so a label-suggestion map keyed to
+  service identity was deliberately avoided); and the new employee
+  assignment only *drives* the "who's working on this" display when a
+  service has no live (non-Completed) `Project` — a project-backed service
+  keeps showing its existing Project team, so a service never shows two
+  competing "who owns this" answers.
+  5 new tables (`service_assignments`, `client_service_links`,
+  `client_assets`, `client_asset_versions`, `client_requirements` — one
+  more than the artifact's original "4," since real versioning wasn't
+  anticipated when that estimate was written). `ClientRequirement.status`
+  and `Project.requirement_status` (this same day's earlier milestone)
+  both reuse `App\Enums\DeliverableStatus` — the third reuse of that one
+  enum rather than a fourth near-identical one. A received requirement's
+  file is never a second, separate attachment — uploading it creates a
+  `ClientAsset` and links it via `client_asset_id`, so it shows up in the
+  Requirements checklist AND the Assets library from one upload.
+  New `CustomerPolicy::manageServices()` (Admin/Manager/Sales/Support,
+  unconditional — same role set and "shared client resource, not
+  sales-owned relationship data" reasoning as the existing `manageLinks()`/
+  `manageMeetings()`) covers every mutation across all four sub-features,
+  deliberately one gate rather than four near-identical policy methods.
+  Mixed implementation shape, each matched to precedent rather than forced
+  into one paradigm: service assignment is a plain controller + inline
+  Alpine `x-show` form (same "too small to justify a Livewire component"
+  call as the 2026-07-24 Payment inline-edit fix — it's one dropdown per
+  existing table row); service links, Client Requirements, and Client
+  Assets are Livewire components (`ClientServiceLinks`/`ClientRequirements`/
+  `ClientAssets`) mirroring `ImportantLinksManager`/`ProjectDeliverables`/
+  `TeamResourceLibrary` respectively. Two new tabs (**Requirements**,
+  **Assets**) on the Client Profile page; Service Links lives inside the
+  existing **Services** tab (per-service links would make a mostly-empty
+  standalone tab), and the Recurring Services table gained a **Team**
+  column mirroring the Projects table's existing one — this also *is* the
+  doc's "Team Working on This Client" ask, not a separate view, matching
+  the doc's own framing ("trivial ... computed, not re-entered"). No
+  sidebar/menu changes needed — `clients.show` was already reachable, same
+  as every other per-client sub-feature in this app.
+  **Same Blade gotcha hit twice more today, caught immediately from the
+  earlier Dashboard-widgets entry's own note**: two more inline
+  `@php($var = ...)` directives (the new Team column's `$liveProjects`/
+  `$assignment` lookups, nested inside the Recurring Services table's row
+  loop) silently broke Blade compilation the same way, corrupting
+  everything downstream in `_services_tab.blade.php` into raw unparsed
+  text until PHP hit a stray `<?php endif; ?>` far later and threw
+  "Undefined variable $overdue" — from the unrelated Projects table
+  further down the same file, not the actual broken line. Fixed the same
+  way: block `@php ... @endphp` form. Recognized and fixed in one pass
+  this time, in under a minute, specifically because the earlier entry
+  documented the exact symptom to watch for — worth noting as a case
+  where writing the gotcha down the first time paid off within the same
+  session.
+  Full suite 2377 (up from 2354) green, same one pre-existing unrelated
+  `MeetingRequestTest` IST-window flake. Pint clean, migrated against
+  local MySQL. `docs/user-guides/manager.md` updated (new Services-tab
+  paragraphs), only `manager.pdf` regenerated (rest discarded per the
+  established `npm run handouts` gotcha).
