@@ -468,6 +468,7 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
         Route::post('leave-requests', [LeaveRequestController::class, 'store'])->name('leave-requests.store');
         Route::delete('leave-requests/{leaveRequest}', [LeaveRequestController::class, 'destroy'])->name('leave-requests.destroy');
         Route::get('leave-requests/approvals', [LeaveRequestController::class, 'approvals'])->name('leave-requests.approvals');
+        Route::get('leave-requests/team', [LeaveRequestController::class, 'team'])->name('leave-requests.team');
         Route::post('leave-requests/{leaveRequest}/approve', [LeaveRequestController::class, 'approve'])->name('leave-requests.approve');
         Route::post('leave-requests/{leaveRequest}/reject', [LeaveRequestController::class, 'reject'])->name('leave-requests.reject');
     });

@@ -12,6 +12,7 @@ use App\Models\LeaveRequest;
 use App\Models\User;
 use App\Notifications\LeaveRequestReviewed;
 use App\Notifications\LeaveRequestSubmitted;
+use App\Services\LeaveRequestMetrics;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -54,16 +55,23 @@ class LeaveRequestController extends Controller
         return back()->with('status', 'Leave request submitted.');
     }
 
+    /**
+     * Cancels a still-pending request — relabeled to Cancelled rather than
+     * hard-deleted, so it stays permanently visible in the employee's own
+     * leave history (matching this app's "relabel a real record instead of
+     * making it disappear" convention elsewhere). Route/method name kept
+     * for URL stability even though it no longer deletes the row.
+     */
     public function destroy(LeaveRequest $leaveRequest): RedirectResponse
     {
         $this->authorize('delete', $leaveRequest);
 
-        $leaveRequest->delete();
+        $leaveRequest->update(['status' => LeaveRequestStatus::Cancelled]);
 
         return back()->with('status', 'Leave request cancelled.');
     }
 
-    public function approvals(Request $request): View
+    public function approvals(Request $request, LeaveRequestMetrics $metrics): View
     {
         $this->authorize('viewApprovalQueue', LeaveRequest::class);
 
@@ -72,7 +80,42 @@ class LeaveRequestController extends Controller
             ->orderBy('start_date')
             ->get();
 
-        return view('leave-requests.approvals', ['requests' => $requests]);
+        return view('leave-requests.approvals', [
+            'requests' => $requests,
+            'summary' => $metrics->summary(),
+        ]);
+    }
+
+    /**
+     * Team Leave Records — the full, filterable history (not just pending)
+     * for Admin/Manager, per the requirements doc's "Admin / Manager — Team
+     * Leave Records" ask. Distinct from approvals() above (an action queue
+     * of pending-only requests) — this is a browse/filter view with no
+     * approve/reject actions of its own.
+     */
+    public function team(Request $request, LeaveRequestMetrics $metrics): View
+    {
+        $this->authorize('viewApprovalQueue', LeaveRequest::class);
+
+        $requests = LeaveRequest::query()
+            ->with(['user', 'reviewer'])
+            ->when($request->filled('user_id'), fn ($q) => $q->where('user_id', $request->integer('user_id')))
+            ->when($request->filled('type'), fn ($q) => $q->where('type', $request->string('type')->value()))
+            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->string('status')->value()))
+            ->when($request->filled('from'), fn ($q) => $q->whereDate('start_date', '>=', $request->date('from')))
+            ->when($request->filled('to'), fn ($q) => $q->whereDate('start_date', '<=', $request->date('to')))
+            ->orderByDesc('start_date')
+            ->paginate(20)
+            ->withQueryString();
+
+        return view('leave-requests.team', [
+            'requests' => $requests,
+            'summary' => $metrics->summary(),
+            'employees' => User::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'types' => LeaveRequestType::cases(),
+            'statuses' => LeaveRequestStatus::cases(),
+            'filters' => $request->only(['user_id', 'type', 'status', 'from', 'to']),
+        ]);
     }
 
     public function approve(Request $request, LeaveRequest $leaveRequest): RedirectResponse

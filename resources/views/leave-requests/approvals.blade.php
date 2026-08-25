@@ -6,7 +6,12 @@
             <div class="rounded-md bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-800">{{ session('status') }}</div>
         @endif
 
-        <a href="{{ route('leave-requests.index') }}" class="text-sm text-indigo-600 hover:underline">← Back to my requests</a>
+        <div class="flex flex-wrap items-center justify-between gap-2">
+            <a href="{{ route('leave-requests.index') }}" class="text-sm text-indigo-600 hover:underline">← Back to my requests</a>
+            <a href="{{ route('leave-requests.team') }}" class="text-sm text-indigo-600 hover:underline">View full team history →</a>
+        </div>
+
+        @include('leave-requests._summary')
 
         <div class="overflow-hidden overflow-x-auto rounded-lg bg-white shadow-sm">
             <table class="min-w-full divide-y divide-gray-200 text-sm">

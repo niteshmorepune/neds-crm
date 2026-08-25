@@ -7,11 +7,16 @@
         @endif
 
         @if ($isManager)
-            <div class="flex items-center justify-between rounded-md bg-indigo-50 border border-indigo-100 px-4 py-3 text-sm text-indigo-700">
+            <div class="flex flex-wrap items-center justify-between gap-2 rounded-md bg-indigo-50 border border-indigo-100 px-4 py-3 text-sm text-indigo-700">
                 <span>Team approvals</span>
-                <a href="{{ route('leave-requests.approvals') }}" class="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-500">
-                    Review pending ({{ $pendingCount }})
-                </a>
+                <div class="flex items-center gap-2">
+                    <a href="{{ route('leave-requests.team') }}" class="rounded-md border border-indigo-300 bg-white px-3 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-50">
+                        Team leave records
+                    </a>
+                    <a href="{{ route('leave-requests.approvals') }}" class="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-500">
+                        Review pending ({{ $pendingCount }})
+                    </a>
+                </div>
             </div>
         @endif
 
@@ -79,6 +84,7 @@
                                 @php($color = match ($r->status->value) {
                                     'approved' => 'bg-green-50 text-green-700 border-green-200',
                                     'rejected' => 'bg-red-50 text-red-700 border-red-200',
+                                    'cancelled' => 'bg-gray-100 text-gray-500 border-gray-200',
                                     default => 'bg-amber-50 text-amber-700 border-amber-200',
                                 })
                                 <span class="inline-block rounded-full border px-2 py-0.5 text-xs font-medium {{ $color }}">{{ $r->status->label() }}</span>
