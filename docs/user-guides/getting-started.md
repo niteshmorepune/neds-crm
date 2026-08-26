@@ -168,6 +168,16 @@ automatically marked **Leave** (or **Half Day** for a half-day request) —
 Sundays are skipped since they're not office days. You can cancel a request
 yourself as long as it's still pending.
 
+## 5b. Working from home
+Open **Work From Home** in the sidebar to request a remote day: pick a
+**duration** (Full Day or Half Day), a start date, end date, and a short
+reason, then submit — same form and approval flow as Leave Requests, from
+any admin or manager. The one difference: WFH doesn't mark you as on leave.
+You're still working, so once approved, check in and out from **Attendance**
+exactly as on any other day — approval just lets your manager know where
+you're working from, and shows a **Remote** badge on that day's attendance
+row. You can cancel a request yourself as long as it's still pending.
+
 ## 6. Daily report — end of day
 At the end of the day, open **Daily Reports** and submit a short "what I did
 today". Some numbers (tasks completed, calls made) are filled in automatically;

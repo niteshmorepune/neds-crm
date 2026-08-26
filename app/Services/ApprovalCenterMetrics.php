@@ -6,6 +6,7 @@ use App\Models\LeaveRequest;
 use App\Models\Note;
 use App\Models\Project;
 use App\Models\Quotation;
+use App\Models\WorkFromHomeRequest;
 use Illuminate\Support\Collection;
 
 /**
@@ -16,6 +17,8 @@ use Illuminate\Support\Collection;
  * through that type's own existing controller/Livewire component:
  *
  * - Leave requests: LeaveRequestController::approve()/reject() (unchanged).
+ * - Work From Home requests: WorkFromHomeRequestController::approve()/
+ *   reject() (unchanged) — same shape as Leave requests, added alongside it.
  * - Project updates: the existing ProjectDailyUpdateReview Livewire
  *   component, embedded per-project — its approve()/discard() methods are
  *   reused verbatim, not reimplemented here.
@@ -37,6 +40,14 @@ class ApprovalCenterMetrics
     public function pendingLeaveRequests(): Collection
     {
         return LeaveRequest::pending()->with('user')->orderBy('start_date')->get();
+    }
+
+    /**
+     * @return Collection<int, WorkFromHomeRequest>
+     */
+    public function pendingWorkFromHomeRequests(): Collection
+    {
+        return WorkFromHomeRequest::pending()->with('user')->orderBy('start_date')->get();
     }
 
     /**
@@ -69,6 +80,7 @@ class ApprovalCenterMetrics
     public function totalCount(): int
     {
         return $this->pendingLeaveRequests()->count()
+            + $this->pendingWorkFromHomeRequests()->count()
             + $this->pendingQuotations()->count()
             + $this->pendingProjectUpdateCount();
     }

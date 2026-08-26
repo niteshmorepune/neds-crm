@@ -8,6 +8,7 @@ use App\Enums\UserRole;
 use App\Models\Attendance;
 use App\Models\BiometricSyncRequest;
 use App\Models\User;
+use App\Services\WorkFromHomeRequestMetrics;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -17,7 +18,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AttendanceController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request, WorkFromHomeRequestMetrics $wfhMetrics): View
     {
         $this->authorize('viewAny', Attendance::class);
 
@@ -37,9 +38,12 @@ class AttendanceController extends Controller
             $viewingUser = $users->firstWhere('id', $selectedId) ?? $user;
         }
 
+        $monthStart = $month->copy()->startOfMonth();
+        $monthEnd = $month->copy()->endOfMonth();
+
         $records = Attendance::query()
             ->where('user_id', $viewingUser->id)
-            ->whereBetween('date', [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()])
+            ->whereBetween('date', [$monthStart, $monthEnd])
             ->orderBy('date')
             ->get()
             ->keyBy(fn ($a) => $a->date->toDateString());
@@ -51,6 +55,10 @@ class AttendanceController extends Controller
             'users' => $users,
             'viewingUser' => $viewingUser,
             'latestSync' => $isManager ? BiometricSyncRequest::latest('requested_at')->first() : null,
+            // Approved WFH days for this date range — never written onto
+            // Attendance itself (see WorkFromHomeRequest's class doc), so
+            // the view derives the "Remote" badge from this set instead.
+            'remoteDates' => $wfhMetrics->remoteDatesFor($viewingUser->id, $monthStart, $monthEnd),
         ]);
     }
 
@@ -101,12 +109,12 @@ class AttendanceController extends Controller
         $this->authorize('correct', Attendance::class);
 
         $data = $request->validate([
-            'user_id'    => ['required', Rule::exists('users', 'id')],
-            'date'       => ['required', 'date'],
-            'status'     => ['required', Rule::enum(AttendanceStatus::class)],
-            'check_in'   => ['nullable', 'date_format:H:i'],
-            'check_out'  => ['nullable', 'date_format:H:i'],
-            'notes'      => ['nullable', 'string', 'max:255'],
+            'user_id' => ['required', Rule::exists('users', 'id')],
+            'date' => ['required', 'date'],
+            'status' => ['required', Rule::enum(AttendanceStatus::class)],
+            'check_in' => ['nullable', 'date_format:H:i'],
+            'check_out' => ['nullable', 'date_format:H:i'],
+            'notes' => ['nullable', 'string', 'max:255'],
         ]);
 
         $date = Carbon::parse($data['date']);
@@ -117,7 +125,7 @@ class AttendanceController extends Controller
 
         $fill = [
             'status' => $data['status'],
-            'notes'  => $data['notes'] ?? null,
+            'notes' => $data['notes'] ?? null,
         ];
 
         if (filled($data['check_in'] ?? null)) {

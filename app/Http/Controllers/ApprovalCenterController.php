@@ -16,6 +16,7 @@ class ApprovalCenterController extends Controller
     {
         return view('approval-center.index', [
             'leaveRequests' => $metrics->pendingLeaveRequests(),
+            'workFromHomeRequests' => $metrics->pendingWorkFromHomeRequests(),
             'quotations' => $metrics->pendingQuotations(),
             'projectsWithUpdates' => $metrics->projectsWithPendingUpdates(),
             'totalCount' => $metrics->totalCount(),

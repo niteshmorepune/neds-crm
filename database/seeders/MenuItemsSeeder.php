@@ -34,6 +34,7 @@ class MenuItemsSeeder extends Seeder
             ['key' => 'my-day',           'label' => 'My Day',           'group' => MenuGroup::MyWork,          'route' => 'my-day.index',     'icon' => 'sun',        'roles' => $all],
             ['key' => 'attendance',       'label' => 'Attendance',       'group' => MenuGroup::MyWork,          'route' => 'attendance.index', 'icon' => 'clock',      'roles' => $all],
             ['key' => 'leave-requests',   'label' => 'Leave Requests',   'group' => MenuGroup::MyWork,          'route' => 'leave-requests.index', 'icon' => 'calendar', 'roles' => $all],
+            ['key' => 'work-from-home',   'label' => 'Work From Home',   'group' => MenuGroup::MyWork,          'route' => 'work-from-home.index', 'icon' => 'home', 'roles' => $all],
             ['key' => 'lead-generation',  'label' => 'Lead Generation',  'group' => MenuGroup::SalesPipeline,   'route' => 'leads.index',      'icon' => 'funnel',     'roles' => [UserRole::Manager, UserRole::Sales, UserRole::Telecaller]],
             ['key' => 'sales-department', 'label' => 'Sales Pipeline',  'group' => MenuGroup::SalesPipeline,  'route' => 'deals.index',      'icon' => 'trending',   'roles' => [UserRole::Manager, UserRole::Sales]],
             ['key' => 'sales-dashboard',  'label' => 'Sales Dashboard',  'group' => MenuGroup::SalesPipeline,   'route' => 'sales-dashboard.index', 'icon' => 'chart-bar', 'roles' => [UserRole::Manager, UserRole::Sales]],

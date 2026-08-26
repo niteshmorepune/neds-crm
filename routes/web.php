@@ -68,6 +68,7 @@ use App\Http\Controllers\VisibilityAuditDashboardController;
 use App\Http\Controllers\VisibilityAuditFunnelTrackingController;
 use App\Http\Controllers\VisibilityAuditOfferController;
 use App\Http\Controllers\VisibilityAuditRecoveryController;
+use App\Http\Controllers\WorkFromHomeRequestController;
 use App\Livewire\ClientImport;
 use App\Livewire\ContractRenewalDashboard;
 use App\Livewire\DealsBoard;
@@ -485,6 +486,21 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
         Route::get('leave-requests/team', [LeaveRequestController::class, 'team'])->name('leave-requests.team');
         Route::post('leave-requests/{leaveRequest}/approve', [LeaveRequestController::class, 'approve'])->name('leave-requests.approve');
         Route::post('leave-requests/{leaveRequest}/reject', [LeaveRequestController::class, 'reject'])->name('leave-requests.reject');
+    });
+
+    /*
+     * Work From Home requests — employee self-service + admin/manager
+     * approval queue, mirroring leave-requests above. Approving one never
+     * touches Attendance (see WorkFromHomeRequest's class doc).
+     */
+    Route::middleware('menu.access:work-from-home')->group(function () {
+        Route::get('work-from-home', [WorkFromHomeRequestController::class, 'index'])->name('work-from-home.index');
+        Route::post('work-from-home', [WorkFromHomeRequestController::class, 'store'])->name('work-from-home.store');
+        Route::delete('work-from-home/{workFromHomeRequest}', [WorkFromHomeRequestController::class, 'destroy'])->name('work-from-home.destroy');
+        Route::get('work-from-home/approvals', [WorkFromHomeRequestController::class, 'approvals'])->name('work-from-home.approvals');
+        Route::get('work-from-home/team', [WorkFromHomeRequestController::class, 'team'])->name('work-from-home.team');
+        Route::post('work-from-home/{workFromHomeRequest}/approve', [WorkFromHomeRequestController::class, 'approve'])->name('work-from-home.approve');
+        Route::post('work-from-home/{workFromHomeRequest}/reject', [WorkFromHomeRequestController::class, 'reject'])->name('work-from-home.reject');
     });
 
     /*

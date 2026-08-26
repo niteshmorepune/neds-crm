@@ -1,0 +1,111 @@
+<x-app-layout>
+    <x-slot name="header">Work From Home</x-slot>
+
+    <div class="max-w-4xl mx-auto space-y-4">
+        @if (session('status'))
+            <div class="rounded-md bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-800">{{ session('status') }}</div>
+        @endif
+
+        @if ($isManager)
+            <div class="flex flex-wrap items-center justify-between gap-2 rounded-md bg-indigo-50 border border-indigo-100 px-4 py-3 text-sm text-indigo-700">
+                <span>Team approvals</span>
+                <div class="flex items-center gap-2">
+                    <a href="{{ route('work-from-home.team') }}" class="rounded-md border border-indigo-300 bg-white px-3 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-50">
+                        Team WFH records
+                    </a>
+                    <a href="{{ route('work-from-home.approvals') }}" class="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-500">
+                        Review pending ({{ $pendingCount }})
+                    </a>
+                </div>
+            </div>
+        @endif
+
+        <div class="rounded-lg bg-white shadow-sm p-4">
+            <h3 class="text-sm font-semibold text-gray-900 mb-3">Request Work From Home</h3>
+            <p class="mb-3 text-xs text-gray-500">You're still working on an approved WFH day — check in/out as normal from Attendance, just not from the office.</p>
+
+            @if ($errors->any())
+                <div class="mb-3 rounded-md bg-red-50 border border-red-200 px-4 py-2 text-sm text-red-700">
+                    <ul class="list-disc list-inside">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            <form method="POST" action="{{ route('work-from-home.store') }}" class="grid grid-cols-1 sm:grid-cols-5 gap-3 items-end">
+                @csrf
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Duration</label>
+                    <select name="type" required class="w-full rounded-md border-gray-300 text-sm shadow-sm">
+                        @foreach (\App\Enums\WorkFromHomeRequestType::cases() as $type)
+                            <option value="{{ $type->value }}" @selected(old('type') === $type->value)>{{ $type->label() }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Start date</label>
+                    <input type="date" name="start_date" value="{{ old('start_date') }}" required class="w-full rounded-md border-gray-300 text-sm shadow-sm" />
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">End date</label>
+                    <input type="date" name="end_date" value="{{ old('end_date') }}" required class="w-full rounded-md border-gray-300 text-sm shadow-sm" />
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Reason</label>
+                    <input type="text" name="reason" value="{{ old('reason') }}" required maxlength="500" class="w-full rounded-md border-gray-300 text-sm shadow-sm" />
+                </div>
+                <div class="sm:col-span-5">
+                    <button class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500">Submit Request</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="overflow-hidden overflow-x-auto rounded-lg bg-white shadow-sm">
+            <table class="min-w-full divide-y divide-gray-200 text-sm">
+                <thead class="bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                    <tr>
+                        <th class="px-4 py-3">Duration</th>
+                        <th class="px-4 py-3">Dates</th>
+                        <th class="px-4 py-3">Reason</th>
+                        <th class="px-4 py-3">Status</th>
+                        <th class="px-4 py-3">Reviewed by</th>
+                        <th class="px-4 py-3">Reviewer notes</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @forelse ($requests as $r)
+                        <tr>
+                            <td class="px-4 py-2 text-gray-600">{{ $r->type->label() }}</td>
+                            <td class="px-4 py-2 text-gray-700">{{ $r->start_date->format('d M Y') }} – {{ $r->end_date->format('d M Y') }}</td>
+                            <td class="px-4 py-2 text-gray-600">{{ $r->reason }}</td>
+                            <td class="px-4 py-2">
+                                @php($color = match ($r->status->value) {
+                                    'approved' => 'bg-green-50 text-green-700 border-green-200',
+                                    'rejected' => 'bg-red-50 text-red-700 border-red-200',
+                                    'cancelled' => 'bg-gray-100 text-gray-500 border-gray-200',
+                                    default => 'bg-amber-50 text-amber-700 border-amber-200',
+                                })
+                                <span class="inline-block rounded-full border px-2 py-0.5 text-xs font-medium {{ $color }}">{{ $r->status->label() }}</span>
+                            </td>
+                            <td class="px-4 py-2 text-gray-500 text-xs">{{ $r->reviewer?->name ?? '—' }}</td>
+                            <td class="px-4 py-2 text-gray-500 text-xs">{{ $r->review_notes }}</td>
+                            <td class="px-4 py-2">
+                                @if ($r->status->value === 'pending')
+                                    <form method="POST" action="{{ route('work-from-home.destroy', $r) }}" onsubmit="return confirm('Cancel this WFH request?')">
+                                        @csrf @method('DELETE')
+                                        <button class="text-xs text-gray-400 hover:text-red-500">Cancel</button>
+                                    </form>
+                                @endif
+                            </td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="7" class="px-4 py-6 text-center text-gray-400">No WFH requests yet.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+</x-app-layout>

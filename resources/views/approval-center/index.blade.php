@@ -9,7 +9,7 @@
         <div class="rounded-lg bg-white p-6 shadow-sm">
             <p class="text-sm text-gray-500">Pending approvals</p>
             <p class="mt-1 text-3xl font-semibold text-gray-900">{{ $totalCount }}</p>
-            <p class="mt-2 text-xs text-gray-400">Everything across the CRM waiting on a manager decision, in one place — Leave Requests, Quotations, and Project Updates.</p>
+            <p class="mt-2 text-xs text-gray-400">Everything across the CRM waiting on a manager decision, in one place — Leave Requests, Work From Home Requests, Quotations, and Project Updates.</p>
         </div>
 
         {{-- Leave Requests --}}
@@ -54,6 +54,54 @@
                             </tr>
                         @empty
                             <tr><td colspan="5" class="px-6 py-6 text-center text-gray-400">No pending leave requests.</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {{-- Work From Home Requests --}}
+        <div class="rounded-lg bg-white shadow-sm">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                <h2 class="text-base font-semibold text-gray-900">🏠 Work From Home Requests</h2>
+                <span class="text-sm text-gray-500">{{ $workFromHomeRequests->count() }} pending</span>
+            </div>
+            <div class="overflow-hidden overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 text-sm">
+                    <thead class="bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                        <tr>
+                            <th class="px-6 py-3">Employee</th>
+                            <th class="px-6 py-3">Duration</th>
+                            <th class="px-6 py-3">Dates</th>
+                            <th class="px-6 py-3">Reason</th>
+                            <th class="px-6 py-3"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        @forelse ($workFromHomeRequests as $r)
+                            <tr>
+                                <td class="px-6 py-3 text-gray-700">{{ $r->user?->name }}</td>
+                                <td class="px-6 py-3 text-gray-600">{{ $r->type->label() }}</td>
+                                <td class="px-6 py-3 text-gray-600">{{ $r->start_date->format('d M Y') }} – {{ $r->end_date->format('d M Y') }}</td>
+                                <td class="px-6 py-3 text-gray-600">{{ $r->reason }}</td>
+                                <td class="px-6 py-3">
+                                    <div class="flex items-center gap-2">
+                                        <form method="POST" action="{{ route('work-from-home.approve', $r) }}">
+                                            @csrf
+                                            <button class="rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-500">Approve</button>
+                                        </form>
+                                        <button type="button" @click="rejecting = rejecting === 'wfh-{{ $r->id }}' ? null : 'wfh-{{ $r->id }}'"
+                                                class="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-500">Reject</button>
+                                    </div>
+                                    <form x-cloak x-show="rejecting === 'wfh-{{ $r->id }}'" method="POST" action="{{ route('work-from-home.reject', $r) }}" class="mt-2 flex items-center gap-2">
+                                        @csrf
+                                        <input type="text" name="review_notes" placeholder="Reason (optional)" maxlength="255" class="rounded-md border-gray-300 text-xs shadow-sm" />
+                                        <button class="rounded-md border border-red-300 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-50">Confirm reject</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="5" class="px-6 py-6 text-center text-gray-400">No pending WFH requests.</td></tr>
                         @endforelse
                     </tbody>
                 </table>

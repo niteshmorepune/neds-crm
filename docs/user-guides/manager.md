@@ -552,6 +552,13 @@ summary above:
   range (Sundays are skipped), while a Half Day request only marks that one
   day as **Half Day**, not a full day off. Rejecting lets you add a short
   note explaining why.
+- **Work From Home → Review pending** — same approve/reject flow as Leave
+  Requests, one level up in the sidebar, but approving a WFH request never
+  touches attendance — the employee is still working, so they check in/out
+  from Attendance as normal. Approving just marks the days as remote (shown
+  as a **Remote** badge on their Attendance page) so you know where they're
+  working from. **Team WFH Records** gives the same full filterable history
+  as Team Leave Records.
 
 ## Best Employee of the Quarter
 **Best Employee** in the sidebar (visible to everyone — Admin/Manager get the

@@ -5,11 +5,14 @@ use App\Enums\LeaveRequestType;
 use App\Enums\QuotationApprovalStatus;
 use App\Enums\QuotationStatus;
 use App\Enums\UserRole;
+use App\Enums\WorkFromHomeRequestStatus;
+use App\Enums\WorkFromHomeRequestType;
 use App\Models\Customer;
 use App\Models\LeaveRequest;
 use App\Models\Project;
 use App\Models\Quotation;
 use App\Models\User;
+use App\Models\WorkFromHomeRequest;
 use Database\Seeders\MenuItemsSeeder;
 
 beforeEach(function () {
@@ -34,6 +37,16 @@ it('lists pending leave requests but not already-reviewed ones', function () {
     $response = $this->actingAs($this->manager)->get(route('approval-center.index'));
 
     expect($response->viewData('leaveRequests'))->toHaveCount(1);
+});
+
+it('lists pending WFH requests but not already-reviewed ones', function () {
+    $someone = User::factory()->role(UserRole::Support)->create();
+    WorkFromHomeRequest::factory()->create(['user_id' => $someone->id, 'status' => WorkFromHomeRequestStatus::Pending, 'type' => WorkFromHomeRequestType::FullDay]);
+    WorkFromHomeRequest::factory()->create(['user_id' => $someone->id, 'status' => WorkFromHomeRequestStatus::Approved, 'type' => WorkFromHomeRequestType::FullDay]);
+
+    $response = $this->actingAs($this->manager)->get(route('approval-center.index'));
+
+    expect($response->viewData('workFromHomeRequests'))->toHaveCount(1);
 });
 
 it('lists quotations pending approval but not approved or already-sent ones', function () {
@@ -64,9 +77,10 @@ it('lists projects with an AI-drafted update still awaiting review', function ()
         ->not->toContain($noDrafts->id);
 });
 
-it('sums pending leave requests, quotations, and project updates into one total', function () {
+it('sums pending leave requests, WFH requests, quotations, and project updates into one total', function () {
     $someone = User::factory()->role(UserRole::Support)->create();
     LeaveRequest::factory()->create(['user_id' => $someone->id, 'status' => LeaveRequestStatus::Pending, 'type' => LeaveRequestType::FullDay]);
+    WorkFromHomeRequest::factory()->create(['user_id' => $someone->id, 'status' => WorkFromHomeRequestStatus::Pending, 'type' => WorkFromHomeRequestType::FullDay]);
 
     $customer = Customer::factory()->create();
     Quotation::factory()->create(['customer_id' => $customer->id, 'approval_status' => QuotationApprovalStatus::Pending]);
@@ -77,5 +91,14 @@ it('sums pending leave requests, quotations, and project updates into one total'
 
     $response = $this->actingAs($this->manager)->get(route('approval-center.index'));
 
-    expect($response->viewData('totalCount'))->toBe(4);
+    expect($response->viewData('totalCount'))->toBe(5);
+});
+
+it('approves a pending WFH request from the approval center', function () {
+    $someone = User::factory()->role(UserRole::Support)->create();
+    $wfhRequest = WorkFromHomeRequest::factory()->create(['user_id' => $someone->id, 'status' => WorkFromHomeRequestStatus::Pending]);
+
+    $this->actingAs($this->manager)->post(route('work-from-home.approve', $wfhRequest))->assertRedirect();
+
+    expect($wfhRequest->fresh()->status)->toBe(WorkFromHomeRequestStatus::Approved);
 });

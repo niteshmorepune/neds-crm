@@ -66,7 +66,12 @@
                         @php($rec = $records->get($day->toDateString()))
                         <tr class="hover:bg-gray-50">
                             <td class="px-4 py-2 text-gray-700">{{ $day->format('d M (D)') }}</td>
-                            <td class="px-4 py-2 text-gray-600">{{ $rec?->status?->label() ?? '—' }}</td>
+                            <td class="px-4 py-2 text-gray-600">
+                                {{ $rec?->status?->label() ?? '—' }}
+                                @if (isset($remoteDates[$day->toDateString()]))
+                                    <span class="ml-1 inline-block rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">Remote</span>
+                                @endif
+                            </td>
                             <td class="px-4 py-2 text-gray-600">{{ $rec?->check_in_at?->timezone(config('app.display_timezone'))->format('g:i A') ?? '—' }}</td>
                             <td class="px-4 py-2 text-gray-600">{{ $rec?->check_out_at?->timezone(config('app.display_timezone'))->format('g:i A') ?? '—' }}</td>
                             <td class="px-4 py-2 text-gray-500">{{ $rec?->notes ?? '' }}</td>
