@@ -427,7 +427,9 @@ the Attendance page, try this first:
 The **Menu Controller** has three parts:
 - **Sidebar section** — a dropdown per item picking which collapsible
   section it appears under in everyone's sidebar (My Work, Sales &
-  Pipeline, Finance, Delivery & Support, Team & Insights, Admin & Config).
+  Pipeline, Finance, Delivery & Support, Team & Insights, Team Tools,
+  Admin & Config — Team & Insights was split into two groups on
+  2026-08-26 so no section has more than ~10 items when expanded).
   *Cosmetic only* — purely how the sidebar is organized, it never affects
   who can reach a module.
 - **Role grid** — which roles can reach each module. *This controls real access.*
@@ -436,9 +438,13 @@ The **Menu Controller** has three parts:
   permission (that's always governed by roles). A banner on the page reminds you
   of this.
 
-Changes apply on the user's next page load. Each sidebar section can be
-collapsed by clicking its heading — this is remembered per browser, not
-synced across devices.
+Changes apply on the user's next page load. The sidebar always opens with
+exactly one section expanded — whichever one contains the page you're
+currently on — and every other section starts collapsed; click any
+section's heading to expand it further while you're browsing, but that
+doesn't stick once you navigate elsewhere (2026-08-26: replaced the
+earlier per-browser-remembered collapse state, which could leave several
+sections expanded at once and made the sidebar unpredictably long).
 
 ## 11. Audit Log
 **Audit Log** (admin) shows who created, updated or deleted records, and when.
