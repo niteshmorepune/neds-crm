@@ -1499,3 +1499,57 @@ Record every "we chose X because Y" here — this is the project's memory.
   local MySQL. `docs/user-guides/manager.md` updated (new Services-tab
   paragraphs), only `manager.pdf` regenerated (rest discarded per the
   established `npm run handouts` gotcha).
+- **2026-08-26 — Two real bugs reported via screenshot, both fixed same
+  session: the active sidebar item could be scrolled off-screen with no
+  way to find it, and the Project Updates grouped views silently stayed
+  scoped to "My Services."** Owner's own words: had to scroll down again
+  every time just to see where they were in the sidebar, since it now has
+  ~30 items across 6 groups; separately, clicking **My Services** (an
+  admin who owns no projects, correctly empty) then **Client-wise**
+  showed **no clients** — not a data bug, both buttons stayed lit purple
+  at once.
+  **Sidebar** (`resources/views/layouts/sidebar.blade.php`): the current
+  page's own link now gets `data-active-menu-item`, and a small script
+  (`@push('scripts')`, runs once on load) calls `scrollIntoView({block:
+  'center'})` on whichever copy is actually laid out (desktop `<aside>`
+  vs. the mobile overlay, checked via `offsetParent !== null`). Separately
+  — and this was a real latent bug of its own, not just the reported
+  complaint — a group the user had manually collapsed could hide the
+  active item entirely with zero visual trace of "where am I"; the
+  group's own `x-data="{ open: ... }"` now checks
+  `$itemsInGroup->contains(...activePatterns())` first and forces `open:
+  true` when the current page lives in that group, overriding (never
+  persisting over) the stored collapse state for just that one page load.
+  Deliberately did NOT force-collapse every OTHER group by default — that
+  would silently override every user's own manually-chosen layout, a
+  bigger behavior change than what was reported or asked for.
+  **Project Updates** (`resources/views/projects/index.blade.php`): the
+  Client-wise/Employee-wise/Service-wise links previously did
+  `'mine' => $mine ?: null`, carrying the current My-Services scope
+  forward — so switching from an empty My-Services view into any grouped
+  view stayed silently scoped to "my own projects" (still empty) instead
+  of resetting to a fresh, full grouped view. `mine` and `group` had never
+  been a deliberately composable combination the UI exposed cleanly (My
+  Services itself has no grouping option shown), so removing the carry-
+  forward — making each button a clean, independent view switch — matches
+  what clicking a different filter button reasonably means, and fixes
+  both the empty-results bug and the two-buttons-lit-at-once confusion in
+  one change (`ProjectController::index()`'s server-side `$mine`/`$group`
+  handling was already correct; this was purely a frontend href bug).
+  **Real Blade gotcha hit a third time, same session it was written
+  down** (see [[feedback-gotchas]]): adding the new group-active `@php`
+  block shifted the sidebar's nesting just enough to tip over a
+  *pre-existing* inline `@php($active = ...)` two lines below it that had
+  apparently been safe at the old nesting depth — caught immediately from
+  the now-documented symptom (`storage/framework/views/*.php` full of
+  literal, uncompiled `@if`/`@foreach` text) rather than chasing the
+  reported "unexpected end of file" location, which pointed nowhere near
+  the real cause.
+  2 new Pest tests (sidebar force-open + scroll-script presence) + 1 new
+  Pest test (group links never carry `mine=1`), full suite 2378 green —
+  same 2 pre-existing unrelated flakes as before, plus one newly-noticed
+  one (`EmployeeActivityTimelineTest`'s "sorts entries most recent first"
+  — a `now()->subHours(3)` fixture that crosses the UTC midnight boundary
+  when run between 00:00–03:00 UTC, same class of bug as the other
+  documented time-window flakes, not caused by this change). Pint clean.
+  No new Tailwind classes, no `npm run build` needed this time.
