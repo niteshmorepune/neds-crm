@@ -622,6 +622,11 @@ it('leaves an inbound Lead message body unprefixed, same as before this feature'
 });
 
 it('logs a VisibilityAuditTouch when a VA-cohort lead sends an inbound WhatsApp reply', function () {
+    // Queue::fake() so LeadObserver's own VA first-invite dispatch (WhatsApp
+    // + email) doesn't also log its own touch alongside the one this test
+    // actually cares about (the webhook handler's CustomerReply touch).
+    Queue::fake();
+
     $gmb = Service::factory()->create(['name' => 'GMB', 'is_active' => true]);
     $lead = Lead::factory()->create([
         'phone' => '919999999999',
@@ -647,6 +652,12 @@ it('logs a VisibilityAuditTouch when a VA-cohort lead sends an inbound WhatsApp 
 });
 
 it('does not log a VisibilityAuditTouch for an outbound message, even on a VA-cohort lead', function () {
+    // Queue::fake() so LeadObserver's own VA first-invite dispatch (WhatsApp
+    // + email, since the lead below is meta_leadgen_id+GMB eligible) never
+    // actually runs and logs its OWN touch — this test is only about
+    // whether the webhook handler itself logs one for an outbound message.
+    Queue::fake();
+
     $gmb = Service::factory()->create(['name' => 'GMB', 'is_active' => true]);
     $lead = Lead::factory()->create([
         'phone' => '919999999999',

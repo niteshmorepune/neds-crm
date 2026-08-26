@@ -6,6 +6,7 @@ use App\Enums\LeadStatus;
 use App\Enums\UserRole;
 use App\Jobs\ScoreLead;
 use App\Jobs\SendTelegramLeadAlertJob;
+use App\Jobs\SendVisibilityAuditFirstInviteEmailJob;
 use App\Jobs\SendVisibilityAuditFirstInviteJob;
 use App\Jobs\SyncLeadToWadeskJob;
 use App\Models\Lead;
@@ -197,6 +198,7 @@ class LeadObserver
 
         if ($lead->service_id === $gmbServiceId) {
             SendVisibilityAuditFirstInviteJob::dispatch($lead->id);
+            SendVisibilityAuditFirstInviteEmailJob::dispatch($lead->id);
         }
     }
 

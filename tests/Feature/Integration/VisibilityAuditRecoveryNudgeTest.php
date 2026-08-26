@@ -2,8 +2,11 @@
 
 use App\Enums\VisibilityAuditFunnelEventType;
 use App\Enums\VisibilityAuditTier;
+use App\Enums\VisibilityAuditTouchChannel;
 use App\Enums\VisibilityAuditTouchType;
+use App\Jobs\SendVisibilityAuditRecoveryNudgeEmailJob;
 use App\Jobs\SendVisibilityAuditRecoveryNudgeJob;
+use App\Mail\VisibilityAuditRecoveryNudgeEmail;
 use App\Models\Lead;
 use App\Models\VisibilityAuditFunnelEvent;
 use App\Models\VisibilityAuditPurchase;
@@ -12,6 +15,7 @@ use App\Services\VisibilityAuditFunnelMetrics;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
 
 beforeEach(function () {
@@ -201,6 +205,135 @@ it('no-ops when the template for that stage is not configured', function () {
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
+// SendVisibilityAuditRecoveryNudgeEmailJob — email sibling of the WhatsApp job
+// ──────────────────────────────────────────────────────────────────────────────
+
+it('sends the checkout-stage nudge email with the checkout link and marks the event email-nudged', function () {
+    Mail::fake();
+
+    $lead = Lead::factory()->create(['name' => 'Priya Shah', 'email' => 'priya@shah.test']);
+    $event = VisibilityAuditFunnelEvent::create([
+        'event_type' => VisibilityAuditFunnelEventType::PaymentViewed,
+        'tier' => VisibilityAuditTier::Gbp,
+        'lead_id' => $lead->id,
+    ]);
+
+    (new SendVisibilityAuditRecoveryNudgeEmailJob($lead->id, $event->id, VisibilityAuditFunnelEventType::PaymentViewed))->handle();
+
+    Mail::assertSent(VisibilityAuditRecoveryNudgeEmail::class, function ($mail) use ($lead) {
+        return $mail->hasTo($lead->email)
+            && $mail->lead->is($lead)
+            && $mail->stage === VisibilityAuditFunnelEventType::PaymentViewed;
+    });
+
+    expect($event->fresh()->nudged_email_at)->not->toBeNull();
+
+    $touch = VisibilityAuditTouch::firstOrFail();
+    expect($touch->lead_id)->toBe($lead->id)
+        ->and($touch->touch_type)->toBe(VisibilityAuditTouchType::RecoveryNudgeCheckout)
+        ->and($touch->channel)->toBe(VisibilityAuditTouchChannel::AiEmail)
+        ->and($touch->success)->toBeTrue();
+});
+
+it('sends the landing-stage nudge email', function () {
+    Mail::fake();
+
+    $lead = Lead::factory()->create(['email' => 'priya@shah.test']);
+    $event = VisibilityAuditFunnelEvent::create(['event_type' => VisibilityAuditFunnelEventType::LandingViewed, 'lead_id' => $lead->id]);
+
+    (new SendVisibilityAuditRecoveryNudgeEmailJob($lead->id, $event->id, VisibilityAuditFunnelEventType::LandingViewed))->handle();
+
+    Mail::assertSent(VisibilityAuditRecoveryNudgeEmail::class, fn ($mail) => $mail->stage === VisibilityAuditFunnelEventType::LandingViewed);
+    expect(VisibilityAuditTouch::firstOrFail()->touch_type)->toBe(VisibilityAuditTouchType::RecoveryNudgeLanding);
+});
+
+it('logs a failed touch but does not throw when the nudge email send fails', function () {
+    Mail::shouldReceive('to')->andThrow(new Exception('SMTP down'));
+
+    $lead = Lead::factory()->create(['email' => 'priya@shah.test']);
+    $event = VisibilityAuditFunnelEvent::create(['event_type' => VisibilityAuditFunnelEventType::PaymentViewed, 'lead_id' => $lead->id]);
+
+    expect(fn () => (new SendVisibilityAuditRecoveryNudgeEmailJob($lead->id, $event->id, VisibilityAuditFunnelEventType::PaymentViewed))->handle())->not->toThrow(Throwable::class);
+
+    $touch = VisibilityAuditTouch::firstOrFail();
+    expect($touch->success)->toBeFalse()->and($touch->channel)->toBe(VisibilityAuditTouchChannel::AiEmail);
+    expect($event->fresh()->nudged_email_at)->toBeNull();
+});
+
+it('never emails twice for the same event once already email-nudged', function () {
+    Mail::fake();
+
+    $lead = Lead::factory()->create(['email' => 'priya@shah.test']);
+    $event = VisibilityAuditFunnelEvent::create([
+        'event_type' => VisibilityAuditFunnelEventType::PaymentViewed,
+        'lead_id' => $lead->id,
+        'nudged_email_at' => now(),
+    ]);
+
+    (new SendVisibilityAuditRecoveryNudgeEmailJob($lead->id, $event->id, VisibilityAuditFunnelEventType::PaymentViewed))->handle();
+
+    Mail::assertNothingSent();
+});
+
+it('skips the nudge email when the lead paid after the job was queued but before it ran', function () {
+    Mail::fake();
+
+    $lead = Lead::factory()->create(['email' => 'priya@shah.test']);
+    $event = VisibilityAuditFunnelEvent::create(['event_type' => VisibilityAuditFunnelEventType::PaymentViewed, 'lead_id' => $lead->id]);
+    VisibilityAuditPurchase::create([
+        'tier' => VisibilityAuditTier::Gbp,
+        'amount_paise' => 12000,
+        'razorpay_payment_id' => 'pay_va_email_race1',
+        'lead_id' => $lead->id,
+    ]);
+
+    (new SendVisibilityAuditRecoveryNudgeEmailJob($lead->id, $event->id, VisibilityAuditFunnelEventType::PaymentViewed))->handle();
+
+    Mail::assertNothingSent();
+    expect($event->fresh()->nudged_email_at)->toBeNull();
+});
+
+it('skips the nudge email when staff already replied over WhatsApp since the visit', function () {
+    Mail::fake();
+
+    $lead = Lead::factory()->create(['email' => 'priya@shah.test']);
+    $event = VisibilityAuditFunnelEvent::create(['event_type' => VisibilityAuditFunnelEventType::PaymentViewed, 'lead_id' => $lead->id]);
+    $lead->notes()->create([
+        'user_id' => null,
+        'body' => "[Sent via WhatsApp by Kiran Katte]\nYes we will create the proposal and share it with you soon",
+    ]);
+
+    (new SendVisibilityAuditRecoveryNudgeEmailJob($lead->id, $event->id, VisibilityAuditFunnelEventType::PaymentViewed))->handle();
+
+    Mail::assertNothingSent();
+    expect($event->fresh()->nudged_email_at)->toBeNull();
+});
+
+it('no-ops the nudge email when the lead has no email', function () {
+    Mail::fake();
+
+    $lead = Lead::factory()->create(['email' => null]);
+    $event = VisibilityAuditFunnelEvent::create(['event_type' => VisibilityAuditFunnelEventType::PaymentViewed, 'lead_id' => $lead->id]);
+
+    (new SendVisibilityAuditRecoveryNudgeEmailJob($lead->id, $event->id, VisibilityAuditFunnelEventType::PaymentViewed))->handle();
+
+    Mail::assertNothingSent();
+});
+
+it('renders the checkout-stage nudge email with the checkout link, and the landing-stage with the enter link', function () {
+    $lead = Lead::factory()->create(['name' => 'Priya Shah']);
+
+    $checkoutRendered = (new VisibilityAuditRecoveryNudgeEmail($lead, VisibilityAuditFunnelEventType::PaymentViewed))->render();
+    expect($checkoutRendered)
+        ->toContain(route('offers.visibility-audit.checkout'))
+        ->toContain('tier=gbp')
+        ->toContain('lead='.$lead->id);
+
+    $landingRendered = (new VisibilityAuditRecoveryNudgeEmail($lead, VisibilityAuditFunnelEventType::LandingViewed))->render();
+    expect($landingRendered)->toContain(route('offers.visibility-audit.enter', ['lead' => $lead->id]));
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
 // Metrics: which leads are actually pending
 // ──────────────────────────────────────────────────────────────────────────────
 
@@ -301,4 +434,8 @@ it('dispatches one nudge job per pending lead across both stages', function () {
     Queue::assertPushed(SendVisibilityAuditRecoveryNudgeJob::class, 2);
     Queue::assertPushed(fn (SendVisibilityAuditRecoveryNudgeJob $job) => $job->leadId === $checkoutLead->id && $job->stage === VisibilityAuditFunnelEventType::PaymentViewed);
     Queue::assertPushed(fn (SendVisibilityAuditRecoveryNudgeJob $job) => $job->leadId === $landingLead->id && $job->stage === VisibilityAuditFunnelEventType::LandingViewed);
+
+    Queue::assertPushed(SendVisibilityAuditRecoveryNudgeEmailJob::class, 2);
+    Queue::assertPushed(fn (SendVisibilityAuditRecoveryNudgeEmailJob $job) => $job->leadId === $checkoutLead->id && $job->stage === VisibilityAuditFunnelEventType::PaymentViewed);
+    Queue::assertPushed(fn (SendVisibilityAuditRecoveryNudgeEmailJob $job) => $job->leadId === $landingLead->id && $job->stage === VisibilityAuditFunnelEventType::LandingViewed);
 });

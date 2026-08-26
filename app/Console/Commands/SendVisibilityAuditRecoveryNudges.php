@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Enums\VisibilityAuditFunnelEventType;
+use App\Jobs\SendVisibilityAuditRecoveryNudgeEmailJob;
 use App\Jobs\SendVisibilityAuditRecoveryNudgeJob;
 use App\Services\VisibilityAuditFunnelMetrics;
 use Illuminate\Console\Command;
@@ -11,7 +12,7 @@ class SendVisibilityAuditRecoveryNudges extends Command
 {
     protected $signature = 'app:send-visibility-audit-recovery-nudges';
 
-    protected $description = 'Dispatch one WhatsApp recovery nudge per Lead stuck at the Visibility Audit landing page or checkout stage (run every 30 minutes via scheduler).';
+    protected $description = 'Dispatch one WhatsApp + one email recovery nudge per Lead stuck at the Visibility Audit landing page or checkout stage (run every 30 minutes via scheduler).';
 
     /**
      * Checkout is the closer-to-converting stage, so it gets a shorter wait
@@ -28,20 +29,16 @@ class SendVisibilityAuditRecoveryNudges extends Command
         $sent = 0;
 
         foreach ($metrics->pendingCheckoutNudges(now()->subHours(self::CHECKOUT_WAIT_HOURS)) as $lead) {
-            SendVisibilityAuditRecoveryNudgeJob::dispatch(
-                $lead->id,
-                $lead->visibilityAuditFunnelEvents->first()->id,
-                VisibilityAuditFunnelEventType::PaymentViewed,
-            );
+            $eventId = $lead->visibilityAuditFunnelEvents->first()->id;
+            SendVisibilityAuditRecoveryNudgeJob::dispatch($lead->id, $eventId, VisibilityAuditFunnelEventType::PaymentViewed);
+            SendVisibilityAuditRecoveryNudgeEmailJob::dispatch($lead->id, $eventId, VisibilityAuditFunnelEventType::PaymentViewed);
             $sent++;
         }
 
         foreach ($metrics->pendingLandingNudges(now()->subHours(self::LANDING_WAIT_HOURS)) as $lead) {
-            SendVisibilityAuditRecoveryNudgeJob::dispatch(
-                $lead->id,
-                $lead->visibilityAuditFunnelEvents->first()->id,
-                VisibilityAuditFunnelEventType::LandingViewed,
-            );
+            $eventId = $lead->visibilityAuditFunnelEvents->first()->id;
+            SendVisibilityAuditRecoveryNudgeJob::dispatch($lead->id, $eventId, VisibilityAuditFunnelEventType::LandingViewed);
+            SendVisibilityAuditRecoveryNudgeEmailJob::dispatch($lead->id, $eventId, VisibilityAuditFunnelEventType::LandingViewed);
             $sent++;
         }
 

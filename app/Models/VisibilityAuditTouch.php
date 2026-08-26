@@ -43,18 +43,20 @@ class VisibilityAuditTouch extends Model
     }
 
     /**
-     * Logs one AI-automated WhatsApp send attempt (success or failure) —
-     * the shared write path for SendVisibilityAuditFirstInviteJob,
-     * SendVisibilityAuditRecoveryNudgeJob, and
-     * SendVisibilityAuditPaymentConfirmationJob, so the three jobs never
-     * each redefine channel/actor defaults themselves.
+     * Logs one AI-automated send attempt (success or failure) — the shared
+     * write path for every AI-automated Visibility Audit job, WhatsApp
+     * (SendVisibilityAuditFirstInviteJob/SendVisibilityAuditRecoveryNudgeJob/
+     * SendVisibilityAuditPaymentConfirmationJob) and email
+     * (their *EmailJob siblings), so none of them redefine channel/actor
+     * defaults themselves. $channel defaults to AiWhatsapp to keep every
+     * existing WhatsApp call site unchanged.
      */
-    public static function logSend(int $leadId, VisibilityAuditTouchType $type, bool $success, ?array $meta = null): void
+    public static function logSend(int $leadId, VisibilityAuditTouchType $type, bool $success, ?array $meta = null, VisibilityAuditTouchChannel $channel = VisibilityAuditTouchChannel::AiWhatsapp): void
     {
         static::create([
             'lead_id' => $leadId,
             'touch_type' => $type,
-            'channel' => VisibilityAuditTouchChannel::AiWhatsapp,
+            'channel' => $channel,
             'actor_user_id' => null,
             'occurred_at' => now(),
             'success' => $success,

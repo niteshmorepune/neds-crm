@@ -5,7 +5,9 @@ use App\Enums\VisibilityAuditFunnelEventType;
 use App\Enums\VisibilityAuditTier;
 use App\Enums\VisibilityAuditTouchChannel;
 use App\Enums\VisibilityAuditTouchType;
+use App\Jobs\SendVisibilityAuditFirstInviteEmailJob;
 use App\Jobs\SendVisibilityAuditFirstInviteJob;
+use App\Mail\VisibilityAuditFirstInviteEmail;
 use App\Models\Lead;
 use App\Models\Service;
 use App\Models\VisibilityAuditFunnelEvent;
@@ -15,6 +17,7 @@ use App\Services\VisibilityAuditFunnelMetrics;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
 
 beforeEach(function () {
@@ -191,6 +194,124 @@ it('logs no touch at all for a guard-clause skip — no touch means no send was 
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
+// SendVisibilityAuditFirstInviteEmailJob — email sibling of the WhatsApp job
+// ──────────────────────────────────────────────────────────────────────────────
+
+it('sends the first-invite email with the tracked enter link and marks the lead invite-emailed', function () {
+    Mail::fake();
+
+    $lead = Lead::factory()->create([
+        'name' => 'Priya Shah',
+        'email' => 'priya@shah.test',
+        'meta_leadgen_id' => 'lg_'.uniqid(),
+        'service_id' => $this->gmb->id,
+    ]);
+
+    (new SendVisibilityAuditFirstInviteEmailJob($lead->id))->handle();
+
+    Mail::assertSent(VisibilityAuditFirstInviteEmail::class, function ($mail) use ($lead) {
+        return $mail->hasTo($lead->email) && $mail->lead->is($lead);
+    });
+
+    expect($lead->fresh()->visibility_audit_invite_emailed_at)->not->toBeNull();
+
+    $touch = VisibilityAuditTouch::firstOrFail();
+    expect($touch->lead_id)->toBe($lead->id)
+        ->and($touch->touch_type)->toBe(VisibilityAuditTouchType::FirstInvite)
+        ->and($touch->channel)->toBe(VisibilityAuditTouchChannel::AiEmail)
+        ->and($touch->success)->toBeTrue();
+});
+
+it('logs a failed touch but does not throw when the first-invite email send fails', function () {
+    Mail::shouldReceive('to')->andThrow(new Exception('SMTP down'));
+
+    $lead = Lead::factory()->create([
+        'email' => 'priya@shah.test',
+        'meta_leadgen_id' => 'lg_'.uniqid(),
+        'service_id' => $this->gmb->id,
+    ]);
+
+    expect(fn () => (new SendVisibilityAuditFirstInviteEmailJob($lead->id))->handle())->not->toThrow(Throwable::class);
+
+    $touch = VisibilityAuditTouch::firstOrFail();
+    expect($touch->success)->toBeFalse()->and($touch->channel)->toBe(VisibilityAuditTouchChannel::AiEmail);
+    expect($lead->fresh()->visibility_audit_invite_emailed_at)->toBeNull();
+});
+
+it('never emails the same lead twice for the first invite', function () {
+    Mail::fake();
+
+    $lead = Lead::factory()->create([
+        'email' => 'priya@shah.test',
+        'meta_leadgen_id' => 'lg_'.uniqid(),
+        'service_id' => $this->gmb->id,
+        'visibility_audit_invite_emailed_at' => now(),
+    ]);
+
+    (new SendVisibilityAuditFirstInviteEmailJob($lead->id))->handle();
+
+    Mail::assertNothingSent();
+});
+
+it('skips the first-invite email when the lead paid after the job was queued but before it ran', function () {
+    Mail::fake();
+
+    $lead = Lead::factory()->create([
+        'email' => 'priya@shah.test',
+        'meta_leadgen_id' => 'lg_'.uniqid(),
+        'service_id' => $this->gmb->id,
+    ]);
+    VisibilityAuditPurchase::create([
+        'tier' => VisibilityAuditTier::Gbp,
+        'amount_paise' => 12000,
+        'razorpay_payment_id' => 'pay_va_invite_email_race1',
+        'lead_id' => $lead->id,
+    ]);
+
+    (new SendVisibilityAuditFirstInviteEmailJob($lead->id))->handle();
+
+    Mail::assertNothingSent();
+    expect($lead->fresh()->visibility_audit_invite_emailed_at)->toBeNull();
+});
+
+it('no-ops the first-invite email when the lead has no email', function () {
+    Mail::fake();
+
+    $lead = Lead::factory()->create([
+        'email' => null,
+        'meta_leadgen_id' => 'lg_'.uniqid(),
+        'service_id' => $this->gmb->id,
+    ]);
+
+    (new SendVisibilityAuditFirstInviteEmailJob($lead->id))->handle();
+
+    Mail::assertNothingSent();
+    expect(VisibilityAuditTouch::count())->toBe(0);
+});
+
+it('no-ops the first-invite email when the lead no longer exists', function () {
+    Mail::fake();
+
+    (new SendVisibilityAuditFirstInviteEmailJob(999999))->handle();
+
+    Mail::assertNothingSent();
+});
+
+it('renders the first-invite email with the tracked enter link', function () {
+    $lead = Lead::factory()->create([
+        'name' => 'Priya Shah',
+        'meta_leadgen_id' => 'lg_'.uniqid(),
+        'service_id' => $this->gmb->id,
+    ]);
+
+    $rendered = (new VisibilityAuditFirstInviteEmail($lead))->render();
+
+    expect($rendered)
+        ->toContain('Priya Shah')
+        ->toContain(route('offers.visibility-audit.enter', ['lead' => $lead->id]));
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
 // Observer: which new leads actually get invited
 // ──────────────────────────────────────────────────────────────────────────────
 
@@ -203,6 +324,17 @@ it('dispatches the first-invite job for a new lead with a meta_leadgen_id tagged
     ]);
 
     Queue::assertPushed(SendVisibilityAuditFirstInviteJob::class, fn ($job) => $job->leadId === $lead->id);
+});
+
+it('dispatches the first-invite EMAIL job alongside the WhatsApp job for a newly eligible lead', function () {
+    Queue::fake();
+
+    $lead = Lead::factory()->create([
+        'meta_leadgen_id' => 'lg_'.uniqid(),
+        'service_id' => $this->gmb->id,
+    ]);
+
+    Queue::assertPushed(SendVisibilityAuditFirstInviteEmailJob::class, fn ($job) => $job->leadId === $lead->id);
 });
 
 it('does not dispatch the first-invite job for a meta_leadgen_id lead tagged a different service', function () {
@@ -438,4 +570,6 @@ it('dispatches the first-invite job for every pending lead when the sweep comman
 
     Queue::assertPushed(SendVisibilityAuditFirstInviteJob::class, fn ($job) => $job->leadId === $stuck->id);
     Queue::assertNotPushed(SendVisibilityAuditFirstInviteJob::class, fn ($job) => $job->leadId === $fresh->id);
+    Queue::assertPushed(SendVisibilityAuditFirstInviteEmailJob::class, fn ($job) => $job->leadId === $stuck->id);
+    Queue::assertNotPushed(SendVisibilityAuditFirstInviteEmailJob::class, fn ($job) => $job->leadId === $fresh->id);
 });

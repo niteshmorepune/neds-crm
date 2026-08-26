@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Jobs\SendVisibilityAuditFirstInviteEmailJob;
 use App\Jobs\SendVisibilityAuditFirstInviteJob;
 use App\Services\VisibilityAuditFunnelMetrics;
 use Illuminate\Console\Command;
@@ -19,7 +20,7 @@ class SendVisibilityAuditFirstInviteSweep extends Command
 {
     protected $signature = 'app:send-visibility-audit-first-invite-sweep';
 
-    protected $description = 'Re-dispatch the Visibility Audit first-invite job for any eligible Lead still not invited after 10 minutes (run every 10 minutes via scheduler).';
+    protected $description = 'Re-dispatch the Visibility Audit first-invite jobs (WhatsApp + email) for any eligible Lead still not invited after 10 minutes (run every 10 minutes via scheduler).';
 
     private const WAIT_MINUTES = 10;
 
@@ -29,6 +30,7 @@ class SendVisibilityAuditFirstInviteSweep extends Command
 
         foreach ($metrics->pendingFirstInvites(now()->subMinutes(self::WAIT_MINUTES)) as $lead) {
             SendVisibilityAuditFirstInviteJob::dispatch($lead->id);
+            SendVisibilityAuditFirstInviteEmailJob::dispatch($lead->id);
             $sent++;
         }
 
