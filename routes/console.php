@@ -84,6 +84,13 @@ Schedule::command('app:send-visibility-audit-recovery-nudges')->everyThirtyMinut
 // this covers). 10 min matches the sweep's own wait threshold.
 Schedule::command('app:send-visibility-audit-first-invite-sweep')->everyTenMinutes();
 
+// Visibility Audit "audit in progress" nudge — step 2 of the post-payment
+// conversion pipeline (see SendVisibilityAuditInProgressNudges). 15 min is
+// frequent enough against the 30-min wait threshold without being
+// wasteful; ships inert until WADESK_VISIBILITY_AUDIT_IN_PROGRESS_TEMPLATE_NAME
+// is set (the email side needs no config at all).
+Schedule::command('app:send-visibility-audit-in-progress-nudges')->everyFifteenMinutes();
+
 // Ticket SLA breach escalation — check hourly during the working day.
 Schedule::command('app:check-ticket-sla')->hourly();
 

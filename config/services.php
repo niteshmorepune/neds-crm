@@ -106,6 +106,19 @@ return [
         // your listing back — tap below to check it out." — {{1}} = lead's
         // name.
         'visibility_audit_first_invite_template_name' => env('WADESK_VISIBILITY_AUDIT_FIRST_INVITE_TEMPLATE_NAME'),
+
+        // "Audit in progress" (App\Jobs\SendVisibilityAuditInProgressJob,
+        // scheduled — step 2 of the post-payment conversion pipeline,
+        // App\Console\Commands\SendVisibilityAuditInProgressNudges). Sent
+        // once, a short wait after payment (see the command's own
+        // WAIT_MINUTES) — a reassurance that work has actually started,
+        // distinct from the payment-received thank-you. This is a Utility
+        // message (a follow-up on an existing, paid-for request, not
+        // unsolicited outreach), body has only {{1}}=name, no button.
+        // Suggested body: "Hi {{1}}, quick update — our team has started
+        // working on your Visibility Audit. We'll let you know here the
+        // moment it's ready to walk you through." Ships inert until set.
+        'visibility_audit_in_progress_template_name' => env('WADESK_VISIBILITY_AUDIT_IN_PROGRESS_TEMPLATE_NAME'),
     ],
 
     // nedsdrishti.in — agency service delivery platform.

@@ -26,6 +26,8 @@ class VisibilityAuditPurchase extends Model
         'gbp_url',
         'website_url',
         'lead_id',
+        'in_progress_notified_at',
+        'in_progress_notified_email_at',
     ];
 
     protected function casts(): array
@@ -33,6 +35,8 @@ class VisibilityAuditPurchase extends Model
         return [
             'tier' => VisibilityAuditTier::class,
             'amount_paise' => 'integer',
+            'in_progress_notified_at' => 'datetime',
+            'in_progress_notified_email_at' => 'datetime',
         ];
     }
 

@@ -129,6 +129,25 @@ class VisibilityAuditFunnelMetrics
             ->get();
     }
 
+    /**
+     * Purchases older than $olderThan still missing at least one channel of
+     * the "audit in progress" nudge (step 2 of the post-payment conversion
+     * pipeline) — used by SendVisibilityAuditInProgressNudges. Deliberately
+     * "missing EITHER channel", not "missing both": the command dispatches
+     * each job independently, gated on that job's own idempotency column,
+     * so a purchase that already got its WhatsApp nudge but whose email
+     * failed still needs to be surfaced here for the email side to retry.
+     *
+     * @return Collection<int, VisibilityAuditPurchase>
+     */
+    public function pendingInProgressNudges(Carbon $olderThan): Collection
+    {
+        return VisibilityAuditPurchase::query()
+            ->where('created_at', '<=', $olderThan)
+            ->where(fn ($q) => $q->whereNull('in_progress_notified_at')->orWhereNull('in_progress_notified_email_at'))
+            ->get();
+    }
+
     private function stuckQuery(VisibilityAuditFunnelEventType $type, ?int $ownerId = null)
     {
         return Lead::query()

@@ -8,6 +8,7 @@ enum VisibilityAuditTouchType: string
     case RecoveryNudgeLanding = 'recovery_nudge_landing';
     case RecoveryNudgeCheckout = 'recovery_nudge_checkout';
     case PaymentConfirmation = 'payment_confirmation';
+    case AuditInProgress = 'audit_in_progress';
     case ManualOutreach = 'manual_outreach';
     case CustomerReply = 'customer_reply';
 
@@ -18,6 +19,7 @@ enum VisibilityAuditTouchType: string
             self::RecoveryNudgeLanding => 'Recovery nudge (landing)',
             self::RecoveryNudgeCheckout => 'Recovery nudge (checkout)',
             self::PaymentConfirmation => 'Payment confirmation',
+            self::AuditInProgress => 'Audit in progress',
             self::ManualOutreach => 'Manual outreach',
             self::CustomerReply => 'Customer reply',
         };
