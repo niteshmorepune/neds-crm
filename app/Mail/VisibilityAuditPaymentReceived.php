@@ -18,8 +18,16 @@ class VisibilityAuditPaymentReceived extends Mailable
 
     public function envelope(): Envelope
     {
+        // Reply-To (not From — see config/company.php for why) plus a CC to
+        // whoever owns the matched Lead, so the assigned Sales/Telecaller
+        // rep sees every customer-facing email that goes out on a lead they
+        // own, not just the ones they send themselves.
+        $ownerEmail = $this->purchase->lead?->owner?->email;
+
         return new Envelope(
             subject: 'Payment received — '.config('company.name'),
+            replyTo: [config('company.reply_to_email')],
+            cc: array_filter([$ownerEmail]),
         );
     }
 

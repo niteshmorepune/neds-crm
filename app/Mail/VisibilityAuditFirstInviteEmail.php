@@ -25,8 +25,13 @@ class VisibilityAuditFirstInviteEmail extends Mailable
 
     public function envelope(): Envelope
     {
+        // Reply-To (not From — see config/company.php for why) plus a CC to
+        // the Lead's assigned owner, so the rep sees every customer-facing
+        // email that goes out on a lead they own.
         return new Envelope(
             subject: 'Your free Google Business Profile Audit — '.config('company.name'),
+            replyTo: [config('company.reply_to_email')],
+            cc: array_filter([$this->lead->owner?->email]),
         );
     }
 

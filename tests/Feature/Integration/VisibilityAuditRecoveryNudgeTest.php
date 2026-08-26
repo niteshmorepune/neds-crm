@@ -8,6 +8,7 @@ use App\Jobs\SendVisibilityAuditRecoveryNudgeEmailJob;
 use App\Jobs\SendVisibilityAuditRecoveryNudgeJob;
 use App\Mail\VisibilityAuditRecoveryNudgeEmail;
 use App\Models\Lead;
+use App\Models\User;
 use App\Models\VisibilityAuditFunnelEvent;
 use App\Models\VisibilityAuditPurchase;
 use App\Models\VisibilityAuditTouch;
@@ -331,6 +332,20 @@ it('renders the checkout-stage nudge email with the checkout link, and the landi
 
     $landingRendered = (new VisibilityAuditRecoveryNudgeEmail($lead, VisibilityAuditFunnelEventType::LandingViewed))->render();
     expect($landingRendered)->toContain(route('offers.visibility-audit.enter', ['lead' => $lead->id]));
+});
+
+it('sets Reply-To the configured company reply-to address, and CCs the lead\'s owner', function () {
+    Mail::fake();
+    config(['company.reply_to_email' => 'contact@niranjanenterprises.com']);
+
+    $owner = User::factory()->create(['email' => 'kiran@niranjanenterprises.co.in']);
+    $lead = Lead::factory()->create(['email' => 'priya@shah.test', 'owner_id' => $owner->id]);
+    $event = VisibilityAuditFunnelEvent::create(['event_type' => VisibilityAuditFunnelEventType::PaymentViewed, 'lead_id' => $lead->id]);
+
+    (new SendVisibilityAuditRecoveryNudgeEmailJob($lead->id, $event->id, VisibilityAuditFunnelEventType::PaymentViewed))->handle();
+
+    Mail::assertSent(VisibilityAuditRecoveryNudgeEmail::class, fn ($mail) => $mail->hasReplyTo('contact@niranjanenterprises.com')
+        && $mail->hasCc('kiran@niranjanenterprises.co.in'));
 });
 
 // ──────────────────────────────────────────────────────────────────────────────

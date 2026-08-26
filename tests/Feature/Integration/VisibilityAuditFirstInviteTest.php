@@ -10,6 +10,7 @@ use App\Jobs\SendVisibilityAuditFirstInviteJob;
 use App\Mail\VisibilityAuditFirstInviteEmail;
 use App\Models\Lead;
 use App\Models\Service;
+use App\Models\User;
 use App\Models\VisibilityAuditFunnelEvent;
 use App\Models\VisibilityAuditPurchase;
 use App\Models\VisibilityAuditTouch;
@@ -295,6 +296,24 @@ it('no-ops the first-invite email when the lead no longer exists', function () {
     (new SendVisibilityAuditFirstInviteEmailJob(999999))->handle();
 
     Mail::assertNothingSent();
+});
+
+it('sets Reply-To the configured company reply-to address, and CCs the lead\'s owner', function () {
+    Mail::fake();
+    config(['company.reply_to_email' => 'contact@niranjanenterprises.com']);
+
+    $owner = User::factory()->create(['email' => 'kiran@niranjanenterprises.co.in']);
+    $lead = Lead::factory()->create([
+        'email' => 'priya@shah.test',
+        'meta_leadgen_id' => 'lg_'.uniqid(),
+        'service_id' => $this->gmb->id,
+        'owner_id' => $owner->id,
+    ]);
+
+    (new SendVisibilityAuditFirstInviteEmailJob($lead->id))->handle();
+
+    Mail::assertSent(VisibilityAuditFirstInviteEmail::class, fn ($mail) => $mail->hasReplyTo('contact@niranjanenterprises.com')
+        && $mail->hasCc('kiran@niranjanenterprises.co.in'));
 });
 
 it('renders the first-invite email with the tracked enter link', function () {

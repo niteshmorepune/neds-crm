@@ -12,6 +12,17 @@ return [
     'state' => 'Maharashtra',
     'state_code' => '27',
     'email' => env('COMPANY_EMAIL', 'niranjan.enterprisespune@gmail.com'),
+
+    /*
+    | Reply-To shown on customer-facing Visibility Audit emails (payment
+    | received, first invite, recovery nudges) -- deliberately Reply-To,
+    | not From: those emails still send via the CRM's own authenticated
+    | mailer (COMPANY_EMAIL's domain), since contact@niranjanenterprises.com
+    | is hosted on a different domain/mail server and sending From: it
+    | through the CRM's SMTP would fail SPF/DKIM alignment and likely land
+    | in spam. A customer who hits Reply lands in that inbox either way.
+    */
+    'reply_to_email' => env('COMPANY_REPLY_TO_EMAIL', 'contact@niranjanenterprises.com'),
     'phone' => env('COMPANY_PHONE', ''),
     'whatsapp' => env('COMPANY_WHATSAPP', ''), // E.164 without +, e.g. 919028099919
 

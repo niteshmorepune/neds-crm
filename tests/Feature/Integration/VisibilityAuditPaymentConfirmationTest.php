@@ -7,6 +7,7 @@ use App\Jobs\SendVisibilityAuditPaymentConfirmationJob;
 use App\Jobs\SendVisibilityAuditPaymentReceiptEmailJob;
 use App\Mail\VisibilityAuditPaymentReceived;
 use App\Models\Lead;
+use App\Models\User;
 use App\Models\VisibilityAuditPurchase;
 use App\Models\VisibilityAuditTouch;
 use Illuminate\Http\Client\ConnectionException;
@@ -239,6 +240,31 @@ it('sends the payment-received email to the payer', function () {
         return $mail->hasTo($purchase->payer_email)
             && $mail->purchase->is($purchase);
     });
+});
+
+it('sets Reply-To the configured company reply-to address, and CCs the matched lead\'s owner', function () {
+    Mail::fake();
+    config(['company.reply_to_email' => 'contact@niranjanenterprises.com']);
+
+    $owner = User::factory()->create(['email' => 'kiran@niranjanenterprises.co.in']);
+    $lead = Lead::factory()->create(['owner_id' => $owner->id]);
+    $purchase = visibilityAuditPurchase(['lead_id' => $lead->id]);
+
+    (new SendVisibilityAuditPaymentReceiptEmailJob($purchase->id))->handle();
+
+    Mail::assertSent(VisibilityAuditPaymentReceived::class, fn ($mail) => $mail->hasReplyTo('contact@niranjanenterprises.com')
+        && $mail->hasCc('kiran@niranjanenterprises.co.in'));
+});
+
+it('sends with no CC when the matched lead has no owner', function () {
+    Mail::fake();
+
+    $lead = Lead::factory()->create(['owner_id' => null]);
+    $purchase = visibilityAuditPurchase(['lead_id' => $lead->id]);
+
+    (new SendVisibilityAuditPaymentReceiptEmailJob($purchase->id))->handle();
+
+    Mail::assertSent(VisibilityAuditPaymentReceived::class, fn ($mail) => $mail->envelope()->cc === []);
 });
 
 it('skips sending the email when the purchase has no payer email', function () {
