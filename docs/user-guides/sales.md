@@ -138,7 +138,12 @@ leads is created; if they stall after that, a separate recovery nudge goes
 out 2–4 hours later, both "Stop promotions"-gated templates. Each queued
 row links straight to that lead's own page so you can act with the usual
 tools — a lead who converts from either automatic message simply
-disappears off the list, nothing extra to do there. That lead's own page
+disappears off the list, nothing extra to do there. A row still stuck at
+checkout or the offer page also gets a green **WhatsApp →** button
+alongside "Open lead" — it jumps straight into that lead's own wadesk
+chat with the matching recovery template already picked and filled in
+(name, lead link); you just review and hit Send, no hunting for the
+right conversation or the right template. That lead's own page
 also shows a colored **"Visibility Audit:"** badge (e.g. "Reached
 checkout, hasn't paid") right under its name, so you don't need to come
 back to this list to remember why a lead needs a call.

@@ -65,8 +65,12 @@ leads, plus a queue of who's stuck at which stage — worth a follow-up
 call. The CRM automatically WhatsApps a first invite as soon as one of
 these leads comes in (Meta's own form never sends them anywhere), then
 nudges again a few hours later if they stall, so someone already on this
-list may convert before you even get to them. Below that whole-team
-queue, **Your gaps** and **Your message log** show just your own leads —
+list may convert before you even get to them. A row still stuck at
+checkout or the offer page also gets a green **WhatsApp →** button next
+to "Open lead" — it jumps straight into that lead's wadesk chat with the
+matching recovery template already picked and filled in, ready for you
+to review and send. Below that whole-team queue, **Your gaps** and
+**Your message log** show just your own leads —
 who's stuck or missing a service tag, and every AI-WhatsApp send to your
 own leads. A lead's own page also shows a colored **"Visibility Audit:"**
 badge right under its name, so opening the lead directly tells you the
