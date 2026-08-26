@@ -52,12 +52,18 @@
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         @forelse ($stuckAtCheckout as $lead)
+                            @php
+                                $wadeskUrl = $lead->wadeskChatUrl(config('services.wadesk.visibility_audit_recovery_checkout_template_name'));
+                            @endphp
                             <tr>
                                 <td class="px-4 py-3 font-medium text-gray-900">{{ $lead->name }}</td>
                                 <td class="px-4 py-3 text-gray-600">{{ $lead->phone }}</td>
                                 <td class="px-4 py-3 text-gray-600">{{ $lead->owner?->name ?? '—' }}</td>
                                 <td class="px-4 py-3 text-gray-600">{{ $lead->visibilityAuditFunnelEvents->first()?->created_at?->diffForHumans() }}</td>
-                                <td class="px-4 py-3 text-right">
+                                <td class="px-4 py-3 text-right space-x-2 whitespace-nowrap">
+                                    @if ($wadeskUrl)
+                                        <a href="{{ $wadeskUrl }}" target="_blank" rel="noopener" class="rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-500">WhatsApp →</a>
+                                    @endif
                                     <a href="{{ route('leads.show', $lead) }}" class="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-500">Open lead →</a>
                                 </td>
                             </tr>
@@ -86,12 +92,18 @@
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         @forelse ($stuckAtLanding as $lead)
+                            @php
+                                $wadeskUrl = $lead->wadeskChatUrl(config('services.wadesk.visibility_audit_recovery_landing_template_name'));
+                            @endphp
                             <tr>
                                 <td class="px-4 py-3 font-medium text-gray-900">{{ $lead->name }}</td>
                                 <td class="px-4 py-3 text-gray-600">{{ $lead->phone }}</td>
                                 <td class="px-4 py-3 text-gray-600">{{ $lead->owner?->name ?? '—' }}</td>
                                 <td class="px-4 py-3 text-gray-600">{{ $lead->visibilityAuditFunnelEvents->first()?->created_at?->diffForHumans() }}</td>
-                                <td class="px-4 py-3 text-right">
+                                <td class="px-4 py-3 text-right space-x-2 whitespace-nowrap">
+                                    @if ($wadeskUrl)
+                                        <a href="{{ $wadeskUrl }}" target="_blank" rel="noopener" class="rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-500">WhatsApp →</a>
+                                    @endif
                                     <a href="{{ route('leads.show', $lead) }}" class="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-500">Open lead →</a>
                                 </td>
                             </tr>

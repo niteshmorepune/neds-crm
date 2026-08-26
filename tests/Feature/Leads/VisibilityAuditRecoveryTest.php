@@ -180,3 +180,85 @@ it('shows a Sales user their own AI-WhatsApp sends in "Your message log", scoped
         ->assertSee('My Log Lead')
         ->assertDontSee('Their Log Lead');
 });
+
+// ──────────────────────────────────────────────────────────────────────────────
+// "WhatsApp →" deep link into wadesk.in — stage-aware template pre-selection
+// ──────────────────────────────────────────────────────────────────────────────
+
+it('shows a WhatsApp deep link with the checkout template for a lead stuck at checkout', function () {
+    config([
+        'services.wadesk.base_url' => 'https://wadesk.test',
+        'services.wadesk.visibility_audit_recovery_checkout_template_name' => 'va_recovery_checkout',
+    ]);
+    $lead = Lead::factory()->create(['name' => 'Checkout Deep Link Lead', 'whatsapp_conversation_id' => 'conv_checkout_1']);
+    VisibilityAuditFunnelEvent::create(['event_type' => VisibilityAuditFunnelEventType::PaymentViewed, 'tier' => VisibilityAuditTier::Gbp, 'lead_id' => $lead->id]);
+
+    $expected = $lead->wadeskChatUrl('va_recovery_checkout');
+
+    $this->actingAs($this->admin)
+        ->get(route('leads.visibility-audit-recovery'))
+        ->assertOk()
+        ->assertSee('WhatsApp')
+        ->assertSee($expected);
+
+    expect($expected)
+        ->toContain('https://wadesk.test/inbox?')
+        ->toContain('conversation=conv_checkout_1')
+        ->toContain('template=va_recovery_checkout')
+        ->toContain('var1=Checkout+Deep+Link+Lead')
+        ->toContain('buttonParam='.$lead->id);
+});
+
+it('shows a WhatsApp deep link with the landing template for a lead stuck at landing', function () {
+    config([
+        'services.wadesk.base_url' => 'https://wadesk.test',
+        'services.wadesk.visibility_audit_recovery_landing_template_name' => 'va_recovery_landing',
+    ]);
+    $lead = Lead::factory()->create(['name' => 'Landing Deep Link Lead', 'whatsapp_conversation_id' => 'conv_landing_1']);
+    VisibilityAuditFunnelEvent::create(['event_type' => VisibilityAuditFunnelEventType::LandingViewed, 'lead_id' => $lead->id]);
+
+    $expected = $lead->wadeskChatUrl('va_recovery_landing');
+
+    $this->actingAs($this->admin)
+        ->get(route('leads.visibility-audit-recovery'))
+        ->assertOk()
+        ->assertSee($expected);
+
+    expect($expected)->toContain('template=va_recovery_landing');
+});
+
+it('hides the WhatsApp deep link for a lead never staged in wadesk', function () {
+    config([
+        'services.wadesk.base_url' => 'https://wadesk.test',
+        'services.wadesk.visibility_audit_recovery_checkout_template_name' => 'va_recovery_checkout',
+    ]);
+    $lead = Lead::factory()->create(['name' => 'No Wadesk Lead', 'whatsapp_conversation_id' => null]);
+    VisibilityAuditFunnelEvent::create(['event_type' => VisibilityAuditFunnelEventType::PaymentViewed, 'tier' => VisibilityAuditTier::Gbp, 'lead_id' => $lead->id]);
+
+    $this->actingAs($this->admin)
+        ->get(route('leads.visibility-audit-recovery'))
+        ->assertOk()
+        ->assertSee('No Wadesk Lead')
+        ->assertDontSee('WhatsApp →', false);
+});
+
+it('builds a plain conversation link with no template params when none is passed', function () {
+    config(['services.wadesk.base_url' => 'https://wadesk.test']);
+    $lead = Lead::factory()->create(['whatsapp_conversation_id' => 'conv_plain']);
+
+    expect($lead->wadeskChatUrl())->toBe('https://wadesk.test/inbox?conversation=conv_plain');
+});
+
+it('returns null from wadeskChatUrl when the lead has no wadesk conversation', function () {
+    config(['services.wadesk.base_url' => 'https://wadesk.test']);
+    $lead = Lead::factory()->create(['whatsapp_conversation_id' => null]);
+
+    expect($lead->wadeskChatUrl('any_template'))->toBeNull();
+});
+
+it('returns null from wadeskChatUrl when wadesk has no base_url configured', function () {
+    config(['services.wadesk.base_url' => null]);
+    $lead = Lead::factory()->create(['whatsapp_conversation_id' => 'conv_x']);
+
+    expect($lead->wadeskChatUrl())->toBeNull();
+});

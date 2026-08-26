@@ -186,6 +186,42 @@ class Lead extends Model
             ->exists();
     }
 
+    /**
+     * Deep link into wadesk.in's inbox, straight to this lead's own
+     * conversation — optionally with $templateName pre-selected in the
+     * template picker, pre-filled with this lead's own name/id using the
+     * exact same {{1}}=name / buttonUrlParam=lead-id contract
+     * SendVisibilityAuditRecoveryNudgeJob already sends automatically.
+     * Staff still has to review and hit Send on wadesk's side (this never
+     * sends anything itself) — it only saves the trip of finding the right
+     * conversation and the right template by hand.
+     *
+     * Null when the lead was never staged in wadesk (SyncLeadToWadeskJob
+     * hasn't run/succeeded yet — e.g. a lead with no phone) or wadesk
+     * itself isn't configured — nothing to link to.
+     */
+    public function wadeskChatUrl(?string $templateName = null): ?string
+    {
+        if (blank($this->whatsapp_conversation_id)) {
+            return null;
+        }
+
+        $baseUrl = rtrim((string) config('services.wadesk.base_url'), '/');
+        if (! $baseUrl) {
+            return null;
+        }
+
+        $query = ['conversation' => $this->whatsapp_conversation_id];
+
+        if (filled($templateName)) {
+            $query['template'] = $templateName;
+            $query['var1'] = $this->name ?: 'there';
+            $query['buttonParam'] = (string) $this->id;
+        }
+
+        return $baseUrl.'/inbox?'.http_build_query($query);
+    }
+
     public function callLogs(): MorphMany
     {
         return $this->morphMany(CallLog::class, 'callable')->latest('called_at');
