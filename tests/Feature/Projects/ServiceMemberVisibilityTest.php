@@ -88,6 +88,30 @@ it('filters projects index to assignee projects when mine=1 for a manager', func
         ->assertDontSee('Not my project');
 });
 
+it('does not carry the mine=1 scope into a group view — switching to Client-wise shows everyone\'s projects, not just the admin\'s own (none)', function () {
+    // Real bug (2026-08-26): the admin owns/leads no projects, so My
+    // Services is correctly empty — but the Client-wise/Employee-wise/
+    // Service-wise links used to silently carry `mine=1` forward too,
+    // so clicking Client-wise right after My Services stayed scoped to
+    // the admin's own (zero) projects and showed "No projects found"
+    // even though real projects existed for other owners.
+    $client = Customer::factory()->create(['company_name' => 'Real Client Co']);
+    Project::factory()->create(['customer_id' => $client->id, 'owner_id' => null, 'name' => 'Someone Elses Project']);
+
+    $html = $this->actingAs($this->admin)
+        ->get(route('projects.index', ['group' => 'client']))
+        ->assertOk()
+        ->assertSee('Real Client Co')
+        ->assertSee('Someone Elses Project')
+        ->getContent();
+
+    // The Client-wise/Employee-wise/Service-wise links themselves must
+    // never emit a mine=1 query param, so this can't regress silently.
+    expect($html)->not->toContain('group=client&amp;mine=1')
+        ->not->toContain('group=owner&amp;mine=1')
+        ->not->toContain('group=service&amp;mine=1');
+});
+
 // ── Portal: projects list shows owner name ───────────────────────────────────
 
 it('shows the assigned team member name on the portal projects list', function () {

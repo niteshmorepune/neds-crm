@@ -41,3 +41,25 @@ it('hides items a sales user has no access to', function () {
     $response->assertDontSee('Menu Controller');
     $response->assertDontSee('Partners');
 });
+
+it('marks the active sidebar link and force-opens its group, even when a further-down group would otherwise render first', function () {
+    // Real bug (2026-08-26): with ~30 items across 6 groups, the active
+    // item could be scrolled well off-screen with no visible cue where
+    // "you are here" is — the fix is a data-active-menu-item marker (a
+    // small script scrolls it into view) plus forcing that item's own
+    // group open regardless of any previously-collapsed state.
+    $admin = User::factory()->role(UserRole::Admin)->create();
+
+    $html = $this->actingAs($admin)->get(route('projects.index'))->assertOk()->getContent();
+
+    expect($html)->toContain('data-active-menu-item')
+        ->toContain('open: true');
+});
+
+it('includes the sidebar active-item scroll script', function () {
+    $admin = User::factory()->role(UserRole::Admin)->create();
+
+    $this->actingAs($admin)->get('/dashboard')->assertOk()
+        ->assertSee('data-active-menu-item', false)
+        ->assertSee('scrollIntoView', false);
+});

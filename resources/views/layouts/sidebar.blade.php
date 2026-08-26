@@ -35,8 +35,12 @@
 
         <nav class="flex-1 px-3 py-4 space-y-3 overflow-y-auto">
             @foreach ($groupedMenuItems as $groupKey => $itemsInGroup)
-                <div x-data="{ open: localStorage.getItem('sidebar-group-{{ $groupKey ?: 'other' }}') !== '0' }">
-                    <button type="button" @click="open = !open; localStorage.setItem('sidebar-group-{{ $groupKey ?: 'other' }}', open ? '1' : '0')"
+                @php
+                    $groupIsActive = $itemsInGroup->contains(fn ($item) => request()->routeIs(...$item->activePatterns()));
+                    $storageKey = 'sidebar-group-'.($groupKey ?: 'other');
+                @endphp
+                <div x-data="{ open: {{ $groupIsActive ? 'true' : "localStorage.getItem('{$storageKey}') !== '0'" }} }">
+                    <button type="button" @click="open = !open; localStorage.setItem('{{ $storageKey }}', open ? '1' : '0')"
                             class="flex w-full items-center justify-between px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500 hover:text-gray-300">
                         <span>{{ $itemsInGroup->first()->group?->label() ?? 'Other' }}</span>
                         <svg class="h-3.5 w-3.5 shrink-0 transition-transform" :class="{ '-rotate-90': !open }" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -45,8 +49,11 @@
                     </button>
                     <div x-show="open" x-transition class="space-y-1">
                         @foreach ($itemsInGroup as $item)
-                            @php($active = request()->routeIs(...$item->activePatterns()))
+                            @php
+                                $active = request()->routeIs(...$item->activePatterns());
+                            @endphp
                             <a href="{{ route($item->route) }}" @click="sidebarOpen = false"
+                               {{ $active ? 'data-active-menu-item' : '' }}
                                @class([
                                    'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
                                    'bg-gray-800 text-white' => $active,
@@ -103,8 +110,12 @@
 
     <nav class="flex-1 px-3 py-4 space-y-3 overflow-y-auto">
         @foreach ($groupedMenuItems as $groupKey => $itemsInGroup)
-            <div x-data="{ open: localStorage.getItem('sidebar-group-{{ $groupKey ?: 'other' }}') !== '0' }">
-                <button type="button" @click="open = !open; localStorage.setItem('sidebar-group-{{ $groupKey ?: 'other' }}', open ? '1' : '0')"
+            @php
+                $groupIsActive = $itemsInGroup->contains(fn ($item) => request()->routeIs(...$item->activePatterns()));
+                $storageKey = 'sidebar-group-'.($groupKey ?: 'other');
+            @endphp
+            <div x-data="{ open: {{ $groupIsActive ? 'true' : "localStorage.getItem('{$storageKey}') !== '0'" }} }">
+                <button type="button" @click="open = !open; localStorage.setItem('{{ $storageKey }}', open ? '1' : '0')"
                         class="flex w-full items-center justify-between px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500 hover:text-gray-300">
                     <span>{{ $itemsInGroup->first()->group?->label() ?? 'Other' }}</span>
                     <svg class="h-3.5 w-3.5 shrink-0 transition-transform" :class="{ '-rotate-90': !open }" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -113,8 +124,11 @@
                 </button>
                 <div x-show="open" x-transition class="space-y-1">
                     @foreach ($itemsInGroup as $item)
-                        @php($active = request()->routeIs(...$item->activePatterns()))
+                        @php
+                            $active = request()->routeIs(...$item->activePatterns());
+                        @endphp
                         <a href="{{ route($item->route) }}"
+                           {{ $active ? 'data-active-menu-item' : '' }}
                            @class([
                                'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
                                'bg-gray-800 text-white' => $active,
@@ -147,3 +161,23 @@
         </form>
     </div>
 </aside>
+
+@push('scripts')
+    <script>
+        // Scroll the current page's sidebar item into view within its own
+        // scroll container — with ~30 items across 6 groups, the active
+        // item can otherwise be well off the initial scroll position,
+        // leaving no visible sign of "where am I" without manually
+        // scrolling first. Both the desktop <aside> and the mobile overlay
+        // render a matching [data-active-menu-item] element; only the one
+        // that's actually laid out (offsetParent !== null — the mobile
+        // panel is display:none until opened) gets scrolled.
+        (function () {
+            document.querySelectorAll('[data-active-menu-item]').forEach(function (item) {
+                if (item.offsetParent !== null) {
+                    item.scrollIntoView({ block: 'center', behavior: 'instant' });
+                }
+            });
+        })();
+    </script>
+@endpush
