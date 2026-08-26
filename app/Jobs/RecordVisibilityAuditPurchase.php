@@ -81,6 +81,10 @@ class RecordVisibilityAuditPurchase implements ShouldQueue
         // configured; see the job's own docblock.
         SendVisibilityAuditPaymentConfirmationJob::dispatch($purchase->id);
 
+        // Email half of the same thank-you — no-ops when the purchase has
+        // no payer_email; see the job's own docblock.
+        SendVisibilityAuditPaymentReceiptEmailJob::dispatch($purchase->id);
+
         if ($tier === null) {
             Log::warning('Visibility Audit payment amount matched no known tier', [
                 'payment_id' => $this->paymentId,
