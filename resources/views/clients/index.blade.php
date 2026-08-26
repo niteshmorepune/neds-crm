@@ -8,13 +8,43 @@
             </div>
         @endif
 
-        <div class="flex flex-wrap items-center justify-between gap-3">
-            <form method="GET" class="flex flex-wrap items-center gap-2">
-                <input type="text" name="search" value="{{ $filters['search'] ?? '' }}"
-                       placeholder="Search company, email, GSTIN"
-                       class="rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
+        <form method="GET" class="space-y-3">
+            {{-- Row 1: page-scoped search (distinct from the global omnisearch
+                 in the top bar — this one only searches clients and drives
+                 this list/export/pagination) + primary actions. --}}
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="relative max-w-md flex-1 min-w-[220px]">
+                    <input type="text" name="search" value="{{ $filters['search'] ?? '' }}"
+                           placeholder="Search company, email, GSTIN"
+                           class="w-full rounded-md border-gray-300 pr-9 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
+                    <button type="submit" aria-label="Search"
+                            class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" />
+                        </svg>
+                    </button>
+                </div>
 
-                <select name="status" class="rounded-md border-gray-300 text-sm shadow-sm">
+                <div class="flex items-center gap-2">
+                    <a href="{{ route('clients.import') }}"
+                       class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                        Import CSV
+                    </a>
+                    @can('create', \App\Models\Customer::class)
+                        <a href="{{ route('clients.create') }}"
+                           class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">
+                            Add Client
+                        </a>
+                    @endcan
+                </div>
+            </div>
+
+            {{-- Row 2: filters, each auto-applying on change — no separate
+                 Filter button. All fields share this one form, so changing
+                 one select resubmits with the search text and every other
+                 currently-selected filter intact. --}}
+            <div class="flex flex-wrap items-center gap-2">
+                <select name="status" onchange="this.form.submit()" class="rounded-md border-gray-300 text-sm shadow-sm">
                     <option value="all" @selected($statusFilter === 'all')>All statuses</option>
                     @foreach ($statuses as $s)
                         <option value="{{ $s->value }}" @selected($statusFilter === $s->value)>
@@ -23,7 +53,7 @@
                     @endforeach
                 </select>
 
-                <select name="owner_id" class="rounded-md border-gray-300 text-sm shadow-sm">
+                <select name="owner_id" onchange="this.form.submit()" class="rounded-md border-gray-300 text-sm shadow-sm">
                     <option value="">All owners</option>
                     @foreach ($owners as $owner)
                         <option value="{{ $owner->id }}" @selected((string) ($filters['owner_id'] ?? '') === (string) $owner->id)>
@@ -32,7 +62,7 @@
                     @endforeach
                 </select>
 
-                <select name="referring_partner_id" class="rounded-md border-gray-300 text-sm shadow-sm">
+                <select name="referring_partner_id" onchange="this.form.submit()" class="rounded-md border-gray-300 text-sm shadow-sm">
                     <option value="">All referring partners</option>
                     @foreach ($partners as $partner)
                         <option value="{{ $partner->id }}" @selected((string) ($filters['referring_partner_id'] ?? '') === (string) $partner->id)>
@@ -41,45 +71,36 @@
                     @endforeach
                 </select>
 
-                <select name="state" class="rounded-md border-gray-300 text-sm shadow-sm">
+                <select name="state" onchange="this.form.submit()" class="rounded-md border-gray-300 text-sm shadow-sm">
                     <option value="">All states</option>
                     @foreach ($states as $state)
                         <option value="{{ $state }}" @selected(($filters['state'] ?? '') === $state)>{{ $state }}</option>
                     @endforeach
                 </select>
 
-                <select name="city" class="rounded-md border-gray-300 text-sm shadow-sm">
+                <select name="city" onchange="this.form.submit()" class="rounded-md border-gray-300 text-sm shadow-sm">
                     <option value="">All cities</option>
                     @foreach ($cities as $city)
                         <option value="{{ $city }}" @selected(($filters['city'] ?? '') === $city)>{{ $city }}</option>
                     @endforeach
                 </select>
 
-                <select name="sort" class="rounded-md border-gray-300 text-sm shadow-sm">
+                <select name="sort" onchange="this.form.submit()" class="rounded-md border-gray-300 text-sm shadow-sm">
                     <option value="newest" @selected($sort === 'newest')>Newest first</option>
                     <option value="name" @selected($sort === 'name')>Company name (A–Z)</option>
                     <option value="oldest" @selected($sort === 'oldest')>Date of entry (oldest first)</option>
                     <option value="location" @selected($sort === 'location')>Location (State, City)</option>
                 </select>
 
-                <button type="submit" class="rounded-md bg-gray-800 px-3 py-2 text-sm font-medium text-white hover:bg-gray-700">
-                    Filter
-                </button>
-            </form>
-
-            <div class="flex items-center gap-2">
-                <a href="{{ route('clients.import') }}"
-                   class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
-                    Import CSV
-                </a>
-                @can('create', \App\Models\Customer::class)
-                    <a href="{{ route('clients.create') }}"
-                       class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">
-                        Add Client
-                    </a>
-                @endcan
+                {{-- "Active" is the default status shown with no query params
+                     at all (see CustomerController::index()), so it doesn't
+                     count as an active filter on its own — anything else
+                     (including the explicit "All statuses" option) does. --}}
+                @if (($filters['search'] ?? '') || $statusFilter !== \App\Enums\CustomerStatus::Active->value || ($filters['owner_id'] ?? '') || ($filters['referring_partner_id'] ?? '') || ($filters['state'] ?? '') || ($filters['city'] ?? ''))
+                    <a href="{{ route('clients.index') }}" class="text-sm text-gray-500 hover:text-gray-700">Clear filters</a>
+                @endif
             </div>
-        </div>
+        </form>
 
         <div class="overflow-hidden overflow-x-auto rounded-lg bg-white shadow-sm">
             <table class="min-w-full divide-y divide-gray-200 text-sm">

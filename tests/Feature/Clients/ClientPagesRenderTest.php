@@ -31,6 +31,23 @@ it('renders the clients index', function () {
         ->assertSee('Clients');
 });
 
+it('auto-applies filters on change instead of a separate Filter button, and offers Clear filters only once a filter is active', function () {
+    // Real UX fix (2026-08-26): the toolbar used to stack a search row, a
+    // wrapped sort/Filter-button row, and Import CSV/Add Client onto a
+    // third row. All five filter selects now share one form and submit
+    // via onchange — no standalone "Filter" submit button should exist
+    // anymore, and "Clear filters" only appears once something is set.
+    $this->actingAs($this->admin)->get(route('clients.index'))->assertOk()
+        ->assertDontSee('>Filter<', false)
+        ->assertDontSee('Clear filters');
+
+    Customer::factory()->create(['state' => 'Maharashtra']);
+
+    $this->actingAs($this->admin)->get(route('clients.index', ['state' => 'Maharashtra']))->assertOk()
+        ->assertSee('Clear filters')
+        ->assertSee('onchange="this.form.submit()"', false);
+});
+
 it('renders the create form', function () {
     $this->actingAs($this->admin)
         ->get(route('clients.create'))
