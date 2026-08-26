@@ -56,21 +56,29 @@ class MenuItemsSeeder extends Seeder
             ['key' => 'calling',          'label' => 'Calling',          'group' => MenuGroup::DeliverySupport, 'route' => 'calls.index',      'icon' => 'phone',      'roles' => [UserRole::Manager, UserRole::Sales, UserRole::Support, UserRole::Telecaller]],
             ['key' => 'project-updates',  'label' => 'Project Updates',  'group' => MenuGroup::DeliverySupport, 'route' => 'projects.index',   'icon' => 'briefcase',  'roles' => [UserRole::Manager, UserRole::Sales, UserRole::Support, UserRole::Intern]],
             ['key' => 'emptask',          'label' => 'Employee Task',    'group' => MenuGroup::DeliverySupport, 'route' => 'tasks.index',      'icon' => 'check',      'roles' => $all],
+            // Team & Insights: monitoring/scoring dashboards — "what needs
+            // my attention, how is the team/business doing." Split from the
+            // former single 15-item Team & Insights group (2026-08-26,
+            // owner-reported: no group should exceed ~10 items when
+            // expanded) — Team Tools below holds the day-to-day operational
+            // half (assigning work, scheduling, browsing reports, comms).
             ['key' => 'manager-action-center', 'label' => 'Action Center', 'group' => MenuGroup::TeamInsights,  'route' => 'manager-action-center.index', 'icon' => 'bolt', 'roles' => [UserRole::Manager]],
             ['key' => 'approval-center',  'label' => 'Approval Center',  'group' => MenuGroup::TeamInsights,    'route' => 'approval-center.index', 'icon' => 'check-badge', 'roles' => [UserRole::Manager]],
-            ['key' => 'team-workload',    'label' => 'Team Workload',    'group' => MenuGroup::TeamInsights,    'route' => 'team-workload.index', 'icon' => 'scale', 'roles' => [UserRole::Manager]],
             ['key' => 'project-health',   'label' => 'Project Health',   'group' => MenuGroup::TeamInsights,    'route' => 'project-health.index', 'icon' => 'heart', 'roles' => [UserRole::Manager]],
             ['key' => 'revenue-at-risk',  'label' => 'Revenue at Risk',  'group' => MenuGroup::TeamInsights,    'route' => 'revenue-at-risk.index', 'icon' => 'exclamation-triangle', 'roles' => [UserRole::Manager]],
             ['key' => 'client-radar',     'label' => 'Client Radar',     'group' => MenuGroup::TeamInsights,    'route' => 'client-radar.index', 'icon' => 'radar',    'roles' => [UserRole::Manager]],
             ['key' => 'visibility-audit-funnel', 'label' => 'VA Funnel Analytics', 'group' => MenuGroup::TeamInsights,   'route' => 'reports.visibility-audit-funnel', 'icon' => 'funnel', 'roles' => [UserRole::Manager]],
             ['key' => 'employee-360',     'label' => 'Employee 360°',    'group' => MenuGroup::TeamInsights,    'route' => 'employees.index',  'icon' => 'identification', 'roles' => [UserRole::Manager]],
             ['key' => 'team-targets',     'label' => 'Team Targets',     'group' => MenuGroup::TeamInsights,    'route' => 'role-targets.index', 'icon' => 'flag', 'roles' => [UserRole::Manager]],
-            ['key' => 'manager-calendar', 'label' => 'Manager Calendar', 'group' => MenuGroup::TeamInsights,    'route' => 'manager-calendar.index', 'icon' => 'calendar-days', 'roles' => [UserRole::Manager]],
-            ['key' => 'daily-reports',    'label' => 'Daily Reports',    'group' => MenuGroup::TeamInsights,    'route' => 'daily-reports.index', 'icon' => 'clipboard', 'roles' => $all],
-            ['key' => 'quarterly-awards', 'label' => 'Best Employee',    'group' => MenuGroup::TeamInsights,    'route' => 'quarterly-awards.index', 'icon' => 'trophy',  'roles' => $all],
-            ['key' => 'partners',         'label' => 'Partners',         'group' => MenuGroup::TeamInsights,    'route' => 'partners.index',   'icon' => 'users',      'roles' => [UserRole::Manager]],
-            ['key' => 'announcements',    'label' => 'Notice Board',     'group' => MenuGroup::TeamInsights,    'route' => 'announcements.index', 'icon' => 'megaphone', 'roles' => [UserRole::Manager]],
-            ['key' => 'team-nudges',      'label' => 'Team Nudges',      'group' => MenuGroup::TeamInsights,    'route' => 'team-nudges.index', 'icon' => 'bell',       'roles' => [UserRole::Manager]],
+
+            // Team Tools: operational team-management utilities.
+            ['key' => 'team-workload',    'label' => 'Team Workload',    'group' => MenuGroup::TeamTools,       'route' => 'team-workload.index', 'icon' => 'scale', 'roles' => [UserRole::Manager]],
+            ['key' => 'manager-calendar', 'label' => 'Manager Calendar', 'group' => MenuGroup::TeamTools,       'route' => 'manager-calendar.index', 'icon' => 'calendar-days', 'roles' => [UserRole::Manager]],
+            ['key' => 'daily-reports',    'label' => 'Daily Reports',    'group' => MenuGroup::TeamTools,       'route' => 'daily-reports.index', 'icon' => 'clipboard', 'roles' => $all],
+            ['key' => 'quarterly-awards', 'label' => 'Best Employee',    'group' => MenuGroup::TeamTools,       'route' => 'quarterly-awards.index', 'icon' => 'trophy',  'roles' => $all],
+            ['key' => 'partners',         'label' => 'Partners',         'group' => MenuGroup::TeamTools,       'route' => 'partners.index',   'icon' => 'users',      'roles' => [UserRole::Manager]],
+            ['key' => 'announcements',    'label' => 'Notice Board',     'group' => MenuGroup::TeamTools,       'route' => 'announcements.index', 'icon' => 'megaphone', 'roles' => [UserRole::Manager]],
+            ['key' => 'team-nudges',      'label' => 'Team Nudges',      'group' => MenuGroup::TeamTools,       'route' => 'team-nudges.index', 'icon' => 'bell',       'roles' => [UserRole::Manager]],
             ['key' => 'categories',       'label' => 'Services',         'group' => MenuGroup::AdminConfig,     'route' => 'services.index',   'icon' => 'tag',        'roles' => [UserRole::Manager]],
             ['key' => 'lead-assignment-rules', 'label' => 'Lead Assignment Rules', 'group' => MenuGroup::AdminConfig, 'route' => 'lead-assignment-rules.index', 'icon' => 'funnel', 'roles' => [UserRole::Manager]],
             ['key' => 'festivals',        'label' => 'Festivals',        'group' => MenuGroup::AdminConfig,     'route' => 'festivals.index',  'icon' => 'calendar',   'roles' => [UserRole::Manager]],

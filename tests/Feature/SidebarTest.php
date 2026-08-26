@@ -42,24 +42,34 @@ it('hides items a sales user has no access to', function () {
     $response->assertDontSee('Partners');
 });
 
-it('marks the active sidebar link and force-opens its group, even when a further-down group would otherwise render first', function () {
-    // Real bug (2026-08-26): with ~30 items across 6 groups, the active
-    // item could be scrolled well off-screen with no visible cue where
-    // "you are here" is — the fix is a data-active-menu-item marker (a
-    // small script scrolls it into view) plus forcing that item's own
-    // group open regardless of any previously-collapsed state.
+it('opens only the current page\'s own group and collapses every other group — true accordion, not just force-opening the active one', function () {
+    // Real bug (2026-08-26, owner-reported via screenshot): a group opened
+    // once and persisted (via localStorage) stayed open on every later
+    // page load regardless of which page you were actually on, so several
+    // groups could be expanded at once — a long sidebar, and (because the
+    // active item could sit well below the fold) a scroll-into-view script
+    // that ended up scrolling the whole page instead of just the sidebar,
+    // landing the page itself somewhere other than the top. Fixed by
+    // dropping persistence entirely: exactly one group — the one containing
+    // the current page — is open on every fresh load, full stop.
     $admin = User::factory()->role(UserRole::Admin)->create();
 
     $html = $this->actingAs($admin)->get(route('projects.index'))->assertOk()->getContent();
 
-    expect($html)->toContain('data-active-menu-item')
-        ->toContain('open: true');
+    // Desktop + mobile each render every group once, so "open: true" should
+    // appear exactly twice (one per copy of the Delivery & Support group,
+    // which owns Project Updates) — never for any other group.
+    expect(substr_count($html, 'open: true'))->toBe(2)
+        ->and($html)->not->toContain('localStorage')
+        ->not->toContain('scrollIntoView');
 });
 
-it('includes the sidebar active-item scroll script', function () {
+it('splits the former single Team & Insights group so no sidebar group exceeds 10 items when expanded', function () {
     $admin = User::factory()->role(UserRole::Admin)->create();
 
     $this->actingAs($admin)->get('/dashboard')->assertOk()
-        ->assertSee('data-active-menu-item', false)
-        ->assertSee('scrollIntoView', false);
+        ->assertSee('Team & Insights')
+        ->assertSee('Team Tools')
+        ->assertSee('Project Health')
+        ->assertSee('Team Workload');
 });

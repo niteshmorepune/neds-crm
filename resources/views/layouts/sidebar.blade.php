@@ -2,7 +2,17 @@
      view composer and reflects the logged-in user's role + per-user overrides.
      Grouped into collapsible sections (App\Enums\MenuGroup) purely for
      display — access is still governed entirely by menu.access:{key}
-     middleware / menu_item_role, unaffected by grouping. --}}
+     middleware / menu_item_role, unaffected by grouping.
+
+     Accordion behavior (2026-08-26, owner-reported): exactly one group is
+     open at a time — whichever contains the current page — every other
+     group starts collapsed. This is deliberately NOT persisted across page
+     loads (no localStorage) — every navigation is a real full-page request
+     in this app (no SPA), so "collapse everything except where I am now" is
+     recomputed fresh each time rather than carried over from a previous,
+     possibly different page's manual toggling. A user can still expand
+     another group to browse within the current page load; it just won't
+     stick after the next click takes them somewhere else. --}}
 
 @php
     $groupedMenuItems = $menuItems->groupBy('group');
@@ -37,10 +47,9 @@
             @foreach ($groupedMenuItems as $groupKey => $itemsInGroup)
                 @php
                     $groupIsActive = $itemsInGroup->contains(fn ($item) => request()->routeIs(...$item->activePatterns()));
-                    $storageKey = 'sidebar-group-'.($groupKey ?: 'other');
                 @endphp
-                <div x-data="{ open: {{ $groupIsActive ? 'true' : "localStorage.getItem('{$storageKey}') !== '0'" }} }">
-                    <button type="button" @click="open = !open; localStorage.setItem('{{ $storageKey }}', open ? '1' : '0')"
+                <div x-data="{ open: {{ $groupIsActive ? 'true' : 'false' }} }">
+                    <button type="button" @click="open = !open"
                             class="flex w-full items-center justify-between px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500 hover:text-gray-300">
                         <span>{{ $itemsInGroup->first()->group?->label() ?? 'Other' }}</span>
                         <svg class="h-3.5 w-3.5 shrink-0 transition-transform" :class="{ '-rotate-90': !open }" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -53,7 +62,6 @@
                                 $active = request()->routeIs(...$item->activePatterns());
                             @endphp
                             <a href="{{ route($item->route) }}" @click="sidebarOpen = false"
-                               {{ $active ? 'data-active-menu-item' : '' }}
                                @class([
                                    'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
                                    'bg-gray-800 text-white' => $active,
@@ -100,8 +108,17 @@
     </div>
 </div>
 
-{{-- ── Desktop sidebar (md and above) ── --}}
-<aside class="hidden md:flex md:flex-col w-64 shrink-0 bg-gray-900 text-gray-300 min-h-screen">
+{{-- ── Desktop sidebar (md and above) ──
+     Deliberately sticky + capped to viewport height so it scrolls
+     independently of the main content column. Before this fix, <aside> only
+     had min-h-screen, so on a tall page (a long table, for instance) it grew
+     to match its sibling instead of clipping — there was no real internal
+     scroll container, so anything that scrolled an item into view actually
+     scrolled the whole window, landing the page wherever the sidebar item
+     happened to be rather than at the top. With the accordion above, this
+     matters less day-to-day (at most ~10 items are ever visible at once),
+     but it's the actual root-cause fix, not just a smaller sidebar. --}}
+<aside class="hidden md:sticky md:top-0 md:flex md:h-screen md:flex-col w-64 shrink-0 bg-gray-900 text-gray-300">
     <div class="flex items-center px-4 py-3 border-b border-gray-800 bg-white">
         <a href="{{ route('dashboard') }}">
             <img src="{{ asset('images/neds-logo.png') }}" alt="Niranjan Enterprises Digital Solutions" style="height:40px;width:auto">
@@ -112,10 +129,9 @@
         @foreach ($groupedMenuItems as $groupKey => $itemsInGroup)
             @php
                 $groupIsActive = $itemsInGroup->contains(fn ($item) => request()->routeIs(...$item->activePatterns()));
-                $storageKey = 'sidebar-group-'.($groupKey ?: 'other');
             @endphp
-            <div x-data="{ open: {{ $groupIsActive ? 'true' : "localStorage.getItem('{$storageKey}') !== '0'" }} }">
-                <button type="button" @click="open = !open; localStorage.setItem('{{ $storageKey }}', open ? '1' : '0')"
+            <div x-data="{ open: {{ $groupIsActive ? 'true' : 'false' }} }">
+                <button type="button" @click="open = !open"
                         class="flex w-full items-center justify-between px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500 hover:text-gray-300">
                     <span>{{ $itemsInGroup->first()->group?->label() ?? 'Other' }}</span>
                     <svg class="h-3.5 w-3.5 shrink-0 transition-transform" :class="{ '-rotate-90': !open }" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -128,7 +144,6 @@
                             $active = request()->routeIs(...$item->activePatterns());
                         @endphp
                         <a href="{{ route($item->route) }}"
-                           {{ $active ? 'data-active-menu-item' : '' }}
                            @class([
                                'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
                                'bg-gray-800 text-white' => $active,
@@ -161,23 +176,3 @@
         </form>
     </div>
 </aside>
-
-@push('scripts')
-    <script>
-        // Scroll the current page's sidebar item into view within its own
-        // scroll container — with ~30 items across 6 groups, the active
-        // item can otherwise be well off the initial scroll position,
-        // leaving no visible sign of "where am I" without manually
-        // scrolling first. Both the desktop <aside> and the mobile overlay
-        // render a matching [data-active-menu-item] element; only the one
-        // that's actually laid out (offsetParent !== null — the mobile
-        // panel is display:none until opened) gets scrolled.
-        (function () {
-            document.querySelectorAll('[data-active-menu-item]').forEach(function (item) {
-                if (item.offsetParent !== null) {
-                    item.scrollIntoView({ block: 'center', behavior: 'instant' });
-                }
-            });
-        })();
-    </script>
-@endpush

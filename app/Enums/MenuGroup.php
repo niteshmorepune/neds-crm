@@ -14,6 +14,7 @@ enum MenuGroup: string
     case Finance = 'finance';
     case DeliverySupport = 'delivery_support';
     case TeamInsights = 'team_insights';
+    case TeamTools = 'team_tools';
     case AdminConfig = 'admin_config';
 
     public function label(): string
@@ -24,6 +25,7 @@ enum MenuGroup: string
             self::Finance => 'Finance',
             self::DeliverySupport => 'Delivery & Support',
             self::TeamInsights => 'Team & Insights',
+            self::TeamTools => 'Team Tools',
             self::AdminConfig => 'Admin & Config',
         };
     }
