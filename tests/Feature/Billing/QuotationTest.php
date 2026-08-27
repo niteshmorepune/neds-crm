@@ -3,7 +3,9 @@
 use App\Enums\QuotationApprovalStatus;
 use App\Enums\QuotationStatus;
 use App\Enums\UserRole;
+use App\Jobs\SendQuotationWhatsAppJob;
 use App\Livewire\QuotationBuilder;
+use App\Models\Contact;
 use App\Models\Customer;
 use App\Models\Deal;
 use App\Models\FollowUpReminder;
@@ -13,9 +15,11 @@ use App\Models\Quotation;
 use App\Models\User;
 use App\Notifications\QuotationNeedsApproval;
 use Database\Seeders\MenuItemsSeeder;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
 
 beforeEach(function () {
@@ -480,4 +484,145 @@ it('shows a delete button on the quotation show page and deletes it', function (
 
     $this->actingAs($this->admin)->delete(route('quotations.destroy', $quotation))->assertRedirect(route('quotations.index'));
     expect(Quotation::find($quotation->id))->toBeNull();
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Step 5 — one-click WhatsApp send alongside the existing email send
+// ──────────────────────────────────────────────────────────────────────────────
+
+it('generates a public_token lazily, once, and reuses it', function () {
+    $quotation = quotationWithLine();
+
+    expect($quotation->public_token)->toBeNull();
+
+    $url1 = $quotation->publicPdfUrl();
+    $token1 = $quotation->fresh()->public_token;
+    expect($token1)->not->toBeNull();
+
+    $url2 = $quotation->publicPdfUrl();
+
+    expect($url2)->toBe($url1)->and($quotation->fresh()->public_token)->toBe($token1);
+});
+
+it('prefers the primary contact\'s phone for billingPhone(), falling back to the customer\'s own', function () {
+    $customer = Customer::factory()->create(['phone' => '9000000000']);
+    expect($customer->billingPhone())->toBe('9000000000');
+
+    $customer->contacts()->save(Contact::factory()->make(['phone' => '8111111111', 'is_primary' => true]));
+    expect($customer->fresh()->billingPhone())->toBe('8111111111');
+});
+
+it('returns null from billingPhone() when neither the primary contact nor the customer has a phone', function () {
+    $customer = Customer::factory()->create(['phone' => null]);
+
+    expect($customer->billingPhone())->toBeNull();
+});
+
+it('downloads the quotation via its public token', function () {
+    $quotation = quotationWithLine();
+
+    $response = $this->get($quotation->publicPdfUrl());
+
+    $response->assertOk();
+    expect($response->getContent())->toStartWith('%PDF');
+});
+
+it('404s the public quotation link for an unknown token', function () {
+    $this->get(route('quotations.public-pdf', 'not-a-real-token'))->assertNotFound();
+});
+
+it('dispatches SendQuotationWhatsAppJob alongside the email when a quotation is sent', function () {
+    Mail::fake();
+    Queue::fake();
+    $customer = Customer::factory()->create(['email' => 'client@x.test']);
+    $quotation = quotationWithLine(['customer_id' => $customer->id]);
+    $manager = User::factory()->role(UserRole::Manager)->create();
+    $this->actingAs($manager)->post(route('quotations.approve', $quotation))->assertRedirect();
+
+    $this->actingAs($this->admin)->post(route('quotations.send', $quotation))->assertRedirect();
+
+    Queue::assertPushed(SendQuotationWhatsAppJob::class, fn ($job) => $job->quotationId === $quotation->id);
+});
+
+it('POSTs the quotation-sent template with the public_token as buttonUrlParam', function () {
+    config([
+        'services.wadesk.base_url' => 'https://wadesk.test',
+        'services.wadesk.service_key' => 'wadesk-secret',
+        'services.wadesk.marketing_number' => '919112095202',
+        'services.wadesk.quotation_sent_template_name' => 'quotation_sent',
+    ]);
+    Http::fake(['https://wadesk.test/api/send-template' => Http::response(['conversationId' => 'c1', 'messageId' => 'wamsg_1'], 201)]);
+
+    $customer = Customer::factory()->create(['phone' => '+91 98765 43210']);
+    $customer->contacts()->save(Contact::factory()->make(['name' => 'Priya Shah', 'phone' => '+91 98765 43210', 'is_primary' => true]));
+    $quotation = quotationWithLine(['customer_id' => $customer->id]);
+
+    (new SendQuotationWhatsAppJob($quotation->id))->handle();
+
+    $quotation->refresh();
+    expect($quotation->public_token)->not->toBeNull();
+
+    Http::assertSent(function ($request) use ($quotation) {
+        return $request->url() === 'https://wadesk.test/api/send-template'
+            && $request['phone'] === '919876543210'
+            && $request['businessNumber'] === '919112095202'
+            && $request['templateName'] === 'quotation_sent'
+            && $request['variables'] === ['Priya Shah']
+            && $request['buttonUrlParam'] === $quotation->public_token;
+    });
+});
+
+it('skips the WhatsApp quotation send when the customer has no phone', function () {
+    config([
+        'services.wadesk.base_url' => 'https://wadesk.test',
+        'services.wadesk.service_key' => 'wadesk-secret',
+        'services.wadesk.marketing_number' => '919112095202',
+        'services.wadesk.quotation_sent_template_name' => 'quotation_sent',
+    ]);
+    Http::fake();
+
+    $customer = Customer::factory()->create(['phone' => null]);
+    $quotation = quotationWithLine(['customer_id' => $customer->id]);
+
+    (new SendQuotationWhatsAppJob($quotation->id))->handle();
+
+    Http::assertNothingSent();
+});
+
+it('skips the WhatsApp quotation send entirely when the wadesk config is not set', function () {
+    Http::fake();
+    $quotation = quotationWithLine();
+
+    (new SendQuotationWhatsAppJob($quotation->id))->handle();
+
+    Http::assertNothingSent();
+});
+
+it('logs a warning but does not throw when wadesk.in is unreachable for the quotation send', function () {
+    config([
+        'services.wadesk.base_url' => 'https://wadesk.test',
+        'services.wadesk.service_key' => 'wadesk-secret',
+        'services.wadesk.marketing_number' => '919112095202',
+        'services.wadesk.quotation_sent_template_name' => 'quotation_sent',
+    ]);
+    Http::fake(['*' => fn () => throw new ConnectionException('Connection refused')]);
+
+    $customer = Customer::factory()->create(['phone' => '9876543210']);
+    $quotation = quotationWithLine(['customer_id' => $customer->id]);
+
+    expect(fn () => (new SendQuotationWhatsAppJob($quotation->id))->handle())->not->toThrow(Throwable::class);
+});
+
+it('no-ops SendQuotationWhatsAppJob for a deleted quotation id', function () {
+    config([
+        'services.wadesk.base_url' => 'https://wadesk.test',
+        'services.wadesk.service_key' => 'wadesk-secret',
+        'services.wadesk.marketing_number' => '919112095202',
+        'services.wadesk.quotation_sent_template_name' => 'quotation_sent',
+    ]);
+    Http::fake();
+
+    (new SendQuotationWhatsAppJob(999999))->handle();
+
+    Http::assertNothingSent();
 });

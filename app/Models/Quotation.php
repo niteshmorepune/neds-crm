@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Str;
 
 class Quotation extends Model
 {
@@ -48,6 +49,7 @@ class Quotation extends Model
         'is_intra_state', 'is_gst_exempt', 'subtotal', 'discount', 'taxable_total', 'cgst_total',
         'sgst_total', 'igst_total', 'round_off', 'total', 'terms', 'scope_of_work', 'validity_date',
         'approval_status', 'approval_notes', 'approved_by', 'approved_at', 'client_decision_note',
+        'public_token',
     ];
 
     protected function casts(): array
@@ -73,6 +75,24 @@ class Quotation extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    /**
+     * The public, permanent quotation-view link the WhatsApp send
+     * (SendQuotationWhatsAppJob) points to — generates public_token lazily
+     * on first call if not already set, same shape as
+     * VisibilityAuditPurchase::reportUrl(). Deliberately non-expiring, like
+     * that link — a client may want to revisit it, and validity_date
+     * (whether the OFFER itself is still valid) is a separate business
+     * concern from whether the LINK still resolves.
+     */
+    public function publicPdfUrl(): string
+    {
+        if ($this->public_token === null) {
+            $this->forceFill(['public_token' => (string) Str::uuid()])->save();
+        }
+
+        return route('quotations.public-pdf', $this->public_token);
     }
 
     public function deal(): BelongsTo

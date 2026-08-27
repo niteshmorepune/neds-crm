@@ -369,6 +369,16 @@ class Customer extends Model
     }
 
     /**
+     * Best phone for WhatsApp correspondence: the primary contact's, else
+     * the customer's own. Null if neither is set. Same fallback shape as
+     * billingEmail().
+     */
+    public function billingPhone(): ?string
+    {
+        return $this->primaryContact?->phone ?: $this->phone;
+    }
+
+    /**
      * Admins/managers/support/accounts see all clients.
      * Sales reps (including anyone with Sales as an additional role) see
      * only clients they own or that are unassigned. Mirrors CustomerPolicy::view.

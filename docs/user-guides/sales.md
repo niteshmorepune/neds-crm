@@ -364,12 +364,14 @@ form to set the company's monthly/FY target and each rep's monthly target.
      quotation, then click **Resubmit for approval** to send it back into
      the queue.
 7. Open it and click **Send to Client** — this emails the quotation details to
-   the client's billing address and marks it **Sent**. It also drops a
-   3-day **follow-up reminder** onto your own Dashboard automatically (see
-   Getting Started → Follow-up Reminders), so a quotation can't quietly
-   fall through the cracks — if the client was referred by a partner
-   agency, the reminder names the partner too (e.g. "Follow up with
-   Prajakta Dahake (referring partner)...").
+   the client's billing address and marks it **Sent**. If the client has a
+   phone number on file, it also sends a WhatsApp message with a link to
+   view the quotation online — no extra step, both go out from the same
+   click. It also drops a 3-day **follow-up reminder** onto your own
+   Dashboard automatically (see Getting Started → Follow-up Reminders), so
+   a quotation can't quietly fall through the cracks — if the client was
+   referred by a partner agency, the reminder names the partner too (e.g.
+   "Follow up with Prajakta Dahake (referring partner)...").
    - **Reseller partners:** if the client you picked was referred by a
      partner set up as a reseller (see Manager guide → Content
      collaboration → Reseller billing), you'll see an amber notice near

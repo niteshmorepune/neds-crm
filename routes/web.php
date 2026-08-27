@@ -46,6 +46,7 @@ use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectHealthController;
 use App\Http\Controllers\QuarterlyAwardController;
 use App\Http\Controllers\QuotationController;
+use App\Http\Controllers\QuotationPublicController;
 use App\Http\Controllers\RecurringInvoiceController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ResourceController;
@@ -107,6 +108,11 @@ Route::get('/offers/visibility-audit/checkout', [VisibilityAuditFunnelTrackingCo
 // attachment + WhatsApp button both point here). Authorized purely by
 // knowing the unguessable report_token, same as partner-upload's own token.
 Route::get('/offers/visibility-audit/report/{token}', [VisibilityAuditReportController::class, 'show'])->name('offers.visibility-audit.report');
+
+// Step 5 — the permanent, public quotation-view link a Quotation's WhatsApp
+// send points to (email still gets the PDF attached directly, unchanged).
+// Authorized purely by knowing the unguessable public_token.
+Route::get('/quotations/view/{token}', [QuotationPublicController::class, 'show'])->name('quotations.public-pdf');
 
 // Internal CRM — no public landing page. Send visitors to the right place.
 Route::get('/', function () {

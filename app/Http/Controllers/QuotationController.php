@@ -6,6 +6,7 @@ use App\Actions\ConvertQuotationToInvoice;
 use App\Enums\QuotationApprovalStatus;
 use App\Enums\QuotationStatus;
 use App\Enums\UserRole;
+use App\Jobs\SendQuotationWhatsAppJob;
 use App\Mail\QuotationSent;
 use App\Models\FollowUpReminder;
 use App\Models\Quotation;
@@ -84,6 +85,8 @@ class QuotationController extends Controller
         }
 
         Mail::to($email)->send(new QuotationSent($quotation->load(['customer', 'items'])));
+
+        SendQuotationWhatsAppJob::dispatch($quotation->id);
 
         if ($quotation->status === QuotationStatus::Draft) {
             $quotation->update(['status' => QuotationStatus::Sent]);

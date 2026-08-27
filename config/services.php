@@ -132,6 +132,19 @@ return [
         // Suggested body: "Hi {{1}}, your Visibility Audit is ready! Tap
         // below to view your full report any time." — {{1}} = lead's name.
         'visibility_audit_report_template_name' => env('WADESK_VISIBILITY_AUDIT_REPORT_TEMPLATE_NAME'),
+
+        // Quotation sent — step 5. Fires alongside the existing email send
+        // (QuotationController::send()) for EVERY quotation sent through
+        // the CRM, not just VA-pipeline-originated ones. Same Dynamic-URL
+        // button contract (button's own {{1}} = Quotation.public_token,
+        // sent as buttonUrlParam, appended to the public quotation-view
+        // link — the PDF is never attached directly, same "wadesk has no
+        // document-header support" reasoning as the audit report). Utility
+        // message (a direct follow-up to something the client asked for).
+        // Suggested body: "Hi {{1}}, your quotation from Niranjan
+        // Enterprises Digital Solutions is ready! Tap below to view it
+        // any time." — {{1}} = customer's billing contact name.
+        'quotation_sent_template_name' => env('WADESK_QUOTATION_SENT_TEMPLATE_NAME'),
     ],
 
     // nedsdrishti.in — agency service delivery platform.
