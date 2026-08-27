@@ -68,6 +68,7 @@ use App\Http\Controllers\VisibilityAuditDashboardController;
 use App\Http\Controllers\VisibilityAuditFunnelTrackingController;
 use App\Http\Controllers\VisibilityAuditOfferController;
 use App\Http\Controllers\VisibilityAuditRecoveryController;
+use App\Http\Controllers\VisibilityAuditReportController;
 use App\Http\Controllers\WorkFromHomeRequestController;
 use App\Livewire\ClientImport;
 use App\Livewire\ContractRenewalDashboard;
@@ -100,6 +101,12 @@ Route::get('/offers/visibility-audit', [VisibilityAuditOfferController::class, '
 // to instead of a raw Razorpay Payment Page URL.
 Route::get('/offers/visibility-audit/enter', [VisibilityAuditFunnelTrackingController::class, 'enter'])->name('offers.visibility-audit.enter');
 Route::get('/offers/visibility-audit/checkout', [VisibilityAuditFunnelTrackingController::class, 'checkout'])->name('offers.visibility-audit.checkout');
+
+// Step 4 of the post-payment conversion pipeline — the permanent, public
+// report-view link a paid customer's audit report is shared through (email
+// attachment + WhatsApp button both point here). Authorized purely by
+// knowing the unguessable report_token, same as partner-upload's own token.
+Route::get('/offers/visibility-audit/report/{token}', [VisibilityAuditReportController::class, 'show'])->name('offers.visibility-audit.report');
 
 // Internal CRM — no public landing page. Send visitors to the right place.
 Route::get('/', function () {
@@ -198,6 +205,8 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
         Route::post('leads/{lead}/quotation', [LeadController::class, 'quotation'])->name('leads.quotation');
         Route::post('leads/{lead}/reassign', [LeadController::class, 'reassign'])->name('leads.reassign');
         Route::post('leads/{lead}/visibility-audit/{purchase}/ready', [LeadController::class, 'markVisibilityAuditReady'])->name('leads.visibility-audit.ready');
+        Route::post('leads/{lead}/visibility-audit/{purchase}/report/upload', [LeadController::class, 'uploadVisibilityAuditReport'])->name('leads.visibility-audit.report.upload');
+        Route::post('leads/{lead}/visibility-audit/{purchase}/report/send', [LeadController::class, 'sendVisibilityAuditReport'])->name('leads.visibility-audit.report.send');
         Route::post('leads/bulk-reassign', [LeadController::class, 'bulkReassign'])->name('leads.bulk-reassign');
         Route::resource('leads', LeadController::class)->parameters(['leads' => 'lead']);
     });

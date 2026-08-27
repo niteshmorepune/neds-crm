@@ -531,13 +531,14 @@ class VisibilityAuditFunnelMetrics
      * kind, since nothing surfaced this funnel-stage information there.
      * Returns null for a lead outside the VA cohort entirely (nothing to
      * show). Checked in the same priority order funnelSummary()'s stages
-     * imply — gmeet_held outranks ready_awaiting_gmeet outranks paid
-     * outranks stuck-at-checkout outranks stuck-at-landing, etc. — so a
-     * lead only ever gets its furthest-reached stage, not every stage it
-     * passed through. gmeet_held/ready_awaiting_gmeet/paid all carry a
-     * purchase_id (the Lead page uses it to render the "Mark ready" action
-     * against the right purchase) — every earlier stage has no purchase
-     * yet, so purchase_id is simply absent from that stage's array.
+     * imply — report_sent outranks gmeet_held outranks ready_awaiting_gmeet
+     * outranks paid outranks stuck-at-checkout outranks stuck-at-landing,
+     * etc. — so a lead only ever gets its furthest-reached stage, not every
+     * stage it passed through. report_sent/gmeet_held/ready_awaiting_gmeet/
+     * paid all carry a purchase_id (the Lead page uses it to render the
+     * "Mark ready"/"Send Audit Report" actions against the right purchase)
+     * — every earlier stage has no purchase yet, so purchase_id is simply
+     * absent from that stage's array.
      *
      * @return array{stage: string, label: string, tone: string, since: ?Carbon, purchase_id?: int}|null
      */
@@ -549,6 +550,10 @@ class VisibilityAuditFunnelMetrics
 
         $purchase = $lead->visibilityAuditPurchases()->latest()->first();
         if ($purchase !== null) {
+            if ($purchase->report_sent_at !== null) {
+                return ['stage' => 'report_sent', 'label' => 'Audit report sent', 'tone' => 'green', 'since' => $purchase->report_sent_at, 'purchase_id' => $purchase->id];
+            }
+
             if ($purchase->audit_ready_at !== null) {
                 if ($purchase->hasHeldGmeet()) {
                     return ['stage' => 'gmeet_held', 'label' => 'Gmeet held — ready to share the audit report', 'tone' => 'green', 'since' => $purchase->audit_ready_at, 'purchase_id' => $purchase->id];

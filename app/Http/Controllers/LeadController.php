@@ -12,6 +12,8 @@ use App\Http\Requests\LeadBulkReassignRequest;
 use App\Http\Requests\LeadReassignRequest;
 use App\Http\Requests\LeadStoreRequest;
 use App\Http\Requests\LeadUpdateRequest;
+use App\Jobs\SendVisibilityAuditReportEmailJob;
+use App\Jobs\SendVisibilityAuditReportJob;
 use App\Models\Lead;
 use App\Models\Service;
 use App\Models\User;
@@ -343,6 +345,60 @@ class LeadController extends Controller
         }
 
         return back()->with('status', 'Marked ready — the owner has been notified to schedule the Gmeet.');
+    }
+
+    /**
+     * Step 4 of the post-payment Visibility Audit conversion pipeline:
+     * upload the finished report file, ready to send. Replaces (not adds
+     * to) any earlier upload — VisibilityAuditPurchase::attachments() is
+     * ordered latest-first and reportAttachment() only ever reads the
+     * newest one, so an old upload just becomes unreachable rather than
+     * needing an explicit delete-first step.
+     */
+    public function uploadVisibilityAuditReport(Request $request, Lead $lead, VisibilityAuditPurchase $purchase): RedirectResponse
+    {
+        $this->authorize('manageMeetings', $lead);
+        abort_unless($purchase->lead_id === $lead->id, 404);
+
+        $request->validate(['file' => ['required', 'file', 'max:20480']]);
+        $file = $request->file('file');
+
+        $purchase->attachments()->create([
+            'uploaded_by' => $this->user()->id,
+            'disk' => 'local',
+            'path' => $file->store('attachments', 'local'),
+            'original_name' => $file->getClientOriginalName(),
+            'mime_type' => $file->getClientMimeType(),
+            'size' => $file->getSize(),
+        ]);
+
+        return back()->with('status', 'Report uploaded.');
+    }
+
+    /**
+     * Step 4: one-click send, both channels. Deliberately gated on
+     * hasHeldGmeet() (step 3's whole point) rather than just "has an
+     * attachment" — the report must never go out before the call. No
+     * idempotency guard: a deliberate resend is valid, so report_sent_at/
+     * report_sent_by are simply overwritten on every click, and both jobs
+     * are dispatched fresh every time.
+     */
+    public function sendVisibilityAuditReport(Lead $lead, VisibilityAuditPurchase $purchase): RedirectResponse
+    {
+        $this->authorize('manageMeetings', $lead);
+        abort_unless($purchase->lead_id === $lead->id, 404);
+        abort_unless($purchase->hasHeldGmeet(), 409, 'The Gmeet hasn\'t happened yet.');
+        abort_unless($purchase->reportAttachment() !== null, 409, 'Upload the report first.');
+
+        $purchase->update([
+            'report_sent_at' => now(),
+            'report_sent_by' => $this->user()->id,
+        ]);
+
+        SendVisibilityAuditReportJob::dispatch($purchase->id);
+        SendVisibilityAuditReportEmailJob::dispatch($purchase->id);
+
+        return back()->with('status', 'Audit report sent — email and WhatsApp.');
     }
 
     /**

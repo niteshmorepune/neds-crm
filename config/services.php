@@ -119,6 +119,19 @@ return [
         // working on your Visibility Audit. We'll let you know here the
         // moment it's ready to walk you through." Ships inert until set.
         'visibility_audit_in_progress_template_name' => env('WADESK_VISIBILITY_AUDIT_IN_PROGRESS_TEMPLATE_NAME'),
+
+        // "Send Audit Report" (App\Jobs\SendVisibilityAuditReportJob) —
+        // step 4 of the post-payment conversion pipeline, triggered by a
+        // manual one-click staff action (never scheduled), gated on the
+        // Gmeet having actually happened (step 3). Same Dynamic-URL button
+        // contract as the other templates (button's own {{1}} =
+        // VisibilityAuditPurchase.report_token, sent as buttonUrlParam,
+        // appended to /offers/visibility-audit/report — a permanent,
+        // unguessable link, not the lead id). This is a Utility message
+        // (a direct follow-up to a paid, already-in-progress request).
+        // Suggested body: "Hi {{1}}, your Visibility Audit is ready! Tap
+        // below to view your full report any time." — {{1}} = lead's name.
+        'visibility_audit_report_template_name' => env('WADESK_VISIBILITY_AUDIT_REPORT_TEMPLATE_NAME'),
     ],
 
     // nedsdrishti.in — agency service delivery platform.

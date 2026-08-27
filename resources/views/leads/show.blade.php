@@ -82,6 +82,34 @@
                                     </button>
                                 </form>
                             @endif
+
+                            @if (in_array($vaFunnelStatus['stage'], ['gmeet_held', 'report_sent']) && $canManageMeetings)
+                                @php
+                                    $vaPurchase = $lead->visibilityAuditPurchases()->find($vaFunnelStatus['purchase_id']);
+                                    $vaReportAttachment = $vaPurchase?->reportAttachment();
+                                @endphp
+                                <div class="mt-2 space-y-2">
+                                    @if ($vaReportAttachment)
+                                        <div class="text-xs">
+                                            Report: <a href="{{ route('attachments.download', $vaReportAttachment) }}" class="underline">{{ $vaReportAttachment->original_name }}</a>
+                                            ({{ $vaReportAttachment->humanSize() }})
+                                        </div>
+                                        <form method="POST" action="{{ route('leads.visibility-audit.report.send', [$lead, $vaPurchase]) }}">
+                                            @csrf
+                                            <button type="submit" class="rounded-md bg-white px-2 py-1 text-xs font-medium text-green-800 border border-green-300 hover:bg-green-100">
+                                                {{ $vaFunnelStatus['stage'] === 'report_sent' ? 'Resend Audit Report — email + WhatsApp' : 'Send Audit Report — email + WhatsApp' }}
+                                            </button>
+                                        </form>
+                                    @endif
+                                    <form method="POST" action="{{ route('leads.visibility-audit.report.upload', [$lead, $vaPurchase]) }}" enctype="multipart/form-data" class="flex items-center gap-2">
+                                        @csrf
+                                        <input type="file" name="file" required class="text-xs" />
+                                        <button type="submit" class="rounded-md bg-white px-2 py-1 text-xs font-medium text-gray-700 border border-gray-300 hover:bg-gray-100">
+                                            {{ $vaReportAttachment ? 'Replace report file' : 'Upload report file' }}
+                                        </button>
+                                    </form>
+                                </div>
+                            @endif
                         </div>
                     @endif
                 </div>
