@@ -7,6 +7,9 @@ use App\Models\CallLog;
 use App\Models\Lead;
 use App\Models\Meeting;
 use App\Models\Note;
+use App\Models\VisibilityAuditFunnelEvent;
+use App\Models\VisibilityAuditPurchase;
+use App\Models\VisibilityAuditTouch;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
@@ -43,6 +46,14 @@ class MergeLeads
 
             Meeting::where('meetable_type', Lead::class)->where('meetable_id', $duplicate->id)
                 ->update(['meetable_id' => $primary->id]);
+
+            // Visibility Audit funnel data — a purchase/touch/funnel-event
+            // still pointing at a soft-deleted duplicate becomes invisible
+            // to isVisibilityAuditCohort()/the Lead page exactly like an
+            // orphaned record (see the 2026-08-27 cohort-detection fix).
+            VisibilityAuditPurchase::where('lead_id', $duplicate->id)->update(['lead_id' => $primary->id]);
+            VisibilityAuditTouch::where('lead_id', $duplicate->id)->update(['lead_id' => $primary->id]);
+            VisibilityAuditFunnelEvent::where('lead_id', $duplicate->id)->update(['lead_id' => $primary->id]);
 
             // Re-home the duplicate's own history onto the surviving record
             // so its full timeline (creation, edits, status changes) stays

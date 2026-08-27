@@ -2,12 +2,19 @@
 
 use App\Actions\MergeLeads;
 use App\Enums\LeadStatus;
+use App\Enums\VisibilityAuditFunnelEventType;
+use App\Enums\VisibilityAuditTier;
+use App\Enums\VisibilityAuditTouchChannel;
+use App\Enums\VisibilityAuditTouchType;
 use App\Models\Activity;
 use App\Models\CallLog;
 use App\Models\Lead;
 use App\Models\Meeting;
 use App\Models\Note;
 use App\Models\User;
+use App\Models\VisibilityAuditFunnelEvent;
+use App\Models\VisibilityAuditPurchase;
+use App\Models\VisibilityAuditTouch;
 
 it('applies the given field values to the primary lead', function () {
     $user = User::factory()->create();
@@ -37,6 +44,31 @@ it('reassigns the duplicate\'s notes, call logs, and meetings onto the primary l
         ->and($note->fresh()->notable_type)->toBe(Lead::class)
         ->and($call->fresh()->callable_id)->toBe($primary->id)
         ->and($meeting->fresh()->meetable_id)->toBe($primary->id);
+});
+
+it('reassigns the duplicate\'s Visibility Audit purchase, touches, and funnel events onto the primary lead', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+    $primary = Lead::factory()->create();
+    $duplicate = Lead::factory()->create();
+
+    $purchase = VisibilityAuditPurchase::create([
+        'tier' => VisibilityAuditTier::Gbp, 'amount_paise' => 12000,
+        'razorpay_payment_id' => 'pay_merge1', 'lead_id' => $duplicate->id,
+    ]);
+    $touch = VisibilityAuditTouch::create([
+        'lead_id' => $duplicate->id, 'touch_type' => VisibilityAuditTouchType::FirstInvite,
+        'channel' => VisibilityAuditTouchChannel::AiWhatsapp, 'occurred_at' => now(), 'success' => true,
+    ]);
+    $event = VisibilityAuditFunnelEvent::create([
+        'event_type' => VisibilityAuditFunnelEventType::LandingViewed, 'lead_id' => $duplicate->id,
+    ]);
+
+    (new MergeLeads)->handle($primary, $duplicate, []);
+
+    expect($purchase->fresh()->lead_id)->toBe($primary->id)
+        ->and($touch->fresh()->lead_id)->toBe($primary->id)
+        ->and($event->fresh()->lead_id)->toBe($primary->id);
 });
 
 it('reassigns the duplicate\'s activity history onto the primary lead', function () {
