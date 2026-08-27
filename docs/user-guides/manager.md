@@ -486,10 +486,12 @@ above), with a pickable date range instead of a fixed 7 days:
 
 **Message Log** ("Message log →" at the top of the dashboard) is the
 detailed "when and to whom" record behind the AI-WhatsApp numbers: every
-send attempt (first invite, recovery nudge, payment confirmation), the
-exact time, which lead, and whether it succeeded or failed — filterable by
-message type and outcome. Use this whenever something looks off in the
-funnel (a lead who should've been invited but wasn't, a stage that isn't
+send attempt (first invite, recovery nudge, payment confirmation, the
+"audit in progress" update sent ~30 min after payment, and the audit
+report itself once someone clicks Send Audit Report), the exact time,
+which lead, and whether it succeeded or failed — filterable by message
+type and outcome. Use this whenever something looks off in the funnel (a
+lead who should've been invited but wasn't, a stage that isn't
 converting) to check whether the automation actually tried and what
 happened.
 
@@ -515,7 +517,13 @@ without needing access to this Admin/Manager-only page. Every lead in
 the funnel also carries a colored **"Visibility Audit:"** status badge
 on its own page (e.g. "Reached checkout, hasn't paid") — the same stage
 this dashboard and the worklist already track, just visible without
-needing either one open.
+needing either one open. Once a lead pays, that badge also carries the
+next action: **Mark audit ready** (once the audit itself is prepared,
+notifies the lead's owner to schedule the 15-minute walkthrough call) and
+**Send Audit Report** (emails the report and sends a WhatsApp link, only
+once that call has actually happened) — see the Sales guide's Lead
+Generation section for the full step-by-step, since Sales is who
+normally clicks these.
 
 ## Employee 360°
 Sidebar → **Employee 360°** — one consolidated page per employee: this

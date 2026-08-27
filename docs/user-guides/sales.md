@@ -148,6 +148,26 @@ also shows a colored **"Visibility Audit:"** badge (e.g. "Reached
 checkout, hasn't paid") right under its name, so you don't need to come
 back to this list to remember why a lead needs a call.
 
+**Once a lead pays ₹120 for the audit**, the rest of the journey is mostly
+automatic, with two points where you take over:
+1. The moment payment clears, the client gets an automatic thank-you on
+   WhatsApp and email — nothing for you to do.
+2. About 30 minutes later, they get a short "work has started" update on
+   both channels too — again, automatic.
+3. Once the audit itself is actually ready, click **Mark audit ready** on
+   the lead's **"Visibility Audit:"** badge — this notifies you (the
+   lead's owner) to go ahead and schedule the 15-minute Gmeet walkthrough
+   with the client, the same way you'd schedule any other meeting.
+4. After you've held that call, upload the finished report file and click
+   **Send Audit Report** — this emails the client the real file as an
+   attachment and sends a WhatsApp message with a link to view it online,
+   both from one click. The button only works once the Gmeet has actually
+   happened — the report is never meant to go out before you've walked
+   the client through it live.
+5. From there it's the usual flow: **Send Quotation** (Section 3 below),
+   which now also sends a WhatsApp message alongside the email, and the
+   client can pay a milestone advance online themselves once it's sent.
+
 Below that whole-team queue, two more sections show just **your own**
 leads: **Your gaps** (your leads missing a service tag, stuck waiting on a
 call, or who replied on WhatsApp with no response from you yet — each
