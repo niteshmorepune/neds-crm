@@ -217,7 +217,9 @@ class VisibilityAuditFunnelMetrics
             fn ($row) => $row->{$column}->timezone($tz)->toDateString()
         )->map->count();
 
-        $eligibleByDay = $bucket($this->eligibleLeadsQuery($from, $to)->get(['created_at']), 'created_at');
+        $eligibleLeads = $this->eligibleLeadsQuery($from, $to)->get(['id', 'created_at']);
+        $eligibleIds = $eligibleLeads->pluck('id');
+        $eligibleByDay = $bucket($eligibleLeads, 'created_at');
         $invitedByDay = $bucket(
             Lead::whereNotNull('visibility_audit_invited_at')
                 ->whereBetween('visibility_audit_invited_at', [$from, $to])
@@ -234,7 +236,17 @@ class VisibilityAuditFunnelMetrics
                 ->whereBetween('created_at', [$from, $to])->get(['created_at']),
             'created_at'
         );
-        $paidByDay = $bucket(VisibilityAuditPurchase::whereBetween('created_at', [$from, $to])->get(['created_at']), 'created_at');
+        // Scoped to the same eligible (meta_leadgen_id + GMB) cohort as every
+        // other series above and as funnelSummary()'s own 'paid' tile —
+        // unscoped previously, which let a purchase from a lead with no Meta
+        // attribution (e.g. a direct/organic checkout) inflate this series
+        // past the summary tile's count (real incident, 2026-08-27: owner
+        // reported the daily chart showing 8 paid against the tile's 6).
+        $paidByDay = $bucket(
+            VisibilityAuditPurchase::whereIn('lead_id', $eligibleIds)
+                ->whereBetween('created_at', [$from, $to])->get(['created_at']),
+            'created_at'
+        );
 
         $trend = [];
         foreach (CarbonPeriod::create($from->copy()->timezone($tz)->startOfDay(), '1 day', $to->copy()->timezone($tz)->startOfDay()) as $day) {

@@ -98,6 +98,29 @@ it('does not mis-bucket a lead created just after IST midnight into the previous
         ->and($yesterday['eligible'])->toBe(0);
 });
 
+it('excludes a purchase from a non-eligible (no meta_leadgen_id) lead from the daily "paid" series, matching funnelSummary()\'s tile', function () {
+    // Real incident, 2026-08-27: the daily trend's "Paid" series had no
+    // eligibility scoping at all, so a purchase from a lead with no Meta
+    // attribution (e.g. a direct/organic checkout) inflated it past the
+    // funnelSummary() tile's count on the same dashboard (8 vs 6).
+    $from = now()->subDays(2)->startOfDay();
+    $to = now()->endOfDay();
+
+    $eligible = Lead::factory()->create(['meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => $this->gmb->id]);
+    VisibilityAuditPurchase::create(['tier' => VisibilityAuditTier::Gbp, 'amount_paise' => 12000, 'razorpay_payment_id' => 'pay_elig1', 'lead_id' => $eligible->id]);
+
+    $notEligible = Lead::factory()->create(['meta_leadgen_id' => null, 'service_id' => $this->gmb->id]);
+    VisibilityAuditPurchase::create(['tier' => VisibilityAuditTier::Gbp, 'amount_paise' => 12000, 'razorpay_payment_id' => 'pay_noelig1', 'lead_id' => $notEligible->id]);
+
+    $trend = $this->metrics->trend($from, $to);
+    $totalPaidInTrend = collect($trend)->sum('paid');
+
+    $summary = $this->metrics->funnelSummary($from, $to);
+
+    expect($totalPaidInTrend)->toBe(1)
+        ->and($totalPaidInTrend)->toBe($summary['paid']);
+});
+
 // ──────────────────────────────────────────────────────────────────────────────
 // leadsForStage()
 // ──────────────────────────────────────────────────────────────────────────────
