@@ -531,11 +531,15 @@ class VisibilityAuditFunnelMetrics
      * kind, since nothing surfaced this funnel-stage information there.
      * Returns null for a lead outside the VA cohort entirely (nothing to
      * show). Checked in the same priority order funnelSummary()'s stages
-     * imply — paid outranks stuck-at-checkout outranks stuck-at-landing,
-     * etc. — so a lead only ever gets its furthest-reached stage, not every
-     * stage it passed through.
+     * imply — gmeet_held outranks ready_awaiting_gmeet outranks paid
+     * outranks stuck-at-checkout outranks stuck-at-landing, etc. — so a
+     * lead only ever gets its furthest-reached stage, not every stage it
+     * passed through. gmeet_held/ready_awaiting_gmeet/paid all carry a
+     * purchase_id (the Lead page uses it to render the "Mark ready" action
+     * against the right purchase) — every earlier stage has no purchase
+     * yet, so purchase_id is simply absent from that stage's array.
      *
-     * @return array{stage: string, label: string, tone: string, since: ?Carbon}|null
+     * @return array{stage: string, label: string, tone: string, since: ?Carbon, purchase_id?: int}|null
      */
     public function funnelStatusFor(Lead $lead): ?array
     {
@@ -545,7 +549,15 @@ class VisibilityAuditFunnelMetrics
 
         $purchase = $lead->visibilityAuditPurchases()->latest()->first();
         if ($purchase !== null) {
-            return ['stage' => 'paid', 'label' => 'Paid — Visibility Audit purchased', 'tone' => 'green', 'since' => $purchase->created_at];
+            if ($purchase->audit_ready_at !== null) {
+                if ($purchase->hasHeldGmeet()) {
+                    return ['stage' => 'gmeet_held', 'label' => 'Gmeet held — ready to share the audit report', 'tone' => 'green', 'since' => $purchase->audit_ready_at, 'purchase_id' => $purchase->id];
+                }
+
+                return ['stage' => 'ready_awaiting_gmeet', 'label' => 'Audit ready — Gmeet not scheduled/held yet', 'tone' => 'amber', 'since' => $purchase->audit_ready_at, 'purchase_id' => $purchase->id];
+            }
+
+            return ['stage' => 'paid', 'label' => 'Paid — Visibility Audit purchased', 'tone' => 'green', 'since' => $purchase->created_at, 'purchase_id' => $purchase->id];
         }
 
         $checkoutEvent = $lead->visibilityAuditFunnelEvents()

@@ -15,6 +15,8 @@ use App\Http\Requests\LeadUpdateRequest;
 use App\Models\Lead;
 use App\Models\Service;
 use App\Models\User;
+use App\Models\VisibilityAuditPurchase;
+use App\Notifications\VisibilityAuditReadyForGmeet;
 use App\Services\VisibilityAuditFunnelMetrics;
 use App\Support\Money;
 use Illuminate\Database\Eloquent\Collection;
@@ -309,6 +311,38 @@ class LeadController extends Controller
             'customer_id' => $lead->converted_customer_id,
             'deal_id' => $deal?->id,
         ]));
+    }
+
+    /**
+     * Step 3 of the post-payment Visibility Audit conversion pipeline:
+     * staff marks the audit content as prepared, which notifies the Lead's
+     * owner to schedule the 15-min Gmeet — deliberately manual (there's no
+     * way to auto-detect "a human finished preparing a slide deck"), but
+     * the resulting notification is automatic so this doesn't just become
+     * a silent status flag nobody acts on.
+     */
+    public function markVisibilityAuditReady(Lead $lead, VisibilityAuditPurchase $purchase): RedirectResponse
+    {
+        // manageMeetings(), not update() — same reasoning as
+        // MeetingImport/LeadPolicy::manageMeetings() itself: this action is
+        // meeting-adjacent (it triggers the Gmeet-scheduling reminder), not
+        // general lead editing, so it should be reachable by the same
+        // Admin/Manager/Sales/Support set that can already create a
+        // meeting on this lead, not narrowed to update()'s owning-Sales-only
+        // rule (which would 403 a Support user the button was shown to).
+        $this->authorize('manageMeetings', $lead);
+        abort_unless($purchase->lead_id === $lead->id, 404);
+
+        if ($purchase->audit_ready_at === null) {
+            $purchase->update([
+                'audit_ready_at' => now(),
+                'audit_ready_by' => $this->user()->id,
+            ]);
+
+            $lead->owner?->notify(new VisibilityAuditReadyForGmeet($purchase));
+        }
+
+        return back()->with('status', 'Marked ready — the owner has been notified to schedule the Gmeet.');
     }
 
     /**

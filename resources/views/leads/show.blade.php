@@ -74,6 +74,14 @@
                             @if ($vaFunnelStatus['since'])
                                 <span class="text-xs opacity-75">({{ $vaFunnelStatus['since']->diffForHumans() }})</span>
                             @endif
+                            @if ($vaFunnelStatus['stage'] === 'paid' && $canManageMeetings)
+                                <form method="POST" action="{{ route('leads.visibility-audit.ready', [$lead, $vaFunnelStatus['purchase_id']]) }}" class="mt-2">
+                                    @csrf
+                                    <button type="submit" class="rounded-md bg-white px-2 py-1 text-xs font-medium text-green-800 border border-green-300 hover:bg-green-100">
+                                        Mark audit ready — notify owner to schedule Gmeet
+                                    </button>
+                                </form>
+                            @endif
                         </div>
                     @endif
                 </div>
