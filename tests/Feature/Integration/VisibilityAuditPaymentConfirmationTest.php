@@ -5,6 +5,7 @@ use App\Enums\VisibilityAuditTouchType;
 use App\Jobs\RecordVisibilityAuditPurchase;
 use App\Jobs\SendVisibilityAuditPaymentConfirmationJob;
 use App\Jobs\SendVisibilityAuditPaymentReceiptEmailJob;
+use App\Jobs\SendVisibilityAuditPurchaseAlertJob;
 use App\Mail\VisibilityAuditPaymentReceived;
 use App\Models\Lead;
 use App\Models\User;
@@ -221,6 +222,26 @@ it('dispatches SendVisibilityAuditPaymentReceiptEmailJob when RecordVisibilityAu
 
     Queue::assertPushed(
         SendVisibilityAuditPaymentReceiptEmailJob::class,
+        fn ($job) => $job->purchaseId === $purchase->id,
+    );
+});
+
+it('dispatches SendVisibilityAuditPurchaseAlertJob for every purchase, matched-lead or not', function () {
+    Queue::fake();
+
+    (new RecordVisibilityAuditPurchase(
+        paymentId: 'pay_va_test4',
+        orderId: 'order_va_test4',
+        amountPaise: 12000,
+        phone: null,
+        email: 'priya@shah.test',
+        name: 'Priya Shah',
+    ))->handle();
+
+    $purchase = VisibilityAuditPurchase::where('razorpay_payment_id', 'pay_va_test4')->first();
+
+    Queue::assertPushed(
+        SendVisibilityAuditPurchaseAlertJob::class,
         fn ($job) => $job->purchaseId === $purchase->id,
     );
 });

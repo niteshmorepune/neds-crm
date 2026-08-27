@@ -81,6 +81,13 @@ class RecordVisibilityAuditPurchase implements ShouldQueue
         // configured; see the job's own docblock.
         SendVisibilityAuditPaymentConfirmationJob::dispatch($purchase->id);
 
+        // Unmistakable staff-facing alert — every purchase, whether it ends
+        // up matching an existing Lead, creating a new one, or finding no
+        // phone at all. See the job's own docblock for the real incident
+        // this closes (2026-08-27: a payment with no staff-facing signal at
+        // all got missed and its auto-created Lead deleted as noise).
+        SendVisibilityAuditPurchaseAlertJob::dispatch($purchase->id);
+
         // Email half of the same thank-you — no-ops when the purchase has
         // no payer_email; see the job's own docblock.
         SendVisibilityAuditPaymentReceiptEmailJob::dispatch($purchase->id);
