@@ -98,6 +98,23 @@ it('respects a custom date range', function () {
     ]))->assertOk();
 });
 
+it('shows the true total purchases figure, unscoped by Meta attribution, alongside the eligible-only "Paid" tile', function () {
+    Queue::fake();
+    $gmb = Service::factory()->create(['name' => 'GMB', 'is_active' => true]);
+    $eligibleLead = Lead::factory()->create(['meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => $gmb->id]);
+    VisibilityAuditPurchase::create(['tier' => VisibilityAuditTier::Gbp, 'amount_paise' => 12000, 'razorpay_payment_id' => 'pay_total1', 'lead_id' => $eligibleLead->id]);
+
+    $otherLead = Lead::factory()->create(['meta_leadgen_id' => null]);
+    VisibilityAuditPurchase::create(['tier' => VisibilityAuditTier::Gbp, 'amount_paise' => 12000, 'razorpay_payment_id' => 'pay_total2', 'lead_id' => $otherLead->id]);
+
+    $manager = User::factory()->role(UserRole::Manager)->create();
+
+    $this->actingAs($manager)->get(route('reports.visibility-audit-funnel'))
+        ->assertOk()
+        ->assertSee('All Visibility Audit purchases')
+        ->assertSee('no Meta attribution');
+});
+
 // ──────────────────────────────────────────────────────────────────────────────
 // leads() — the stage drill-down
 // ──────────────────────────────────────────────────────────────────────────────
@@ -181,4 +198,48 @@ it('filters the message log by outcome', function () {
     $this->actingAs($manager)->get(route('reports.visibility-audit-funnel.messages', ['outcome' => 'failed']))
         ->assertOk()
         ->assertDontSee('Filter Test Lead');
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// purchases() — the true, unscoped purchase list
+// ──────────────────────────────────────────────────────────────────────────────
+
+it('redirects a guest away from the purchases list', function () {
+    $this->get(route('reports.visibility-audit-funnel.purchases'))->assertRedirect('/login');
+});
+
+it('forbids a Sales user from the purchases list', function () {
+    $sales = User::factory()->role(UserRole::Sales)->create();
+
+    $this->actingAs($sales)->get(route('reports.visibility-audit-funnel.purchases'))->assertForbidden();
+});
+
+it('lists every purchase for a Manager, including one from a lead with no Meta attribution', function () {
+    $metaLead = Lead::factory()->create(['meta_leadgen_id' => 'lg_'.uniqid(), 'name' => 'Meta Attributed Lead']);
+    VisibilityAuditPurchase::create(['tier' => VisibilityAuditTier::Gbp, 'amount_paise' => 12000, 'razorpay_payment_id' => 'pay_list1', 'payer_name' => 'Priya Shah', 'lead_id' => $metaLead->id]);
+
+    $otherLead = Lead::factory()->create(['meta_leadgen_id' => null, 'name' => 'Non-Meta Lead']);
+    VisibilityAuditPurchase::create(['tier' => VisibilityAuditTier::Gbp, 'amount_paise' => 12000, 'razorpay_payment_id' => 'pay_list2', 'payer_name' => 'Rakesh Kadam', 'lead_id' => $otherLead->id]);
+
+    $manager = User::factory()->role(UserRole::Manager)->create();
+
+    $this->actingAs($manager)->get(route('reports.visibility-audit-funnel.purchases'))
+        ->assertOk()
+        ->assertSee('Priya Shah')
+        ->assertSee('Meta Attributed Lead')
+        ->assertSee('Rakesh Kadam')
+        ->assertSee('Non-Meta Lead')
+        ->assertSee('Meta lead')
+        ->assertSee('Other');
+});
+
+it('shows "No lead matched" for an anonymous purchase with no lead_id', function () {
+    VisibilityAuditPurchase::create(['tier' => VisibilityAuditTier::Gbp, 'amount_paise' => 12000, 'razorpay_payment_id' => 'pay_list3', 'payer_name' => 'Anonymous Payer', 'lead_id' => null]);
+
+    $manager = User::factory()->role(UserRole::Manager)->create();
+
+    $this->actingAs($manager)->get(route('reports.visibility-audit-funnel.purchases'))
+        ->assertOk()
+        ->assertSee('Anonymous Payer')
+        ->assertSee('No lead matched');
 });

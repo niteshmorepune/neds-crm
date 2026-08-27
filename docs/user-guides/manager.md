@@ -493,6 +493,17 @@ funnel (a lead who should've been invited but wasn't, a stage that isn't
 converting) to check whether the automation actually tried and what
 happened.
 
+**All Visibility Audit purchases** (the tile below the stage counts, "View
+all →") is the true total for the window — every ₹120 payment, regardless
+of whether the payer ever came through Meta Ads. The **Paid** tile above
+it and the daily trend chart are both deliberately scoped to just the
+Meta lead-form → GMB cohort, so a purchase from someone who paid via a
+manually-shared landing page link (no Meta history at all) won't show
+there — but it always shows here, tagged **Other** instead of **Meta
+lead**, with a link to the matched lead if one exists. Check this list
+if the two numbers ever disagree and you want to see exactly who
+accounts for the difference.
+
 The **Visibility Audit Recovery** worklist (Lead Generation → the "Audit
 Recovery" button) is where you or Sales/Telecaller actually work a stuck
 lead one at a time — this dashboard is the oversight view, not a place to

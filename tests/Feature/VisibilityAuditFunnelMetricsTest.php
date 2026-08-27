@@ -60,6 +60,31 @@ it('returns null (not zero or a division error) for a percentage whose denominat
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
+// totalPurchases() / purchasesQuery() — unscoped by Meta attribution
+// ──────────────────────────────────────────────────────────────────────────────
+
+it('totalPurchases() counts every purchase in the window, including one with no Meta attribution', function () {
+    $metaLead = Lead::factory()->create(['meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => $this->gmb->id]);
+    VisibilityAuditPurchase::create(['tier' => VisibilityAuditTier::Gbp, 'amount_paise' => 12000, 'razorpay_payment_id' => 'pay_total_a', 'lead_id' => $metaLead->id]);
+
+    $otherLead = Lead::factory()->create(['meta_leadgen_id' => null]);
+    VisibilityAuditPurchase::create(['tier' => VisibilityAuditTier::Gbp, 'amount_paise' => 12000, 'razorpay_payment_id' => 'pay_total_b', 'lead_id' => $otherLead->id]);
+
+    expect($this->metrics->totalPurchases())->toBe(2)
+        ->and($this->metrics->funnelSummary()['paid'])->toBe(1);
+});
+
+it('purchasesQuery() respects the from/to window and orders latest first', function () {
+    $inWindow = VisibilityAuditPurchase::create(['tier' => VisibilityAuditTier::Gbp, 'amount_paise' => 12000, 'razorpay_payment_id' => 'pay_win_a']);
+    $outOfWindow = VisibilityAuditPurchase::create(['tier' => VisibilityAuditTier::Gbp, 'amount_paise' => 12000, 'razorpay_payment_id' => 'pay_win_b']);
+    $outOfWindow->forceFill(['created_at' => now()->subDays(90)])->saveQuietly();
+
+    $results = $this->metrics->purchasesQuery(now()->subDays(2), now())->get();
+
+    expect($results->pluck('id')->all())->toBe([$inWindow->id]);
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
 // trend()
 // ──────────────────────────────────────────────────────────────────────────────
 

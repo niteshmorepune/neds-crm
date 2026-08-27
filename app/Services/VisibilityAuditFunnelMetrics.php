@@ -12,6 +12,7 @@ use App\Models\VisibilityAuditFunnelEvent;
 use App\Models\VisibilityAuditPurchase;
 use App\Models\VisibilityAuditTouch;
 use Carbon\CarbonPeriod;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
 
@@ -198,6 +199,34 @@ class VisibilityAuditFunnelMetrics
         $summary['overall_pct'] = $this->pct($summary['paid'], $summary['eligible']);
 
         return $summary;
+    }
+
+    /**
+     * ALL Visibility Audit purchases in the window, regardless of Meta
+     * attribution — deliberately the one figure on this dashboard NOT scoped
+     * to the eligible (meta_leadgen_id + GMB) cohort, unlike funnelSummary()/
+     * trend()'s 'paid'. Real gap found 2026-08-27: after fixing trend() to
+     * match funnelSummary()'s eligible-only 'paid' tile (both now correctly
+     * agree on 6), the owner asked the obvious next question — where does
+     * the true total (8, including 2 real purchases from leads with no Meta
+     * attribution) actually show up. It didn't, anywhere. This is that
+     * number, and purchasesQuery() below is the actual list behind it.
+     */
+    public function totalPurchases(?Carbon $from = null, ?Carbon $to = null): int
+    {
+        return $this->purchasesQuery($from, $to)->count();
+    }
+
+    /**
+     * @return Builder<VisibilityAuditPurchase>
+     */
+    public function purchasesQuery(?Carbon $from = null, ?Carbon $to = null)
+    {
+        return VisibilityAuditPurchase::query()
+            ->with('lead')
+            ->when($from, fn ($q) => $q->where('created_at', '>=', $from))
+            ->when($to, fn ($q) => $q->where('created_at', '<=', $to))
+            ->latest('created_at');
     }
 
     /**

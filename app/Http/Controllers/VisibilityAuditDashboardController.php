@@ -47,6 +47,27 @@ class VisibilityAuditDashboardController extends Controller
             'awaitingServiceTag' => $metrics->awaitingServiceTag($from, $to),
             'notYetInvited' => $metrics->notYetInvitedCount($from, $to),
             'failedTouches' => $metrics->failedTouchesCount($from, $to),
+            'totalPurchases' => $metrics->totalPurchases($from, $to),
+            'fromInput' => $request->string('from')->value() ?: $from->copy()->timezone(config('app.display_timezone', 'Asia/Kolkata'))->toDateString(),
+            'toInput' => $request->string('to')->value() ?: $to->copy()->timezone(config('app.display_timezone', 'Asia/Kolkata'))->toDateString(),
+        ]);
+    }
+
+    /**
+     * ALL Visibility Audit purchases in the window, regardless of Meta
+     * attribution — the actual list behind totalPurchases()'s count on the
+     * main dashboard. Deliberately unscoped by cohort, unlike leads() above.
+     */
+    public function purchases(Request $request, VisibilityAuditFunnelMetrics $metrics): View
+    {
+        abort_unless($request->user()->hasRole(UserRole::Admin, UserRole::Manager), 403);
+
+        [$from, $to] = $this->dateRange($request);
+
+        $purchases = $metrics->purchasesQuery($from, $to)->paginate(50)->withQueryString();
+
+        return view('reports.visibility-audit-funnel-purchases', [
+            'purchases' => $purchases,
             'fromInput' => $request->string('from')->value() ?: $from->copy()->timezone(config('app.display_timezone', 'Asia/Kolkata'))->toDateString(),
             'toInput' => $request->string('to')->value() ?: $to->copy()->timezone(config('app.display_timezone', 'Asia/Kolkata'))->toDateString(),
         ]);

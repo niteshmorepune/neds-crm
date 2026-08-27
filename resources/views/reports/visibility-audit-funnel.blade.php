@@ -81,6 +81,23 @@
             <p class="mt-2 text-xs text-gray-500">Overall conversion (paid / eligible): <span class="font-medium text-gray-700">{{ $funnel['overall_pct'] !== null ? $funnel['overall_pct'].'%' : '—' }}</span></p>
         </div>
 
+        {{-- True total, unscoped by Meta attribution — see the purchases page for why this can differ from the "Paid" tile above --}}
+        <a href="{{ route('reports.visibility-audit-funnel.purchases', ['from' => $fromInput, 'to' => $toInput]) }}"
+           class="block rounded-lg border border-gray-200 bg-white p-4 shadow-sm hover:ring-1 hover:ring-indigo-300">
+            <div class="flex items-center justify-between">
+                <div>
+                    <div class="text-xs text-gray-500">All Visibility Audit purchases (any source)</div>
+                    <div class="text-xl font-semibold text-gray-900">{{ $totalPurchases }}</div>
+                </div>
+                <span class="text-sm font-medium text-indigo-600">View all →</span>
+            </div>
+            @if ($totalPurchases > $funnel['paid'])
+                <p class="mt-1 text-xs text-amber-700">{{ $totalPurchases - $funnel['paid'] }} of these came from leads with no Meta attribution — not counted in the "Paid" tile above.</p>
+            @else
+                <p class="mt-1 text-xs text-gray-400">Matches the "Paid" tile above — every purchase this window came through the tracked Meta funnel.</p>
+            @endif
+        </a>
+
         {{-- Daily trend --}}
         <div class="rounded-lg bg-white p-4 shadow-sm">
             <p class="mb-3 text-xs font-medium text-gray-500">Daily trend</p>
