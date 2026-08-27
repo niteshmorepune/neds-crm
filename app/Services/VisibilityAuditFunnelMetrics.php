@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\QuotationStatus;
 use App\Enums\VisibilityAuditFunnelEventType;
 use App\Enums\VisibilityAuditTouchChannel;
 use App\Enums\VisibilityAuditTouchType;
@@ -540,12 +541,26 @@ class VisibilityAuditFunnelMetrics
      * — every earlier stage has no purchase yet, so purchase_id is simply
      * absent from that stage's array.
      *
-     * @return array{stage: string, label: string, tone: string, since: ?Carbon, purchase_id?: int}|null
+     * Step 6/7 of the post-payment conversion pipeline added two stages
+     * OUTRANKING report_sent — advance_paid and quotation_sent — for a lead
+     * whose converted Deal has gone on to an actual Quotation. These are
+     * derived from live Quotation/QuotationMilestone/Invoice state, the
+     * same way report_sent/gmeet_held/ready_awaiting_gmeet are derived from
+     * live VisibilityAuditPurchase columns rather than a separate touch-log
+     * entry — no new VisibilityAuditTouchType/VisibilityAuditFunnelEventType
+     * case was needed, consistent with that existing precedent.
+     *
+     * @return array{stage: string, label: string, tone: string, since: ?Carbon, purchase_id?: int, quotation_id?: int}|null
      */
     public function funnelStatusFor(Lead $lead): ?array
     {
         if (! $this->isVisibilityAuditCohort($lead)) {
             return null;
+        }
+
+        $billingStage = $this->postPurchaseBillingStage($lead);
+        if ($billingStage !== null) {
+            return $billingStage;
         }
 
         $purchase = $lead->visibilityAuditPurchases()->latest()->first();
@@ -584,6 +599,58 @@ class VisibilityAuditFunnelMetrics
         }
 
         return ['stage' => 'eligible', 'label' => 'Eligible for the Visibility Audit invite, not yet sent', 'tone' => 'gray', 'since' => null];
+    }
+
+    /**
+     * funnelStatusFor()'s two highest-ranking stages — a lead whose
+     * converted Deal has an actual Quotation in flight. Checked first,
+     * outranking every VisibilityAuditPurchase-derived stage (including
+     * report_sent), since paying an advance only ever happens after the
+     * audit report has already gone out. Returns null for a lead with no
+     * converted Deal, or a Deal with no Quotations yet — falling through to
+     * the purchase-based ladder in that case.
+     */
+    private function postPurchaseBillingStage(Lead $lead): ?array
+    {
+        $deal = $lead->convertedDeal;
+        if ($deal === null) {
+            return null;
+        }
+
+        $quotations = $deal->quotations()->with('milestones.invoice.payments')->get();
+        if ($quotations->isEmpty()) {
+            return null;
+        }
+
+        foreach ($quotations as $quotation) {
+            foreach ($quotation->milestones as $milestone) {
+                if ($milestone->invoice !== null && $milestone->invoice->amount_paid > 0) {
+                    $since = $milestone->invoice->payments->sortByDesc('paid_on')->first()?->created_at
+                        ?? $milestone->invoice->updated_at;
+
+                    return [
+                        'stage' => 'advance_paid',
+                        'label' => "Advance paid — {$milestone->title} (quotation {$quotation->number})",
+                        'tone' => 'green',
+                        'since' => $since,
+                        'quotation_id' => $quotation->id,
+                    ];
+                }
+            }
+        }
+
+        $sentQuotation = $quotations->first(fn ($q) => $q->status !== QuotationStatus::Draft);
+        if ($sentQuotation !== null) {
+            return [
+                'stage' => 'quotation_sent',
+                'label' => "Quotation sent — #{$sentQuotation->number}",
+                'tone' => 'amber',
+                'since' => $sentQuotation->updated_at,
+                'quotation_id' => $sentQuotation->id,
+            ];
+        }
+
+        return null;
     }
 
     private function eligibleLeadsQuery(?Carbon $from, ?Carbon $to)

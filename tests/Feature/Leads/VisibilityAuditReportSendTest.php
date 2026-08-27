@@ -1,5 +1,7 @@
 <?php
 
+use App\Enums\PaymentMode;
+use App\Enums\QuotationStatus;
 use App\Enums\UserRole;
 use App\Enums\VisibilityAuditTier;
 use App\Enums\VisibilityAuditTouchChannel;
@@ -7,8 +9,11 @@ use App\Enums\VisibilityAuditTouchType;
 use App\Jobs\SendVisibilityAuditReportEmailJob;
 use App\Jobs\SendVisibilityAuditReportJob;
 use App\Mail\VisibilityAuditReportEmail;
+use App\Models\Deal;
+use App\Models\Invoice;
 use App\Models\Lead;
 use App\Models\Meeting;
+use App\Models\Quotation;
 use App\Models\Service;
 use App\Models\User;
 use App\Models\VisibilityAuditPurchase;
@@ -357,6 +362,71 @@ it('shows "report_sent" once the report has gone out, outranking gmeet_held', fu
     $lead = Lead::factory()->create(['meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => $gmb->id]);
     $purchase = reportPurchaseForLead($lead, ['report_sent_at' => now()]);
     heldMeetingFor($lead);
+
+    $status = app(VisibilityAuditFunnelMetrics::class)->funnelStatusFor($lead);
+
+    expect($status['stage'])->toBe('report_sent')->and($status['purchase_id'])->toBe($purchase->id);
+});
+
+it('shows "quotation_sent" once a converted deal has a sent quotation, outranking report_sent', function () {
+    $gmb = Service::factory()->create(['name' => 'GMB', 'is_active' => true]);
+    $lead = Lead::factory()->create(['meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => $gmb->id]);
+    reportPurchaseForLead($lead, ['report_sent_at' => now()]);
+    $deal = Deal::factory()->create();
+    $lead->update(['converted_deal_id' => $deal->id]);
+    $quotation = Quotation::factory()->create([
+        'deal_id' => $deal->id,
+        'status' => QuotationStatus::Sent,
+        'number' => 'NEDS/2026-27/0099',
+    ]);
+
+    $status = app(VisibilityAuditFunnelMetrics::class)->funnelStatusFor($lead);
+
+    expect($status['stage'])->toBe('quotation_sent')
+        ->and($status['quotation_id'])->toBe($quotation->id);
+});
+
+it('does not show quotation_sent for a Draft quotation', function () {
+    $gmb = Service::factory()->create(['name' => 'GMB', 'is_active' => true]);
+    $lead = Lead::factory()->create(['meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => $gmb->id]);
+    $purchase = reportPurchaseForLead($lead, ['report_sent_at' => now()]);
+    $deal = Deal::factory()->create();
+    $lead->update(['converted_deal_id' => $deal->id]);
+    Quotation::factory()->create(['deal_id' => $deal->id, 'status' => QuotationStatus::Draft]);
+
+    $status = app(VisibilityAuditFunnelMetrics::class)->funnelStatusFor($lead);
+
+    expect($status['stage'])->toBe('report_sent')->and($status['purchase_id'])->toBe($purchase->id);
+});
+
+it('shows "advance_paid" once a milestone invoice on the converted deal\'s quotation has a payment, outranking quotation_sent', function () {
+    $gmb = Service::factory()->create(['name' => 'GMB', 'is_active' => true]);
+    $lead = Lead::factory()->create(['meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => $gmb->id]);
+    reportPurchaseForLead($lead, ['report_sent_at' => now()]);
+    $deal = Deal::factory()->create();
+    $lead->update(['converted_deal_id' => $deal->id]);
+    $quotation = Quotation::factory()->create([
+        'deal_id' => $deal->id,
+        'status' => QuotationStatus::Sent,
+        'number' => 'NEDS/2026-27/0100',
+    ]);
+    $invoice = Invoice::factory()->create(['quotation_id' => $quotation->id, 'total' => 59000, 'amount_paid' => 59000]);
+    $milestone = $quotation->milestones()->create(['title' => 'Advance', 'percentage' => 50, 'amount' => 59000, 'sort_order' => 0, 'invoice_id' => $invoice->id]);
+    $invoice->payments()->create(['paid_on' => now()->toDateString(), 'mode' => PaymentMode::Gateway, 'amount' => 59000, 'tds_amount' => 0]);
+
+    $status = app(VisibilityAuditFunnelMetrics::class)->funnelStatusFor($lead);
+
+    expect($status['stage'])->toBe('advance_paid')
+        ->and($status['quotation_id'])->toBe($quotation->id)
+        ->and($status['label'])->toContain($milestone->title);
+});
+
+it('falls back to the purchase-based ladder when the converted deal has no quotations yet', function () {
+    $gmb = Service::factory()->create(['name' => 'GMB', 'is_active' => true]);
+    $lead = Lead::factory()->create(['meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => $gmb->id]);
+    $purchase = reportPurchaseForLead($lead, ['report_sent_at' => now()]);
+    $deal = Deal::factory()->create();
+    $lead->update(['converted_deal_id' => $deal->id]);
 
     $status = app(VisibilityAuditFunnelMetrics::class)->funnelStatusFor($lead);
 
