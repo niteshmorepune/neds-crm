@@ -520,10 +520,23 @@ class VisibilityAuditFunnelMetrics
     }
 
     /**
-     * Whether a Lead belongs to the Visibility Audit cohort at all — either
-     * it matches the eligibility rule (meta_leadgen_id + GMB) directly, or
-     * it already has at least one funnel event (it clicked through a
-     * tracked link at some point, even if its service tag later changed).
+     * Whether a Lead belongs to the Visibility Audit cohort at all — it
+     * matches the eligibility rule (meta_leadgen_id + GMB) directly, OR it
+     * already has at least one funnel event (it clicked through a tracked
+     * link at some point, even if its service tag later changed), OR it has
+     * an actual purchase attached. That third condition matters for a
+     * genuinely real case: RecordVisibilityAuditPurchase auto-creates a bare
+     * Lead (no meta_leadgen_id, no funnel event — the payer's phone matched
+     * no existing open Lead) purely to hold a real payment's attribution.
+     * Real incident, 2026-08-27: two such leads (paid, ₹120 each) were
+     * completely invisible to funnelStatusFor() — no banner, no "Mark
+     * ready"/"Send Audit Report" buttons — because this method returned
+     * false for them, so staff had no way to progress a real, paying
+     * customer through the Gmeet gate or report delivery. This condition
+     * doesn't affect funnelSummary()/trend() (the acquisition dashboard's
+     * own tiles) at all — those key off eligibleLeadsQuery() directly, not
+     * this method — so widening this only affects per-Lead status display
+     * and action-button visibility, never the funnel counts.
      * Used by CallLogController::store() to decide whether a logged call
      * should also become a manual_outreach touch.
      */
@@ -533,7 +546,11 @@ class VisibilityAuditFunnelMetrics
             return true;
         }
 
-        return $lead->visibilityAuditFunnelEvents()->exists();
+        if ($lead->visibilityAuditFunnelEvents()->exists()) {
+            return true;
+        }
+
+        return $lead->visibilityAuditPurchases()->exists();
     }
 
     /**

@@ -282,6 +282,19 @@ it('treats an unrelated lead as out of cohort', function () {
     expect($this->metrics->isVisibilityAuditCohort($lead))->toBeFalse();
 });
 
+it('treats a lead with a purchase as in-cohort, even without meta_leadgen_id or a funnel event', function () {
+    // Real incident, 2026-08-27: RecordVisibilityAuditPurchase auto-creates
+    // a bare Lead (no meta_leadgen_id, no funnel event) when a payer's
+    // phone matches no existing open Lead — that lead was previously
+    // invisible to funnelStatusFor(), so staff had no way to act on a real,
+    // paying customer.
+    $lead = Lead::factory()->create(['meta_leadgen_id' => null]);
+    VisibilityAuditPurchase::create(['tier' => VisibilityAuditTier::Gbp, 'amount_paise' => 12000, 'razorpay_payment_id' => 'pay_bare_'.uniqid(), 'lead_id' => $lead->id]);
+
+    expect($this->metrics->isVisibilityAuditCohort($lead))->toBeTrue()
+        ->and($this->metrics->funnelStatusFor($lead))->not->toBeNull();
+});
+
 // ──────────────────────────────────────────────────────────────────────────────
 // funnelStatusFor()
 // ──────────────────────────────────────────────────────────────────────────────
