@@ -92,13 +92,13 @@ class SendQuotationWhatsAppJob implements ShouldQueue
     }
 
     /**
-     * publicPdfUrl() lazily generates+persists public_token on first call —
+     * publicViewUrl() lazily generates+persists public_token on first call —
      * we only need the token itself here (it's what Meta appends), not the
      * full URL that method returns.
      */
     private function tokenFor(Quotation $quotation): string
     {
-        $quotation->publicPdfUrl();
+        $quotation->publicViewUrl();
 
         return $quotation->public_token;
     }

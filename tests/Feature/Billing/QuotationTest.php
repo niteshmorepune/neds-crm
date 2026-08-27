@@ -495,11 +495,11 @@ it('generates a public_token lazily, once, and reuses it', function () {
 
     expect($quotation->public_token)->toBeNull();
 
-    $url1 = $quotation->publicPdfUrl();
+    $url1 = $quotation->publicViewUrl();
     $token1 = $quotation->fresh()->public_token;
     expect($token1)->not->toBeNull();
 
-    $url2 = $quotation->publicPdfUrl();
+    $url2 = $quotation->publicViewUrl();
 
     expect($url2)->toBe($url1)->and($quotation->fresh()->public_token)->toBe($token1);
 });
@@ -518,17 +518,29 @@ it('returns null from billingPhone() when neither the primary contact nor the cu
     expect($customer->billingPhone())->toBeNull();
 });
 
-it('downloads the quotation via its public token', function () {
+it('renders the public quotation view page with line items and milestones', function () {
     $quotation = quotationWithLine();
 
-    $response = $this->get($quotation->publicPdfUrl());
+    $response = $this->get($quotation->publicViewUrl());
+
+    $response->assertOk()->assertSee($quotation->number)->assertSee('SEO retainer');
+});
+
+it('404s the public quotation view page for an unknown token', function () {
+    $this->get(route('quotations.public-view', 'not-a-real-token'))->assertNotFound();
+});
+
+it('downloads the quotation PDF via its public token', function () {
+    $quotation = quotationWithLine();
+
+    $response = $this->get($quotation->publicDownloadUrl());
 
     $response->assertOk();
     expect($response->getContent())->toStartWith('%PDF');
 });
 
-it('404s the public quotation link for an unknown token', function () {
-    $this->get(route('quotations.public-pdf', 'not-a-real-token'))->assertNotFound();
+it('404s the public quotation download link for an unknown token', function () {
+    $this->get(route('quotations.public-download', 'not-a-real-token'))->assertNotFound();
 });
 
 it('dispatches SendQuotationWhatsAppJob alongside the email when a quotation is sent', function () {

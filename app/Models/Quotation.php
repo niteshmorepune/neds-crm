@@ -78,21 +78,56 @@ class Quotation extends Model
     }
 
     /**
-     * The public, permanent quotation-view link the WhatsApp send
+     * The public, permanent quotation-view page the WhatsApp send
      * (SendQuotationWhatsAppJob) points to — generates public_token lazily
      * on first call if not already set, same shape as
      * VisibilityAuditPurchase::reportUrl(). Deliberately non-expiring, like
      * that link — a client may want to revisit it, and validity_date
      * (whether the OFFER itself is still valid) is a separate business
-     * concern from whether the LINK still resolves.
+     * concern from whether the LINK still resolves. Renders a summary page
+     * (with the online advance-payment button, when eligible — see
+     * nextPayableMilestone()) rather than streaming the PDF directly; see
+     * publicDownloadUrl() for that.
      */
-    public function publicPdfUrl(): string
+    public function publicViewUrl(): string
     {
         if ($this->public_token === null) {
             $this->forceFill(['public_token' => (string) Str::uuid()])->save();
         }
 
-        return route('quotations.public-pdf', $this->public_token);
+        return route('quotations.public-view', $this->public_token);
+    }
+
+    /**
+     * The direct PDF stream, linked from the public view page's "Download
+     * PDF" button. Also lazily generates public_token — either URL may be
+     * the first one a caller asks for.
+     */
+    public function publicDownloadUrl(): string
+    {
+        if ($this->public_token === null) {
+            $this->forceFill(['public_token' => (string) Str::uuid()])->save();
+        }
+
+        return route('quotations.public-download', $this->public_token);
+    }
+
+    /**
+     * The next milestone a client can pay online from the public view page
+     * — the earliest (by sort_order) not yet invoiced — or null when the
+     * quotation has no milestones, isn't sendable yet, or every milestone
+     * is already billed. Milestone billing is optional (see CLAUDE.md:
+     * "for milestone/project work"), so a plain single-line quotation with
+     * no milestones simply never shows an online-payment option; Accounts
+     * converts and invoices it the usual way instead.
+     */
+    public function nextPayableMilestone(): ?QuotationMilestone
+    {
+        if (! in_array($this->status, [QuotationStatus::Sent, QuotationStatus::Accepted], true)) {
+            return null;
+        }
+
+        return $this->milestones()->whereNull('invoice_id')->orderBy('sort_order')->first();
     }
 
     public function deal(): BelongsTo

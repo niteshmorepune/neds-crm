@@ -109,6 +109,16 @@ you can send or download the invoice PDF.
 on signing, balance on delivery) — each milestone becomes its own invoice. These
 also start with a pending number; assign it when you're ready to issue the invoice.
 
+**A milestone invoice can also appear on its own, with a payment already
+recorded, without anyone on the team creating it.** The public quotation link
+sent to the client has a "Pay ₹X now" button for whichever milestone is next
+due — if they pay it online, the CRM raises that milestone's invoice and
+records the payment automatically (mode **Gateway**, reference starting
+`Razorpay ...`, same as any other online invoice payment). You'll still see it
+in the normal places (Invoices list, the quotation's Milestone Manager, the
+Collections report) — just assign it a NEDS invoice number like any other
+invoice when you notice it. Nothing to do differently.
+
 **"Log Invoice" (top of the Invoices list) is for recording an invoice already
 issued outside the CRM** — historically in Hitech, the older billing tool —
 so it shows up here for record-keeping, alongside real client history. **Always

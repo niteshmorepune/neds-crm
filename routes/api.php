@@ -93,11 +93,16 @@ Route::post('/webhooks/meta-leads', [MetaLeadsWebhookController::class, 'receive
     ->middleware(['throttle:120,1', VerifyMetaWebhookSignature::class])
     ->name('api.webhooks.meta-leads.receive');
 
-// Razorpay → CRM bridge. Client Portal "Pay Now" (online invoice payment).
-// payment.captured events confirm a payment made against an order created by
-// Portal\InvoicePaymentController::order() and record it via a queued job —
-// the reliable/authoritative path alongside the portal's own synchronous
-// verify callback (immediate UX; both share RazorpayPaymentRecorder's
+// Razorpay → CRM bridge for any invoice paid via the Razorpay Orders API —
+// Client Portal "Pay Now" (Portal\InvoicePaymentController::order()) and the
+// public quotation page's online milestone advance payment
+// (QuotationAdvancePaymentController::order(), step 6 of the post-payment VA
+// conversion pipeline — creates the milestone's invoice on the spot and puts
+// its id in the SAME notes.invoice_id shape, so this webhook needed zero
+// changes to also cover it). payment.captured events confirm a payment made
+// against one of those orders and record it via a queued job — the
+// reliable/authoritative path alongside each flow's own synchronous verify
+// callback (immediate UX; both share RazorpayPaymentRecorder's
 // gateway_payment_id idempotency guard, so whichever fires first wins).
 // Auth: HMAC-SHA256 (X-Razorpay-Signature header) with RAZORPAY_WEBHOOK_SECRET
 // — a separate webhook subscription/secret from the one already configured

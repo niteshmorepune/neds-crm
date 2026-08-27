@@ -350,7 +350,14 @@ form to set the company's monthly/FY target and each rep's monthly target.
    balance on delivery). Once work starts, whoever runs the project marks each
    milestone **Pending / In Progress / Done** on the quotation page — that's
    how accounts knows a phase is finished and it's time to raise the next
-   invoice.
+   invoice. The client can also **pay the next milestone online themselves**
+   — the public quotation link (the one the WhatsApp/email send shares, see
+   point 7 below) shows a "Pay ₹X now" button for whichever milestone is
+   next due.
+   Paying it automatically raises that milestone's invoice and records the
+   payment — nobody on the team needs to do anything, and the milestone
+   shows **Paid** on the quotation page (both yours and the client's) the
+   moment it clears.
 5. Save, then **download the PDF** to send to the client.
 6. **New quotations need Admin/Manager approval before they can be sent** —
    every quotation you save starts **Pending approval**, and **Send to

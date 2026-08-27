@@ -64,4 +64,24 @@ class GenerateMilestoneInvoice
             return $invoice;
         });
     }
+
+    /**
+     * Same billing logic as handle(), but safe to call when the milestone
+     * might already be invoiced — used by the guest online advance-payment
+     * flow (QuotationAdvancePaymentController::order()), where "no invoice
+     * exists yet" and "someone already started/finished paying a moment
+     * ago" are both live possibilities, unlike the staff-driven Milestone
+     * Manager button that only ever calls handle() after checking
+     * isBilled() itself. Locks the milestone row for the duration of the
+     * check-and-create to close the race between two concurrent callers
+     * (e.g. two open tabs on the same public quotation link).
+     */
+    public function handleOrExisting(QuotationMilestone $milestone): Invoice
+    {
+        return DB::transaction(function () use ($milestone) {
+            $locked = QuotationMilestone::whereKey($milestone->id)->lockForUpdate()->first();
+
+            return $locked->isBilled() ? $locked->invoice : $this->handle($locked);
+        });
+    }
 }

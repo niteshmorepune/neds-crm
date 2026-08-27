@@ -45,6 +45,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectHealthController;
 use App\Http\Controllers\QuarterlyAwardController;
+use App\Http\Controllers\QuotationAdvancePaymentController;
 use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\QuotationPublicController;
 use App\Http\Controllers\RecurringInvoiceController;
@@ -109,10 +110,15 @@ Route::get('/offers/visibility-audit/checkout', [VisibilityAuditFunnelTrackingCo
 // knowing the unguessable report_token, same as partner-upload's own token.
 Route::get('/offers/visibility-audit/report/{token}', [VisibilityAuditReportController::class, 'show'])->name('offers.visibility-audit.report');
 
-// Step 5 — the permanent, public quotation-view link a Quotation's WhatsApp
-// send points to (email still gets the PDF attached directly, unchanged).
-// Authorized purely by knowing the unguessable public_token.
-Route::get('/quotations/view/{token}', [QuotationPublicController::class, 'show'])->name('quotations.public-pdf');
+// Step 5 — the permanent, public quotation-view page a Quotation's
+// WhatsApp/email send points to. Authorized purely by knowing the
+// unguessable public_token. Step 6 adds the online "Pay Advance" button
+// (order/verify below) rendered on this same page when the quotation has
+// an unbilled milestone.
+Route::get('/quotations/view/{token}', [QuotationPublicController::class, 'show'])->name('quotations.public-view');
+Route::get('/quotations/view/{token}/download', [QuotationPublicController::class, 'download'])->name('quotations.public-download');
+Route::post('/quotations/view/{token}/pay/order', [QuotationAdvancePaymentController::class, 'order'])->name('quotations.public-pay.order');
+Route::post('/quotations/view/{token}/pay/verify', [QuotationAdvancePaymentController::class, 'verify'])->name('quotations.public-pay.verify');
 
 // Internal CRM — no public landing page. Send visitors to the right place.
 Route::get('/', function () {
