@@ -150,6 +150,46 @@ it('skips sending when the lead paid after the job was queued but before it ran'
     expect($lead->fresh()->visibility_audit_invited_at)->toBeNull();
 });
 
+it('skips the WhatsApp first-invite when staff has already replied to the lead over WhatsApp', function () {
+    // Real production incident, 2026-08-28 (lead "rocksangli27" / Sanjay
+    // Suryavanshi): a lead already mid-conversation with a human-sent
+    // proposal (a real call had happened, staff was messaging directly)
+    // still got this cold "come check out our offer" invite the moment
+    // someone tagged its service GMB. Same class of bug
+    // SendVisibilityAuditRecoveryNudgeJob already guards against via
+    // Lead::hasStaffWhatsappReplySince() — just never applied here.
+    Http::fake(['https://wadesk.test/api/send-template' => Http::response(['conversationId' => 'c1'], 201)]);
+
+    $lead = Lead::factory()->create([
+        'phone' => '+91 98765 43210',
+        'meta_leadgen_id' => 'lg_'.uniqid(),
+        'service_id' => $this->gmb->id,
+    ]);
+    $lead->notes()->create(['body' => "[Sent via WhatsApp by Kiran Katte]\nAs discuss over call please share Business details"]);
+
+    (new SendVisibilityAuditFirstInviteJob($lead->id))->handle();
+
+    Http::assertNothingSent();
+    expect($lead->fresh()->visibility_audit_invited_at)->toBeNull();
+    expect(VisibilityAuditTouch::count())->toBe(0);
+});
+
+it('does not skip the WhatsApp first-invite for the AI after-hours assistant\'s own auto-reply', function () {
+    Http::fake(['https://wadesk.test/api/send-template' => Http::response(['conversationId' => 'c1'], 201)]);
+
+    $lead = Lead::factory()->create([
+        'phone' => '+91 98765 43210',
+        'meta_leadgen_id' => 'lg_'.uniqid(),
+        'service_id' => $this->gmb->id,
+    ]);
+    $lead->notes()->create(['body' => "[Sent via WhatsApp by AI Assistant (auto-reply)]\nThanks for reaching out, we'll get back to you soon."]);
+
+    (new SendVisibilityAuditFirstInviteJob($lead->id))->handle();
+
+    Http::assertSent(fn ($request) => $request->url() === 'https://wadesk.test/api/send-template');
+    expect($lead->fresh()->visibility_audit_invited_at)->not->toBeNull();
+});
+
 it('no-ops when the invite template is not configured', function () {
     config(['services.wadesk.visibility_audit_first_invite_template_name' => null]);
     Http::fake();
@@ -268,6 +308,23 @@ it('skips the first-invite email when the lead paid after the job was queued but
         'razorpay_payment_id' => 'pay_va_invite_email_race1',
         'lead_id' => $lead->id,
     ]);
+
+    (new SendVisibilityAuditFirstInviteEmailJob($lead->id))->handle();
+
+    Mail::assertNothingSent();
+    expect($lead->fresh()->visibility_audit_invite_emailed_at)->toBeNull();
+});
+
+it('skips the first-invite email when staff has already replied to the lead over WhatsApp', function () {
+    // Email sibling of the WhatsApp guard above — same 2026-08-28 incident.
+    Mail::fake();
+
+    $lead = Lead::factory()->create([
+        'email' => 'priya@shah.test',
+        'meta_leadgen_id' => 'lg_'.uniqid(),
+        'service_id' => $this->gmb->id,
+    ]);
+    $lead->notes()->create(['body' => "[Sent via WhatsApp by Kiran Katte]\nAs discuss over call please share Business details"]);
 
     (new SendVisibilityAuditFirstInviteEmailJob($lead->id))->handle();
 
@@ -566,6 +623,19 @@ it('does not surface a lead who already purchased despite never being marked inv
         'razorpay_payment_id' => 'pay_va_sweep1',
         'lead_id' => $lead->id,
     ]);
+
+    $pending = app(VisibilityAuditFunnelMetrics::class)->pendingFirstInvites(now()->subMinutes(10))->pluck('id');
+
+    expect($pending)->not->toContain($lead->id);
+});
+
+it('does not surface a lead staff has already replied to over WhatsApp', function () {
+    Queue::fake();
+
+    $lead = Lead::factory()->create(['meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => $this->gmb->id]);
+    $lead->created_at = now()->subMinutes(15);
+    $lead->saveQuietly();
+    $lead->notes()->create(['body' => "[Sent via WhatsApp by Kiran Katte]\nAs discuss over call please share Business details"]);
 
     $pending = app(VisibilityAuditFunnelMetrics::class)->pendingFirstInvites(now()->subMinutes(10))->pluck('id');
 

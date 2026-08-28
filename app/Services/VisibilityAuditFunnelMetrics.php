@@ -121,6 +121,17 @@ class VisibilityAuditFunnelMetrics
      * hand. Excludes a lead who already purchased — SendVisibilityAuditFirstInviteJob
      * re-checks this again immediately before sending regardless, same
      * dual-layer pattern as the recovery nudges' payment-race guard.
+     *
+     * Also excludes a lead staff has already replied to over WhatsApp since
+     * it was created — same "don't interrupt a live human conversation" rule
+     * as needsFollowUp()/pendingLandingNudges()/pendingCheckoutNudges()
+     * above, just never applied to the first-invite cohort until a real
+     * incident (2026-08-28): a lead already mid-conversation with a
+     * human-sent proposal (a real call had happened) got the automated
+     * "come check out our offer" invite the moment its service was tagged
+     * GMB. SendVisibilityAuditFirstInviteJob/-EmailJob re-check this again
+     * immediately before sending regardless, same dual-layer pattern as the
+     * purchase-race guard above.
      */
     public function pendingFirstInvites(Carbon $olderThan): Collection
     {
@@ -128,7 +139,9 @@ class VisibilityAuditFunnelMetrics
             ->whereNull('visibility_audit_invited_at')
             ->whereDoesntHave('visibilityAuditPurchases')
             ->where('created_at', '<=', $olderThan)
-            ->get();
+            ->get()
+            ->reject(fn (Lead $lead) => $lead->hasStaffWhatsappReplySince($lead->created_at))
+            ->values();
     }
 
     /**

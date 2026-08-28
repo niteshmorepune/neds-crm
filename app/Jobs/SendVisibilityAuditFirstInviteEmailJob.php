@@ -60,6 +60,13 @@ class SendVisibilityAuditFirstInviteEmailJob implements ShouldQueue
             return;
         }
 
+        // Same "don't interrupt a live human conversation" guard as the
+        // WhatsApp sibling job above — see its docblock for the real
+        // 2026-08-28 incident this fixes.
+        if ($lead->hasStaffWhatsappReplySince($lead->created_at)) {
+            return;
+        }
+
         try {
             Mail::to($lead->email)->send(new VisibilityAuditFirstInviteEmail($lead));
         } catch (\Throwable $e) {

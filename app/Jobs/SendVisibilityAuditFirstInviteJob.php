@@ -30,6 +30,13 @@ use Illuminate\Support\Facades\Log;
  *
  * Idempotent on Lead.visibility_audit_invited_at — a lead is only ever
  * invited once, regardless of how many times this job is dispatched.
+ *
+ * Skips a lead staff has already replied to over WhatsApp since it was
+ * created (Lead::hasStaffWhatsappReplySince()) — a real human conversation
+ * already in progress means this cold "come check out our offer" intro is
+ * redundant/confusing, not a first contact. Same guard the recovery-nudge
+ * jobs already use; see this class's handle() for the incident that
+ * surfaced the gap here.
  */
 class SendVisibilityAuditFirstInviteJob implements ShouldQueue
 {
@@ -68,6 +75,18 @@ class SendVisibilityAuditFirstInviteJob implements ShouldQueue
         // our offer" invite). Same fix as SendVisibilityAuditRecoveryNudgeJob:
         // re-check for a completed purchase immediately before sending.
         if ($lead->visibilityAuditPurchases()->exists()) {
+            return;
+        }
+
+        // Real incident, 2026-08-28: a lead already mid-conversation with a
+        // human-sent proposal (a real call happened, staff was messaging
+        // directly) still got this cold "come check out our offer" invite
+        // the moment someone tagged its service GMB — same class of bug
+        // SendVisibilityAuditRecoveryNudgeJob already guards against, just
+        // never applied here. If staff has personally replied on WhatsApp
+        // at any point since this lead was created, a human is already
+        // handling it — the automated intro would be redundant/confusing.
+        if ($lead->hasStaffWhatsappReplySince($lead->created_at)) {
             return;
         }
 
