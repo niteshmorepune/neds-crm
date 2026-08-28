@@ -85,6 +85,48 @@ it('offers browser dictation on the call notes field', function () {
         ->assertSee('SpeechRecognition', false);
 });
 
+it('shows the best-time-to-call hint on the create form once enough data exists', function () {
+    foreach ([9, 10, 12, 11, 14, 16] as $hour) {
+        for ($i = 1; $i <= 15; $i++) {
+            $calledAt = now('Asia/Kolkata')->subDays($i)->setTime($hour, 0, 0)->utc();
+            CallLog::factory()->create([
+                'direction' => 'outgoing',
+                'outcome' => in_array($hour, [9, 10, 12], true) ? 'connected' : 'no_answer',
+                'called_at' => $calledAt,
+            ]);
+        }
+    }
+
+    $this->actingAs($this->sales)->get(route('calls.create'))
+        ->assertOk()
+        ->assertSee('Best time to call:')
+        ->assertSee('9 AM');
+});
+
+it('does not show the best-time-to-call hint when there is not enough data yet', function () {
+    $this->actingAs($this->sales)->get(route('calls.create'))
+        ->assertOk()
+        ->assertDontSee('Best time to call:');
+});
+
+it('auto-fills a smarter follow-up suggestion for a missed call, sourced from real connect-rate data', function () {
+    for ($i = 1; $i <= 15; $i++) {
+        $calledAt = now('Asia/Kolkata')->subDays($i)->setTime(9, 0, 0)->utc();
+        CallLog::factory()->create(['direction' => 'outgoing', 'outcome' => 'connected', 'called_at' => $calledAt]);
+    }
+
+    $response = $this->actingAs($this->sales)->get(route('calls.create'))->assertOk();
+
+    $response->assertDontSee('suggestedFollowUp: null', false);
+    $response->assertSee('Suggested from real connect-rate data', false);
+});
+
+it('leaves the follow-up suggestion null when there is no qualifying data', function () {
+    $response = $this->actingAs($this->sales)->get(route('calls.create'))->assertOk();
+
+    $response->assertSee('suggestedFollowUp: null', false);
+});
+
 it('does not let support log a call against a lead', function () {
     $support = User::factory()->role(UserRole::Support)->create();
     $lead = Lead::factory()->create();

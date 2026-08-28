@@ -6,6 +6,8 @@
               class="rounded-lg bg-white p-6 shadow-sm grid grid-cols-1 gap-4 md:grid-cols-2"
               x-data="{
                   outcome: '{{ old('outcome', '') }}',
+                  followUpAt: '{{ old('follow_up_at') }}',
+                  suggestedFollowUp: {{ Illuminate\Support\Js::from($suggestedFollowUp) }},
                   showFollowUp: {{ old('follow_up_at') ? 'true' : 'false' }},
                   dictating: false,
                   dictationSupported: 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window,
@@ -102,8 +104,15 @@
               }"
               x-init="$watch('outcome', val => {
                   if (['no_answer','busy','follow_up_needed'].includes(val)) showFollowUp = true;
+                  if (['no_answer','busy'].includes(val) && !followUpAt && suggestedFollowUp) followUpAt = suggestedFollowUp;
               })">
             @csrf
+
+            @if ($timingSummary)
+                <div class="md:col-span-2 rounded-md bg-indigo-50 px-3 py-2 text-xs text-indigo-700">
+                    💡 <strong>Best time to call:</strong> {{ $timingSummary }}
+                </div>
+            @endif
             <div>
                 <x-input-label for="customer_id" value="Client" />
                 <select id="customer_id" name="customer_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
@@ -204,7 +213,10 @@
                     <div>
                         <x-input-label for="follow_up_at" value="Remind me on" />
                         <x-text-input id="follow_up_at" name="follow_up_at" type="datetime-local" class="mt-1 block w-full"
-                            :value="old('follow_up_at')" />
+                            x-model="followUpAt" />
+                        <p x-show="followUpAt && followUpAt === suggestedFollowUp" x-cloak class="mt-1 text-xs text-gray-400">
+                            Suggested from real connect-rate data — feel free to change it.
+                        </p>
                         <x-input-error :messages="$errors->get('follow_up_at')" class="mt-1" />
                     </div>
                     <div>

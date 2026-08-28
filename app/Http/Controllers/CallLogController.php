@@ -15,6 +15,7 @@ use App\Models\Customer;
 use App\Models\Lead;
 use App\Models\User;
 use App\Models\VisibilityAuditTouch;
+use App\Services\CallTimingMetrics;
 use App\Services\MenuResolver;
 use App\Services\VisibilityAuditFunnelMetrics;
 use App\Support\Ai;
@@ -55,11 +56,13 @@ class CallLogController extends Controller
         ]);
     }
 
-    public function create(Request $request): View
+    public function create(Request $request, CallTimingMetrics $callTiming): View
     {
         $this->authorize('create', CallLog::class);
 
         $canLogLeads = $this->menu->canAccess($request->user(), 'lead-generation');
+
+        $suggestedFollowUp = $callTiming->suggestNextCallSlot(now());
 
         return view('calls.create', [
             'directions' => CallDirection::cases(),
@@ -69,6 +72,8 @@ class CallLogController extends Controller
             'aiEnabled' => Ai::voiceTranscriptionEnabled(),
             'selectedCustomer' => $request->integer('customer_id') ?: null,
             'selectedLead' => $request->integer('lead_id') ?: null,
+            'timingSummary' => $callTiming->summaryLine(),
+            'suggestedFollowUp' => $suggestedFollowUp?->format('Y-m-d\TH:i'),
         ]);
     }
 
