@@ -113,6 +113,49 @@ it('returns null and makes no call when summarizing a lead with AI disabled', fu
     Http::assertNothingSent();
 });
 
+it('prepares a pre-call brief for a lead, grounded in its notes and call history', function () {
+    aiOn();
+    fakeAiText("Context: interested in GMB.\nWhere things stand: quoted \u{20b9}12,000/mo, awaiting decision.\nSuggested opener: Ask if they had a chance to review the GMB proposal.");
+    $lead = Lead::factory()->create(['name' => 'Priya Shah']);
+    $lead->notes()->create(['user_id' => null, 'body' => 'Quoted GMB at 12000/month.']);
+    CallLog::factory()->create(['callable_type' => Lead::class, 'callable_id' => $lead->id, 'outcome' => 'no_answer']);
+
+    $brief = app(AiAssistant::class)->prepareCallBrief($lead);
+
+    expect($brief)->toContain('Suggested opener');
+    expect(AiUsage::where('feature', 'call_brief')->exists())->toBeTrue();
+
+    Http::assertSent(function ($request) {
+        $prompt = $request->data()['messages'][0]['content'];
+
+        return str_contains($prompt, 'Priya Shah')
+            && str_contains($prompt, 'Quoted GMB at 12000/month.')
+            && str_contains($prompt, 'Call history (1 total)');
+    });
+});
+
+it('prepares a pre-call brief for a customer', function () {
+    aiOn();
+    fakeAiText("Context: long-time client.\nWhere things stand: no open items.\nSuggested opener: Ask how things are going.");
+    $customer = Customer::factory()->create(['company_name' => 'Brand Whiz']);
+
+    $brief = app(AiAssistant::class)->prepareCallBrief($customer);
+
+    expect($brief)->toContain('Suggested opener');
+    expect(AiUsage::where('feature', 'call_brief')->exists())->toBeTrue();
+
+    Http::assertSent(fn ($request) => str_contains($request->data()['messages'][0]['content'], 'Brand Whiz'));
+});
+
+it('returns null and makes no call when preparing a call brief with AI disabled', function () {
+    config(['services.anthropic.enabled' => false]);
+    Http::fake();
+    $lead = Lead::factory()->create();
+
+    expect(app(AiAssistant::class)->prepareCallBrief($lead))->toBeNull();
+    Http::assertNothingSent();
+});
+
 it('summarizes a meeting transcript', function () {
     aiOn();
     fakeAiText("Key points:\n- Discussed renewal");

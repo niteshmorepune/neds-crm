@@ -135,6 +135,76 @@ class AiAssistant
     }
 
     /**
+     * A short pre-call briefing for a rep about to phone a Lead or Customer
+     * — context, where things stand, and a suggested opener — grounded in
+     * the record's actual notes/call history. Distinct from
+     * suggestCallTalkingPoint() below, which works off CallPriorityService's
+     * computed ranking signals (days since contact, deal stage) for an
+     * existing client's "who to call today" list, not raw history text, and
+     * only ever covers Customers; this covers both Leads and Customers and
+     * is triggered per-call (from the Log a Call form) rather than per
+     * list-row. Built from a real owner conversation, 2026-08-28, about
+     * improving cold-call pickup rates — the companion to
+     * CallTimingMetrics' "best time to call" hint on the same form: that
+     * answers WHEN to call, this answers WHAT TO SAY.
+     */
+    public function prepareCallBrief(Lead|Customer $record): ?string
+    {
+        if (! Ai::enabled()) {
+            return null;
+        }
+
+        $record->loadMissing(['notes', 'callLogs']);
+
+        if ($record instanceof Lead) {
+            $record->loadMissing('service');
+            $lines = [
+                'Lead: '.$record->name.($record->company ? ' ('.$record->company.')' : ''),
+                'Interested in: '.($record->service?->name ?? 'unspecified'),
+                'Source: '.$record->source->label(),
+                'Status: '.$record->status->label(),
+            ];
+        } else {
+            $lines = ['Client: '.$record->company_name];
+        }
+
+        $lines[] = '';
+        $lines[] = 'Notes:';
+        foreach ($record->notes->take(self::MAX_ITEMS) as $note) {
+            $lines[] = '- '.$note->body;
+        }
+
+        $lines[] = '';
+        $lines[] = 'Call history ('.$record->callLogs->count().' total):';
+        foreach ($record->callLogs->take(self::MAX_ITEMS) as $call) {
+            $when = $call->called_at?->timezone(config('app.display_timezone'))->format('d M') ?? 'unknown date';
+            $lines[] = "- {$when} — {$call->direction->label()} / {$call->outcome->label()}: ".($call->notes ?: 'no notes');
+        }
+
+        $system = <<<'PROMPT'
+        You prepare a short pre-call briefing for a salesperson at a
+        digital-solutions agency in India who is about to phone a lead or
+        client. Using ONLY the provided history, write exactly three short
+        labeled sections:
+        Context: 1-2 lines on who they are and what they're interested in.
+        Where things stand: 1-2 lines on the most recent interaction and any
+        open ask or commitment.
+        Suggested opener: one natural opening line for the call, referencing
+        something specific from the history if possible.
+        If the history is too thin to say something specific, say so plainly
+        in that section rather than inventing detail. Output only the three
+        labeled sections, nothing else.
+        PROMPT;
+
+        return $this->trimmed($this->client->message(
+            feature: 'call_brief',
+            prompt: implode("\n", $lines),
+            system: $system,
+            maxTokens: 400,
+        ));
+    }
+
+    /**
      * A scheduled nurture-sequence follow-up for a lead nobody has personally
      * followed up on yet. Unlike draftLeadFollowUp() (an on-demand button),
      * this is written for an automated 3-touch cadence — the tone shifts by
@@ -1194,6 +1264,11 @@ class AiAssistant
      * never-batched shape as suggestClientAction(), but not Admin/Manager-
      * gated: this list only ever shows a rep their own book, so any Sales
      * rep can trigger it for their own client.
+     *
+     * See prepareCallBrief() above for the fuller, history-grounded,
+     * Lead-and-Customer counterpart triggered from the Log a Call form
+     * itself — this one stays list-shaped and signal-only on purpose, see
+     * its own docblock for why.
      *
      * @param  array<string, array{label: string, detail: string}>  $signals
      */

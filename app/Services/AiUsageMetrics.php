@@ -236,6 +236,7 @@ class AiUsageMetrics
             'productivity_improvement_suggestion' => 'Productivity Improvement Suggestion',
             'client_radar_suggestion' => 'Client Radar Suggestion',
             'call_priority_suggestion' => 'Call Priority Suggestion',
+            'call_brief' => 'Pre-call Brief',
             'monthly_wins_note' => 'Monthly Wins Note',
             'portal_assistant_answer' => 'Portal Assistant Answer',
             'csat_recovery_message' => 'CSAT Recovery Message',

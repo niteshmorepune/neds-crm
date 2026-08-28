@@ -113,6 +113,10 @@
                     💡 <strong>Best time to call:</strong> {{ $timingSummary }}
                 </div>
             @endif
+
+            @if ($selectedLead || $selectedCustomer)
+                <livewire:call-brief :lead-id="$selectedLead" :customer-id="$selectedCustomer" />
+            @endif
             <div>
                 <x-input-label for="customer_id" value="Client" />
                 <select id="customer_id" name="customer_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
