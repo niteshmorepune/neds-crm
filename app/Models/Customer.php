@@ -46,6 +46,7 @@ class Customer extends Model
         'smdost_client_id',
         'referring_partner_id',
         'partner_collection_mode',
+        'billed_via_customer_id',
         'referral_share_rate',
         'referral_share_type',
         'referral_share_fixed_amount',
@@ -134,14 +135,33 @@ class Customer extends Model
     }
 
     /**
+     * When partner_collection_mode is BilledViaThirdParty, the separate
+     * company NEDS actually bills — which in turn bills this client
+     * directly (e.g. Pulse Orbit Entertainment Pvt Ltd, tied up with the
+     * referring partner). Kept on the customer rather than the partner
+     * (contrast Partner::billingCustomer()) since the same partner can
+     * route different referred clients through different third parties.
+     */
+    public function billedViaCustomer(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'billed_via_customer_id');
+    }
+
+    /**
      * Who a GST invoice for this customer should actually name as the buyer
-     * — itself, unless it was referred by a reseller partner (one with its
-     * own billing_customer_id set), in which case that partner's own
-     * customer record is billed instead (e.g. Brand-Whiz's referred clients
-     * are billed to Brand Whiz).
+     * — itself, unless: (a) partner_collection_mode is BilledViaThirdParty,
+     * in which case its own billed_via_customer_id is billed instead, or
+     * (b) it was referred by a reseller partner (one with its own
+     * billing_customer_id set), in which case that partner's own customer
+     * record is billed instead (e.g. Brand-Whiz's referred clients are
+     * billed to Brand Whiz).
      */
     public function billingTarget(): self
     {
+        if ($this->partner_collection_mode === PartnerCollectionMode::BilledViaThirdParty) {
+            return $this->billedViaCustomer ?? $this;
+        }
+
         return $this->referringPartner?->billingCustomer ?? $this;
     }
 

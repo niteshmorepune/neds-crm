@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 /**
@@ -82,7 +83,11 @@ class Partner extends Model implements Authenticatable
      * quotation is GST-billed to the partner's billing_customer at save
      * time (Customer::billingTarget()), so filtering on the referred
      * client's own referring_partner_id alone (as this query used to)
-     * silently misses every reseller-billed quotation.
+     * silently misses every reseller-billed quotation. Also includes
+     * quotations for a referred client billed via a THIRD party
+     * (Customer::billed_via_customer_id — a per-client redirect, distinct
+     * from this partner's own billing_customer_id reseller field) — same
+     * visibility gap, same fix, one level further removed.
      */
     public function quotations(): Builder
     {
@@ -92,20 +97,42 @@ class Partner extends Model implements Authenticatable
             if ($this->billing_customer_id !== null) {
                 $query->orWhere('customer_id', $this->billing_customer_id);
             }
+
+            $thirdPartyCustomerIds = $this->thirdPartyBillingCustomerIds();
+
+            if ($thirdPartyCustomerIds->isNotEmpty()) {
+                $query->orWhereIn('customer_id', $thirdPartyCustomerIds);
+            }
         });
     }
 
     /**
      * Whether the given quotation belongs to this partner — either it's
      * for a directly referred client, or (reseller partners only) it's
-     * billed to this partner's own billingCustomer(). Mirrors quotations()
-     * above but for a single already-loaded model, so a controller doesn't
-     * need to re-query to check ownership of a route-bound quotation.
+     * billed to this partner's own billingCustomer(), or it's for a
+     * referred client billed via a third party. Mirrors quotations() above
+     * but for a single already-loaded model, so a controller doesn't need
+     * to re-query to check ownership of a route-bound quotation.
      */
     public function ownsQuotation(Quotation $quotation): bool
     {
         return $quotation->customer?->referring_partner_id === $this->id
-            || ($this->billing_customer_id !== null && $quotation->customer_id === $this->billing_customer_id);
+            || ($this->billing_customer_id !== null && $quotation->customer_id === $this->billing_customer_id)
+            || $this->thirdPartyBillingCustomerIds()->contains($quotation->customer_id);
+    }
+
+    /**
+     * The set of Customer ids this partner's own referred clients are
+     * billed via (Customer::billed_via_customer_id), when any are set —
+     * that's where a BilledViaThirdParty referred client's real quotations
+     * actually live, since customer_id no longer points at the referred
+     * client itself. See quotations()/ownsQuotation() above.
+     */
+    private function thirdPartyBillingCustomerIds(): Collection
+    {
+        return Customer::where('referring_partner_id', $this->id)
+            ->whereNotNull('billed_via_customer_id')
+            ->pluck('billed_via_customer_id');
     }
 
     public function hasCommission(): bool

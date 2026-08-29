@@ -91,6 +91,57 @@ it('defaults a referred client to NedsCollects when no collection mode is chosen
         ->and($customer->isPartnerCollected())->toBeFalse();
 });
 
+it('saves a referred client billed via a third party and resolves billingTarget() to it', function () {
+    $partner = Partner::factory()->create();
+    $thirdParty = Customer::factory()->create(['company_name' => 'Pulse Orbit Entertainment Pvt Ltd']);
+
+    $this->actingAs($this->admin)->post(route('clients.store'), [
+        'company_name' => 'Terragenix Solutions',
+        'country' => 'India',
+        'status' => CustomerStatus::Active->value,
+        'referring_partner_id' => $partner->id,
+        'partner_collection_mode' => PartnerCollectionMode::BilledViaThirdParty->value,
+        'billed_via_customer_id' => $thirdParty->id,
+    ])->assertRedirect();
+
+    $customer = Customer::firstWhere('company_name', 'Terragenix Solutions');
+
+    expect($customer->partner_collection_mode)->toBe(PartnerCollectionMode::BilledViaThirdParty)
+        ->and($customer->billed_via_customer_id)->toBe($thirdParty->id)
+        ->and($customer->isPartnerCollected())->toBeFalse()
+        ->and($customer->billingTarget()->is($thirdParty))->toBeTrue();
+});
+
+it('requires a billed-via company when the collection mode is BilledViaThirdParty', function () {
+    $partner = Partner::factory()->create();
+
+    $this->actingAs($this->admin)->post(route('clients.store'), [
+        'company_name' => 'Missing Third Party Co',
+        'country' => 'India',
+        'status' => CustomerStatus::Active->value,
+        'referring_partner_id' => $partner->id,
+        'partner_collection_mode' => PartnerCollectionMode::BilledViaThirdParty->value,
+    ])->assertSessionHasErrors('billed_via_customer_id');
+
+    expect(Customer::where('company_name', 'Missing Third Party Co')->exists())->toBeFalse();
+});
+
+it('rejects a client being billed via itself', function () {
+    $partner = Partner::factory()->create();
+    $customer = Customer::factory()->create(['referring_partner_id' => $partner->id]);
+
+    $this->actingAs($this->admin)
+        ->put(route('clients.update', $customer), [
+            'company_name' => $customer->company_name,
+            'country' => 'India',
+            'status' => CustomerStatus::Active->value,
+            'referring_partner_id' => $partner->id,
+            'partner_collection_mode' => PartnerCollectionMode::BilledViaThirdParty->value,
+            'billed_via_customer_id' => $customer->id,
+        ])
+        ->assertSessionHasErrors('billed_via_customer_id');
+});
+
 it('saves and displays an alternate phone number', function () {
     $this->actingAs($this->admin)->post(route('clients.store'), [
         'company_name' => 'Acme Digital Pvt Ltd',

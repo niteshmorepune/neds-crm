@@ -54,8 +54,13 @@ It depends on how that specific client was set up with NEDS. For a "NEDS
 collects" client, NEDS invoices the client directly and then owes you a
 share each month. For a "Partner collects" client, you invoice the client
 yourself outside the CRM — NEDS never invoices them — and you then owe
-NEDS a share of what you collected. Either way, it's the same
-Settlement card, just showing the opposite direction.
+NEDS a share of what you collected. There's also a "NEDS collects — via
+third party" setup for a client you've routed through another company
+you have a tie-up with — NEDS invoices that company instead of the client
+directly, and it bills the client in turn — but it still works the same
+way as a regular "NEDS collects" client for your own settlement: the
+monthly figure and Settlement card behave identically. Either way, it's
+the same Settlement card, just showing the direction that applies.
 
 ## 3. Content submissions & uploading
 

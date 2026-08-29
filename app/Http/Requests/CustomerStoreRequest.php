@@ -8,6 +8,7 @@ use App\Enums\ReferralShareType;
 use App\Rules\Gstin;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class CustomerStoreRequest extends FormRequest
 {
@@ -59,10 +60,31 @@ class CustomerStoreRequest extends FormRequest
             'status' => ['required', Rule::enum(CustomerStatus::class)],
             'referring_partner_id' => ['nullable', Rule::exists('partners', 'id')],
             'partner_collection_mode' => ['nullable', Rule::enum(PartnerCollectionMode::class)],
+            'billed_via_customer_id' => ['nullable', Rule::exists('customers', 'id')],
             'referral_share_type' => ['nullable', Rule::enum(ReferralShareType::class)],
             'referral_share_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'referral_share_fixed_amount' => ['nullable', 'numeric', 'min:0'],
         ];
+    }
+
+    /**
+     * @param  Validator  $validator
+     */
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            $mode = $this->input('partner_collection_mode');
+
+            if ($mode === PartnerCollectionMode::BilledViaThirdParty->value && ! $this->filled('billed_via_customer_id')) {
+                $validator->errors()->add('billed_via_customer_id', 'Pick the company NEDS actually bills when "Billed via third party" is selected.');
+            }
+
+            $client = $this->route('client');
+
+            if ($client && $this->filled('billed_via_customer_id') && (int) $this->input('billed_via_customer_id') === $client->id) {
+                $validator->errors()->add('billed_via_customer_id', 'A client cannot be billed via itself.');
+            }
+        });
     }
 
     protected function gstinUniqueRule(): Rule|string

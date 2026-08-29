@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\InvoiceStatus;
+use App\Enums\PartnerCollectionMode;
 use App\Enums\UserRole;
 use App\Models\Customer;
 use App\Models\Invoice;
@@ -207,6 +208,49 @@ it('shows a reseller partner\'s consolidated account, including quotations bille
         ->assertSee('Your Account')
         ->assertSee('NEDS/2026-27/9101')
         ->assertSee('QTN/2026-27/9101');
+});
+
+it('includes a referred client\'s third-party-billed quotation in the partner\'s own quotations() and ownsQuotation()', function () {
+    $thirdParty = Customer::factory()->create(['company_name' => 'Pulse Orbit Entertainment Pvt Ltd']);
+    $partner = Partner::factory()->create(['name' => 'Prajakta Dahake']);
+    Customer::factory()->create([
+        'company_name' => 'Terragenix Solutions',
+        'referring_partner_id' => $partner->id,
+        'partner_collection_mode' => PartnerCollectionMode::BilledViaThirdParty,
+        'billed_via_customer_id' => $thirdParty->id,
+    ]);
+
+    // Billed to the third party, not the referred client itself
+    // (Customer::billingTarget()).
+    $quotation = Quotation::factory()->create(['customer_id' => $thirdParty->id, 'number' => 'QTN/2026-27/9202']);
+
+    expect($partner->quotations()->pluck('id'))->toContain($quotation->id)
+        ->and($partner->ownsQuotation($quotation))->toBeTrue();
+
+    actingAs(User::factory()->create(['role' => UserRole::Admin]))
+        ->get(route('partners.show', $partner))
+        ->assertOk()
+        ->assertSee('QTN/2026-27/9202');
+});
+
+it('labels a third-party-billed referred client with which company it\'s billed via', function () {
+    $thirdParty = Customer::factory()->create(['company_name' => 'Pulse Orbit Entertainment Pvt Ltd']);
+    $partner = Partner::factory()->create();
+    $customer = Customer::factory()->create([
+        'company_name' => 'Terragenix Solutions',
+        'referring_partner_id' => $partner->id,
+        'referral_share_rate' => 20,
+        'partner_collection_mode' => PartnerCollectionMode::BilledViaThirdParty,
+        'billed_via_customer_id' => $thirdParty->id,
+    ]);
+    // A real recurring template so the settlement grid (and its "billed via"
+    // label) actually renders for this client — an empty grid is hidden.
+    RecurringInvoice::factory()->create(['customer_id' => $customer->id]);
+
+    actingAs(User::factory()->create(['role' => UserRole::Admin]))
+        ->get(route('partners.show', $partner))
+        ->assertOk()
+        ->assertSee('Billed via Pulse Orbit Entertainment Pvt Ltd');
 });
 
 it('does not show a "Your Account" section for a non-reseller partner', function () {

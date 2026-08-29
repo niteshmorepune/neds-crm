@@ -13,9 +13,11 @@ use Illuminate\Support\Carbon;
 
 /**
  * Locks the referral settlement share for the month that just ended, for
- * every NedsCollects referred client's recurring services — same
- * idempotency pattern as FinalizePartnerCommissions/FinalizeIncentives
- * (update-or-create keyed via whereDate(), not a naive updateOrCreate()).
+ * every NedsCollects (and BilledViaThirdParty — a real NEDS invoice exists
+ * for these too, just addressed to the third party instead of the client)
+ * referred client's recurring services — same idempotency pattern as
+ * FinalizePartnerCommissions/FinalizeIncentives (update-or-create keyed via
+ * whereDate(), not a naive updateOrCreate()).
  *
  * PartnerCollects clients are deliberately NOT touched here — there is no
  * NEDS invoice to sum for them (the owner's explicit call), so their
@@ -48,7 +50,8 @@ class FinalizeReferralSettlements extends Command
             })
             ->where(function ($q) {
                 $q->whereNull('partner_collection_mode')
-                    ->orWhere('partner_collection_mode', PartnerCollectionMode::NedsCollects->value);
+                    ->orWhere('partner_collection_mode', PartnerCollectionMode::NedsCollects->value)
+                    ->orWhere('partner_collection_mode', PartnerCollectionMode::BilledViaThirdParty->value);
             })
             ->with('recurringInvoices.invoices')
             ->get()

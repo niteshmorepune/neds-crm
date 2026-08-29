@@ -715,12 +715,16 @@ details, it shows:
   the partner for each referred client's recurring services. Set up per
   client on the Client's Edit page: **Who collects payment for this
   client?** (NEDS collects — the default, NEDS invoices the client and then
-  owes the partner a share — or Partner collects, where the partner
-  invoices the client outside the CRM entirely, so no NEDS invoice is
-  created for that client at all, and the partner instead owes NEDS a share
-  of what they collected) and a **Referral share %** for that client. For a
-  NEDS-collects client the monthly figure is worked out automatically from
-  real invoices on the 1st of the following month; for a Partner-collects
+  owes the partner a share; Partner collects, where the partner invoices
+  the client outside the CRM entirely, so no NEDS invoice is created for
+  that client at all, and the partner instead owes NEDS a share of what
+  they collected; or NEDS collects — via third party, for a client the
+  partner has routed through a separate company they have a tie-up with —
+  pick that company on the same form, NEDS invoices IT instead of the
+  client, and it in turn bills the client directly) and a **Referral
+  share %** for that client. For a NEDS-collects client (via third party
+  or not) the monthly figure is worked out automatically from real
+  invoices on the 1st of the following month; for a Partner-collects
   client, since there's no invoice to read from, enter the month's
   collected amount yourself right on this page. Either way, once the money
   has actually changed hands, click **Mark Settled** on that row — the
