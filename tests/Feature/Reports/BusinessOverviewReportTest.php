@@ -321,7 +321,11 @@ it('links a client name in AR Aging, MRR expiring and Client Concentration to it
         ->assertSee(route('clients.show', $client), false);
 });
 
-it('shows a client name as plain text in AR Aging when a secondary-Sales viewer does not own that client', function () {
+it('links a client name in AR Aging for an Accounts viewer who also has Sales as an additional role, even for a client they do not own', function () {
+    // 2026-08-29 fix: Accounts already grants full CustomerPolicy::view()
+    // access on its own — an additional Sales role must never narrow that
+    // down (see CustomerPolicyTest and CustomerPolicy's own docblock). This
+    // page links via can('view', $customer), so it should follow suit.
     $viewer = User::factory()->role(UserRole::Accounts)->withAdditionalRoles(UserRole::Sales)->create();
     $owner = User::factory()->role(UserRole::Sales)->create();
     $client = Customer::factory()->create(['company_name' => 'Not My Client Co', 'owner_id' => $owner->id]);
@@ -330,8 +334,15 @@ it('shows a client name as plain text in AR Aging when a secondary-Sales viewer 
     $this->actingAs($viewer)->get(route('reports.business-overview'))
         ->assertOk()
         ->assertSee('Not My Client Co')
-        ->assertDontSee(route('clients.show', $client), false);
+        ->assertSee(route('clients.show', $client), false);
 });
+
+// Note: this report is Admin/Manager/Accounts-only (ReportController::
+// authorizeRevenue()), and all three of those roles independently grant
+// full CustomerPolicy::view() access — so there is no reachable viewer
+// combination on this specific page for whom a client name would still
+// render as plain text; the "plain text" branch exists for other reports/
+// pages this policy also gates, not this one.
 
 it('shows manager the page but hides itemized financial detail', function () {
     $manager = User::factory()->role(UserRole::Manager)->create();

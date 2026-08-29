@@ -10,7 +10,13 @@ use App\Models\User;
  * Client (Customer) access rules:
  *  - admin/manager/support/accounts: can view and list all clients.
  *  - support: view-only — cannot edit client profiles or manage contacts.
- *  - sales: can only view/edit/manage clients they own or that are unassigned.
+ *  - sales: can only view/edit/manage clients they own or that are unassigned
+ *    — UNLESS they also hold one of the full-access roles above (multi-role:
+ *    an additional role must only ever WIDEN access, never narrow below what
+ *    any one of the user's roles would independently grant — see the
+ *    2026-08-16 multi-role decisions log and its 2026-08-29 follow-up in
+ *    CLAUDE.md). So Sales-only narrowing applies solely when Sales is the
+ *    user's one and only qualifying role here.
  *  - telecaller: view-only, same as support — clients aren't part of their
  *    scope (leads + calling only); listed explicitly in update()'s deny-list
  *    since this method otherwise defaults to true for any non-Sales role.
@@ -27,6 +33,10 @@ class CustomerPolicy
 
     public function view(User $user, Customer $customer): bool
     {
+        if ($this->hasFullAccessRole($user)) {
+            return true;
+        }
+
         if (! $user->hasRole(UserRole::Sales)) {
             return true;
         }
@@ -46,15 +56,25 @@ class CustomerPolicy
 
     public function update(User $user, Customer $customer): bool
     {
+        if ($user->hasRole(UserRole::Admin, UserRole::Manager)) {
+            return true;
+        }
+
+        // Sales is checked before the Intern/Support/Telecaller deny-list
+        // below so a Sales rep who also picks up Support (or Intern/
+        // Telecaller) as an additional role keeps editing their own clients
+        // — the deny-list must never veto a grant Sales alone would give.
+        // (Accounts isn't in that deny-list at all, so it still falls
+        // through to the final `true` untouched, same as before.)
+        if ($user->hasRole(UserRole::Sales)) {
+            return $this->salesOwnsOrUnassigned($user, $customer);
+        }
+
         if ($user->hasRole(UserRole::Intern, UserRole::Support, UserRole::Telecaller)) {
             return false;
         }
 
-        if (! $user->hasRole(UserRole::Sales)) {
-            return true;
-        }
-
-        return $this->salesOwnsOrUnassigned($user, $customer);
+        return true;
     }
 
     public function delete(User $user, Customer $customer): bool
@@ -117,6 +137,17 @@ class CustomerPolicy
     public function manageServices(User $user, Customer $customer): bool
     {
         return $user->hasRole(UserRole::Admin, UserRole::Manager, UserRole::Sales, UserRole::Support);
+    }
+
+    /**
+     * Any role that independently grants full (unowned) client visibility —
+     * checked before the Sales narrowing in view(), so a Sales rep who also
+     * holds one of these as an additional role isn't wrongly narrowed down
+     * to their own/unassigned clients (see view()'s docblock note above).
+     */
+    private function hasFullAccessRole(User $user): bool
+    {
+        return $user->hasRole(UserRole::Admin, UserRole::Manager, UserRole::Support, UserRole::Accounts);
     }
 
     private function salesOwnsOrUnassigned(User $user, Customer $customer): bool

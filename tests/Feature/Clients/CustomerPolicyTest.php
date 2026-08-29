@@ -42,18 +42,34 @@ it('limits a sales rep to their own and unassigned clients', function () {
         ->and($sales->can('view', $foreignClient))->toBeFalse();
 });
 
-it('limits a support user to their own and unassigned clients once Sales is granted as an additional role', function () {
-    // Mirrors CustomerPolicy::view's existing "if hasRole(Sales) at all,
-    // restrict" priority — an additional Sales role now reaches that branch
-    // even though the primary role (Support) would otherwise see everything.
+it('still sees every client when Support is the primary role and Sales is only an additional role', function () {
+    // 2026-08-29 fix: an additional role must only ever WIDEN access, never
+    // narrow it below what any one of the user's roles independently grants
+    // (real case: Mohit Patil, primary Sales + additional Support, was
+    // seeing zero clients — Sales's owned-or-unassigned narrowing was
+    // wrongly vetoing Support's full-access grant).
     $supportPlusSales = User::factory()->role(UserRole::Support)->withAdditionalRoles(UserRole::Sales)->create();
-    $ownClient = Customer::factory()->ownedBy($supportPlusSales->id)->create();
     $foreignClient = Customer::factory()->ownedBy(User::factory()->create()->id)->create();
 
     $visible = Customer::visibleTo($supportPlusSales)->pluck('id');
 
-    expect($visible)->toContain($ownClient->id)
-        ->and($visible)->not->toContain($foreignClient->id);
+    expect($visible)->toContain($foreignClient->id)
+        ->and($supportPlusSales->can('view', $foreignClient))->toBeTrue();
+});
+
+it('still sees and edits every client when Sales is primary and Support is only an additional role', function () {
+    // Same fix, the other direction (Mohit Patil's actual real-world setup):
+    // Sales primary + Support additional must see everything (Support's
+    // full-access grant), AND keep editing their own clients (Sales's own
+    // grant must not be vetoed by the Intern/Support/Telecaller deny-list
+    // in update()).
+    $salesPlusSupport = User::factory()->role(UserRole::Sales)->withAdditionalRoles(UserRole::Support)->create();
+    $ownClient = Customer::factory()->ownedBy($salesPlusSupport->id)->create();
+    $foreignClient = Customer::factory()->ownedBy(User::factory()->create()->id)->create();
+
+    expect(Customer::visibleTo($salesPlusSupport)->pluck('id'))->toContain($foreignClient->id)
+        ->and($salesPlusSupport->can('view', $foreignClient))->toBeTrue()
+        ->and($salesPlusSupport->can('update', $ownClient))->toBeTrue();
 });
 
 it('only allows admin/manager or the owning sales rep to delete', function () {
