@@ -399,13 +399,19 @@ class Customer extends Model
     }
 
     /**
-     * Admins/managers/support/accounts see all clients.
-     * Sales reps (including anyone with Sales as an additional role) see
-     * only clients they own or that are unassigned. Mirrors CustomerPolicy::view.
+     * Admins/managers/support/accounts see all clients. Sales reps see only
+     * clients they own or that are unassigned — UNLESS they also hold one of
+     * those full-access roles as an additional role, in which case that
+     * broader access wins (an additional role must only ever WIDEN access,
+     * never narrow it — see CustomerPolicy::view()'s docblock and the
+     * 2026-08-16/2026-08-29 multi-role entries in CLAUDE.md). Mirrors
+     * CustomerPolicy::view().
      */
     public function scopeVisibleTo(Builder $query, User $user): Builder
     {
-        if ($user->hasRole(UserRole::Sales)) {
+        $hasFullAccessRole = $user->hasRole(UserRole::Admin, UserRole::Manager, UserRole::Support, UserRole::Accounts);
+
+        if ($user->hasRole(UserRole::Sales) && ! $hasFullAccessRole) {
             $query->where(function (Builder $q) use ($user) {
                 $q->where('owner_id', $user->id)->orWhereNull('owner_id');
             });
