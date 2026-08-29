@@ -51,6 +51,31 @@ it('finalizes a FixedAmount NedsCollects client at the flat amount, ignoring the
         ->and($settlement->share_amount)->toBe(10_000 * 100);
 });
 
+it('finalizes a BilledViaThirdParty client from its real invoice, same as NedsCollects', function () {
+    $partner = Partner::factory()->create();
+    $thirdParty = Customer::factory()->create(['company_name' => 'Pulse Orbit Entertainment Pvt Ltd']);
+    $customer = Customer::factory()->create([
+        'referring_partner_id' => $partner->id,
+        'referral_share_rate' => 20,
+        'partner_collection_mode' => PartnerCollectionMode::BilledViaThirdParty,
+        'billed_via_customer_id' => $thirdParty->id,
+    ]);
+    $template = RecurringInvoice::factory()->create(['customer_id' => $customer->id]);
+    Invoice::factory()->create([
+        'recurring_invoice_id' => $template->id, 'customer_id' => $customer->id,
+        'issue_date' => Carbon::create(2026, 6, 5), 'total' => 60_000 * 100,
+    ]);
+
+    $this->artisan('app:finalize-referral-settlements', ['--month' => '2026-06'])->assertSuccessful();
+
+    $settlement = ReferralSettlement::where('recurring_invoice_id', $template->id)->whereDate('period_start', '2026-06-01')->first();
+
+    expect($settlement)->not->toBeNull()
+        ->and($settlement->billed_amount)->toBe(60_000 * 100)
+        ->and($settlement->share_amount)->toBe(12_000 * 100)
+        ->and($settlement->flow_mode)->toBe(PartnerCollectionMode::NedsCollects);
+});
+
 it('never processes a PartnerCollects client, even if it somehow has a real invoice', function () {
     $partner = Partner::factory()->create();
     $customer = Customer::factory()->create([

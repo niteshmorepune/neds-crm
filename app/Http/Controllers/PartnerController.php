@@ -54,7 +54,7 @@ class PartnerController extends Controller
         // concept from commissionEstimate/commissionHistory above (see
         // ReferralSettlementService's own docblock).
         $referredCustomers = $partner->referredCustomers()
-            ->with(['recurringInvoices.service', 'recurringInvoices.items', 'recurringInvoices.invoices', 'referralSettlements'])
+            ->with(['recurringInvoices.service', 'recurringInvoices.items', 'recurringInvoices.invoices', 'referralSettlements', 'billedViaCustomer'])
             ->orderBy('company_name')
             ->get();
         $settlementGrids = $referredCustomers->mapWithKeys(fn (Customer $c) => [$c->id => $settlementService->gridForClient($c)]);

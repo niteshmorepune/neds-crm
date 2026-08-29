@@ -8,6 +8,7 @@
     $isOverseasInit = ! empty($countryValue) && strtolower(trim($countryValue)) !== 'india';
     $partnerIdValue = old('referring_partner_id', $customer->referring_partner_id ?? '');
     $shareTypeValue = old('referral_share_type', $customer->referral_share_type?->value ?? 'percentage');
+    $collectionModeValue = old('partner_collection_mode', $customer->partner_collection_mode?->value ?? '');
 @endphp
 
 <div class="grid grid-cols-1 gap-6 md:grid-cols-2"
@@ -16,6 +17,7 @@
          get isOverseas() { return this.country.trim().toLowerCase() !== 'india' && this.country.trim() !== '' },
          partnerId: {{ Js::from((string) $partnerIdValue) }},
          shareType: {{ Js::from($shareTypeValue) }},
+         collectionMode: {{ Js::from($collectionModeValue) }},
      }">
     <div class="md:col-span-2">
         <x-input-label for="company_name" value="Company name *" />
@@ -156,7 +158,7 @@
 
     <div x-show="partnerId !== ''" style="display: none;">
         <x-input-label for="partner_collection_mode" value="Who collects payment for this client?" />
-        <select id="partner_collection_mode" name="partner_collection_mode" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+        <select id="partner_collection_mode" name="partner_collection_mode" x-model="collectionMode" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
             <option value="">— NEDS collects (default) —</option>
             @foreach (\App\Enums\PartnerCollectionMode::cases() as $mode)
                 <option value="{{ $mode->value }}" @selected(old('partner_collection_mode', $customer->partner_collection_mode?->value) === $mode->value)>
@@ -165,6 +167,22 @@
             @endforeach
         </select>
         <x-input-error :messages="$errors->get('partner_collection_mode')" class="mt-1" />
+    </div>
+
+    <div x-show="partnerId !== '' && collectionMode === 'billed_via_third_party'" style="display: none;">
+        <x-input-label for="billed_via_customer_id" value="Billed via (third-party company)" />
+        <select id="billed_via_customer_id" name="billed_via_customer_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+            <option value="">— Select company —</option>
+            @foreach ($billableCustomers as $billable)
+                <option value="{{ $billable->id }}" @selected((string) old('billed_via_customer_id', $customer->billed_via_customer_id) === (string) $billable->id)>
+                    {{ $billable->company_name }}
+                </option>
+            @endforeach
+        </select>
+        <p class="mt-1 text-sm text-gray-500">
+            NEDS raises the real GST invoice to this company — they in turn bill this client directly.
+        </p>
+        <x-input-error :messages="$errors->get('billed_via_customer_id')" class="mt-1" />
     </div>
 
     <div x-show="partnerId !== ''" style="display: none;">

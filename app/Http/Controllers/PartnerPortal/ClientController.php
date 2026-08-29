@@ -35,7 +35,12 @@ class ClientController extends PartnerPortalController
         return view('partner-portal.clients.show', [
             'customer' => $customer,
             'account' => $collectionsMetrics->accountSummaryForCustomer($customer),
-            'quotations' => $customer->quotations()->latest()->get(),
+            // billingTarget() redirects to the real quotation owner when this
+            // client is billed via a third party (Customer::billed_via_customer_id)
+            // — unlike a reseller's shared consolidated account, a single
+            // referred client's own quotations are unambiguous, so this is a
+            // safe direct fix (no risk of pulling in another client's rows).
+            'quotations' => $customer->billingTarget()->quotations()->latest()->get(),
             'settlementGrid' => $settlementService->gridForClient($customer),
         ]);
     }

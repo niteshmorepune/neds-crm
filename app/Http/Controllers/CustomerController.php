@@ -78,6 +78,7 @@ class CustomerController extends Controller
             'owners' => $this->assignableOwners(),
             'statuses' => CustomerStatus::cases(),
             'partners' => Partner::orderBy('name')->get(),
+            'billableCustomers' => $this->billableCustomerOptions(),
         ]);
     }
 
@@ -216,6 +217,7 @@ class CustomerController extends Controller
             'owners' => $this->assignableOwners(),
             'statuses' => CustomerStatus::cases(),
             'partners' => Partner::orderBy('name')->get(),
+            'billableCustomers' => $this->billableCustomerOptions($client),
         ]);
     }
 
@@ -271,6 +273,19 @@ class CustomerController extends Controller
         }
 
         return $data;
+    }
+
+    /**
+     * Companies selectable as a "billed via third party" target — every
+     * other client, excluding this one itself (a client can't be billed via
+     * itself, see CustomerStoreRequest::withValidator()).
+     */
+    private function billableCustomerOptions(?Customer $exclude = null)
+    {
+        return Customer::query()
+            ->when($exclude, fn ($q, $c) => $q->where('id', '!=', $c->id))
+            ->orderBy('company_name')
+            ->get(['id', 'company_name']);
     }
 
     /**

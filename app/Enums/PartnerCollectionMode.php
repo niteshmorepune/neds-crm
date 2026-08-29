@@ -13,12 +13,14 @@ enum PartnerCollectionMode: string
 {
     case NedsCollects = 'neds_collects';
     case PartnerCollects = 'partner_collects';
+    case BilledViaThirdParty = 'billed_via_third_party';
 
     public function label(): string
     {
         return match ($this) {
             self::NedsCollects => 'NEDS collects',
             self::PartnerCollects => 'Partner collects',
+            self::BilledViaThirdParty => 'NEDS collects — via third party',
         };
     }
 
