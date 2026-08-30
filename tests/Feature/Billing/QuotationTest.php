@@ -28,12 +28,15 @@ beforeEach(function () {
     $this->admin = User::factory()->role(UserRole::Admin)->create();
 });
 
-it('defaults a new line item to the admin-configured SAC/HSN code', function () {
+it('defaults a new line item to the admin-configured SAC/HSN code and 18% GST', function () {
     BillingSetting::current()->update(['default_sac_code' => '998313']);
 
-    Livewire::actingAs($this->admin)
+    $component = Livewire::actingAs($this->admin)
         ->test(QuotationBuilder::class)
-        ->assertSet('items.0.sac_code', '998313');
+        ->assertSet('items.0.sac_code', '998313')
+        ->assertSet('items.0.gst_rate', '18');
+
+    $component->call('addItem')->assertSet('items.1.sac_code', '998313')->assertSet('items.1.gst_rate', '18');
 });
 
 function quotationWithLine(array $attributes = []): Quotation
