@@ -145,7 +145,7 @@
             <div x-show="!itemsMode">
                 <x-input-label for="amount" value="Amount (₹) *" />
                 <x-text-input id="amount" name="amount" type="number" step="0.01" min="0.01"
-                              class="mt-1 block w-full" :value="old('amount')" placeholder="50000" :required="old('mode') !== 'items'" />
+                              class="mt-1 block w-full" :value="old('amount')" placeholder="50000" x-bind:required="!itemsMode" />
                 <x-input-error :messages="$errors->get('amount')" class="mt-1" />
             </div>
 

@@ -32,6 +32,21 @@ it('renders the Add GST line items toggle and defaults new rows to SAC 998314 / 
         ->assertSee('998314');
 });
 
+it('does not hardcode the flat-mode Amount field as required, since that silently blocks submission when it is hidden behind the GST line items toggle', function () {
+    // Regression: the field previously used :required="old('mode') !== 'items'",
+    // a Blade conditional baked in at page load -- true on a fresh page load
+    // regardless of the live Alpine itemsMode state. A `required` input
+    // hidden via x-show="!itemsMode" fails native browser validation with
+    // NO visible error anywhere, silently blocking the Log Invoice button
+    // the moment someone checks "Add GST line items now". Fixed to track
+    // the same live x-show boolean via x-bind:required="!itemsMode".
+    $html = $this->actingAs($this->accounts)->get(route('invoices.create'))->getContent();
+    preg_match('/<input[^>]*id="amount"[^>]*>/', $html, $matches);
+
+    expect($matches)->not->toBeEmpty()
+        ->and($matches[0])->toContain('x-bind:required="!itemsMode"');
+});
+
 it('preselects the client and project when deep-linked from the client/project page', function () {
     $project = Project::factory()->create(['customer_id' => $this->customer->id]);
 
