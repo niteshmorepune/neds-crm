@@ -48,6 +48,7 @@
             <div>
                 <x-input-label value="Value (₹) *" />
                 <x-text-input wire:model="value" type="number" step="0.01" min="0" class="mt-1 block w-full" />
+                <p class="mt-1 text-xs text-gray-400">Amount before GST — not the quotation/invoice total. This feeds Sales Incentive and target reports directly.</p>
                 @error('value') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
             </div>
             <div>

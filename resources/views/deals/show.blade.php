@@ -156,6 +156,7 @@
                         <div>
                             <x-input-label for="value" value="Value (₹) *" />
                             <x-text-input id="value" name="value" type="number" step="0.01" min="0" class="mt-1 block w-full" :value="$valueRupees" />
+                            <p class="mt-1 text-xs text-gray-400">Amount before GST — not the quotation/invoice total. This feeds Sales Incentive and target reports directly.</p>
                             <x-input-error :messages="$errors->get('value')" class="mt-1" />
                         </div>
                         <div>
