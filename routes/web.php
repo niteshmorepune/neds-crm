@@ -6,6 +6,7 @@ use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\Auth\TwoFactorChallengeController;
+use App\Http\Controllers\BillingSettingController;
 use App\Http\Controllers\CallLogController;
 use App\Http\Controllers\ClientAdvanceController;
 use App\Http\Controllers\ClientAssetController;
@@ -566,8 +567,16 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
         Route::post('services', [ServiceController::class, 'store'])->name('services.store');
         Route::put('services/{service}', [ServiceController::class, 'update'])->name('services.update');
         Route::delete('services/{service}', [ServiceController::class, 'destroy'])->name('services.destroy');
-        Route::patch('services/billing-settings', [ServiceController::class, 'updateBillingSettings'])->name('services.billing-settings.update');
-        Route::patch('services/invoice-numbering', [ServiceController::class, 'updateInvoiceNumbering'])->name('services.invoice-numbering.update');
+    });
+
+    /*
+     * Billing Settings — default SAC/HSN code + invoice numbering. Split out
+     * of the Services page (2026-08-30): billing config, not service taxonomy.
+     */
+    Route::middleware('menu.access:billing-settings')->group(function () {
+        Route::get('billing-settings', [BillingSettingController::class, 'index'])->name('billing-settings.index');
+        Route::patch('billing-settings/sac-default', [BillingSettingController::class, 'updateSacDefault'])->name('billing-settings.sac-default.update');
+        Route::patch('billing-settings/invoice-numbering', [BillingSettingController::class, 'updateInvoiceNumbering'])->name('billing-settings.invoice-numbering.update');
     });
 
     /*
