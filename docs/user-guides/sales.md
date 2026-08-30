@@ -286,6 +286,11 @@ on **Sales Dashboard** — see 2a below.
   estimate even early on (New/Contacted) and correct it as the deal firms up.
   It drives every figure on the Sales Dashboard's KPI strip, so a missing or
   0 value understates your own numbers.
+- **Enter the amount before GST** — not the quotation or invoice total. Once
+  a quotation exists, use its Subtotal line, not the GST-inclusive Total at
+  the bottom. Your Incentive slabs (see Section 5) are calculated directly
+  off this number, so a GST-inclusive Value overstates your own sales for
+  the month by the GST rate.
 - **Deals like this one** — on a deal's page, a panel shows up to 3 other
   closed deals (Won or Lost) for the same service, ranked by how close their
   value is to this one — useful context on how deals with this profile tend
