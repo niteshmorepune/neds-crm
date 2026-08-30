@@ -14,6 +14,7 @@ use App\Http\Requests\PaymentStoreRequest;
 use App\Http\Requests\PaymentUpdateRequest;
 use App\Mail\InvoiceIssued;
 use App\Mail\PaymentReceived;
+use App\Models\BillingSetting;
 use App\Models\ClientAdvance;
 use App\Models\Customer;
 use App\Models\Deal;
@@ -71,6 +72,7 @@ class InvoiceController extends Controller
             'projects' => Project::whereNotIn('status', ['completed'])->orderBy('name')->get(['id', 'name', 'customer_id']),
             'prefillCustomerId' => $request->integer('customer_id') ?: null,
             'prefillProjectId' => $request->integer('project_id') ?: null,
+            'defaultSacCode' => BillingSetting::current()->default_sac_code,
         ]);
     }
 

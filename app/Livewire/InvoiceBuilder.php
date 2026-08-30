@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Models\BillingSetting;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Services\GstCalculator;
@@ -31,12 +32,12 @@ class InvoiceBuilder extends Component
 
     /**
      * Nearly every NEDS line item is Social Media Management-style monthly
-     * retainer work under this one SAC code at the standard services rate --
-     * defaulting a new row to these (instead of blank) is what the owner
-     * asked for; either field is still freely editable per line.
+     * retainer work at the standard services GST rate -- defaulting a new
+     * row to these (instead of blank) is what the owner asked for; either
+     * field is still freely editable per line. SAC code comes from the
+     * admin-editable BillingSetting (Admin & Config → Services), not a
+     * hardcoded constant, so it can be changed without a deploy.
      */
-    private const DEFAULT_SAC_CODE = '998314';
-
     private const DEFAULT_GST_RATE = '18';
 
     public function mount(Invoice $invoice): void
@@ -66,7 +67,7 @@ class InvoiceBuilder extends Component
     {
         $this->items[] = [
             'description' => '',
-            'sac_code' => self::DEFAULT_SAC_CODE,
+            'sac_code' => BillingSetting::current()->default_sac_code,
             'quantity' => '',
             'rate' => '',
             'gst_rate' => self::DEFAULT_GST_RATE,

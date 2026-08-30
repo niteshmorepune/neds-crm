@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Enums\RecurringFrequency;
+use App\Models\BillingSetting;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\Project;
@@ -127,7 +128,7 @@ class RecurringInvoiceBuilder extends Component
 
     public function addItem(): void
     {
-        $this->items[] = ['description' => '', 'sac_code' => '', 'quantity' => '1', 'rate' => '0', 'gst_rate' => '18'];
+        $this->items[] = ['description' => '', 'sac_code' => BillingSetting::current()->default_sac_code, 'quantity' => '1', 'rate' => '0', 'gst_rate' => '18'];
     }
 
     public function removeItem(int $index): void

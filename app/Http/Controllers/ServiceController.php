@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\BillingSettingsRequest;
 use App\Http\Requests\ServiceRequest;
+use App\Models\BillingSetting;
 use App\Models\Project;
 use App\Models\Service;
 use App\Models\Ticket;
@@ -22,6 +24,7 @@ class ServiceController extends Controller
     {
         return view('services.index', [
             'services' => Service::orderBy('sort_order')->orderBy('name')->get(),
+            'defaultSacCode' => BillingSetting::current()->default_sac_code,
         ]);
     }
 
@@ -60,5 +63,16 @@ class ServiceController extends Controller
         $service->delete();
 
         return back()->with('status', 'Service removed.');
+    }
+
+    public function updateBillingSettings(BillingSettingsRequest $request): RedirectResponse
+    {
+        $setting = BillingSetting::current();
+        $setting->update([
+            'default_sac_code' => $request->validated('default_sac_code'),
+            'updated_by' => $request->user()->id,
+        ]);
+
+        return back()->with('status', 'Billing default updated.');
     }
 }

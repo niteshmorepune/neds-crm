@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\UserRole;
+use App\Models\BillingSetting;
 use App\Models\Deal;
 use App\Models\Service;
 use App\Models\User;
@@ -74,4 +75,23 @@ it('deletes an unused service', function () {
     $this->actingAs($admin)->delete(route('services.destroy', $service))->assertRedirect();
 
     expect(Service::find($service->id))->toBeNull();
+});
+
+it('defaults the billing SAC/HSN code to 998314 the first time it is read', function () {
+    expect(BillingSetting::current()->default_sac_code)->toBe('998314');
+});
+
+it('lets a manager update the default SAC/HSN code but forbids a sales user', function () {
+    $manager = User::factory()->role(UserRole::Manager)->create();
+
+    $this->actingAs($manager)->patch(route('services.billing-settings.update'), [
+        'default_sac_code' => '998313',
+    ])->assertRedirect();
+
+    expect(BillingSetting::current()->default_sac_code)->toBe('998313')
+        ->and(BillingSetting::current()->updated_by)->toBe($manager->id);
+
+    $this->actingAs(User::factory()->role(UserRole::Sales)->create())
+        ->patch(route('services.billing-settings.update'), ['default_sac_code' => '000000'])
+        ->assertForbidden();
 });

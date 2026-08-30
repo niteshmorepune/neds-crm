@@ -5,6 +5,7 @@ use App\Enums\QuotationStatus;
 use App\Enums\UserRole;
 use App\Jobs\SendQuotationWhatsAppJob;
 use App\Livewire\QuotationBuilder;
+use App\Models\BillingSetting;
 use App\Models\Contact;
 use App\Models\Customer;
 use App\Models\Deal;
@@ -25,6 +26,14 @@ use Livewire\Livewire;
 beforeEach(function () {
     $this->seed(MenuItemsSeeder::class);
     $this->admin = User::factory()->role(UserRole::Admin)->create();
+});
+
+it('defaults a new line item to the admin-configured SAC/HSN code', function () {
+    BillingSetting::current()->update(['default_sac_code' => '998313']);
+
+    Livewire::actingAs($this->admin)
+        ->test(QuotationBuilder::class)
+        ->assertSet('items.0.sac_code', '998313');
 });
 
 function quotationWithLine(array $attributes = []): Quotation

@@ -24,6 +24,22 @@
             </form>
         </div>
 
+        {{-- Billing default --}}
+        <div class="rounded-lg bg-white p-6 shadow-sm">
+            <h2 class="text-base font-semibold text-gray-900">Billing default</h2>
+            <form method="POST" action="{{ route('services.billing-settings.update') }}" class="mt-3 flex flex-wrap items-end gap-3">
+                @csrf
+                @method('PATCH')
+                <div class="w-40">
+                    <x-input-label for="default_sac_code" value="Default SAC/HSN code" />
+                    <x-text-input id="default_sac_code" name="default_sac_code" type="text" class="mt-1 block w-full" :value="old('default_sac_code', $defaultSacCode)" required />
+                    <x-input-error :messages="$errors->get('default_sac_code')" class="mt-1" />
+                </div>
+                <x-primary-button>Save</x-primary-button>
+            </form>
+            <p class="mt-2 text-xs text-gray-400">Pre-fills the SAC/HSN field on every new Quotation, Invoice, and Recurring Invoice line item. Still freely editable per line.</p>
+        </div>
+
         {{-- Existing services (inline edit; row inputs bind to the forms below via form="…") --}}
         <div class="overflow-hidden overflow-x-auto rounded-lg bg-white shadow-sm">
             <table class="min-w-full divide-y divide-gray-200 text-sm">

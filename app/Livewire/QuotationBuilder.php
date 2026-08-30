@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Enums\QuotationStatus;
 use App\Livewire\Concerns\RatesAiDrafts;
+use App\Models\BillingSetting;
 use App\Models\Customer;
 use App\Models\Deal;
 use App\Models\Quotation;
@@ -134,7 +135,7 @@ class QuotationBuilder extends Component
 
     public function addItem(): void
     {
-        $this->items[] = ['description' => '', 'sac_code' => '', 'quantity' => '', 'rate' => '', 'gst_rate' => '', 'is_recurring' => false];
+        $this->items[] = ['description' => '', 'sac_code' => BillingSetting::current()->default_sac_code, 'quantity' => '', 'rate' => '', 'gst_rate' => '', 'is_recurring' => false];
     }
 
     public function removeItem(int $index): void

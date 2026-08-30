@@ -4,7 +4,7 @@
     @php
         $selectedCustomerId = old('customer_id', $prefillCustomerId);
         $selectedProjectId = old('project_id', $prefillProjectId);
-        $defaultItems = [['description' => '', 'sac_code' => '998314', 'quantity' => '', 'rate' => '', 'gst_rate' => '18']];
+        $defaultItems = [['description' => '', 'sac_code' => $defaultSacCode, 'quantity' => '', 'rate' => '', 'gst_rate' => '18']];
     @endphp
 
     <div class="max-w-3xl mx-auto"
@@ -27,7 +27,7 @@
                 }
             },
             addItem() {
-                this.items.push({ description: '', sac_code: '998314', quantity: '', rate: '', gst_rate: '18' });
+                this.items.push({ description: '', sac_code: @js($defaultSacCode), quantity: '', rate: '', gst_rate: '18' });
             },
             removeItem(index) {
                 this.items.splice(index, 1);
