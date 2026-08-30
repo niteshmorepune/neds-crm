@@ -72,7 +72,7 @@
             <div>
                 <x-input-label for="invoice_number" value="Hitech Invoice Number *" />
                 <x-text-input id="invoice_number" name="invoice_number" type="text" class="mt-1 block w-full"
-                              :value="old('invoice_number')" placeholder="e.g. HT-2026-0042" required />
+                              :value="old('invoice_number')" placeholder="e.g. 26/27-040 (Indian) or 26/27-IN022 (Out of India)" required />
                 <x-input-error :messages="$errors->get('invoice_number')" class="mt-1" />
             </div>
 

@@ -567,6 +567,7 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
         Route::put('services/{service}', [ServiceController::class, 'update'])->name('services.update');
         Route::delete('services/{service}', [ServiceController::class, 'destroy'])->name('services.destroy');
         Route::patch('services/billing-settings', [ServiceController::class, 'updateBillingSettings'])->name('services.billing-settings.update');
+        Route::patch('services/invoice-numbering', [ServiceController::class, 'updateInvoiceNumbering'])->name('services.invoice-numbering.update');
     });
 
     /*

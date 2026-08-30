@@ -88,7 +88,7 @@ class RecurringInvoiceController extends Controller
 
         $invoice = DB::transaction(function () use ($recurring, $numbers, $issueDate) {
             $invoice = Invoice::create([
-                'invoice_number' => $numbers->generate($issueDate),
+                'invoice_number' => $numbers->generate($issueDate, $recurring->customer->isOverseas()),
                 'financial_year' => $numbers->financialYear($issueDate),
                 'customer_id' => $recurring->customer_id,
                 'project_id' => $recurring->project_id,

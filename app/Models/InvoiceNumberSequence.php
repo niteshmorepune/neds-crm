@@ -8,6 +8,7 @@ class InvoiceNumberSequence extends Model
 {
     protected $fillable = [
         'financial_year',
+        'sequence_type',
         'last_number',
     ];
 }

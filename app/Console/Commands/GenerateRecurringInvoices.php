@@ -42,7 +42,7 @@ class GenerateRecurringInvoices extends Command
 
             $invoice = DB::transaction(function () use ($template, $numbers, $issueDate) {
                 $invoice = Invoice::create([
-                    'invoice_number' => $numbers->generate($issueDate),
+                    'invoice_number' => $numbers->generate($issueDate, $template->customer->isOverseas()),
                     'financial_year' => $numbers->financialYear($issueDate),
                     'customer_id' => $template->customer_id,
                     'project_id' => $template->project_id,

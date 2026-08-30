@@ -90,7 +90,10 @@ it('generates via the "Generate & Send Now" button, self-healing a drifted invoi
     // the invoice_number_sequences counter, so the counter is stuck behind the
     // real max and a naive generate() call would collide on every attempt.
     $manuallyLogged = Invoice::factory()->create();
-    $manuallyLogged->update(['invoice_number' => 'NEDS/'.$manuallyLogged->financial_year.'/0050']);
+    $startYear = (int) explode('-', $manuallyLogged->financial_year)[0];
+    [$yy, $yy2] = [substr((string) $startYear, -2), substr((string) ($startYear + 1), -2)];
+    $aheadNumber = $startYear >= 2027 ? "NEDS/{$yy}-{$yy2}/050" : "{$yy}/{$yy2}-050";
+    $manuallyLogged->update(['invoice_number' => $aheadNumber]);
 
     $template = recurringWithLine(['next_run_on' => now()->addWeek()->toDateString()]);
     $accounts = User::factory()->role(UserRole::Accounts)->create();
