@@ -141,3 +141,45 @@ it('lets an admin catch the counter up to a manually-set next number, per FY and
     expect($domestic)->toBe('26/27-040')
         ->and($export)->toBe('26/27-IN022');
 });
+
+it('generates Non-GST invoice numbers as INV/{fy}/{seq}, with no bare-format era — starts immediately this FY', function () {
+    $fy2627 = $this->gen->generate(Carbon::parse('2026-06-10'), isGstExempt: true);
+    $fy2728 = $this->gen->generate(Carbon::parse('2027-05-10'), isGstExempt: true);
+
+    expect($fy2627)->toBe('INV/26-27/001')
+        ->and($fy2728)->toBe('INV/27-28/001'); // independent counter, not FY2627's continuation
+});
+
+it('keeps the Non-GST sequence independent of domestic/export in the same FY', function () {
+    $this->gen->generate(Carbon::parse('2026-06-10')); // domestic 001
+    $this->gen->generate(Carbon::parse('2026-06-10'), isOverseas: true); // export IN001
+    $nonGst1 = $this->gen->generate(Carbon::parse('2026-06-10'), isGstExempt: true);
+    $domestic2 = $this->gen->generate(Carbon::parse('2026-06-10'));
+    $nonGst2 = $this->gen->generate(Carbon::parse('2026-06-10'), isGstExempt: true);
+
+    expect($nonGst1)->toBe('INV/26-27/001')
+        ->and($nonGst2)->toBe('INV/26-27/002')
+        ->and($domestic2)->toBe('26/27-002');
+});
+
+it('sends an overseas + Non-GST-exempt client to the export sequence, not Non-GST — export wins the overlap', function () {
+    $result = $this->gen->generate(Carbon::parse('2026-06-10'), isOverseas: true, isGstExempt: true);
+
+    expect($result)->toBe('26/27-IN001');
+});
+
+it('self-heals the Non-GST counter from a manually-logged INV number', function () {
+    Invoice::factory()->create(['financial_year' => '2026-27', 'invoice_number' => 'INV/26-27/050']);
+
+    $next = $this->gen->generate(Carbon::parse('2026-06-10'), isGstExempt: true);
+
+    expect($next)->toBe('INV/26-27/051');
+});
+
+it('lets an admin catch the Non-GST counter up to a manually-set next number', function () {
+    InvoiceNumberSequence::updateOrCreate(['financial_year' => '2026-27', 'sequence_type' => 'non_gst'], ['last_number' => 5]);
+
+    $next = $this->gen->generate(Carbon::parse('2026-06-10'), isGstExempt: true);
+
+    expect($next)->toBe('INV/26-27/006');
+});

@@ -456,7 +456,7 @@ class InvoiceController extends Controller
         }
 
         $invoice->update([
-            'invoice_number' => $numbers->generate($invoice->issue_date, $invoice->customer?->isOverseas() ?? false),
+            'invoice_number' => $numbers->generate($invoice->issue_date, $invoice->customer?->isOverseas() ?? false, $invoice->is_gst_exempt),
             'financial_year' => $numbers->financialYear($invoice->issue_date),
         ]);
 

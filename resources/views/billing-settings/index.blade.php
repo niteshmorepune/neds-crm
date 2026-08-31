@@ -26,8 +26,9 @@
         <div class="rounded-lg bg-white p-6 shadow-sm">
             <h2 class="text-base font-semibold text-gray-900">Invoice numbering</h2>
             <p class="mt-1 text-xs text-gray-400">
-                The CRM would currently assign <strong>{{ $nextDomesticPreview }}</strong> next for an Indian client and
-                <strong>{{ $nextExportPreview }}</strong> next for an Out of India client. Use this to catch the CRM's
+                The CRM would currently assign <strong>{{ $nextDomesticPreview }}</strong> next for an Indian client,
+                <strong>{{ $nextExportPreview }}</strong> next for an Out of India client, and
+                <strong>{{ $nextNonGstPreview }}</strong> next for a Non-GST invoice. Use this to catch the CRM's
                 counter up to Hitech's real numbering — set it to the number Hitech would assign next, not the last one used.
             </p>
             <form method="POST" action="{{ route('billing-settings.invoice-numbering.update') }}" class="mt-3 flex flex-wrap items-end gap-3">
@@ -47,6 +48,11 @@
                     <x-input-label for="next_export_number" value="Next number — Out of India clients" />
                     <x-text-input id="next_export_number" name="next_export_number" type="number" min="1" class="mt-1 block w-full" :value="old('next_export_number', $nextExportNumber)" required />
                     <x-input-error :messages="$errors->get('next_export_number')" class="mt-1" />
+                </div>
+                <div class="w-52">
+                    <x-input-label for="next_non_gst_number" value="Next number — Non-GST invoices" />
+                    <x-text-input id="next_non_gst_number" name="next_non_gst_number" type="number" min="1" class="mt-1 block w-full" :value="old('next_non_gst_number', $nextNonGstNumber)" required />
+                    <x-input-error :messages="$errors->get('next_non_gst_number')" class="mt-1" />
                 </div>
                 <x-primary-button>Save</x-primary-button>
             </form>

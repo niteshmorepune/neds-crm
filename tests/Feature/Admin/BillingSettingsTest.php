@@ -42,17 +42,20 @@ it('lets a manager catch the invoice numbering counters up to a given next numbe
         'financial_year' => '2026-27',
         'next_domestic_number' => 40,
         'next_export_number' => 22,
+        'next_non_gst_number' => 6,
     ])->assertRedirect();
 
     $generator = app(InvoiceNumberGenerator::class);
     $domestic = $generator->generate(Carbon::parse('2026-06-10'));
     $export = $generator->generate(Carbon::parse('2026-06-10'), isOverseas: true);
+    $nonGst = $generator->generate(Carbon::parse('2026-06-10'), isGstExempt: true);
 
     expect($domestic)->toBe('26/27-040')
-        ->and($export)->toBe('26/27-IN022');
+        ->and($export)->toBe('26/27-IN022')
+        ->and($nonGst)->toBe('INV/26-27/006');
 
     $this->actingAs(User::factory()->role(UserRole::Sales)->create())
         ->patch(route('billing-settings.invoice-numbering.update'), [
-            'financial_year' => '2026-27', 'next_domestic_number' => 1, 'next_export_number' => 1,
+            'financial_year' => '2026-27', 'next_domestic_number' => 1, 'next_export_number' => 1, 'next_non_gst_number' => 1,
         ])->assertForbidden();
 });

@@ -18,6 +18,7 @@ class InvoiceNumberSettingsRequest extends FormRequest
             'financial_year' => ['required', 'regex:/^\d{4}-\d{2}$/'],
             'next_domestic_number' => ['required', 'integer', 'min:1'],
             'next_export_number' => ['required', 'integer', 'min:1'],
+            'next_non_gst_number' => ['required', 'integer', 'min:1'],
         ];
     }
 }

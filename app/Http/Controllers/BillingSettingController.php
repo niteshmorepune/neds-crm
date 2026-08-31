@@ -27,10 +27,12 @@ class BillingSettingController extends Controller
         return view('billing-settings.index', [
             'defaultSacCode' => BillingSetting::current()->default_sac_code,
             'currentFy' => $currentFy,
-            'nextDomesticPreview' => $numbers->peek(Carbon::now(), false),
-            'nextExportPreview' => $numbers->peek(Carbon::now(), true),
-            'nextDomesticNumber' => $numbers->peekNumber(Carbon::now(), false),
-            'nextExportNumber' => $numbers->peekNumber(Carbon::now(), true),
+            'nextDomesticPreview' => $numbers->peek(Carbon::now(), false, false),
+            'nextExportPreview' => $numbers->peek(Carbon::now(), true, false),
+            'nextNonGstPreview' => $numbers->peek(Carbon::now(), false, true),
+            'nextDomesticNumber' => $numbers->peekNumber(Carbon::now(), false, false),
+            'nextExportNumber' => $numbers->peekNumber(Carbon::now(), true, false),
+            'nextNonGstNumber' => $numbers->peekNumber(Carbon::now(), false, true),
         ]);
     }
 
@@ -56,6 +58,10 @@ class BillingSettingController extends Controller
         InvoiceNumberSequence::updateOrCreate(
             ['financial_year' => $data['financial_year'], 'sequence_type' => 'export'],
             ['last_number' => $data['next_export_number'] - 1]
+        );
+        InvoiceNumberSequence::updateOrCreate(
+            ['financial_year' => $data['financial_year'], 'sequence_type' => 'non_gst'],
+            ['last_number' => $data['next_non_gst_number'] - 1]
         );
 
         return back()->with('status', "Invoice numbering for FY {$data['financial_year']} updated.");
