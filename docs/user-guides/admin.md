@@ -756,10 +756,15 @@ close leads faster, and giving you visibility if they don't.
 
 **Priority sort (default):** the list no longer sorts by newest-first —
 it ranks by a composite of AI score, an overdue or due-today follow-up, and
-(for a still-New lead with no follow-up set yet) how long it's sat
+(for a New or Contacted lead with no follow-up set yet) how long it's sat
 untouched since it came in. An overdue follow-up always outranks
 everything else. Switch to **Newest** via the sort toggle above the list
 if you specifically want chronological order.
+
+A **Lost or Converted lead always sorts to the bottom**, below every open
+lead, regardless of its AI score — there's nothing left to follow up on,
+so a lead that scored well before it died no longer crowds out live leads
+at the top of the list (fixed 2026-08-31).
 
 **"Needs attention today" strip:** three clickable counts above the list —
 overdue follow-ups, follow-ups due today, and Hot leads (AI score ≥ 70)
