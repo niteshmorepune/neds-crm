@@ -108,9 +108,6 @@
             @endif
         </div>
 
-        {{-- Contacts --}}
-        <livewire:contacts-manager :customer="$client" :can-manage="$canManage" />
-
         {{-- Tabbed timeline --}}
         <div class="rounded-lg bg-white shadow-sm">
             <div class="border-b border-gray-200 px-6">
@@ -259,5 +256,8 @@
                 @endif
             </div>
         </div>
+
+        {{-- Contacts --}}
+        <livewire:contacts-manager :customer="$client" :can-manage="$canManage" />
     </div>
 </x-app-layout>
