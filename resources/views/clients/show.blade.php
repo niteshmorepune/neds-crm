@@ -75,7 +75,7 @@
             <div class="rounded-lg bg-white p-4 shadow-sm">
                 <p class="text-xs font-medium uppercase tracking-wide text-gray-400">Next Renewal</p>
                 <p class="mt-1 text-xl font-semibold text-gray-900">{{ $summary['next_renewal']?->format('d M Y') ?? '—' }}</p>
-                <p class="mt-0.5 text-xs text-gray-400">soonest active template end date</p>
+                <p class="mt-0.5 text-xs text-gray-400">soonest active template's next bill date</p>
             </div>
             @if ($canViewInvoices)
                 <div class="rounded-lg bg-white p-4 shadow-sm">

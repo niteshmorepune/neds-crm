@@ -43,22 +43,41 @@ it('normalizes a quarterly templates cycle amount to its monthly equivalent for 
     expect($client->monthlyRecurringValue())->toBe((int) round(100000 / 3));
 });
 
-it('picks the soonest end_date among active templates as the next renewal date', function () {
+it('picks the soonest next_run_on among active templates as the next renewal date', function () {
     $client = Customer::factory()->create();
-    recurringTemplateFor($client, ['is_active' => true, 'end_date' => now()->addDays(60)->toDateString()]);
-    recurringTemplateFor($client, ['is_active' => true, 'end_date' => now()->addDays(10)->toDateString()]);
-    recurringTemplateFor($client, ['is_active' => false, 'end_date' => now()->addDays(1)->toDateString()]); // inactive, ignored
+    recurringTemplateFor($client, ['is_active' => true, 'next_run_on' => now()->addDays(60)->toDateString()]);
+    recurringTemplateFor($client, ['is_active' => true, 'next_run_on' => now()->addDays(10)->toDateString()]);
+    recurringTemplateFor($client, ['is_active' => false, 'next_run_on' => now()->addDays(1)->toDateString()]); // inactive, ignored
 
     $client->load('recurringInvoices');
     expect($client->nextRenewalDate()->toDateString())->toBe(now()->addDays(10)->toDateString());
 });
 
-it('returns null next renewal when no active template has an end date', function () {
+it('returns null next renewal when no active template exists', function () {
     $client = Customer::factory()->create();
-    recurringTemplateFor($client, ['is_active' => true, 'end_date' => null]);
+    recurringTemplateFor($client, ['is_active' => false]);
 
     $client->load('recurringInvoices');
     expect($client->nextRenewalDate())->toBeNull();
+});
+
+it('next renewal date always matches next billing date, even when end_date disagrees with next_run_on', function () {
+    // Real production report, 2026-08-31: two live clients each showed a
+    // "Next Renewal" tile a full year apart from the "Next billing" figure
+    // on the same page, because the two were computed from different
+    // columns (end_date vs next_run_on) that had drifted apart in real
+    // data (a template billed past its own original end_date without
+    // end_date being updated to match). Both tiles must always agree.
+    $client = Customer::factory()->create();
+    recurringTemplateFor($client, [
+        'is_active' => true,
+        'end_date' => now()->addDays(10)->toDateString(),
+        'next_run_on' => now()->addDays(400)->toDateString(),
+    ]);
+
+    $client->load('recurringInvoices');
+    expect($client->nextRenewalDate()->toDateString())->toBe(now()->addDays(400)->toDateString())
+        ->not->toBe(now()->addDays(10)->toDateString());
 });
 
 it('shows MRR and next renewal on the client page for a role without invoice access', function () {
@@ -71,6 +90,24 @@ it('shows MRR and next renewal on the client page for a role without invoice acc
         ->assertSee('MRR')
         ->assertSee(Money::format(100000), false)
         ->assertDontSee('Total Revenue');
+});
+
+it('renders the same date for the page-top "Next Renewal" tile and the Services tab "Next billing" tile', function () {
+    $client = Customer::factory()->create();
+    recurringTemplateFor($client, [
+        'is_active' => true,
+        'end_date' => now()->addDays(10)->toDateString(),
+        'next_run_on' => now()->addDays(400)->toDateString(),
+    ]);
+
+    $response = $this->actingAs($this->admin)->get(route('clients.show', $client));
+
+    // The two tiles must show the same next_run_on-derived date -- while
+    // end_date (still shown separately, in the recurring-services table's
+    // own "End date" column) legitimately stays a different value.
+    $response->assertOk()
+        ->assertSeeInOrder([now()->addDays(400)->format('d M Y'), now()->addDays(400)->format('d M Y')])
+        ->assertSee(now()->addDays(10)->format('d M Y'));
 });
 
 it('shows total revenue and outstanding to a role with invoice access', function () {

@@ -215,7 +215,8 @@ changes** directly from the quotation's own page.
 
 **Client 360° summary strip:** every client's profile page now opens with a
 row of tiles — **MRR** (active recurring services), **Next Renewal** (the
-soonest end date among them), and, for roles with invoice access,
+soonest next-bill date among them — always the same date shown as "Next
+billing" on the Services tab below), and, for roles with invoice access,
 **Total Revenue** (lifetime) and **Outstanding** (clickable — jumps
 straight to that client's Invoices tab). The Health Score badge next to
 the client's status (see Client Radar above) sits right alongside these.

@@ -356,16 +356,29 @@ class Customer extends Model
     }
 
     /**
-     * The soonest end_date among this client's active recurring templates —
-     * the next renewal/contract-lapse point to watch, same signal
-     * SendContractRenewalReminders already alerts on. Null if none are set
-     * to end. Requires recurringInvoices to already be loaded.
+     * The soonest next_run_on among this client's active recurring templates
+     * — deliberately the same value the Services tab's own "Next billing"
+     * figure shows (_services_tab.blade.php's $nextBill), not end_date.
+     *
+     * Previously plucked end_date instead, on the theory that end_date is
+     * "the next renewal/contract-lapse point to watch". In practice the two
+     * drift apart in real data — end_date is a manually-entered contract
+     * term that staff don't always update on renewal, while next_run_on is
+     * the billing engine's own advancing cursor (see generateNow()) — so
+     * the client page showed two different, contradictory dates for what
+     * reads to staff as the same question ("when does this next come up").
+     * Real production report, 2026-08-31 (two live clients, each with
+     * next_run_on and end_date a full year apart). end_date is still the
+     * real signal SendContractRenewalReminders/scopeRenewingWithin() use
+     * for the actual renewal-decision email — this method only changed
+     * what this one client-page tile displays. Null if no active template
+     * has a next_run_on. Requires recurringInvoices to already be loaded.
      */
     public function nextRenewalDate(): ?Carbon
     {
         return $this->recurringInvoices
             ->where('is_active', true)
-            ->pluck('end_date')
+            ->pluck('next_run_on')
             ->filter()
             ->sort()
             ->first();
