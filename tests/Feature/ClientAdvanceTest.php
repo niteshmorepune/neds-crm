@@ -162,3 +162,20 @@ it('sums unapplied advances correctly for the dashboard', function () {
 
     expect($stats['unapplied_advances'])->toBe(1500000);
 });
+
+it('shows the Unapplied Advances tile on the client page, excluding a cancelled advance', function () {
+    $this->customer->clientAdvances()->create(['amount' => 1000000, 'received_on' => now(), 'mode' => PaymentMode::Cash]);
+    $this->customer->clientAdvances()->create(['amount' => 999999, 'received_on' => now(), 'mode' => PaymentMode::Cash, 'status' => ClientAdvanceStatus::Cancelled]);
+
+    $this->actingAs($this->accounts)->get(route('clients.show', $this->customer))
+        ->assertOk()
+        ->assertSee('Unapplied Advances')
+        ->assertSee('₹10,000.00')
+        ->assertDontSee('₹19,999.99');
+
+    // $this->owner (Sales) can view this client (they own it) but Sales has
+    // no ClientAdvance::viewAny access regardless of ownership.
+    $this->actingAs($this->owner)->get(route('clients.show', $this->customer))
+        ->assertOk()
+        ->assertDontSee('Unapplied Advances');
+});

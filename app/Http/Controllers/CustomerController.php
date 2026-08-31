@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ClientAdvanceStatus;
 use App\Enums\CustomerStatus;
 use App\Enums\UserRole;
 use App\Http\Requests\CustomerStoreRequest;
@@ -182,6 +183,11 @@ class CustomerController extends Controller
             'total_revenue' => $canViewInvoices ? (int) $client->invoices->sum('total') : null,
             'outstanding' => $canViewInvoices
                 ? (int) $collections->outstandingInvoicesQuery()->where('customer_id', $client->id)->get()->sum(fn (Invoice $i) => $i->balance())
+                : null,
+            'unapplied_advances' => $canViewAdvances
+                ? (int) $client->clientAdvances
+                    ->whereIn('status', [ClientAdvanceStatus::Outstanding, ClientAdvanceStatus::PartiallyApplied])
+                    ->sum(fn (ClientAdvance $a) => $a->remaining())
                 : null,
         ];
 

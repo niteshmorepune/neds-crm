@@ -94,6 +94,18 @@
                     <p class="mt-0.5 text-xs text-indigo-600">view invoices →</p>
                 </button>
             @endif
+            @if ($canViewAdvances)
+                <button type="button" @click="tab = 'invoices'"
+                        class="rounded-lg bg-white p-4 text-left shadow-sm hover:ring-1 hover:ring-indigo-200 transition-shadow">
+                    <p class="text-xs font-medium uppercase tracking-wide text-gray-400">Unapplied Advances</p>
+                    <p @class([
+                        'mt-1 text-xl font-semibold',
+                        'text-blue-700' => $summary['unapplied_advances'] > 0,
+                        'text-gray-900' => $summary['unapplied_advances'] === 0,
+                    ])>{{ \App\Support\Money::format($summary['unapplied_advances']) }}</p>
+                    <p class="mt-0.5 text-xs text-indigo-600">view details →</p>
+                </button>
+            @endif
         </div>
 
         {{-- Contacts --}}
