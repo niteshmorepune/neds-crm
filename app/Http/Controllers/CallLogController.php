@@ -9,6 +9,8 @@ use App\Enums\VisibilityAuditTouchChannel;
 use App\Enums\VisibilityAuditTouchType;
 use App\Enums\VoiceTranscriptStatus;
 use App\Http\Requests\CallLogStoreRequest;
+use App\Jobs\DetectCallFollowUpCommitment;
+use App\Jobs\ScoreLead;
 use App\Jobs\TranscribeCallLogVoiceNote;
 use App\Models\CallLog;
 use App\Models\Customer;
@@ -42,6 +44,11 @@ class CallLogController extends Controller
             ->when($request->filled('outcome'), fn ($q) => $q->where('outcome', $request->input('outcome')))
             ->when($request->filled('date'), fn ($q) => $q->whereDate('called_at', $request->date('date')))
             ->when($request->boolean('pending_followup'), fn ($q) => $q->whereNotNull('follow_up_at')->whereNull('follow_up_notified_at'))
+            ->when($request->boolean('needs_followup_review'), fn ($q) => $q
+                ->whereIn('outcome', [CallOutcome::Connected->value, CallOutcome::FollowUpNeeded->value])
+                ->whereNotNull('notes')
+                ->where('notes', '!=', '')
+                ->whereNull('follow_up_at'))
             ->latest('called_at')
             ->paginate(20)
             ->withQueryString();
@@ -50,7 +57,7 @@ class CallLogController extends Controller
             'calls' => $calls,
             'staff' => $isManager ? User::orderBy('name')->get(['id', 'name']) : collect(),
             'outcomes' => CallOutcome::cases(),
-            'filters' => $request->only(['user_id', 'outcome', 'date', 'pending_followup']),
+            'filters' => $request->only(['user_id', 'outcome', 'date', 'pending_followup', 'needs_followup_review']),
             'isManager' => $isManager,
             'canLogLeads' => $this->menu->canAccess($user, 'lead-generation'),
         ]);
@@ -105,6 +112,19 @@ class CallLogController extends Controller
                 ? Carbon::parse($data['follow_up_at'], $tz)->utc()
                 : null,
         ]);
+
+        // Only when the rep left both blank -- never second-guess a reminder
+        // (or its deliberate absence) they set themselves.
+        if ($call->follow_up_at === null && filled($call->notes) && Ai::enabled()) {
+            DetectCallFollowUpCommitment::dispatch($call->id);
+        }
+
+        // A call is real post-intake signal ScoreLead's prompt now reads —
+        // re-score so the score reflects it instead of going stale the
+        // moment a rep actually starts talking to this lead.
+        if ($type === Lead::class && Ai::enabled()) {
+            ScoreLead::dispatch($id);
+        }
 
         if ($request->hasFile('voice_note') && Ai::voiceTranscriptionEnabled()) {
             $this->attachVoiceNote($call, $request);

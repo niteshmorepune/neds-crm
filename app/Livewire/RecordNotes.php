@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Jobs\ScoreLead;
 use App\Jobs\SendWhatsappLeadReplyJob;
 use App\Livewire\Concerns\RatesAiDrafts;
 use App\Models\Lead;
@@ -155,6 +156,13 @@ class RecordNotes extends Component
 
         if ($sendViaWhatsapp) {
             SendWhatsappLeadReplyJob::dispatch($note->id);
+        }
+
+        // A note is real post-intake signal ScoreLead's prompt now reads —
+        // re-score so the score reflects it instead of going stale the
+        // moment a rep actually starts talking to this lead.
+        if ($this->record instanceof Lead && Ai::enabled()) {
+            ScoreLead::dispatch($this->record->id);
         }
 
         // Only on creation, not edits — an edited note re-notifying on every

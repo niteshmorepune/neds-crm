@@ -72,6 +72,27 @@ it('filters calls by outcome', function () {
         ->assertSee('busy one')->assertDontSee('connected one');
 });
 
+it('shows the follow-up reminder section expanded by default on the Log a Call form, regardless of outcome', function () {
+    // Regression: it used to auto-expand only for No Answer/Busy/Follow-up
+    // Needed, staying collapsed for Connected -- exactly the outcome most
+    // likely to end in an unstated promise ("I'll send a proposal").
+    $html = $this->actingAs($this->sales)->get(route('calls.create'))->getContent();
+
+    expect($html)->toContain('showFollowUp: true');
+});
+
+it('filters to calls that need a follow-up review: connected/follow-up-needed, has notes, no reminder set', function () {
+    CallLog::factory()->create(['user_id' => $this->sales->id, 'outcome' => 'connected', 'notes' => 'needs review, no reminder']);
+    CallLog::factory()->create(['user_id' => $this->sales->id, 'outcome' => 'connected', 'notes' => 'already has one', 'follow_up_at' => now()->addDay()]);
+    CallLog::factory()->create(['user_id' => $this->sales->id, 'outcome' => 'connected', 'notes' => null]);
+    CallLog::factory()->create(['user_id' => $this->sales->id, 'outcome' => 'no_answer', 'notes' => 'never even connected']);
+
+    $this->actingAs($this->sales)->get(route('calls.index', ['needs_followup_review' => '1']))->assertOk()
+        ->assertSee('needs review, no reminder')
+        ->assertDontSee('already has one')
+        ->assertDontSee('never even connected');
+});
+
 it('renders the call create and index pages', function () {
     $this->actingAs($this->sales)->get(route('calls.index'))->assertOk()->assertSee('Calling');
     $this->actingAs($this->sales)->get(route('calls.create'))->assertOk()->assertSee('Log a Call');

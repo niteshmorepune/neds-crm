@@ -8,7 +8,11 @@
                   outcome: '{{ old('outcome', '') }}',
                   followUpAt: '{{ old('follow_up_at') }}',
                   suggestedFollowUp: {{ Illuminate\Support\Js::from($suggestedFollowUp) }},
-                  showFollowUp: {{ old('follow_up_at') ? 'true' : 'false' }},
+                  // Visible by default for every outcome -- a Connected call
+                  // that goes well is exactly the case most likely to end in
+                  // a promise ("I'll send a proposal"), and that's the one
+                  // outcome this used to stay collapsed for.
+                  showFollowUp: true,
                   dictating: false,
                   dictationSupported: 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window,
                   dictationLang: localStorage.getItem('dictationLang') || 'en-IN',
@@ -103,7 +107,6 @@
                   },
               }"
               x-init="$watch('outcome', val => {
-                  if (['no_answer','busy','follow_up_needed'].includes(val)) showFollowUp = true;
                   if (['no_answer','busy'].includes(val) && !followUpAt && suggestedFollowUp) followUpAt = suggestedFollowUp;
               })">
             @csrf

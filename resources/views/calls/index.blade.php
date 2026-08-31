@@ -30,6 +30,11 @@
                    class="rounded-md px-3 py-2 text-sm font-medium {{ ($filters['pending_followup'] ?? false) ? 'bg-amber-500 text-white' : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50' }}">
                     Pending follow-ups
                 </a>
+                <a href="{{ route('calls.index', array_merge($filters, ['needs_followup_review' => ($filters['needs_followup_review'] ?? false) ? null : '1'])) }}"
+                   title="Connected/Follow-up Needed calls with notes but no reminder set — either a deliberate no-follow-up-needed call, or one that slipped through"
+                   class="rounded-md px-3 py-2 text-sm font-medium {{ ($filters['needs_followup_review'] ?? false) ? 'bg-amber-500 text-white' : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50' }}">
+                    Needs follow-up review
+                </a>
                 <a href="{{ route('calls.create') }}" class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">Log a call</a>
             </div>
         </div>

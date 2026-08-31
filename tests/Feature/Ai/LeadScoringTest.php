@@ -1,18 +1,23 @@
 <?php
 
+use App\Enums\CallDirection;
+use App\Enums\CallOutcome;
 use App\Enums\LeadBudgetBand;
 use App\Enums\LeadUrgency;
 use App\Enums\UserRole;
 use App\Jobs\ScoreLead;
+use App\Livewire\RecordNotes;
 use App\Models\AiUsage;
 use App\Models\Lead;
 use App\Models\Service;
 use App\Models\User;
 use App\Notifications\HotLeadNotification;
 use App\Services\AnthropicClient;
+use Database\Seeders\MenuItemsSeeder;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
+use Livewire\Livewire;
 
 function fakeClaude(
     int $score = 82,
@@ -188,4 +193,86 @@ it('does not send a hot-lead notification when the lead has no owner', function 
     (new ScoreLead($lead->id))->handle(app(AnthropicClient::class));
 
     Notification::assertNothingSent();
+});
+
+it('includes recent notes and call history in the scoring prompt, most recent first, capped at 5', function () {
+    enableAi();
+    fakeClaude();
+    $lead = Lead::factory()->create();
+
+    // Explicit spaced timestamps -- real notes are typed minutes apart, but
+    // factory-created ones in a tight loop can tie to the same second,
+    // which would make latest()'s ordering arbitrary rather than reflect
+    // this test's intended "most recent" ranking. created_at isn't
+    // fillable, so set it via a direct update after create().
+    foreach (range(1, 7) as $i) {
+        $note = $lead->notes()->create(['user_id' => User::factory()->create()->id, 'body' => "Note number {$i}"]);
+        $note->forceFill(['created_at' => now()->addMinutes($i)])->save();
+    }
+    $lead->callLogs()->create([
+        'user_id' => User::factory()->create()->id,
+        'direction' => CallDirection::Outgoing,
+        'outcome' => CallOutcome::Connected,
+        'notes' => 'Asked about pricing and agreed to a proposal.',
+        'called_at' => now(),
+    ]);
+
+    (new ScoreLead($lead->id))->handle(app(AnthropicClient::class));
+
+    Http::assertSent(function ($request) {
+        $body = json_decode($request->body(), true);
+        $prompt = $body['messages'][0]['content'];
+
+        return str_contains($prompt, 'Note number 7') // most recent of the 7 notes
+            && ! str_contains($prompt, 'Note number 1') // oldest, beyond the 5-item cap
+            && str_contains($prompt, 'Call history')
+            && str_contains($prompt, 'Asked about pricing and agreed to a proposal.');
+    });
+});
+
+it('omits the Notes/Call history sections entirely for a lead with neither', function () {
+    enableAi();
+    fakeClaude();
+    $lead = Lead::factory()->create();
+
+    (new ScoreLead($lead->id))->handle(app(AnthropicClient::class));
+
+    Http::assertSent(function ($request) {
+        $body = json_decode($request->body(), true);
+        $prompt = $body['messages'][0]['content'];
+
+        return ! str_contains($prompt, 'Notes') && ! str_contains($prompt, 'Call history');
+    });
+});
+
+it('re-scores a lead when a note is added to it', function () {
+    enableAi();
+    $lead = Lead::factory()->create();
+    $manager = User::factory()->role(UserRole::Manager)->create();
+
+    Queue::fake();
+    Livewire::actingAs($manager)
+        ->test(RecordNotes::class, ['record' => $lead, 'canManage' => true])
+        ->set('body', 'Called and discussed requirements.')
+        ->call('addNote');
+
+    Queue::assertPushed(ScoreLead::class, fn (ScoreLead $job) => $job->leadId === $lead->id);
+});
+
+it('re-scores a lead when a call is logged against it', function () {
+    $this->seed(MenuItemsSeeder::class);
+    enableAi();
+    $lead = Lead::factory()->create();
+    $manager = User::factory()->role(UserRole::Manager)->create();
+
+    Queue::fake();
+    $this->actingAs($manager)->post(route('calls.store'), [
+        'lead_id' => $lead->id,
+        'direction' => 'outgoing',
+        'outcome' => 'connected',
+        'called_at' => now()->format('Y-m-d\TH:i'),
+        'notes' => 'Good call, she wants a proposal.',
+    ]);
+
+    Queue::assertPushed(ScoreLead::class, fn (ScoreLead $job) => $job->leadId === $lead->id);
 });

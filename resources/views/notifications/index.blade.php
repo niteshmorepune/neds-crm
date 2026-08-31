@@ -82,6 +82,7 @@
                                 'festival_greeting_drafted'   => '🎉',
                                 'monthly_wins_note_drafted'   => '📈',
                                 'lead_nurture_drafted'        => '✨',
+                                'call_follow_up_auto_set'     => '🤖',
                                 default                       => '🔔',
                             })
                             @php($invoiceDeleted = ! empty($data['invoice_id']) && $deletedInvoiceIds->contains($data['invoice_id']))

@@ -26,6 +26,13 @@ class ScoreLead implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    /**
+     * How many recent notes/calls to fold into the prompt -- bounded so a
+     * lead with a long history doesn't blow out prompt size, same limit
+     * AiAssistant::prepareCallBrief() uses for the same kind of section.
+     */
+    private const MAX_ITEMS = 5;
+
     public function __construct(public int $leadId) {}
 
     public function handle(AnthropicClient $client): void
@@ -34,7 +41,7 @@ class ScoreLead implements ShouldQueue
             return;
         }
 
-        $lead = Lead::with('service')->find($this->leadId);
+        $lead = Lead::with(['service', 'notes', 'callLogs'])->find($this->leadId);
 
         if ($lead === null) {
             return;
@@ -82,6 +89,13 @@ class ScoreLead implements ShouldQueue
         Also estimate their likely budget band, how urgent their need seems, and
         whether the service they asked about is a good fit for their situation.
 
+        If Notes or Call history are included, weigh them heavily -- they reflect
+        what actually happened after the lead first came in, and are a much
+        stronger signal than the original intake form. A lead who took a real,
+        engaged call and asked specific questions (pricing, timeline, how it
+        works) or agreed to a next step is warmer than the bare form fields
+        alone would suggest, even if no exact budget number was ever stated.
+
         Respond with ONLY a JSON object, no markdown, no prose:
         {"score": <integer 0-100>, "reason": "<one short sentence, max 120 chars>",
          "budget_band": "<low|medium|high>", "urgency": "<low|medium|high>",
@@ -100,6 +114,22 @@ class ScoreLead implements ShouldQueue
             'Service interested in: '.($lead->service?->name ?? 'unspecified'),
             'Estimated value (INR): '.number_format($lead->estimated_value / 100, 2),
         ];
+
+        if ($lead->notes->isNotEmpty()) {
+            $lines[] = '';
+            $lines[] = 'Notes (most recent first):';
+            foreach ($lead->notes->take(self::MAX_ITEMS) as $note) {
+                $lines[] = '- '.$note->body;
+            }
+        }
+
+        if ($lead->callLogs->isNotEmpty()) {
+            $lines[] = '';
+            $lines[] = 'Call history (most recent first):';
+            foreach ($lead->callLogs->take(self::MAX_ITEMS) as $call) {
+                $lines[] = "- {$call->direction->label()} / {$call->outcome->label()}: ".($call->notes ?: 'no notes');
+            }
+        }
 
         return "Score this lead:\n".implode("\n", $lines);
     }
