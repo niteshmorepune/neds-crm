@@ -192,6 +192,31 @@ it('groups MRR by service sorted descending', function () {
     expect($byService[0]['name'])->toBe('GMB');
 });
 
+it('breaks the MRR snapshot down by real billing frequency, keeping the yearly figure un-normalized', function () {
+    // Real report, 2026-08-31: a client with only a yearly AMC template
+    // showed a page-top "MRR ₹1,250" tile, misleadingly implying a monthly
+    // service. by_frequency keeps each frequency's real per-cycle amount
+    // separate instead of blending everything into a monthly-equivalent.
+    $monthly = RecurringInvoice::factory()->create(['frequency' => RecurringFrequency::Monthly, 'discount' => 0]);
+    $monthly->items()->create(['description' => 'SEO', 'quantity' => 1, 'rate' => 100000, 'gst_rate' => 18, 'sort_order' => 1]);
+    $yearly = RecurringInvoice::factory()->create(['frequency' => RecurringFrequency::Yearly, 'discount' => 0]);
+    $yearly->items()->create(['description' => 'AMC', 'quantity' => 1, 'rate' => 1500000, 'gst_rate' => 18, 'sort_order' => 1]);
+
+    $byFrequency = collect($this->metrics->mrrSnapshot()['by_frequency'])->keyBy(fn ($f) => $f['frequency']->value);
+
+    expect($byFrequency['monthly']['total_cycle_value'])->toBe(100000)
+        ->and($byFrequency['yearly']['total_cycle_value'])->toBe(1500000) // real yearly amount, not /12
+        ->and($byFrequency['yearly']['count'])->toBe(1)
+        ->and($byFrequency['yearly']['clients'][0]['customer'])->toBe($yearly->customer->company_name);
+});
+
+it('excludes an inactive recurring template from the by-frequency breakdown', function () {
+    $template = RecurringInvoice::factory()->create(['frequency' => RecurringFrequency::Yearly, 'is_active' => false]);
+    $template->items()->create(['description' => 'AMC', 'quantity' => 1, 'rate' => 1500000, 'gst_rate' => 18, 'sort_order' => 1]);
+
+    expect($this->metrics->mrrSnapshot()['by_frequency'])->toBeEmpty();
+});
+
 it('includes a contract expiring within 30 days and excludes one expiring later or never', function () {
     $expiring = RecurringInvoice::factory()->create(['end_date' => now()->addDays(15)]);
     $expiring->items()->create(['description' => 'x', 'quantity' => 1, 'rate' => 100000, 'gst_rate' => 18, 'sort_order' => 1]);

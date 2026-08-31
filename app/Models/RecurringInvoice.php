@@ -124,6 +124,22 @@ class RecurringInvoice extends Model
     }
 
     /**
+     * This template's own per-cycle amount — pre-GST, what one invoice
+     * generated from this template actually bills (same formula
+     * GenerateRecurringInvoices uses). Extracted from monthlyEquivalentValue()
+     * below so a caller that wants the real, un-normalized cycle figure —
+     * e.g. Customer::recurringValueByFrequency() — has a single source of
+     * truth too, instead of re-deriving it. Requires items to already be
+     * loaded (avoids an N+1 when called in a loop over many templates).
+     */
+    public function cycleAmount(): int
+    {
+        $cycleAmount = (int) $this->items->sum(fn (RecurringInvoiceItem $item) => (int) round(((float) $item->quantity) * (int) $item->rate));
+
+        return max(0, $cycleAmount - (int) $this->discount);
+    }
+
+    /**
      * This template's own monthly-equivalent value — pre-GST, same formula
      * as GenerateRecurringInvoices' actual billing amount. Single source of
      * truth: Customer::monthlyRecurringValue() and
@@ -134,10 +150,7 @@ class RecurringInvoice extends Model
      */
     public function monthlyEquivalentValue(): int
     {
-        $cycleAmount = (int) $this->items->sum(fn (RecurringInvoiceItem $item) => (int) round(((float) $item->quantity) * (int) $item->rate));
-        $cycleAmount = max(0, $cycleAmount - (int) $this->discount);
-
-        return (int) round($cycleAmount / $this->frequency->cycleMonths());
+        return (int) round($this->cycleAmount() / $this->frequency->cycleMonths());
     }
 
     /**

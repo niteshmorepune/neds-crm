@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\CustomerStatus;
 use App\Enums\DealStage;
 use App\Enums\InvoiceStatus;
+use App\Enums\RecurringFrequency;
 use App\Models\Deal;
 use App\Models\Invoice;
 use App\Models\Partner;
@@ -142,14 +143,35 @@ class BusinessOverviewMetrics
                 'customer' => $template->customer?->company_name ?? 'Unknown',
                 'customer_id' => $template->customer?->id,
                 'service' => $template->service?->name ?? 'Unspecified',
-                'frequency' => $template->frequency->label(),
+                'frequency' => $template->frequency,
+                'cycle_amount' => $template->cycleAmount(),
                 'monthly_equivalent' => $template->monthlyEquivalentValue(),
+                'next_run_on' => $template->next_run_on,
                 'end_date' => $template->end_date,
             ]);
 
         $byService = $rows->groupBy('service')
             ->map(fn (Collection $group, string $name) => ['name' => $name, 'monthly_equivalent' => (int) $group->sum('monthly_equivalent')])
             ->sortByDesc('monthly_equivalent')
+            ->values()
+            ->all();
+
+        // Kept separate from by_service (which normalizes everything to a
+        // monthly-equivalent figure to be comparable across frequencies): a
+        // client billed yearly isn't due for the same monthly follow-up
+        // cadence as one billed monthly, and blending the two into one MRR
+        // number hides that (real report, 2026-08-31 — a client with only a
+        // yearly AMC template showed a page-top "MRR ₹1,250" tile). Each
+        // bucket's own total_cycle_value is the real, un-normalized per-cycle
+        // amount, and its client list is what the team follows up against.
+        $byFrequency = $rows->groupBy(fn (array $r) => $r['frequency']->value)
+            ->map(fn (Collection $group, string $freq) => [
+                'frequency' => RecurringFrequency::from($freq),
+                'total_cycle_value' => (int) $group->sum('cycle_amount'),
+                'count' => $group->count(),
+                'clients' => $group->sortBy('customer')->values()->all(),
+            ])
+            ->sortBy(fn (array $g) => $g['frequency']->cycleMonths())
             ->values()
             ->all();
 
@@ -162,6 +184,7 @@ class BusinessOverviewMetrics
         return [
             'total_mrr' => (int) $rows->sum('monthly_equivalent'),
             'by_service' => $byService,
+            'by_frequency' => $byFrequency,
             'expiring_count' => count($expiring),
             'expiring' => $expiring,
         ];

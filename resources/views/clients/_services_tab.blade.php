@@ -9,8 +9,9 @@
     // $reselleredRecurring: templates billed to a reseller's own Customer
     // record but attributed back to this client via project_id — see
     // CustomerController::show(). Merged here for visibility only, tagged
-    // "Billed via X" below; the top-of-page MRR/renewal tiles deliberately
-    // do NOT include these (they mean "billed directly to this client").
+    // "Billed via X" below; the top-of-page recurring-value/renewal tiles
+    // deliberately do NOT include these (they mean "billed directly to this
+    // client").
     $recurring  = $client->nonOrphanedRecurringInvoices()
         ->concat($reselleredRecurring ?? [])
         ->sortBy(fn ($r) => $r->start_date)

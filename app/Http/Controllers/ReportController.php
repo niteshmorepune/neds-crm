@@ -226,6 +226,7 @@ class ReportController extends Controller
         // an id, to correctly hide a client from a Sales-restricted viewer.
         $customerIds = collect($arAging['invoices'])->pluck('customer_id')
             ->merge(collect($mrr['expiring'])->pluck('customer_id'))
+            ->merge(collect($mrr['by_frequency'])->pluck('clients')->flatten(1)->pluck('customer_id'))
             ->merge(collect($concentration['clients'])->pluck('customer_id'))
             ->filter()
             ->unique();
@@ -326,6 +327,21 @@ class ReportController extends Controller
             fputcsv($out, ['By service', 'Monthly equivalent (₹)']);
             foreach ($mrr['by_service'] as $s) {
                 fputcsv($out, [$s['name'], Money::toRupees($s['monthly_equivalent'])]);
+            }
+            fputcsv($out, []);
+            fputcsv($out, ['By billing frequency', 'Client count', 'Total per-cycle value (₹)']);
+            foreach ($mrr['by_frequency'] as $f) {
+                fputcsv($out, [$f['frequency']->label(), $f['count'], Money::toRupees($f['total_cycle_value'])]);
+            }
+            if ($showDetail) {
+                fputcsv($out, []);
+                fputcsv($out, ['Recurring clients by frequency']);
+                fputcsv($out, ['Frequency', 'Customer', 'Service', 'Per-cycle value (₹)', 'Next bill date']);
+                foreach ($mrr['by_frequency'] as $f) {
+                    foreach ($f['clients'] as $c) {
+                        fputcsv($out, [$f['frequency']->label(), $c['customer'], $c['service'], Money::toRupees($c['cycle_amount']), $c['next_run_on']?->toDateString() ?? '—']);
+                    }
+                }
             }
             fputcsv($out, []);
             if ($showDetail) {

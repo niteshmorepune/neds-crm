@@ -43,6 +43,36 @@ it('normalizes a quarterly templates cycle amount to its monthly equivalent for 
     expect($client->monthlyRecurringValue())->toBe((int) round(100000 / 3));
 });
 
+it('breaks recurring value down by real billing frequency, never blending yearly into a monthly figure', function () {
+    // Real report, 2026-08-31: a client with only a yearly AMC template
+    // showed a page-top "MRR ₹1,250" tile, which read as "this client has a
+    // monthly service" when it doesn't — recurringValueByFrequency() keeps
+    // each frequency's real per-cycle amount separate instead.
+    $client = Customer::factory()->create();
+    recurringTemplateFor($client, ['is_active' => true, 'frequency' => RecurringFrequency::Yearly->value]);
+    recurringTemplateFor($client, ['is_active' => false, 'frequency' => RecurringFrequency::Monthly->value]); // inactive, ignored
+
+    $client->load('recurringInvoices.items');
+    $byFrequency = $client->recurringValueByFrequency();
+
+    expect($byFrequency)->toHaveKey('yearly')
+        ->and($byFrequency['yearly']['value'])->toBe(100000) // real yearly amount, not divided by 12
+        ->and($byFrequency['yearly']['count'])->toBe(1)
+        ->and($byFrequency)->not->toHaveKey('monthly'); // the inactive monthly template doesn't count
+});
+
+it('groups multiple active templates of the same frequency into one bucket', function () {
+    $client = Customer::factory()->create();
+    recurringTemplateFor($client, ['is_active' => true, 'frequency' => RecurringFrequency::Monthly->value]);
+    recurringTemplateFor($client, ['is_active' => true, 'frequency' => RecurringFrequency::Monthly->value]);
+
+    $client->load('recurringInvoices.items');
+    $byFrequency = $client->recurringValueByFrequency();
+
+    expect($byFrequency['monthly']['value'])->toBe(200000)
+        ->and($byFrequency['monthly']['count'])->toBe(2);
+});
+
 it('picks the soonest next_run_on among active templates as the next renewal date', function () {
     $client = Customer::factory()->create();
     recurringTemplateFor($client, ['is_active' => true, 'next_run_on' => now()->addDays(60)->toDateString()]);
@@ -80,16 +110,28 @@ it('next renewal date always matches next billing date, even when end_date disag
         ->not->toBe(now()->addDays(10)->toDateString());
 });
 
-it('shows MRR and next renewal on the client page for a role without invoice access', function () {
+it('shows recurring value and next renewal on the client page for a role without invoice access', function () {
     $support = User::factory()->role(UserRole::Support)->create();
     $client = Customer::factory()->create(['company_name' => 'Ganesh Auto Parts']);
-    recurringTemplateFor($client, ['is_active' => true]);
+    recurringTemplateFor($client, ['is_active' => true]); // default frequency: Monthly
 
     $this->actingAs($support)->get(route('clients.show', $client))
         ->assertOk()
-        ->assertSee('MRR')
+        ->assertSee('Monthly Recurring')
         ->assertSee(Money::format(100000), false)
         ->assertDontSee('Total Revenue');
+});
+
+it('shows a yearly recurring service as its own tile, not blended into monthly recurring', function () {
+    $client = Customer::factory()->create();
+    recurringTemplateFor($client, ['is_active' => true, 'frequency' => RecurringFrequency::Yearly->value]);
+
+    $response = $this->actingAs($this->admin)->get(route('clients.show', $client));
+
+    $response->assertOk()
+        ->assertSee('Yearly Recurring')
+        ->assertSee(Money::format(100000), false) // real yearly amount shown, not the /12 monthly-equivalent
+        ->assertDontSee(Money::format((int) round(100000 / 12)), false);
 });
 
 it('renders the same date for the page-top "Next Renewal" tile and the Services tab "Next billing" tile', function () {

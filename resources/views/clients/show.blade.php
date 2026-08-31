@@ -66,11 +66,40 @@
         </div>
 
         {{-- Client 360° summary strip --}}
-        <div class="grid grid-cols-2 gap-3 sm:grid-cols-5">
+        @php
+            $monthlyRecurring = $summary['recurring_by_frequency']['monthly'] ?? null;
+            $quarterlyRecurring = $summary['recurring_by_frequency']['quarterly'] ?? null;
+            $yearlyRecurring = $summary['recurring_by_frequency']['yearly'] ?? null;
+        @endphp
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
             <div class="rounded-lg bg-white p-4 shadow-sm">
-                <p class="text-xs font-medium uppercase tracking-wide text-gray-400">MRR</p>
-                <p class="mt-1 text-xl font-semibold text-gray-900">{{ \App\Support\Money::format($summary['mrr']) }}</p>
-                <p class="mt-0.5 text-xs text-gray-400">active recurring services</p>
+                <p class="text-xs font-medium uppercase tracking-wide text-gray-400">Monthly Recurring</p>
+                <p class="mt-1 text-xl font-semibold text-gray-900">{{ \App\Support\Money::format($monthlyRecurring['value'] ?? 0) }}</p>
+                <p class="mt-0.5 text-xs text-gray-400">
+                    @if ($monthlyRecurring)
+                        {{ $monthlyRecurring['count'] }} active monthly {{ Str::plural('service', $monthlyRecurring['count']) }}
+                    @else
+                        no active monthly services
+                    @endif
+                </p>
+            </div>
+            @if ($quarterlyRecurring)
+                <div class="rounded-lg bg-white p-4 shadow-sm">
+                    <p class="text-xs font-medium uppercase tracking-wide text-gray-400">Quarterly Recurring</p>
+                    <p class="mt-1 text-xl font-semibold text-gray-900">{{ \App\Support\Money::format($quarterlyRecurring['value']) }}<span class="text-xs font-normal text-gray-400">/qtr</span></p>
+                    <p class="mt-0.5 text-xs text-gray-400">{{ $quarterlyRecurring['count'] }} active quarterly {{ Str::plural('service', $quarterlyRecurring['count']) }}</p>
+                </div>
+            @endif
+            <div class="rounded-lg bg-white p-4 shadow-sm">
+                <p class="text-xs font-medium uppercase tracking-wide text-gray-400">Yearly Recurring</p>
+                <p class="mt-1 text-xl font-semibold text-gray-900">{{ \App\Support\Money::format($yearlyRecurring['value'] ?? 0) }}<span class="text-xs font-normal text-gray-400">/yr</span></p>
+                <p class="mt-0.5 text-xs text-gray-400">
+                    @if ($yearlyRecurring)
+                        {{ $yearlyRecurring['count'] }} active yearly {{ Str::plural('service', $yearlyRecurring['count']) }}
+                    @else
+                        no active yearly services
+                    @endif
+                </p>
             </div>
             <div class="rounded-lg bg-white p-4 shadow-sm">
                 <p class="text-xs font-medium uppercase tracking-wide text-gray-400">Next Renewal</p>

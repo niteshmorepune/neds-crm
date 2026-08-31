@@ -167,6 +167,54 @@
             </div>
         </div>
 
+        {{-- Recurring by Billing Frequency --}}
+        <div class="rounded-lg bg-white p-6 shadow-sm">
+            <h3 class="text-base font-semibold text-gray-900">Recurring by Billing Frequency</h3>
+            <p class="mt-1 text-sm text-gray-500">Monthly, quarterly, and yearly recurring services tracked separately — a yearly client isn't due for monthly follow-up.</p>
+            <div class="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                @forelse ($mrr['by_frequency'] as $f)
+                    <div class="rounded-md border border-gray-100 p-4">
+                        <p class="text-xs font-medium uppercase tracking-wide text-gray-400">{{ $f['frequency']->label() }}</p>
+                        <p class="mt-1 text-xl font-semibold text-gray-900">{{ \App\Support\Money::format($f['total_cycle_value']) }}</p>
+                        <p class="mt-0.5 text-xs text-gray-400">{{ $f['count'] }} active {{ Str::plural('service', $f['count']) }}, per cycle</p>
+                    </div>
+                @empty
+                    <p class="text-sm text-gray-400">No active recurring contracts.</p>
+                @endforelse
+            </div>
+            @if ($showFinancialDetail)
+                <div class="mt-4 space-y-4">
+                    @foreach ($mrr['by_frequency'] as $f)
+                        <div>
+                            <p class="text-sm font-medium text-gray-700">{{ $f['frequency']->label() }} — for follow-up</p>
+                            <table class="mt-2 min-w-full text-sm">
+                                <thead class="text-left text-xs uppercase tracking-wide text-gray-500">
+                                    <tr><th class="py-2">Customer</th><th class="py-2">Service</th><th class="py-2 text-right">Per-cycle (₹)</th><th class="py-2">Next bill</th></tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    @foreach ($f['clients'] as $c)
+                                        @php $customer = $customersById->get($c['customer_id']); @endphp
+                                        <tr>
+                                            <td class="py-2 text-gray-700">
+                                                @if ($customer && auth()->user()->can('view', $customer))
+                                                    <a href="{{ route('clients.show', $customer) }}" class="text-indigo-600 hover:underline">{{ $c['customer'] }}</a>
+                                                @else
+                                                    {{ $c['customer'] }}
+                                                @endif
+                                            </td>
+                                            <td class="py-2 text-gray-600">{{ $c['service'] }}</td>
+                                            <td class="py-2 text-right text-gray-900">{{ \App\Support\Money::format($c['cycle_amount']) }}</td>
+                                            <td class="py-2 text-gray-600">{{ $c['next_run_on']?->format('d M Y') ?? '—' }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+
         {{-- Client Concentration --}}
         <div class="rounded-lg bg-white p-6 shadow-sm">
             <h3 class="text-base font-semibold text-gray-900">Client Concentration</h3>

@@ -174,15 +174,25 @@ class CustomerController extends Controller
             $tabCounts['advances'] = $client->clientAdvances->count();
         }
 
-        // Client 360° summary strip. MRR/renewal are visible to everyone who
-        // can see this page (same split the Services tab already uses —
-        // amounts are visible to all, payment-status detail is not); total
-        // revenue and outstanding are invoice-access-gated, and outstanding
-        // reuses CollectionsMetrics::outstandingInvoicesQuery() (the single
-        // source of truth the Receivables Report and Accounts dashboard
-        // already share) so this figure can never quietly disagree with them.
+        // Client 360° summary strip. Recurring value/renewal are visible to
+        // everyone who can see this page (same split the Services tab
+        // already uses — amounts are visible to all, payment-status detail
+        // is not); total revenue and outstanding are invoice-access-gated,
+        // and outstanding reuses CollectionsMetrics::outstandingInvoicesQuery()
+        // (the single source of truth the Receivables Report and Accounts
+        // dashboard already share) so this figure can never quietly disagree
+        // with them.
+        //
+        // Recurring value is shown broken down by actual billing frequency
+        // (monthly/quarterly/yearly), not blended into one monthly-equivalent
+        // "MRR" figure — a client on a yearly retainer isn't due for the same
+        // monthly follow-up cadence as one on a monthly retainer, and a
+        // blended number reads as "this client has a monthly service" even
+        // when it doesn't (real report, 2026-08-31: a client with only a
+        // yearly AMC template showed "MRR ₹1,250").
+        $recurringByFrequency = $client->recurringValueByFrequency();
         $summary = [
-            'mrr' => $client->monthlyRecurringValue(),
+            'recurring_by_frequency' => $recurringByFrequency,
             'next_renewal' => $client->nextRenewalDate(),
             'total_revenue' => $canViewInvoices ? (int) $client->invoices->sum('total') : null,
             'outstanding' => $canViewInvoices

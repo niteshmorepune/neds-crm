@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\CustomerStatus;
 use App\Enums\PartnerCollectionMode;
 use App\Enums\ProjectStatus;
+use App\Enums\RecurringFrequency;
 use App\Enums\ReferralShareType;
 use App\Enums\UserRole;
 use App\Models\Concerns\LogsActivity;
@@ -353,6 +354,35 @@ class Customer extends Model
         return (int) $this->recurringInvoices
             ->where('is_active', true)
             ->sum(fn (RecurringInvoice $template) => $template->monthlyEquivalentValue());
+    }
+
+    /**
+     * Active recurring templates' real per-cycle values grouped by billing
+     * frequency — e.g. what actually bills every month vs. what actually
+     * bills once a year — kept separate rather than blended into one
+     * monthly-equivalent figure (see monthlyRecurringValue() above), since a
+     * client on a yearly retainer isn't due for the same monthly follow-up
+     * cadence as one on a monthly retainer, and a blended "MRR" number reads
+     * as "this client has a monthly service" even when it doesn't. Each
+     * bucket's value is the template's own RecurringInvoice::cycleAmount()
+     * (the single source of truth also used by monthlyEquivalentValue()) —
+     * never normalized, so a Yearly bucket is what bills once a year, not
+     * divided by 12. Requires recurringInvoices.items to already be loaded
+     * (avoids an N+1 on the client show page, which already eager-loads it).
+     *
+     * @return array<string, array{frequency: RecurringFrequency, value: int, count: int}>
+     */
+    public function recurringValueByFrequency(): array
+    {
+        return $this->recurringInvoices
+            ->where('is_active', true)
+            ->groupBy(fn (RecurringInvoice $template) => $template->frequency->value)
+            ->map(fn (Collection $group, string $freq) => [
+                'frequency' => RecurringFrequency::from($freq),
+                'value' => (int) $group->sum(fn (RecurringInvoice $template) => $template->cycleAmount()),
+                'count' => $group->count(),
+            ])
+            ->all();
     }
 
     /**
