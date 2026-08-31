@@ -55,7 +55,23 @@ class LeadObserver
     {
         // The job writes ai_* columns via saveQuietly() (no event), so they never
         // reach here — only genuine field edits trigger a re-score.
+        //
+        // A final snapshot once the lead reaches a terminal state is the
+        // second trigger — Notes and Calls already re-score on real
+        // engagement (RecordNotes::addNote(), CallLogController::store()),
+        // but a bare status change to Converted/Lost carries no note/call of
+        // its own and previously left whatever score happened to be last
+        // computed (often a stale, pre-engagement one — see the Mangeram
+        // Sharma lead 184 case, 2026-08-31: scored 15 at intake, converted 7
+        // days and 10 notes/2 calls later, still showing "AI 15"). Only
+        // fires on the actual transition into a terminal state, not every
+        // edit to an already-terminal lead. Checked with `elseif` — a single
+        // update touching both a scoring field and the terminal status
+        // (e.g. correcting the company name while also converting) only
+        // needs one re-score, not two queued back to back.
         if ($lead->wasChanged(self::SCORING_FIELDS)) {
+            $this->queueScore($lead);
+        } elseif ($lead->wasChanged('status') && ! $lead->status->isOpen()) {
             $this->queueScore($lead);
         }
 

@@ -309,3 +309,48 @@ it('re-scores a lead when a call is logged against it', function () {
 
     Queue::assertPushed(ScoreLead::class, fn (ScoreLead $job) => $job->leadId === $lead->id);
 });
+
+it('re-scores a lead once it converts, so a stale pre-engagement score does not linger', function () {
+    // Real production case, 2026-08-31: lead 184 (Mangeram Sharma) scored 15
+    // at intake, then had 10 notes and 2 real calls before converting 7 days
+    // later -- Notes/Calls already re-score in-flight (see the two tests
+    // above), but the conversion itself carries no note/call of its own, so
+    // whatever score was last computed kept showing on an already-won lead.
+    enableAi();
+    $lead = Lead::factory()->create(['status' => 'contacted']);
+
+    Queue::fake();
+    $lead->update(['status' => 'converted']);
+
+    Queue::assertPushed(ScoreLead::class, fn (ScoreLead $job) => $job->leadId === $lead->id);
+});
+
+it('re-scores a lead once it is marked lost', function () {
+    enableAi();
+    $lead = Lead::factory()->create(['status' => 'contacted']);
+
+    Queue::fake();
+    $lead->update(['status' => 'lost']);
+
+    Queue::assertPushed(ScoreLead::class, fn (ScoreLead $job) => $job->leadId === $lead->id);
+});
+
+it('does not re-score a lead for an edit to an already-terminal lead', function () {
+    enableAi();
+    $lead = Lead::factory()->create(['status' => 'converted']);
+
+    Queue::fake();
+    $lead->update(['next_follow_up_at' => now()->addDay()]);
+
+    Queue::assertNothingPushed();
+});
+
+it('does not double-fire when both a scoring field and the terminal status change together', function () {
+    enableAi();
+    $lead = Lead::factory()->create(['status' => 'contacted']);
+
+    Queue::fake();
+    $lead->update(['status' => 'converted', 'company' => 'Renamed Pvt Ltd']);
+
+    Queue::assertPushed(ScoreLead::class, 1); // a single re-score covers both changes at once
+});
