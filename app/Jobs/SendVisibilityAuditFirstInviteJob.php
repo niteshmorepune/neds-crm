@@ -114,6 +114,20 @@ class SendVisibilityAuditFirstInviteJob implements ShouldQueue
 
                 return;
             }
+
+            // wadesk.in intentionally skips a MARKETING-category send to a
+            // contact who has opted out (e.g. replied "Stop Promotions") --
+            // it still returns 2xx, since this isn't a failure, but no
+            // message actually went out. Same fix as
+            // SendVisibilityAuditRecoveryNudgeJob (real incident,
+            // 2026-08-31). Still mark the lead invited so a known-opted-out
+            // lead isn't re-attempted on a future dispatch.
+            if ($response->json('skipped') === true) {
+                VisibilityAuditTouch::logSend($this->leadId, VisibilityAuditTouchType::FirstInvite, false, ['skipped' => true, 'reason' => $response->json('reason')]);
+                $lead->forceFill(['visibility_audit_invited_at' => now()])->saveQuietly();
+
+                return;
+            }
         } catch (\Throwable $e) {
             Log::warning('SendVisibilityAuditFirstInviteJob: HTTP call to wadesk.in failed', [
                 'lead_id' => $this->leadId,

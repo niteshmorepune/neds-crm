@@ -104,6 +104,27 @@ it('logs a failed touch when wadesk.in returns non-2xx', function () {
     expect($event->fresh()->nudged_at)->toBeNull();
 });
 
+it('logs a skipped (not successful) touch and still marks the event nudged when wadesk.in skips an opted-out contact', function () {
+    // Real incident, 2026-08-31: a contact replied "Stop Promotions" and
+    // still received this exact nudge hours later. wadesk.in's
+    // /api/send-template now refuses to send a MARKETING template to an
+    // opted-out contact and returns 200 {skipped:true} instead of actually
+    // sending -- this must not be logged as a successful touch, but the
+    // event still needs marking nudged so this lead isn't retried forever.
+    Http::fake(['https://wadesk.test/api/send-template' => Http::response(['skipped' => true, 'reason' => 'opted_out'], 200)]);
+
+    $lead = Lead::factory()->create(['phone' => '+91 98765 43210']);
+    $event = VisibilityAuditFunnelEvent::create(['event_type' => VisibilityAuditFunnelEventType::PaymentViewed, 'lead_id' => $lead->id]);
+
+    (new SendVisibilityAuditRecoveryNudgeJob($lead->id, $event->id, VisibilityAuditFunnelEventType::PaymentViewed))->handle();
+
+    $touch = VisibilityAuditTouch::firstOrFail();
+    expect($touch->success)->toBeFalse()
+        ->and($touch->meta['skipped'] ?? null)->toBeTrue()
+        ->and($touch->meta['reason'] ?? null)->toBe('opted_out');
+    expect($event->fresh()->nudged_at)->not->toBeNull();
+});
+
 it('never sends twice for the same event once already nudged', function () {
     Http::fake(['https://wadesk.test/api/send-template' => Http::response(['conversationId' => 'c1'], 201)]);
 

@@ -107,6 +107,29 @@ it('logs a failed touch when wadesk.in is unreachable', function () {
     expect(VisibilityAuditTouch::where('success', false)->count())->toBe(1);
 });
 
+it('logs a skipped (not successful) touch and still marks the lead invited when wadesk.in skips an opted-out contact', function () {
+    // Same wadesk.in opt-out fix as SendVisibilityAuditRecoveryNudgeJob
+    // (real incident, 2026-08-31): /api/send-template returns 200
+    // {skipped:true} instead of actually sending a MARKETING template to an
+    // opted-out contact -- must not be logged as a successful touch, but the
+    // lead still needs marking invited so it isn't retried on a future sweep.
+    Http::fake(['https://wadesk.test/api/send-template' => Http::response(['skipped' => true, 'reason' => 'opted_out'], 200)]);
+
+    $lead = Lead::factory()->create([
+        'phone' => '+91 98765 43210',
+        'meta_leadgen_id' => 'lg_'.uniqid(),
+        'service_id' => $this->gmb->id,
+    ]);
+
+    (new SendVisibilityAuditFirstInviteJob($lead->id))->handle();
+
+    $touch = VisibilityAuditTouch::firstOrFail();
+    expect($touch->success)->toBeFalse()
+        ->and($touch->meta['skipped'] ?? null)->toBeTrue()
+        ->and($touch->meta['reason'] ?? null)->toBe('opted_out');
+    expect($lead->fresh()->visibility_audit_invited_at)->not->toBeNull();
+});
+
 it('never invites the same lead twice', function () {
     Http::fake(['https://wadesk.test/api/send-template' => Http::response(['conversationId' => 'c1'], 201)]);
 

@@ -123,6 +123,20 @@ class SendVisibilityAuditRecoveryNudgeJob implements ShouldQueue
 
                 return;
             }
+
+            // wadesk.in intentionally skips a MARKETING-category send to a
+            // contact who has opted out (e.g. replied "Stop Promotions") --
+            // it still returns 2xx, since this isn't a failure, but no
+            // message actually went out. Real incident, 2026-08-31: before
+            // this check, that response was misread as a successful send.
+            // Still mark the event nudged so a known-opted-out lead isn't
+            // re-attempted on every future dispatch cycle.
+            if ($response->json('skipped') === true) {
+                VisibilityAuditTouch::logSend($this->leadId, $this->touchType(), false, ['skipped' => true, 'reason' => $response->json('reason')]);
+                $event->update(['nudged_at' => now()]);
+
+                return;
+            }
         } catch (\Throwable $e) {
             Log::warning('SendVisibilityAuditRecoveryNudgeJob: HTTP call to wadesk.in failed', [
                 'lead_id' => $this->leadId,
