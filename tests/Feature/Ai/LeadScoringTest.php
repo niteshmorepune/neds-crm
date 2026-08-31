@@ -195,6 +195,39 @@ it('does not send a hot-lead notification when the lead has no owner', function 
     Notification::assertNothingSent();
 });
 
+it('sends a null estimated_value as "not provided", never a misleading literal 0.00', function () {
+    // Real production case, 2026-08-31: a lead with a genuinely engaged,
+    // connected call still scored 15/100 because the prompt read "Estimated
+    // value (INR): 0.00" -- indistinguishable from a confirmed worthless
+    // deal, when really nobody had ever entered an estimate at all.
+    enableAi();
+    fakeClaude();
+    $lead = Lead::factory()->create(['estimated_value' => null]);
+
+    (new ScoreLead($lead->id))->handle(app(AnthropicClient::class));
+
+    Http::assertSent(function ($request) {
+        $prompt = json_decode($request->body(), true)['messages'][0]['content'];
+
+        return str_contains($prompt, 'Estimated value (INR): not provided')
+            && ! str_contains($prompt, '0.00');
+    });
+});
+
+it('still formats a real estimated_value as a rupee figure', function () {
+    enableAi();
+    fakeClaude();
+    $lead = Lead::factory()->create(['estimated_value' => 1500000]); // paise -> ₹15,000.00
+
+    (new ScoreLead($lead->id))->handle(app(AnthropicClient::class));
+
+    Http::assertSent(function ($request) {
+        $prompt = json_decode($request->body(), true)['messages'][0]['content'];
+
+        return str_contains($prompt, 'Estimated value (INR): 15,000.00');
+    });
+});
+
 it('includes recent notes and call history in the scoring prompt, most recent first, capped at 5', function () {
     enableAi();
     fakeClaude();

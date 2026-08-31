@@ -95,6 +95,10 @@ class ScoreLead implements ShouldQueue
         engaged call and asked specific questions (pricing, timeline, how it
         works) or agreed to a next step is warmer than the bare form fields
         alone would suggest, even if no exact budget number was ever stated.
+        "Estimated value: not provided" means nobody has entered one yet -- it
+        is NOT the same as a confirmed zero-value deal, and must not be
+        treated as a disqualifying signal on its own, especially when Notes or
+        Call history show real engagement.
 
         Respond with ONLY a JSON object, no markdown, no prose:
         {"score": <integer 0-100>, "reason": "<one short sentence, max 120 chars>",
@@ -112,7 +116,13 @@ class ScoreLead implements ShouldQueue
             'Phone: '.($lead->phone ?: 'none'),
             'Source: '.$lead->source->label(),
             'Service interested in: '.($lead->service?->name ?? 'unspecified'),
-            'Estimated value (INR): '.number_format($lead->estimated_value / 100, 2),
+            // A genuinely null estimate must read as "not provided", not a
+            // literal "0.00" -- printing 0.00 tells the model this deal is
+            // confirmed worthless, a much stronger disqualifying signal than
+            // "nobody has estimated it yet" (real production case, 2026-08-31:
+            // a lead with an engaged, connected call still scored 15 because
+            // the prompt said "Estimated value (INR): 0.00").
+            'Estimated value (INR): '.($lead->estimated_value === null ? 'not provided' : number_format($lead->estimated_value / 100, 2)),
         ];
 
         if ($lead->notes->isNotEmpty()) {
