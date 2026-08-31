@@ -81,6 +81,41 @@ it('shows the follow-up reminder section expanded by default on the Log a Call f
     expect($html)->toContain('showFollowUp: true');
 });
 
+it('renders x-data as one well-formed attribute, never leaking its JS as visible page text', function () {
+    // Real bug, 2026-08-31: a literal double-quote inside a JS comment
+    // inside x-data (the same "(\"I'll send a proposal\")" phrase the test
+    // above's own comment references) prematurely closed the double-quoted
+    // x-data="..." attribute, corrupting the whole <form> tag -- everything
+    // from the next arrow function's `=>` onward (the browser's HTML parser
+    // reads a bare `>` as ending the tag) rendered as literal, garbled page
+    // text above the form instead of running as Alpine JS.
+    // assertSee()-style string checks can't catch this -- the JS text is
+    // present in the raw HTML either way, correct or broken. Only a real DOM
+    // parse proves whether it landed inside the attribute or spilled into
+    // the page body, which is what actually differs.
+    $html = $this->actingAs($this->sales)->get(route('calls.create'))->getContent();
+
+    libxml_use_internal_errors(true);
+    $dom = new DOMDocument;
+    $dom->loadHTML($html);
+    libxml_clear_errors();
+
+    // The layout has several other <form> tags (logout, filters, etc.) --
+    // find the Log a Call one specifically by its real submit action.
+    $xpath = new DOMXPath($dom);
+    $forms = $xpath->query("//form[contains(@action, '".route('calls.store')."')]");
+    expect($forms->length)->toBe(1);
+
+    $form = $forms->item(0);
+    $xData = $form->getAttribute('x-data');
+    // Content near the very end of the intended x-data block -- only present
+    // in the parsed attribute if the whole thing survived as one attribute.
+    expect($xData)->toContain('toggleDictation')
+        ->and($xData)->toContain('audioChunks');
+
+    expect($form->textContent)->not->toContain('this.audioChunks.push');
+});
+
 it('filters to calls that need a follow-up review: connected/follow-up-needed, has notes, no reminder set', function () {
     CallLog::factory()->create(['user_id' => $this->sales->id, 'outcome' => 'connected', 'notes' => 'needs review, no reminder']);
     CallLog::factory()->create(['user_id' => $this->sales->id, 'outcome' => 'connected', 'notes' => 'already has one', 'follow_up_at' => now()->addDay()]);

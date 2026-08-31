@@ -10,7 +10,7 @@
                   suggestedFollowUp: {{ Illuminate\Support\Js::from($suggestedFollowUp) }},
                   // Visible by default for every outcome -- a Connected call
                   // that goes well is exactly the case most likely to end in
-                  // a promise ("I'll send a proposal"), and that's the one
+                  // a promise, e.g. I'll send a proposal, and that's the one
                   // outcome this used to stay collapsed for.
                   showFollowUp: true,
                   dictating: false,
