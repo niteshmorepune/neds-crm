@@ -179,3 +179,19 @@ it('shows the Unapplied Advances tile on the client page, excluding a cancelled 
         ->assertOk()
         ->assertDontSee('Unapplied Advances');
 });
+
+it('shows a dedicated Advances tab, after Links, listing every advance (not just unapplied ones)', function () {
+    $this->customer->clientAdvances()->create(['amount' => 1000000, 'received_on' => now(), 'mode' => PaymentMode::Cash]);
+    $this->customer->clientAdvances()->create(['amount' => 999999, 'received_on' => now(), 'mode' => PaymentMode::Cash, 'status' => ClientAdvanceStatus::Cancelled]);
+
+    $html = $this->actingAs($this->accounts)->get(route('clients.show', $this->customer))->getContent();
+
+    expect($html)->toContain('Advances (2)') // both rows count here, unlike the tile's unapplied-only total
+        ->and(strpos($html, '>Links'))->toBeLessThan(strpos($html, '>Advances'))
+        ->and($html)->toContain('Client Advances') // the panel heading, now inside its own tab
+        ->and($html)->toContain("tab === 'advances'");
+
+    // Sales has no advances access, so the tab shouldn't render at all.
+    $salesHtml = $this->actingAs($this->owner)->get(route('clients.show', $this->customer))->getContent();
+    expect($salesHtml)->not->toContain("tab = 'advances'");
+});

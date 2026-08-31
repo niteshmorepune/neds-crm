@@ -66,7 +66,7 @@
         </div>
 
         {{-- Client 360° summary strip --}}
-        <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-5">
             <div class="rounded-lg bg-white p-4 shadow-sm">
                 <p class="text-xs font-medium uppercase tracking-wide text-gray-400">MRR</p>
                 <p class="mt-1 text-xl font-semibold text-gray-900">{{ \App\Support\Money::format($summary['mrr']) }}</p>
@@ -95,7 +95,7 @@
                 </button>
             @endif
             @if ($canViewAdvances)
-                <button type="button" @click="tab = 'invoices'"
+                <button type="button" @click="tab = 'advances'"
                         class="rounded-lg bg-white p-4 text-left shadow-sm hover:ring-1 hover:ring-indigo-200 transition-shadow">
                     <p class="text-xs font-medium uppercase tracking-wide text-gray-400">Unapplied Advances</p>
                     <p @class([
@@ -115,7 +115,13 @@
         <div class="rounded-lg bg-white shadow-sm">
             <div class="border-b border-gray-200 px-6">
                 <nav class="-mb-px flex gap-6 text-sm font-medium">
-                    @foreach (['services' => 'Services', 'requirements' => 'Requirements', 'assets' => 'Assets', 'notes' => 'Notes', 'calls' => 'Calls', 'deals' => 'Deals', 'invoices' => 'Invoices', 'tickets' => 'Tickets', 'links' => 'Links'] as $key => $label)
+                    @php
+                        $tabs = ['services' => 'Services', 'requirements' => 'Requirements', 'assets' => 'Assets', 'notes' => 'Notes', 'calls' => 'Calls', 'deals' => 'Deals', 'invoices' => 'Invoices', 'tickets' => 'Tickets', 'links' => 'Links'];
+                        if ($canViewAdvances) {
+                            $tabs['advances'] = 'Advances';
+                        }
+                    @endphp
+                    @foreach ($tabs as $key => $label)
                         <button type="button" @click="tab = '{{ $key }}'"
                                 :class="tab === '{{ $key }}' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
                                 class="border-b-2 py-3">{{ $label }}@if (isset($tabCounts[$key])) ({{ $tabCounts[$key] }})@endif</button>
@@ -213,11 +219,6 @@
                     @else
                         <p class="text-sm text-gray-400">You don't have access to invoices.</p>
                     @endif
-                    @if ($canViewAdvances)
-                        <div class="mt-4">
-                            @include('clients._advances', ['client' => $client])
-                        </div>
-                    @endif
                 </div>
                 <div x-show="tab === 'tickets'" x-cloak>
                     @php
@@ -251,6 +252,11 @@
                 <div x-show="tab === 'links'" x-cloak>
                     <livewire:important-links-manager :customer="$client" :can-manage="$canManageLinks" />
                 </div>
+                @if ($canViewAdvances)
+                    <div x-show="tab === 'advances'" x-cloak>
+                        @include('clients._advances', ['client' => $client])
+                    </div>
+                @endif
             </div>
         </div>
     </div>

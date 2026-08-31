@@ -170,6 +170,10 @@ class CustomerController extends Controller
             $tabCounts['invoices'] = $client->invoices->count() + $reselleredInvoices->count();
         }
 
+        if ($canViewAdvances) {
+            $tabCounts['advances'] = $client->clientAdvances->count();
+        }
+
         // Client 360° summary strip. MRR/renewal are visible to everyone who
         // can see this page (same split the Services tab already uses —
         // amounts are visible to all, payment-status detail is not); total
