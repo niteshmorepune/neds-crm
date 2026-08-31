@@ -106,8 +106,15 @@ class RecurringInvoice extends Model
     /**
      * True when this template is active but its next scheduled run has
      * drifted past its own end_date — the "reactivated after auto-pause"
-     * trap scopeDue() guards against. Used to self-heal stale templates
-     * back to paused so they stop showing as a ticking risk.
+     * state scopeDue() guards against ever actually billing. Not a bug by
+     * itself: RecurringInvoiceController::toggle() deliberately allows
+     * reactivating a template in this state (e.g. to regenerate a
+     * corrected invoice, or catch up on unpaid historical billing) and
+     * scopeDue() makes that safe — the unattended cron can never pick it
+     * back up and double-bill. Nothing currently calls this to auto-pause
+     * anything (no scheduled self-heal exists); it's a diagnostic helper
+     * only, exercised by its own test. If a "stale contracts" report or
+     * similar is ever built, this is the check to use.
      */
     public function isStaleActive(): bool
     {

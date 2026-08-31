@@ -105,18 +105,44 @@ class Lead extends Model
      * Composite "what needs my attention" ranking for the Lead Generation
      * list's default Priority sort — computed in PHP (not raw SQL) so it
      * stays portable across the MySQL/SQLite split this app already has
-     * between production and the test suite. AI score is the base signal;
-     * an overdue follow-up outweighs everything (someone is waiting on a
-     * promise), a follow-up due today matters less but still more than raw
-     * score, and a New or Contacted lead with no follow-up set yet accrues
-     * urgency the longer it's sat untouched since creation (capped at 10
-     * days so an ancient, abandoned lead doesn't permanently dominate the
-     * top of the list). A closed lead (Lost/Converted) is nothing left to
-     * follow up on, so it always sorts below every open lead regardless of
-     * how high its AI score was while it was still live (real production
-     * case, 2026-08-31: a Lost lead with AI 65 was outranking several open,
-     * actionable leads purely on a now-meaningless historical score).
+     * between production and the test suite.
+     *
+     * Strict tiers, each one guaranteed to outrank every lead in the tier
+     * below it regardless of AI score (the gaps between STALENESS_CAP,
+     * DUE_TODAY_TIER and OVERDUE_TIER are all far larger than the maximum
+     * possible score+nudge of any lower tier — 100 + STALENESS_CAP):
+     *   1. Overdue follow-up — a broken promise to the client, always first.
+     *   2. Due today — a commitment coming due, next.
+     *   3. Everything else open — ranked by AI score first (a hotter lead
+     *      is a better use of the team's time and must visually dominate),
+     *      with a small "don't let it go cold" nudge for a New/Contacted
+     *      lead with no follow-up scheduled, capped low enough that it can
+     *      only break a near-tie, never flip a meaningfully hotter lead
+     *      below a cooler one.
+     *   4. Closed (Lost/Converted) — nothing left to follow up on, always
+     *      last, regardless of how high its AI score was while still live.
+     *
+     * Within tiers 1-2, AI score still breaks ties among leads that share
+     * the same urgency.
+     *
+     * Real production case, 2026-08-31: the previous formula's staleness
+     * nudge (uncapped tier separation, up to +30 over 10 days) let six
+     * three-week-old AI-45 leads (maxed out at +30 = 75) outrank two
+     * genuinely hot AI-72 leads created hours earlier (barely any nudge
+     * accrued yet, ~73-74) — the opposite of "hot leads on top." Shrunk the
+     * nudge to STALENESS_CAP and moved the urgency tiers to fixed floors so
+     * no combination of score+nudge can ever cross a tier boundary. Same
+     * session also fixed a closed lead (Lost, AI 65) outranking open leads
+     * — that fix (tier 4 above) is unchanged by this rebalance.
      */
+    private const STALENESS_CAP = 8;
+
+    private const STALENESS_WINDOW_DAYS = 20;
+
+    private const DUE_TODAY_TIER = 500;
+
+    private const OVERDUE_TIER = 1000;
+
     public function priorityScore(): int
     {
         $score = $this->ai_score ?? 0;
@@ -126,15 +152,16 @@ class Lead extends Model
         }
 
         if ($this->isFollowUpOverdue()) {
-            return $score + 100;
+            return $score + self::OVERDUE_TIER;
         }
 
         if ($this->isFollowUpDueToday()) {
-            return $score + 50;
+            return $score + self::DUE_TODAY_TIER;
         }
 
         if ($this->next_follow_up_at === null && in_array($this->status, [LeadStatus::New, LeadStatus::Contacted], true)) {
-            $score += min($this->created_at->diffInDays(now()), 10) * 3;
+            $daysUntouched = min($this->created_at->diffInDays(now()), self::STALENESS_WINDOW_DAYS);
+            $score += (int) round($daysUntouched * (self::STALENESS_CAP / self::STALENESS_WINDOW_DAYS));
         }
 
         return $score;

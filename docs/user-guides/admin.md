@@ -755,11 +755,17 @@ Lead Generation (2026-08-13) got a pass aimed at helping Sales/Telecaller
 close leads faster, and giving you visibility if they don't.
 
 **Priority sort (default):** the list no longer sorts by newest-first —
-it ranks by a composite of AI score, an overdue or due-today follow-up, and
-(for a New or Contacted lead with no follow-up set yet) how long it's sat
-untouched since it came in. An overdue follow-up always outranks
-everything else. Switch to **Newest** via the sort toggle above the list
-if you specifically want chronological order.
+it ranks in strict tiers, each one always above the next regardless of AI
+score: **overdue follow-up** first (a broken promise to the client),
+**due today** next, then **everything else open** — ranked primarily by
+AI score, so your hottest leads are always visually on top — with a
+small nudge for a New/Contacted lead that has no follow-up scheduled yet,
+so it doesn't sit forgotten forever. That nudge is deliberately small (it
+can only break a near-tie between similarly-scored leads) — it can never
+push a stale, mediocre lead above a genuinely hot one (fixed 2026-08-31,
+after 3-week-old AI-45 leads were briefly outranking fresh AI-72 leads).
+Switch to **Newest** via the sort toggle above the list if you
+specifically want chronological order.
 
 A **Lost or Converted lead always sorts to the bottom**, below every open
 lead, regardless of its AI score — there's nothing left to follow up on,

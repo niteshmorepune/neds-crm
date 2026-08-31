@@ -28,13 +28,13 @@ it('marks a follow-up due today distinctly from overdue or future', function () 
         ->and($future->isFollowUpDueToday())->toBeFalse();
 });
 
-it('accrues priority for a New lead with no follow-up set, the longer it has sat untouched, capped at 10 days', function () {
+it('accrues priority for a New lead with no follow-up set, the longer it has sat untouched, capped at 8 points over 20 days', function () {
     $fresh = Lead::factory()->create(['ai_score' => 0, 'next_follow_up_at' => null, 'status' => LeadStatus::New, 'created_at' => now()]);
-    $threeDaysOld = Lead::factory()->create(['ai_score' => 0, 'next_follow_up_at' => null, 'status' => LeadStatus::New, 'created_at' => now()->subDays(3)]);
-    $twentyDaysOld = Lead::factory()->create(['ai_score' => 0, 'next_follow_up_at' => null, 'status' => LeadStatus::New, 'created_at' => now()->subDays(20)]);
+    $tenDaysOld = Lead::factory()->create(['ai_score' => 0, 'next_follow_up_at' => null, 'status' => LeadStatus::New, 'created_at' => now()->subDays(10)]);
+    $fortyDaysOld = Lead::factory()->create(['ai_score' => 0, 'next_follow_up_at' => null, 'status' => LeadStatus::New, 'created_at' => now()->subDays(40)]);
 
-    expect($threeDaysOld->priorityScore())->toBeGreaterThan($fresh->priorityScore())
-        ->and($twentyDaysOld->priorityScore())->toBe($fresh->priorityScore() + 30); // capped at 10 days * 3
+    expect($tenDaysOld->priorityScore())->toBeGreaterThan($fresh->priorityScore())
+        ->and($fortyDaysOld->priorityScore())->toBe($fresh->priorityScore() + 8); // capped at 20 days
 });
 
 it('also accrues staleness priority for a Contacted lead with no follow-up set, same as New', function () {
@@ -42,9 +42,32 @@ it('also accrues staleness priority for a Contacted lead with no follow-up set, 
     // forcing function to resurface it, unlike New -- it could go cold
     // forever with zero urgency pressure.
     $fresh = Lead::factory()->create(['ai_score' => 0, 'next_follow_up_at' => null, 'status' => LeadStatus::Contacted, 'created_at' => now()]);
-    $twentyDaysOld = Lead::factory()->create(['ai_score' => 0, 'next_follow_up_at' => null, 'status' => LeadStatus::Contacted, 'created_at' => now()->subDays(20)]);
+    $fortyDaysOld = Lead::factory()->create(['ai_score' => 0, 'next_follow_up_at' => null, 'status' => LeadStatus::Contacted, 'created_at' => now()->subDays(40)]);
 
-    expect($twentyDaysOld->priorityScore())->toBe($fresh->priorityScore() + 30); // capped at 10 days * 3
+    expect($fortyDaysOld->priorityScore())->toBe($fresh->priorityScore() + 8); // capped at 20 days
+});
+
+it('never lets the staleness nudge outweigh a meaningful AI score gap — a hot fresh lead always outranks a stale mediocre one', function () {
+    // Real production case, 2026-08-31: six 3-week-old AI-45 leads (maxed
+    // out at the OLD +30 staleness cap = 75) outranked two genuinely hot
+    // AI-72 leads created hours earlier (barely any nudge yet, ~73-74) --
+    // hot leads buried under stale mediocre ones, the opposite of what a
+    // priority list should show. The staleness cap was shrunk specifically
+    // so this can never happen again, at any staleness age.
+    $staleMediocre = Lead::factory()->create(['ai_score' => 45, 'next_follow_up_at' => null, 'status' => LeadStatus::Contacted, 'created_at' => now()->subWeeks(3)]);
+    $hotFresh = Lead::factory()->create(['ai_score' => 72, 'next_follow_up_at' => null, 'status' => LeadStatus::Contacted, 'created_at' => now()->subHours(12)]);
+
+    expect($hotFresh->priorityScore())->toBeGreaterThan($staleMediocre->priorityScore());
+});
+
+it('guarantees strict tiers: overdue always beats due-today, which always beats every open lead, at any score combination', function () {
+    $weakestOverdue = Lead::factory()->create(['ai_score' => 0, 'next_follow_up_at' => now()->subHour(), 'status' => LeadStatus::New]);
+    $strongestDueToday = Lead::factory()->create(['ai_score' => 100, 'next_follow_up_at' => now()->addHour(), 'status' => LeadStatus::New]);
+    $weakestDueToday = Lead::factory()->create(['ai_score' => 0, 'next_follow_up_at' => now()->addHour(), 'status' => LeadStatus::New]);
+    $strongestOpen = Lead::factory()->create(['ai_score' => 100, 'next_follow_up_at' => null, 'status' => LeadStatus::New, 'created_at' => now()->subDays(40)]);
+
+    expect($weakestOverdue->priorityScore())->toBeGreaterThan($strongestDueToday->priorityScore())
+        ->and($weakestDueToday->priorityScore())->toBeGreaterThan($strongestOpen->priorityScore());
 });
 
 it('does not accrue staleness priority once a follow-up date is set or the lead has progressed past Contacted', function () {
