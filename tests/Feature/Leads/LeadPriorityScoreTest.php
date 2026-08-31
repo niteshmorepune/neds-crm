@@ -37,16 +37,36 @@ it('accrues priority for a New lead with no follow-up set, the longer it has sat
         ->and($twentyDaysOld->priorityScore())->toBe($fresh->priorityScore() + 30); // capped at 10 days * 3
 });
 
-it('does not accrue staleness priority once a follow-up date is set or the lead has progressed', function () {
+it('also accrues staleness priority for a Contacted lead with no follow-up set, same as New', function () {
+    // Real gap, 2026-08-31: a Contacted lead with nothing scheduled had no
+    // forcing function to resurface it, unlike New -- it could go cold
+    // forever with zero urgency pressure.
+    $fresh = Lead::factory()->create(['ai_score' => 0, 'next_follow_up_at' => null, 'status' => LeadStatus::Contacted, 'created_at' => now()]);
+    $twentyDaysOld = Lead::factory()->create(['ai_score' => 0, 'next_follow_up_at' => null, 'status' => LeadStatus::Contacted, 'created_at' => now()->subDays(20)]);
+
+    expect($twentyDaysOld->priorityScore())->toBe($fresh->priorityScore() + 30); // capped at 10 days * 3
+});
+
+it('does not accrue staleness priority once a follow-up date is set or the lead has progressed past Contacted', function () {
     $followUpSet = Lead::factory()->create(['ai_score' => 0, 'next_follow_up_at' => now()->addWeek(), 'status' => LeadStatus::New, 'created_at' => now()->subDays(20)]);
-    $progressed = Lead::factory()->create(['ai_score' => 0, 'next_follow_up_at' => null, 'status' => LeadStatus::Contacted, 'created_at' => now()->subDays(20)]);
+    $progressed = Lead::factory()->create(['ai_score' => 0, 'next_follow_up_at' => null, 'status' => LeadStatus::Qualified, 'created_at' => now()->subDays(20)]);
 
     expect($followUpSet->priorityScore())->toBe(0)
         ->and($progressed->priorityScore())->toBe(0);
 });
 
-it('falls back to the raw AI score for a closed lead', function () {
+it('sinks a closed lead 1000 points below its raw AI score, never just the raw score', function () {
     $lost = Lead::factory()->create(['ai_score' => 42, 'status' => LeadStatus::Lost]);
 
-    expect($lost->priorityScore())->toBe(42);
+    expect($lost->priorityScore())->toBe(42 - 1000);
+});
+
+it('always ranks a closed lead below every open lead, regardless of AI score', function () {
+    // Real production case, 2026-08-31: a Lost lead with AI 65 outranked
+    // several open, actionable leads on the Priority sort purely because it
+    // scored well before it died.
+    $hotButLost = Lead::factory()->create(['ai_score' => 100, 'status' => LeadStatus::Lost]);
+    $coldButOpen = Lead::factory()->create(['ai_score' => 0, 'status' => LeadStatus::New, 'next_follow_up_at' => null, 'created_at' => now()]);
+
+    expect($coldButOpen->priorityScore())->toBeGreaterThan($hotButLost->priorityScore());
 });

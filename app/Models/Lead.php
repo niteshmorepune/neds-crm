@@ -108,16 +108,21 @@ class Lead extends Model
      * between production and the test suite. AI score is the base signal;
      * an overdue follow-up outweighs everything (someone is waiting on a
      * promise), a follow-up due today matters less but still more than raw
-     * score, and a still-New lead with no follow-up set yet accrues urgency
-     * the longer it's sat untouched since creation (capped at 10 days so an
-     * ancient, abandoned lead doesn't permanently dominate the top of the list).
+     * score, and a New or Contacted lead with no follow-up set yet accrues
+     * urgency the longer it's sat untouched since creation (capped at 10
+     * days so an ancient, abandoned lead doesn't permanently dominate the
+     * top of the list). A closed lead (Lost/Converted) is nothing left to
+     * follow up on, so it always sorts below every open lead regardless of
+     * how high its AI score was while it was still live (real production
+     * case, 2026-08-31: a Lost lead with AI 65 was outranking several open,
+     * actionable leads purely on a now-meaningless historical score).
      */
     public function priorityScore(): int
     {
         $score = $this->ai_score ?? 0;
 
         if (! $this->status->isOpen()) {
-            return $score;
+            return $score - 1000;
         }
 
         if ($this->isFollowUpOverdue()) {
@@ -128,7 +133,7 @@ class Lead extends Model
             return $score + 50;
         }
 
-        if ($this->next_follow_up_at === null && $this->status === LeadStatus::New) {
+        if ($this->next_follow_up_at === null && in_array($this->status, [LeadStatus::New, LeadStatus::Contacted], true)) {
             $score += min($this->created_at->diffInDays(now()), 10) * 3;
         }
 
