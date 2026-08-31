@@ -176,9 +176,6 @@
                             <a href="{{ route('invoices.create', ['customer_id' => $client->id]) }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">+ Log Invoice</a>
                         </div>
                     @endcan
-                    @if ($canViewAdvances)
-                        @include('clients._advances', ['client' => $client])
-                    @endif
                     @if ($canViewInvoices)
                         @php
                             // Includes reseller-billed invoices (customer_id points at
@@ -203,6 +200,11 @@
                         </ul>
                     @else
                         <p class="text-sm text-gray-400">You don't have access to invoices.</p>
+                    @endif
+                    @if ($canViewAdvances)
+                        <div class="mt-4">
+                            @include('clients._advances', ['client' => $client])
+                        </div>
                     @endif
                 </div>
                 <div x-show="tab === 'tickets'" x-cloak>
