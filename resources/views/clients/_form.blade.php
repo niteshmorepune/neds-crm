@@ -116,7 +116,7 @@
         <select id="state_code" name="state_code" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
             <option value="">Select state</option>
             @foreach ($states as $code => $name)
-                <option value="{{ $code }}" @selected(old('state_code', $customer->state_code) === $code)>
+                <option value="{{ $code }}" @selected(old('state_code', $customer->state_code) === (string) $code)>
                     {{ $name }}
                 </option>
             @endforeach

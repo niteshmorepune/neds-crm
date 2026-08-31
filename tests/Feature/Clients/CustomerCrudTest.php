@@ -37,6 +37,21 @@ it('creates a client with valid data and derives the state name', function () {
         ->and($customer->tags)->toBe(['seo', 'retainer']);
 });
 
+it('preselects the client\'s real saved state on the edit form, not "Select state"', function () {
+    // Regression: config('india.states') keys like '27' (no leading zero)
+    // are silently cast to the PHP integer 27 as array keys, while
+    // Customer::state_code is a string column -- a strict === comparison
+    // between them always failed, so the dropdown fell back to blank for
+    // every state except the few with leading-zero codes (01-09).
+    $customer = Customer::factory()->create(['state_code' => '27', 'state' => 'Maharashtra']);
+
+    $html = $this->actingAs($this->admin)->get(route('clients.edit', $customer))->getContent();
+    preg_match('/<option value="27"[^>]*>/', $html, $matches);
+
+    expect($matches)->not->toBeEmpty()
+        ->and($matches[0])->toContain('selected');
+});
+
 it('saves a referred client\'s collection mode and referral share rate', function () {
     $partner = Partner::factory()->create();
 
