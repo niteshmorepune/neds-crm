@@ -103,6 +103,29 @@ it('renders project index, create and show pages', function () {
     $this->actingAs($this->manager)->get(route('projects.show', $project))->assertOk()->assertSee($project->name)->assertSee('Project Manager:');
 });
 
+it('defaults Start date to today on the create form, but never overrides an existing (even blank) saved value on edit', function () {
+    $today = now(config('app.display_timezone', 'Asia/Kolkata'))->toDateString();
+
+    $response = $this->actingAs($this->manager)->get(route('projects.create'));
+    $response->assertOk();
+    $createHtml = $response->getContent();
+    preg_match('/<input[^>]*id="start_date"[^>]*>/', $createHtml, $createMatch);
+    expect($createMatch)->not->toBeEmpty()
+        ->and($createMatch[0])->toContain("value=\"{$today}\"");
+
+    $projectWithDate = Project::factory()->create(['owner_id' => $this->manager->id, 'start_date' => '2026-01-15']);
+    $editHtml = $this->actingAs($this->manager)->get(route('projects.edit', $projectWithDate))->getContent();
+    preg_match('/<input[^>]*id="start_date"[^>]*>/', $editHtml, $editMatch);
+    expect($editMatch[0])->toContain('value="2026-01-15"');
+
+    $projectWithoutDate = Project::factory()->create(['owner_id' => $this->manager->id, 'start_date' => null]);
+    $editBlankHtml = $this->actingAs($this->manager)->get(route('projects.edit', $projectWithoutDate))->getContent();
+    preg_match('/<input[^>]*id="start_date"[^>]*>/', $editBlankHtml, $editBlankMatch);
+    // No value attribute at all -- stays genuinely blank, not silently defaulted to today.
+    expect($editBlankMatch)->not->toBeEmpty()
+        ->and($editBlankMatch[0])->not->toContain('value=');
+});
+
 it('shows a Log Invoice link on the project page, preselecting this client and project', function () {
     $customer = Customer::factory()->create();
     $project = Project::factory()->create(['owner_id' => $this->manager->id, 'customer_id' => $customer->id]);

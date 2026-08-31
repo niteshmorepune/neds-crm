@@ -1,4 +1,6 @@
-@php($selectedAssignees = collect(old('assignees', $project->exists ? $project->assignees->pluck('id')->all() : []))->map(fn ($i) => (string) $i))
+@php
+    $selectedAssignees = collect(old('assignees', $project->exists ? $project->assignees->pluck('id')->all() : []))->map(fn ($i) => (string) $i);
+@endphp
 
 <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
     <div class="md:col-span-2">
@@ -59,7 +61,13 @@
 
     <div>
         <x-input-label for="start_date" value="Start date" />
-        <x-text-input id="start_date" name="start_date" type="date" class="mt-1 block w-full" :value="old('start_date', $project->start_date?->toDateString())" />
+        @php
+            // Default to today only for a brand-new project -- never override
+            // an existing (even genuinely blank) saved value on edit.
+            $defaultStartDate = $project->start_date?->toDateString()
+                ?? ($project->exists ? null : now(config('app.display_timezone', 'Asia/Kolkata'))->toDateString());
+        @endphp
+        <x-text-input id="start_date" name="start_date" type="date" class="mt-1 block w-full" :value="old('start_date', $defaultStartDate)" />
     </div>
 
     <div>
