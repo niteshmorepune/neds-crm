@@ -3,6 +3,7 @@
 use App\Enums\LeadStatus;
 use App\Enums\UserRole;
 use App\Models\Lead;
+use App\Models\ScoreCalibrationSnapshot;
 use App\Models\User;
 use App\Services\ScoreCalibrationMetrics;
 use Database\Seeders\MenuItemsSeeder;
@@ -140,6 +141,25 @@ describe('reports/score-calibration route', function () {
     it('is forbidden for Sales', function () {
         $sales = User::factory()->role(UserRole::Sales)->create();
         $this->actingAs($sales)->get(route('reports.score-calibration'))->assertForbidden();
+    });
+
+    it('shows the trend table alongside the on-demand view when snapshots exist', function () {
+        ScoreCalibrationSnapshot::create(['period_start' => now()->subMonth()->startOfMonth(), 'band' => 'hot', 'total' => 3, 'converted' => 2, 'lost' => 1, 'conversion_rate' => 67]);
+        $admin = User::factory()->role(UserRole::Admin)->create();
+
+        $this->actingAs($admin)->get(route('reports.score-calibration'))
+            ->assertOk()
+            ->assertSee('Trend over time')
+            ->assertSee('67%')
+            ->assertSee('Is the AI score predictive of outcome?'); // on-demand view still present, not replaced
+    });
+
+    it('shows an empty state for the trend table when no snapshots exist yet', function () {
+        $admin = User::factory()->role(UserRole::Admin)->create();
+
+        $this->actingAs($admin)->get(route('reports.score-calibration'))
+            ->assertOk()
+            ->assertSee('No snapshots recorded yet');
     });
 
     it('exports a CSV with a header row and one row per band', function () {

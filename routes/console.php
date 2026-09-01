@@ -146,6 +146,15 @@ Schedule::command('app:finalize-referral-settlements')->monthlyOn(1, '08:10')->t
 Schedule::command('app:dispatch-scheduled-tasks')->dailyAt('08:00')->timezone('Asia/Kolkata');
 
 // "Lead to Won" Phase 3 — measurement-only, no scoring/routing changes.
+// Records the Score Calibration report's numbers as a dated snapshot for
+// the month that just ended. Frequency is config-driven (default: same
+// 1st-of-month slot as the other month-close jobs above) rather than a
+// fixed ->monthlyOn() call, so it can be tuned without a code change; the
+// command itself no-ops entirely when SCORE_CALIBRATION_SNAPSHOT_ENABLED=false.
+Schedule::command('app:snapshot-score-calibration')
+    ->cron(config('services.reports.score_calibration_snapshot_cron', '30 7 1 * *'))
+    ->timezone('Asia/Kolkata');
+
 // Records each rep's win rate for the month that just ended, by lead
 // source and score band. Config-driven cron (see services.reports),
 // no-ops entirely when REP_WIN_RATE_SNAPSHOT_ENABLED=false.

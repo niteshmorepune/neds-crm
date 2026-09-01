@@ -148,7 +148,9 @@ grouped by when it actually closed) is bucketed into Cold/Warm/Hot — the
 same bands shown on every lead's score badge — with conversion rate and
 average/median days-to-close per band. Meant to be read plainly: if Hot
 leads aren't converting noticeably more than Cold ones, that's exactly
-what this report is for surfacing. Export CSV.
+what this report is for surfacing. Export CSV. A **Trend over time**
+table below it is recorded automatically each month, so you can watch
+whether calibration is drifting over time, not just this month's snapshot.
 
 **Loss Reasons** — for a chosen month, why Deals are actually being lost:
 - overall distribution across the 5 reasons (Price, Bad timing, Chose a

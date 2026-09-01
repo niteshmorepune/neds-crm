@@ -399,6 +399,7 @@ class ReportController extends Controller
 
         return view('reports.score-calibration', [
             'data' => $this->scoreCalibrationMetrics->scoreCalibration($from, $to),
+            'trend' => $this->scoreCalibrationMetrics->trend(),
             'from' => $from,
             'to' => $to,
         ]);

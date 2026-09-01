@@ -865,7 +865,13 @@ Cold/Warm/Hot bands as the score badge, and shows conversion rate plus
 average/median time-to-close per band. If Hot leads aren't converting
 meaningfully more than Cold ones, this report is built to show that
 plainly rather than hide it — it's measurement only and never adjusts
-scoring on its own. Filterable by month; exports to CSV.
+scoring on its own. Filterable by month; exports to CSV. A **Trend over
+time** table below the main view is recorded automatically on the 1st
+of each month (`app:snapshot-score-calibration`, configurable via
+`SCORE_CALIBRATION_SNAPSHOT_CRON`/`SCORE_CALIBRATION_SNAPSHOT_ENABLED`
+in `.env`) — a running history so calibration drift is something to
+actually look back at, separate from the always-current on-demand view
+above it.
 
 **Lead auto-assignment** — a new lead with no owner (e.g. from the website
 form) is automatically assigned to whichever active Sales user currently owns
