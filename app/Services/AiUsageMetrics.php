@@ -222,6 +222,7 @@ class AiUsageMetrics
             'draft_ticket_reply' => 'Draft Ticket Reply',
             'draft_lead_followup' => 'Draft Follow-up', // key name predates Deal support; label kept neutral
             'draft_lead_nurture_followup' => 'Lead Nurture Follow-up',
+            'draft_deal_stall_followup' => 'Deal Stall Check-in',
             'draft_festival_greeting' => 'Festival Greeting Draft',
             'daily_priorities_summary' => 'Morning Digest Summary',
             'daily_report_draft' => 'Daily Report Draft',

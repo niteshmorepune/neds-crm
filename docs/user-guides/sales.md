@@ -321,6 +321,12 @@ on **Sales Dashboard** — see 2a below.
   section, working from that deal's own notes (a deal has no call history
   of its own — only leads do). Handy once a lead has converted and the
   conversation keeps going as a deal instead.
+- **If a deal goes quiet, AI drafts a check-in for you.** Any open deal with
+  no note or edit for 7 days gets an AI-drafted check-in note automatically
+  — a bell notification tells you it's ready. It's a staff-only draft, same
+  as everywhere else: you review and send it yourself, nothing goes out on
+  its own. This can happen more than once on the same deal — work it, go
+  quiet again for a week, get another draft.
 
 **Stale-deal badge** — each card shows how many days it's been sitting in its
 current stage, turning red past 10 days. A red badge is a nudge to follow up
