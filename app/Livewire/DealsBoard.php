@@ -8,6 +8,7 @@ use App\Models\Customer;
 use App\Models\Deal;
 use App\Models\Service;
 use App\Models\User;
+use App\Services\AiAssistant;
 use App\Support\Money;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
@@ -29,6 +30,11 @@ class DealsBoard extends Component
 
     public ?string $value = null; // rupees
 
+    /** Set by suggestLostReason() while the Lost-reason picker is open. */
+    public ?string $suggestedLostReason = null;
+
+    public ?string $lostReasonRationale = null;
+
     public function mount(): void
     {
         abort_unless(auth()->user()?->can('viewAny', Deal::class), 403);
@@ -48,6 +54,31 @@ class DealsBoard extends Component
 
         if (! $deal->moveToStage($target, $reason)) {
             $this->dispatch('deal-move-blocked');
+        }
+    }
+
+    /**
+     * Called the moment a card is dropped on the Lost column, before the rep
+     * picks a reason — a draft-only suggestion, never auto-applied. Resets
+     * to null first so a stale suggestion from a previously-opened deal
+     * never briefly shows for a new one while this call is in flight.
+     */
+    public function suggestLostReason(int $dealId, AiAssistant $assistant): void
+    {
+        $this->suggestedLostReason = null;
+        $this->lostReasonRationale = null;
+
+        $deal = Deal::visibleTo(auth()->user())->find($dealId);
+
+        if ($deal === null || ! auth()->user()->can('update', $deal)) {
+            return;
+        }
+
+        $result = $assistant->suggestDealLostReason($deal);
+
+        if ($result !== null) {
+            $this->suggestedLostReason = $result['reason']?->value;
+            $this->lostReasonRationale = $result['rationale'];
         }
     }
 

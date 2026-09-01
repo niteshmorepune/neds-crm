@@ -140,7 +140,9 @@
                         </div>
                         <div>
                             <x-input-label for="stage" value="Stage" />
-                            <select id="stage" name="stage" x-model="stage" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" @disabled($deal->stage->isTerminal())>
+                            <select id="stage" name="stage" x-model="stage"
+                                    x-on:change="if (stage === 'lost') $dispatch('deal-stage-set-to-lost')"
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" @disabled($deal->stage->isTerminal())>
                                 @foreach ($stages as $stage)
                                     <option value="{{ $stage->value }}" @selected(old('stage', $deal->stage->value) === $stage->value)>{{ $stage->label() }}</option>
                                 @endforeach
@@ -158,13 +160,7 @@
                         </div>
                         @unless ($deal->stage->isTerminal())
                         <div x-show="stage === 'lost'" x-cloak>
-                            <x-input-label for="lost_reason" value="Why was this deal lost? *" />
-                            <select id="lost_reason" name="lost_reason" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                                <option value="">—</option>
-                                @foreach (\App\Enums\DealLostReason::cases() as $reason)
-                                    <option value="{{ $reason->value }}" @selected(old('lost_reason') === $reason->value)>{{ $reason->label() }}</option>
-                                @endforeach
-                            </select>
+                            <livewire:deal-lost-reason-field :deal="$deal" wire:key="lost-reason-field-{{ $deal->id }}" />
                             <x-input-error :messages="$errors->get('lost_reason')" class="mt-1" />
                         </div>
                         @endunless

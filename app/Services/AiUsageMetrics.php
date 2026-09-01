@@ -244,6 +244,7 @@ class AiUsageMetrics
             'ticket_triage_suggestion' => 'Ticket Triage Suggestion',
             'onboarding_task_suggestion' => 'Onboarding Task Suggestion',
             'quotation_line_item_suggestion' => 'Quotation Line Item Suggestion',
+            'suggest_deal_lost_reason' => 'Deal Lost Reason Suggestion',
             'crm_query_classify' => 'Ask the CRM (classify)',
             'crm_query_answer' => 'Ask the CRM (answer)',
             'visibility_audit_activity_summary' => 'VA Funnel Activity Summary',
