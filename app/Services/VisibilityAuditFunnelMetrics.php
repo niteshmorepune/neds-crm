@@ -742,4 +742,21 @@ class VisibilityAuditFunnelMetrics
     {
         return $denominator > 0 ? round($numerator / $denominator * 100, 1) : null;
     }
+
+    /**
+     * "Lead to Won" Phase 3, Task 3 -- capture only, never read by
+     * funnelStatusFor() (which only ever looks at the LATEST landing_viewed
+     * event, via ->latest()->first()) or ScoreLead's prompt. Every hit on
+     * the tracked landing redirect (VisibilityAuditFunnelTrackingController
+     * ::enter()) already creates its own VisibilityAuditFunnelEvent row
+     * unconditionally -- repeat visits were already being captured, just
+     * never counted anywhere. This is that count, exposed for future
+     * evaluation, not a new capture mechanism.
+     */
+    public function landingViewCount(Lead $lead): int
+    {
+        return $lead->visibilityAuditFunnelEvents()
+            ->where('event_type', VisibilityAuditFunnelEventType::LandingViewed)
+            ->count();
+    }
 }
