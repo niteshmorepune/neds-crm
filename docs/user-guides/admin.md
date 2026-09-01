@@ -531,6 +531,20 @@ undelivered message no longer sits shown as a clean success forever. No
 action needed here; this is wired between the two apps automatically
 (`CRM_MESSAGE_FAILED_URL` on wadesk.in's side).
 
+**Visibility Audit "audit in progress" retry limit:** the ~30-minute
+post-payment "work has started" WhatsApp/email update (see Sales
+Section 5, step 2) automatically retries a failing send every 15
+minutes, but only up to **5 attempts per channel** — WhatsApp and email
+are tracked independently, so one channel giving up never stops the
+other from still trying. Once a channel hits 5 failed attempts it stops
+retrying that purchase for good and logs a warning for manual
+follow-up; the failed sends already logged stay visible on the **VA
+Funnel Analytics** message log exactly as before, they just won't
+accumulate further automatic retries. If a client says they never got
+this update, check the message log for that lead — a run of 5 failures
+(commonly an unapproved/misnamed template or a bad phone/email on file)
+means it's now waiting on a human, not still quietly retrying.
+
 **Managing which staff see which line:** this is configured on **wadesk.in
 itself**, not the CRM — Admin → Agents page has a checkbox per staff member
 for each line, and Admin → Numbers is where the lines themselves (and their

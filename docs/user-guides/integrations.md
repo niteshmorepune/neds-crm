@@ -450,6 +450,26 @@ matched back to the exact touch by `wadesk_message_id` and downgraded to
 and the gap this closes reopens (the rest of the funnel keeps working
 normally either way).
 
+**Retry cap on the post-payment "audit in progress" nudge (added
+2026-09-01):** separately from the recovery/invite jobs above,
+`App\Jobs\SendVisibilityAuditInProgressJob`/`SendVisibilityAuditInProgressEmailJob`
+send a ~30-minute-after-payment "work has started" update and are
+re-attempted every 15 minutes by `app:send-visibility-audit-in-progress-nudges`
+until they succeed. Real incident that surfaced the gap: a briefly
+unapproved WhatsApp template on 2026-08-27 caused the same purchases to
+be retried for ~75 minutes before self-resolving — harmless that time,
+but nothing would have stopped an indefinite retry storm had the
+misconfiguration lasted longer. Fixed with per-channel attempt counters
+(`visibility_audit_purchases.in_progress_whatsapp_attempts` /
+`in_progress_email_attempts`) and gave-up timestamps
+(`in_progress_whatsapp_gave_up_at` / `in_progress_email_gave_up_at`) —
+each channel stops retrying after 5 failed attempts and logs a warning
+naming the purchase, independently of the other channel.
+`VisibilityAuditFunnelMetrics::pendingInProgressNudges()` excludes a
+given-up channel from future dispatch; already-logged failed
+`VisibilityAuditTouch` rows are untouched and stay visible on the VA
+Funnel Analytics message log for manual follow-up.
+
 ## Integration 13 — Lead context for the wadesk.in after-hours AI assistant
 
 **What it does:** before wadesk.in's after-hours AI assistant drafts a

@@ -542,7 +542,11 @@ which lead, and whether it succeeded or failed — filterable by message
 type and outcome. Use this whenever something looks off in the funnel (a
 lead who should've been invited but wasn't, a stage that isn't
 converting) to check whether the automation actually tried and what
-happened.
+happened. The "audit in progress" step retries a failing send every 15
+minutes but gives up after 5 attempts per channel (WhatsApp and email
+tracked separately) — a lead showing several failed rows for the same
+message type has stopped auto-retrying and needs a manual follow-up,
+not just a wait.
 
 **All Visibility Audit purchases** (the tile below the stage counts, "View
 all →") is the true total for the window — every ₹120 payment, regardless

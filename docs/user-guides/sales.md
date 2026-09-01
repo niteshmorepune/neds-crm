@@ -159,7 +159,9 @@ automatic, with two points where you take over:
 1. The moment payment clears, the client gets an automatic thank-you on
    WhatsApp and email — nothing for you to do.
 2. About 30 minutes later, they get a short "work has started" update on
-   both channels too — again, automatic.
+   both channels too — again, automatic (it retries a few times if
+   delivery fails, then stops and needs a manual nudge from you — check
+   **Your message log** below if a client says they never got it).
 3. Once the audit itself is actually ready, click **Mark audit ready** on
    the lead's **"Visibility Audit:"** badge — this notifies you (the
    lead's owner) to go ahead and schedule the 15-minute Gmeet walkthrough
