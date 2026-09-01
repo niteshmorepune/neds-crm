@@ -130,7 +130,7 @@
             @can('update', $deal)
                 <div class="rounded-lg bg-white p-6 shadow-sm">
                     <h2 class="text-base font-semibold text-gray-900">Update deal</h2>
-                    <form method="POST" action="{{ route('deals.update', $deal) }}" class="mt-4 space-y-4">
+                    <form method="POST" action="{{ route('deals.update', $deal) }}" class="mt-4 space-y-4" x-data="{ stage: '{{ old('stage', $deal->stage->value) }}' }">
                         @csrf @method('PUT')
 
                         <div>
@@ -140,7 +140,7 @@
                         </div>
                         <div>
                             <x-input-label for="stage" value="Stage" />
-                            <select id="stage" name="stage" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" @disabled($deal->stage->isTerminal())>
+                            <select id="stage" name="stage" x-model="stage" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" @disabled($deal->stage->isTerminal())>
                                 @foreach ($stages as $stage)
                                     <option value="{{ $stage->value }}" @selected(old('stage', $deal->stage->value) === $stage->value)>{{ $stage->label() }}</option>
                                 @endforeach
@@ -148,11 +148,26 @@
                             @if ($deal->stage->isTerminal())
                                 <input type="hidden" name="stage" value="{{ $deal->stage->value }}">
                                 <p class="mt-1 text-xs text-gray-400">{{ $deal->stage->label() }} is final and cannot be changed.</p>
+                                @if ($deal->stage === \App\Enums\DealStage::Lost && $deal->lost_reason)
+                                    <p class="mt-1 text-xs text-gray-400">Reason: {{ $deal->lost_reason->label() }}</p>
+                                @endif
                             @else
                                 <p class="mt-1 text-xs text-gray-400">Move to Negotiation only once a quotation has actually been sent — this stage means "pricing shared, discussing terms," not just "talked to them again."</p>
                             @endif
                             <x-input-error :messages="$errors->get('stage')" class="mt-1" />
                         </div>
+                        @unless ($deal->stage->isTerminal())
+                        <div x-show="stage === 'lost'" x-cloak>
+                            <x-input-label for="lost_reason" value="Why was this deal lost? *" />
+                            <select id="lost_reason" name="lost_reason" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                <option value="">—</option>
+                                @foreach (\App\Enums\DealLostReason::cases() as $reason)
+                                    <option value="{{ $reason->value }}" @selected(old('lost_reason') === $reason->value)>{{ $reason->label() }}</option>
+                                @endforeach
+                            </select>
+                            <x-input-error :messages="$errors->get('lost_reason')" class="mt-1" />
+                        </div>
+                        @endunless
                         <div>
                             <x-input-label for="value" value="Value (₹) *" />
                             <x-text-input id="value" name="value" type="number" step="0.01" min="0" class="mt-1 block w-full" :value="$valueRupees" />

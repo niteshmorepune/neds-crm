@@ -49,6 +49,7 @@ class DealController extends Controller
         $deal->update([
             'title' => $data['title'],
             'stage' => $data['stage'],
+            'lost_reason' => $data['stage'] === DealStage::Lost->value ? $data['lost_reason'] : null,
             'service_id' => $data['service_id'] ?? null,
             'owner_id' => $data['owner_id'] ?? null,
             'partner_id' => $data['partner_id'] ?? null,
