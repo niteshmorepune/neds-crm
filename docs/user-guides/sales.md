@@ -148,6 +148,12 @@ also shows a colored **"Visibility Audit:"** badge (e.g. "Reached
 checkout, hasn't paid") right under its name, so you don't need to come
 back to this list to remember why a lead needs a call.
 
+This funnel stage also feeds the lead's **AI score** (and therefore its
+place in the Priority sort, Section 1 above) — reaching checkout or paying
+re-scores the lead immediately, since that's real buying intent even
+before you've made contact. Merely being invited or eligible, with no
+engagement yet, doesn't move the score either way.
+
 **Once a lead pays ₹120 for the audit**, the rest of the journey is mostly
 automatic, with two points where you take over:
 1. The moment payment clears, the client gets an automatic thank-you on

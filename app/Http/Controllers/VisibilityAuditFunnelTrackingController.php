@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Enums\VisibilityAuditFunnelEventType;
 use App\Enums\VisibilityAuditTier;
+use App\Jobs\ScoreLead;
 use App\Models\Lead;
 use App\Models\VisibilityAuditFunnelEvent;
+use App\Support\Ai;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -27,6 +29,13 @@ use Illuminate\Http\Request;
  * forward from `enter()` when one was present. Either way, a missing/invalid
  * `lead` never breaks the redirect — it just logs as an anonymous funnel hit
  * instead of one attributable to a specific Lead.
+ *
+ * Either hop, when attributed to a real Lead, also re-scores that lead
+ * (ScoreLead reads the funnel stage back via
+ * VisibilityAuditFunnelMetrics::funnelStatusFor()) — reaching checkout on a
+ * paid offer is real buying intent the AI score would otherwise never see
+ * until some unrelated Note/Call/status-change happened to trigger a
+ * re-score later, if ever.
  */
 class VisibilityAuditFunnelTrackingController extends Controller
 {
@@ -38,6 +47,8 @@ class VisibilityAuditFunnelTrackingController extends Controller
             'event_type' => VisibilityAuditFunnelEventType::LandingViewed,
             'lead_id' => $leadId,
         ]);
+
+        $this->rescoreIfIdentified($leadId);
 
         return redirect()->route('offers.visibility-audit', array_filter(['lead' => $leadId]));
     }
@@ -53,6 +64,8 @@ class VisibilityAuditFunnelTrackingController extends Controller
             'tier' => $tier,
             'lead_id' => $leadId,
         ]);
+
+        $this->rescoreIfIdentified($leadId);
 
         $paymentUrl = config("services.razorpay.payment_pages.{$this->configKeyForTier($tier)}");
 
@@ -85,5 +98,12 @@ class VisibilityAuditFunnelTrackingController extends Controller
             VisibilityAuditTier::Website => 'website_audit',
             VisibilityAuditTier::Both => 'both_audit',
         };
+    }
+
+    private function rescoreIfIdentified(?int $leadId): void
+    {
+        if ($leadId !== null && Ai::enabled()) {
+            ScoreLead::dispatch($leadId);
+        }
     }
 }

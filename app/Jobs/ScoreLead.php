@@ -7,6 +7,7 @@ use App\Enums\LeadUrgency;
 use App\Models\Lead;
 use App\Notifications\HotLeadNotification;
 use App\Services\AnthropicClient;
+use App\Services\VisibilityAuditFunnelMetrics;
 use App\Support\Ai;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -21,6 +22,14 @@ use Illuminate\Queue\SerializesModels;
  * a serialized model, so a re-score always runs against fresh data and a deleted
  * lead is a no-op. AI failure is swallowed — scoring must never break the lead
  * workflow.
+ *
+ * Dispatch sites: LeadObserver (create/scoring-field update/close), RecordNotes
+ * (a note added), CallLogController (a call logged), and — for a lead in the
+ * Visibility Audit cohort — VisibilityAuditFunnelTrackingController (landing
+ * page viewed, checkout reached) and RecordVisibilityAuditPurchase (paid).
+ * The prompt itself folds in the lead's current VA funnel stage via
+ * VisibilityAuditFunnelMetrics::funnelStatusFor() regardless of which of
+ * those sites triggered this particular re-score.
  */
 class ScoreLead implements ShouldQueue
 {
@@ -35,7 +44,7 @@ class ScoreLead implements ShouldQueue
 
     public function __construct(public int $leadId) {}
 
-    public function handle(AnthropicClient $client): void
+    public function handle(AnthropicClient $client, VisibilityAuditFunnelMetrics $vaFunnel): void
     {
         if (! Ai::enabled()) {
             return;
@@ -49,7 +58,7 @@ class ScoreLead implements ShouldQueue
 
         $result = $client->message(
             feature: 'lead_scoring',
-            prompt: $this->prompt($lead),
+            prompt: $this->prompt($lead, $vaFunnel),
             system: $this->system(),
             maxTokens: 1000,
         );
@@ -100,6 +109,16 @@ class ScoreLead implements ShouldQueue
         treated as a disqualifying signal on its own, especially when Notes or
         Call history show real engagement.
 
+        If a Visibility Audit funnel status is included, it reflects the
+        lead's own self-directed behaviour on a paid offer page -- weigh it
+        comparably to Notes/Calls, not as a minor detail. "Paid" is the
+        strongest possible signal (this person has already spent real money);
+        "Reached checkout" is a strong positive signal, stronger than an
+        untouched intake form alone, since they were seconds from paying;
+        "Viewed the offer page" is a moderate positive signal. Being merely
+        "invited" or "eligible" with no engagement yet is neutral and must not
+        by itself raise or lower the score.
+
         Respond with ONLY a JSON object, no markdown, no prose:
         {"score": <integer 0-100>, "reason": "<one short sentence, max 120 chars>",
          "budget_band": "<low|medium|high>", "urgency": "<low|medium|high>",
@@ -107,7 +126,7 @@ class ScoreLead implements ShouldQueue
         PROMPT;
     }
 
-    private function prompt(Lead $lead): string
+    private function prompt(Lead $lead, VisibilityAuditFunnelMetrics $vaFunnel): string
     {
         $lines = [
             'Name: '.($lead->name ?: 'unknown'),
@@ -124,6 +143,17 @@ class ScoreLead implements ShouldQueue
             // the prompt said "Estimated value (INR): 0.00").
             'Estimated value (INR): '.($lead->estimated_value === null ? 'not provided' : number_format($lead->estimated_value / 100, 2)),
         ];
+
+        // Reuses VisibilityAuditFunnelMetrics::funnelStatusFor() -- the same
+        // single source of truth the Recovery worklist/dashboard/Lead page
+        // already render this lead's furthest-reached stage from -- rather
+        // than re-deriving funnel state independently here. Null for a lead
+        // outside the VA cohort entirely, so this line is simply omitted.
+        $funnelStatus = $vaFunnel->funnelStatusFor($lead);
+        if ($funnelStatus !== null) {
+            $lines[] = 'Visibility Audit funnel status: '.$funnelStatus['label']
+                .($funnelStatus['since'] !== null ? ' ('.$funnelStatus['since']->diffForHumans().')' : '').'.';
+        }
 
         if ($lead->notes->isNotEmpty()) {
             $lines[] = '';

@@ -5,14 +5,17 @@ use App\Enums\CallOutcome;
 use App\Enums\LeadBudgetBand;
 use App\Enums\LeadUrgency;
 use App\Enums\UserRole;
+use App\Enums\VisibilityAuditFunnelEventType;
 use App\Jobs\ScoreLead;
 use App\Livewire\RecordNotes;
 use App\Models\AiUsage;
 use App\Models\Lead;
 use App\Models\Service;
 use App\Models\User;
+use App\Models\VisibilityAuditFunnelEvent;
 use App\Notifications\HotLeadNotification;
 use App\Services\AnthropicClient;
+use App\Services\VisibilityAuditFunnelMetrics;
 use Database\Seeders\MenuItemsSeeder;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
@@ -89,7 +92,7 @@ it('stores the score, reason, qualification fields and timestamp, and records us
     $service = Service::factory()->create();
     $lead = Lead::factory()->create(['service_id' => $service->id]);
 
-    (new ScoreLead($lead->id))->handle(app(AnthropicClient::class));
+    (new ScoreLead($lead->id))->handle(app(AnthropicClient::class), app(VisibilityAuditFunnelMetrics::class));
 
     $lead->refresh();
     expect($lead->ai_score)->toBe(60)
@@ -109,7 +112,7 @@ it('ignores an unrecognised budget band or urgency value instead of failing the 
     fakeClaude(score: 55, budgetBand: 'astronomical', urgency: 'yesterday');
     $lead = Lead::factory()->create();
 
-    (new ScoreLead($lead->id))->handle(app(AnthropicClient::class));
+    (new ScoreLead($lead->id))->handle(app(AnthropicClient::class), app(VisibilityAuditFunnelMetrics::class));
 
     $lead->refresh();
     expect($lead->ai_score)->toBe(55)
@@ -122,7 +125,7 @@ it('clamps an out-of-range score into 0-100', function () {
     fakeClaude(score: 250, reason: 'Over the top');
     $lead = Lead::factory()->create();
 
-    (new ScoreLead($lead->id))->handle(app(AnthropicClient::class));
+    (new ScoreLead($lead->id))->handle(app(AnthropicClient::class), app(VisibilityAuditFunnelMetrics::class));
 
     expect($lead->refresh()->ai_score)->toBe(100);
 });
@@ -132,7 +135,7 @@ it('leaves the lead unscored and never throws when the API fails', function () {
     Http::fake(['api.anthropic.com/*' => Http::response('upstream error', 500)]);
     $lead = Lead::factory()->create();
 
-    (new ScoreLead($lead->id))->handle(app(AnthropicClient::class));
+    (new ScoreLead($lead->id))->handle(app(AnthropicClient::class), app(VisibilityAuditFunnelMetrics::class));
 
     expect($lead->refresh()->ai_score)->toBeNull();
     expect(AiUsage::count())->toBe(0);
@@ -144,7 +147,7 @@ it('writes the score without firing an activity log entry', function () {
     $lead = Lead::factory()->create();
     $before = $lead->activities()->count();
 
-    (new ScoreLead($lead->id))->handle(app(AnthropicClient::class));
+    (new ScoreLead($lead->id))->handle(app(AnthropicClient::class), app(VisibilityAuditFunnelMetrics::class));
 
     expect($lead->activities()->count())->toBe($before);
 });
@@ -154,7 +157,7 @@ it('handles the job gracefully when AI was turned off after dispatch', function 
     $lead = Lead::factory()->create();
     Http::fake();
 
-    (new ScoreLead($lead->id))->handle(app(AnthropicClient::class));
+    (new ScoreLead($lead->id))->handle(app(AnthropicClient::class), app(VisibilityAuditFunnelMetrics::class));
 
     Http::assertNothingSent();
     expect($lead->refresh()->ai_score)->toBeNull();
@@ -167,7 +170,7 @@ it('notifies the owner immediately when a lead scores at or above the hot thresh
     $owner = User::factory()->role(UserRole::Sales)->create();
     $lead = Lead::factory()->ownedBy($owner->id)->create();
 
-    (new ScoreLead($lead->id))->handle(app(AnthropicClient::class));
+    (new ScoreLead($lead->id))->handle(app(AnthropicClient::class), app(VisibilityAuditFunnelMetrics::class));
 
     Notification::assertSentTo($owner, HotLeadNotification::class);
 });
@@ -179,7 +182,7 @@ it('does not send a hot-lead notification for a lead below the threshold', funct
     $owner = User::factory()->role(UserRole::Sales)->create();
     $lead = Lead::factory()->ownedBy($owner->id)->create();
 
-    (new ScoreLead($lead->id))->handle(app(AnthropicClient::class));
+    (new ScoreLead($lead->id))->handle(app(AnthropicClient::class), app(VisibilityAuditFunnelMetrics::class));
 
     Notification::assertNotSentTo($owner, HotLeadNotification::class);
 });
@@ -190,7 +193,7 @@ it('does not send a hot-lead notification when the lead has no owner', function 
     fakeClaude(score: 95);
     $lead = Lead::factory()->create(); // no active Sales user exists, so auto-assign is a no-op
 
-    (new ScoreLead($lead->id))->handle(app(AnthropicClient::class));
+    (new ScoreLead($lead->id))->handle(app(AnthropicClient::class), app(VisibilityAuditFunnelMetrics::class));
 
     Notification::assertNothingSent();
 });
@@ -204,7 +207,7 @@ it('sends a null estimated_value as "not provided", never a misleading literal 0
     fakeClaude();
     $lead = Lead::factory()->create(['estimated_value' => null]);
 
-    (new ScoreLead($lead->id))->handle(app(AnthropicClient::class));
+    (new ScoreLead($lead->id))->handle(app(AnthropicClient::class), app(VisibilityAuditFunnelMetrics::class));
 
     Http::assertSent(function ($request) {
         $prompt = json_decode($request->body(), true)['messages'][0]['content'];
@@ -219,7 +222,7 @@ it('still formats a real estimated_value as a rupee figure', function () {
     fakeClaude();
     $lead = Lead::factory()->create(['estimated_value' => 1500000]); // paise -> ₹15,000.00
 
-    (new ScoreLead($lead->id))->handle(app(AnthropicClient::class));
+    (new ScoreLead($lead->id))->handle(app(AnthropicClient::class), app(VisibilityAuditFunnelMetrics::class));
 
     Http::assertSent(function ($request) {
         $prompt = json_decode($request->body(), true)['messages'][0]['content'];
@@ -250,7 +253,7 @@ it('includes recent notes and call history in the scoring prompt, most recent fi
         'called_at' => now(),
     ]);
 
-    (new ScoreLead($lead->id))->handle(app(AnthropicClient::class));
+    (new ScoreLead($lead->id))->handle(app(AnthropicClient::class), app(VisibilityAuditFunnelMetrics::class));
 
     Http::assertSent(function ($request) {
         $body = json_decode($request->body(), true);
@@ -268,7 +271,7 @@ it('omits the Notes/Call history sections entirely for a lead with neither', fun
     fakeClaude();
     $lead = Lead::factory()->create();
 
-    (new ScoreLead($lead->id))->handle(app(AnthropicClient::class));
+    (new ScoreLead($lead->id))->handle(app(AnthropicClient::class), app(VisibilityAuditFunnelMetrics::class));
 
     Http::assertSent(function ($request) {
         $body = json_decode($request->body(), true);
@@ -353,4 +356,55 @@ it('does not double-fire when both a scoring field and the terminal status chang
     $lead->update(['status' => 'converted', 'company' => 'Renamed Pvt Ltd']);
 
     Queue::assertPushed(ScoreLead::class, 1); // a single re-score covers both changes at once
+});
+
+it('includes the Visibility Audit funnel status in the scoring prompt for a lead that reached checkout', function () {
+    enableAi();
+    fakeClaude();
+    $lead = Lead::factory()->create();
+    VisibilityAuditFunnelEvent::create([
+        'event_type' => VisibilityAuditFunnelEventType::PaymentViewed,
+        'lead_id' => $lead->id,
+    ]);
+
+    (new ScoreLead($lead->id))->handle(app(AnthropicClient::class), app(VisibilityAuditFunnelMetrics::class));
+
+    Http::assertSent(function ($request) {
+        $prompt = json_decode($request->body(), true)['messages'][0]['content'];
+
+        return str_contains($prompt, "Visibility Audit funnel status: Reached checkout, hasn't paid");
+    });
+});
+
+it('includes the paid Visibility Audit funnel status in the scoring prompt once a purchase is recorded', function () {
+    enableAi();
+    fakeClaude();
+    $lead = Lead::factory()->create();
+    $lead->visibilityAuditPurchases()->create([
+        'tier' => 'gbp',
+        'amount_paise' => 12000,
+        'razorpay_payment_id' => 'pay_test_scoring',
+    ]);
+
+    (new ScoreLead($lead->id))->handle(app(AnthropicClient::class), app(VisibilityAuditFunnelMetrics::class));
+
+    Http::assertSent(function ($request) {
+        $prompt = json_decode($request->body(), true)['messages'][0]['content'];
+
+        return str_contains($prompt, 'Visibility Audit funnel status: Paid — Visibility Audit purchased');
+    });
+});
+
+it('omits the Visibility Audit funnel line entirely for a lead outside that cohort', function () {
+    enableAi();
+    fakeClaude();
+    $lead = Lead::factory()->create();
+
+    (new ScoreLead($lead->id))->handle(app(AnthropicClient::class), app(VisibilityAuditFunnelMetrics::class));
+
+    Http::assertSent(function ($request) {
+        $prompt = json_decode($request->body(), true)['messages'][0]['content'];
+
+        return ! str_contains($prompt, 'Visibility Audit funnel status');
+    });
 });
