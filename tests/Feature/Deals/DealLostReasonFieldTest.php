@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\DealLostReason;
 use App\Enums\DealStage;
 use App\Enums\UserRole;
 use App\Livewire\DealLostReasonField;
@@ -25,6 +26,8 @@ it('suggests a reason when the deal-stage-set-to-lost event fires', function () 
         ->assertSet('rationale', 'Notes say the scope never matched.')
         ->assertSee('suggested')
         ->assertSee('Notes say the scope never matched.');
+
+    expect($deal->fresh()->ai_suggested_lost_reason)->toBe(DealLostReason::NotAFit);
 });
 
 it('does not call Claude a second time if the event fires twice', function () {
@@ -58,6 +61,7 @@ it('shows no pre-selection and a helpful note when the deal has no history', fun
         ->assertSee('No suggestion available');
 
     Http::assertNothingSent();
+    expect($deal->fresh()->ai_suggested_lost_reason)->toBeNull();
 });
 
 it('forbids suggesting for a deal the viewer cannot update', function () {

@@ -31,6 +31,7 @@ class Deal extends Model
         'value',
         'stage',
         'lost_reason',
+        'ai_suggested_lost_reason',
         'owner_id',
         'next_follow_up_at',
         'won_at',
@@ -53,6 +54,7 @@ class Deal extends Model
         return [
             'stage' => DealStage::class,
             'lost_reason' => DealLostReason::class,
+            'ai_suggested_lost_reason' => DealLostReason::class,
             'value' => 'integer',
             'next_follow_up_at' => 'datetime',
             'won_at' => 'datetime',
@@ -216,6 +218,29 @@ class Deal extends Model
         }
 
         return $this->save();
+    }
+
+    /**
+     * Compares the AI's suggested Lost reason (persisted at suggestion time by
+     * DealsBoard::suggestLostReason() / DealLostReasonField::suggest(), see
+     * ai_suggested_lost_reason) against the reason actually saved -- used by
+     * the Loss Reason report as a calibration signal on Phase 1's suggestion
+     * quality, not to influence anything at save time.
+     *
+     * @return 'no_suggestion'|'accepted'|'overridden'|null null when the deal
+     *                                                      isn't Lost yet (the comparison is meaningless before that).
+     */
+    public function aiSuggestionOutcome(): ?string
+    {
+        if ($this->stage !== DealStage::Lost) {
+            return null;
+        }
+
+        if ($this->ai_suggested_lost_reason === null) {
+            return 'no_suggestion';
+        }
+
+        return $this->ai_suggested_lost_reason === $this->lost_reason ? 'accepted' : 'overridden';
     }
 
     /**

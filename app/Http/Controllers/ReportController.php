@@ -380,10 +380,6 @@ class ReportController extends Controller
     }
 
     /**
-     * "Collections & Delivery" client health, optionally scoped to one
-     * referring partner or to direct (unassigned) clients via ?partner_id=.
-     */
-    /**
      * "Is the 0-100 AI score actually predictive of outcome?" -- buckets
      * closed Leads by score band and shows conversion rate + time-to-close
      * per bucket. Same access gate as Employee Performance / Loss Reasons.
@@ -422,6 +418,79 @@ class ReportController extends Controller
         });
     }
 
+    /**
+     * "Loss Reasons by Rep" — deliberately not "Rep Loss Rankings": this is a
+     * coaching signal (which reasons recur for which rep), not a
+     * performance-ranking report. Same access gate as Employee Performance.
+     */
+    public function lossReasons(Request $request): View
+    {
+        $this->authorizePerformance($request);
+        [$from, $to] = $this->monthRange($request);
+
+        return view('reports.loss-reasons', [
+            'data' => $this->metrics->lossReasonBreakdown($from, $to),
+            'from' => $from,
+            'to' => $to,
+        ]);
+    }
+
+    public function exportLossReasons(Request $request): StreamedResponse
+    {
+        $this->authorizePerformance($request);
+        [$from, $to] = $this->monthRange($request);
+        $data = $this->metrics->lossReasonBreakdown($from, $to);
+
+        return $this->csv("loss-reasons-{$from->format('Y-m-d')}_to_{$to->format('Y-m-d')}.csv", function ($out) use ($data) {
+            fputcsv($out, ['Overall distribution']);
+            fputcsv($out, ['Reason', 'Count', '%', 'Value (₹)']);
+            foreach ($data['overall'] as $r) {
+                fputcsv($out, [$r['label'], $r['count'], $r['pct'], Money::toRupees($r['value'])]);
+            }
+            fputcsv($out, []);
+
+            fputcsv($out, ['Loss reasons by rep']);
+            foreach ($data['by_rep'] as $rep) {
+                fputcsv($out, [$rep['label'], 'Total', $rep['total']]);
+                fputcsv($out, ['Reason', 'Count', '%']);
+                foreach ($rep['by_reason'] as $r) {
+                    fputcsv($out, [$r['label'], $r['count'], $r['pct']]);
+                }
+                fputcsv($out, []);
+            }
+
+            fputcsv($out, ['Loss reasons by lead source']);
+            foreach ($data['by_source'] as $source) {
+                fputcsv($out, [$source['label'], 'Total', $source['total']]);
+                fputcsv($out, ['Reason', 'Count', '%']);
+                foreach ($source['by_reason'] as $r) {
+                    fputcsv($out, [$r['label'], $r['count'], $r['pct']]);
+                }
+                fputcsv($out, []);
+            }
+
+            fputcsv($out, ['Loss reasons by score band']);
+            foreach ($data['by_score_band'] as $band) {
+                fputcsv($out, [$band['label'], 'Total', $band['total']]);
+                fputcsv($out, ['Reason', 'Count', '%']);
+                foreach ($band['by_reason'] as $r) {
+                    fputcsv($out, [$r['label'], $r['count'], $r['pct']]);
+                }
+                fputcsv($out, []);
+            }
+
+            fputcsv($out, ['AI suggestion calibration']);
+            fputcsv($out, ['Accepted', $data['ai_suggestion_stats']['accepted']]);
+            fputcsv($out, ['Overridden', $data['ai_suggestion_stats']['overridden']]);
+            fputcsv($out, ['No suggestion made', $data['ai_suggestion_stats']['no_suggestion']]);
+            fputcsv($out, ['Accepted %', $data['ai_suggestion_stats']['accepted_pct']]);
+        });
+    }
+
+    /**
+     * "Collections & Delivery" client health, optionally scoped to one
+     * referring partner or to direct (unassigned) clients via ?partner_id=.
+     */
     public function collections(Request $request): View
     {
         $this->authorizeRevenue($request);

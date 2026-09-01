@@ -232,6 +232,7 @@
                     <li><a href="{{ route('reports.employee-performance') }}" class="text-indigo-600 hover:underline">Employee Performance Report</a></li>
                     <li><a href="{{ route('reports.lead-sources') }}" class="text-indigo-600 hover:underline">Lead Source Performance</a></li>
                     <li><a href="{{ route('reports.score-calibration') }}" class="text-indigo-600 hover:underline">Score Calibration</a></li>
+                    <li><a href="{{ route('reports.loss-reasons') }}" class="text-indigo-600 hover:underline">Loss Reasons</a></li>
                     <li><a href="{{ route('reports.ai-usage') }}" class="text-indigo-600 hover:underline">AI Usage Report</a></li>
                     <li><a href="{{ route('reports.ask') }}" class="text-indigo-600 hover:underline">Ask the CRM</a></li>
                     <li><a href="{{ route('reports.receivables') }}" class="text-indigo-600 hover:underline">Outstanding Receivables</a></li>

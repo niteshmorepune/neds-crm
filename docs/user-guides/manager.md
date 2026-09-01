@@ -150,6 +150,20 @@ average/median days-to-close per band. Meant to be read plainly: if Hot
 leads aren't converting noticeably more than Cold ones, that's exactly
 what this report is for surfacing. Export CSV.
 
+**Loss Reasons** — for a chosen month, why Deals are actually being lost:
+- overall distribution across the 5 reasons (Price, Bad timing, Chose a
+  competitor, Went dark, Not a good fit).
+- **Loss reasons by rep** — which reasons recur most for each rep. A
+  coaching signal ("this rep keeps losing to price — is our pitch or our
+  pricing the issue?"), not a leaderboard.
+- **by lead source** and **by the originating lead's AI score band**
+  (Cold/Warm/Hot) — the same bands shown on every lead's score badge — so
+  you can see whether high-scored leads that still get lost cluster
+  around one particular reason.
+- how often a rep accepted vs. overrode the reason AI suggests when a
+  deal is dropped on Lost (see Sales guide, Section 2) — a running check
+  on whether that suggestion is actually pulling its weight. Export CSV.
+
 **AI Usage Report** — for a chosen month, which of the CRM's AI features are
 actually being used: calls per feature (lead scoring, draft replies, monthly
 wins notes, and the rest), tokens processed, and a rough estimated cost per

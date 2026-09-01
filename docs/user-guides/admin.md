@@ -866,6 +866,19 @@ picks any of the 5 options with no extra friction, and a deal with too
 little history simply shows the plain picker with nothing pre-selected —
 never a guessed default.
 
+**Loss Reasons report** (Reports panel, Admin/Manager) — a real-numbers
+answer to "why are we actually losing deals," broken down by reason
+alone, by reason per rep ("Loss reasons by rep" — a coaching signal, not
+a ranking), by reason per lead source, and by reason against the
+originating lead's AI score band (Cold/Warm/Hot, the same bands shown on
+every lead's score badge) — so a pattern like "high-scored leads mostly
+lost to going dark" stands out from "high-scored leads mostly lost to a
+competitor." Also shows how often a rep accepted vs. overrode the
+AI-suggested Lost reason above, as a running check on whether that
+suggestion is actually useful. Filterable by month; exports to CSV. Pure
+aggregation over what's already recorded — it doesn't call Claude and
+never changes.
+
 **Automated lead nurture follow-ups** — daily at 10:30 IST, any New lead its
 owner hasn't personally added a note or logged a call on gets an AI-drafted
 follow-up at day 1 (first outreach), day 3 (gentle nudge), and day 7 (final,

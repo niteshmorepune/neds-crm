@@ -116,20 +116,11 @@ class Lead extends Model
     /**
      * The Cold/Warm/Hot banding already shown on every AI-scored lead badge
      * (resources/views/components/lead-score.blade.php) — extracted here so
-     * the Score Calibration report buckets scores identically to what a rep
-     * already sees on the lead itself, rather than inventing a second
-     * banding. Hot's threshold follows the same configurable
+     * reports (Score Calibration, Loss Reason) bucket scores identically to
+     * what a rep already sees on the lead itself, rather than inventing a
+     * second banding. Hot's threshold follows the same configurable
      * hot_lead_threshold isHot() uses; Warm/Cold's 40 boundary mirrors the
      * badge component's own hardcoded value (not independently configurable).
-     *
-     * NOTE: this exact method is also added independently by the Loss
-     * Reason report (PR #147, branch feat-loss-reason-report), built the
-     * same day off master before either PR merged — deliberately kept
-     * duplicated rather than making one PR depend on the other's unmerged
-     * branch (see CLAUDE.md's "independently shippable" instruction for
-     * this phase). Whichever of the two merges second will hit a trivial
-     * conflict here; keep either copy, they're identical, and drop the
-     * duplicate from lead-score.blade.php's own refactor too.
      *
      * @return 'cold'|'warm'|'hot'|null null when there's no score to band.
      */
