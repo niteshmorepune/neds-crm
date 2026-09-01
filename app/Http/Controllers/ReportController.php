@@ -15,6 +15,7 @@ use App\Services\CollectionsMetrics;
 use App\Services\LossReasonMetrics;
 use App\Services\ReassignmentMetrics;
 use App\Services\ReportMetrics;
+use App\Services\RepWinRateMetrics;
 use App\Services\RoleTargetMetrics;
 use App\Services\SalesPipelineMetrics;
 use App\Services\ScoreCalibrationMetrics;
@@ -37,6 +38,7 @@ class ReportController extends Controller
         private readonly ScoreCalibrationMetrics $scoreCalibrationMetrics,
         private readonly LossReasonMetrics $lossReasonMetrics,
         private readonly ReassignmentMetrics $reassignmentMetrics,
+        private readonly RepWinRateMetrics $repWinRateMetrics,
     ) {}
 
     public function employeePerformance(Request $request): View
@@ -525,6 +527,46 @@ class ReportController extends Controller
             foreach ($data['rows'] as $r) {
                 $reasons = collect($r['reassigned_away_reasons'])->map(fn ($x) => "{$x['label']} ({$x['count']})")->implode('; ');
                 fputcsv($out, [$r['user'], $r['reassigned_away_count'], $reasons ?: '—', $r['reassigned_to_count']]);
+            }
+        });
+    }
+
+    /**
+     * "Lead to Won" Phase 3, Task 2 — win rate by rep, by lead source and
+     * score band, for a chosen month. Reads only what the monthly
+     * app:snapshot-rep-win-rates command already recorded (see
+     * RepWinRateMetrics::forPeriod()) -- this page never recomputes live,
+     * so a month with no snapshot yet (e.g. the current, still-open one)
+     * shows an empty state rather than a different, live-computed number.
+     * Measurement only: this figure is not wired into LeadAssignmentRule
+     * or any other routing decision.
+     */
+    public function repWinRates(Request $request): View
+    {
+        $this->authorizePerformance($request);
+        [$monthStart] = $this->monthRange($request);
+
+        return view('reports.rep-win-rates', [
+            'rows' => $this->repWinRateMetrics->forPeriod($monthStart),
+            'from' => $monthStart,
+        ]);
+    }
+
+    public function exportRepWinRates(Request $request): StreamedResponse
+    {
+        $this->authorizePerformance($request);
+        [$monthStart] = $this->monthRange($request);
+        $rows = $this->repWinRateMetrics->forPeriod($monthStart);
+
+        return $this->csv("rep-win-rates-{$monthStart->format('Y-m')}.csv", function ($out) use ($rows) {
+            fputcsv($out, ['Rep', 'Won', 'Lost', 'Win rate %', 'By source', 'By score band']);
+            foreach ($rows as $r) {
+                $bySource = collect($r['by_source'])->map(fn ($x) => "{$x['label']} ({$x['won_count']}W/{$x['lost_count']}L, ".($x['win_rate'] ?? '—').'%)')->implode('; ');
+                $byBand = collect($r['by_score_band'])->map(fn ($x) => "{$x['label']} ({$x['won_count']}W/{$x['lost_count']}L, ".($x['win_rate'] ?? '—').'%)')->implode('; ');
+                fputcsv($out, [
+                    $r['user'], $r['overall']['won_count'], $r['overall']['lost_count'], $r['overall']['win_rate'] ?? '—',
+                    $bySource ?: '—', $byBand ?: '—',
+                ]);
             }
         });
     }

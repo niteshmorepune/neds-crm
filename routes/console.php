@@ -155,6 +155,13 @@ Schedule::command('app:snapshot-score-calibration')
     ->cron(config('services.reports.score_calibration_snapshot_cron', '30 7 1 * *'))
     ->timezone('Asia/Kolkata');
 
+// Records each rep's win rate for the month that just ended, by lead
+// source and score band. Config-driven cron (see services.reports),
+// no-ops entirely when REP_WIN_RATE_SNAPSHOT_ENABLED=false.
+Schedule::command('app:snapshot-rep-win-rates')
+    ->cron(config('services.reports.rep_win_rate_snapshot_cron', '55 7 1 * *'))
+    ->timezone('Asia/Kolkata');
+
 // AI-drafts festival greeting content for active Social Media/GMB projects
 // 7 days ahead of each festival. Idempotent (checks for an existing content
 // piece per project+festival) so a missed run just catches up the next day.

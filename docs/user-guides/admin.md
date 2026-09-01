@@ -829,6 +829,19 @@ reassigned away from them (with a reasons breakdown), and how many were
 reassigned to them. Deliberately simple — a single table, no multi-cut
 breakdown. Export CSV.
 
+**Rep Win Rates report** (Reports panel, Admin/Manager) — win rate
+(Won ÷ (Won + Lost)) per Sales rep for a chosen month, broken down by
+lead source and by the originating lead's score band. Recorded
+automatically on the 1st of each month for the month that just ended
+(`app:snapshot-rep-win-rates`, configurable via
+`REP_WIN_RATE_SNAPSHOT_CRON`/`REP_WIN_RATE_SNAPSHOT_ENABLED` in
+`.env`) — the page only ever shows what's already been recorded, so a
+month with no snapshot yet shows a plain "not recorded yet" message
+rather than a live-computed number. **This is measurement only**: the
+figure isn't used anywhere in lead routing or assignment today — it
+exists so there's a real trend to look at once enough of it has
+accumulated, not to quietly change how leads get routed.
+
 ## 17. AI features (optional)
 Several AI helpers are built into the CRM, powered by Anthropic's Claude. They are
 **off by default** and never take action, send, publish, or score an employee
