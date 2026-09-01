@@ -55,6 +55,11 @@ class DealLostReasonField extends Component
         if ($result !== null) {
             $this->suggestedReason = $result['reason']?->value;
             $this->rationale = $result['rationale'];
+
+            // Persisted regardless of what the rep ends up picking -- see
+            // Deal::aiSuggestionOutcome(), the Loss Reason report's
+            // calibration signal on Phase 1's own suggestion quality.
+            $this->deal->forceFill(['ai_suggested_lost_reason' => $result['reason']?->value])->saveQuietly();
         }
     }
 

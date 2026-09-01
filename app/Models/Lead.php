@@ -86,6 +86,40 @@ class Lead extends Model
             && $this->ai_score >= config('services.anthropic.hot_lead_threshold', 70);
     }
 
+    /**
+     * The Cold/Warm/Hot banding already shown on every AI-scored lead badge
+     * (resources/views/components/lead-score.blade.php) — extracted here so
+     * reports (Score Calibration, Loss Reason) bucket scores identically to
+     * what a rep already sees on the lead itself, rather than inventing a
+     * second banding. Hot's threshold follows the same configurable
+     * hot_lead_threshold isHot() uses; Warm/Cold's 40 boundary mirrors the
+     * badge component's own hardcoded value (not independently configurable).
+     *
+     * @return 'cold'|'warm'|'hot'|null null when there's no score to band.
+     */
+    public static function scoreBandFor(?int $score): ?string
+    {
+        if ($score === null) {
+            return null;
+        }
+
+        return match (true) {
+            $score >= config('services.anthropic.hot_lead_threshold', 70) => 'hot',
+            $score >= 40 => 'warm',
+            default => 'cold',
+        };
+    }
+
+    public static function scoreBandLabel(?string $band): string
+    {
+        return match ($band) {
+            'hot' => 'Hot',
+            'warm' => 'Warm',
+            'cold' => 'Cold',
+            default => 'No score data',
+        };
+    }
+
     public function isFollowUpOverdue(): bool
     {
         return $this->status->isOpen()

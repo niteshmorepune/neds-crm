@@ -87,9 +87,11 @@ it('suggests a lost reason once a deal is dropped on the Lost column', function 
         ->assertSet('lostReasonRationale', 'No reply since the last call.')
         ->assertSee('Suggested')
         ->assertSee('No reply since the last call.');
+
+    expect($deal->fresh()->ai_suggested_lost_reason)->toBe(DealLostReason::WentDark);
 });
 
-it('overriding the suggested lost reason persists the chosen value, not the suggestion', function () {
+it('overriding the suggested lost reason persists the chosen value, not the suggestion, but still records what was suggested', function () {
     config(['services.anthropic.enabled' => true, 'services.anthropic.key' => 'sk-test']);
     Http::fake(['api.anthropic.com/*' => Http::response([
         'content' => [['type' => 'text', 'text' => json_encode(['reason' => 'went_dark', 'rationale' => 'No reply since the last call.'])]],
@@ -104,7 +106,10 @@ it('overriding the suggested lost reason persists the chosen value, not the sugg
         ->assertSet('suggestedLostReason', 'went_dark')
         ->call('moveDeal', $deal->id, DealStage::Lost->value, 'price');
 
-    expect($deal->fresh()->lost_reason)->toBe(DealLostReason::Price);
+    $fresh = $deal->fresh();
+    expect($fresh->lost_reason)->toBe(DealLostReason::Price)
+        ->and($fresh->ai_suggested_lost_reason)->toBe(DealLostReason::WentDark)
+        ->and($fresh->aiSuggestionOutcome())->toBe('overridden');
 });
 
 it('does not suggest anything for an unauthorized deal', function () {
