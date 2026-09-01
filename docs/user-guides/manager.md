@@ -525,6 +525,14 @@ above), with a pickable date range instead of a fixed 7 days:
   unanswered WhatsApp reply). Nothing is sent automatically and nothing is
   saved — regenerate any time; it always reflects the current state.
 
+**Behind the scenes (not shown on this dashboard yet)**: every purchase
+now also records how long it took the payer to pay from their first
+visit to the offer page ("time to payment"), and every repeat visit to
+the offer page was already being tracked but is now countable per lead
+too. Both are measurement only for now — captured so there's a real
+trend to look at once enough purchases have accumulated, not used
+anywhere in scoring or routing today.
+
 **Message Log** ("Message log →" at the top of the dashboard) is the
 detailed "when and to whom" record behind the AI-WhatsApp numbers: every
 send attempt (first invite, recovery nudge, payment confirmation, the

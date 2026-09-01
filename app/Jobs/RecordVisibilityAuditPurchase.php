@@ -4,11 +4,13 @@ namespace App\Jobs;
 
 use App\Enums\LeadSource;
 use App\Enums\LeadStatus;
+use App\Enums\VisibilityAuditFunnelEventType;
 use App\Enums\VisibilityAuditTier;
 use App\Models\Lead;
 use App\Models\LeadAssignmentRule;
 use App\Models\Service;
 use App\Models\User;
+use App\Models\VisibilityAuditFunnelEvent;
 use App\Models\VisibilityAuditPurchase;
 use App\Support\Ai;
 use Illuminate\Bus\Queueable;
@@ -17,6 +19,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -41,6 +44,13 @@ use Illuminate\Support\Facades\Log;
  * funnel state isn't known yet at the moment a bare Lead::create() fires it.
  * Only ever assigns an unowned lead; never reassigns one that already has
  * an owner (see assignViaVaPaidRuleIfUnowned()).
+ *
+ * Also stamps time_to_payment_minutes ("Lead to Won" Phase 3, Task 3 --
+ * capture only) -- the delta between the matched lead's first tracked
+ * landing-page view and this purchase. Measurement only: nothing reads
+ * this value back into ScoreLead's prompt, LeadAssignmentRule, or any
+ * other scoring/routing decision; it exists purely so there's a real
+ * time-to-payment trend to evaluate once enough purchases have one.
  */
 class RecordVisibilityAuditPurchase implements ShouldQueue
 {
@@ -129,7 +139,10 @@ class RecordVisibilityAuditPurchase implements ShouldQueue
         // branch once it has already found an owner.
         $this->assignViaVaPaidRuleIfUnowned($lead);
 
-        $purchase->update(['lead_id' => $lead->id]);
+        $purchase->update([
+            'lead_id' => $lead->id,
+            'time_to_payment_minutes' => $this->timeToPaymentMinutes($lead, $purchase),
+        ]);
 
         // A completed payment is the strongest buying-intent signal this
         // lead will ever produce -- re-score so ai_score/priorityScore pick
@@ -141,6 +154,29 @@ class RecordVisibilityAuditPurchase implements ShouldQueue
         if (Ai::enabled()) {
             ScoreLead::dispatch($lead->id);
         }
+    }
+
+    /**
+     * "Lead to Won" Phase 3, Task 3 -- capture only, never read by ScoreLead
+     * or any other scoring/routing decision (see this job's own updated
+     * docblock, and the migration's docblock for the going-forward-only
+     * choice). Null when the matched lead has no tracked landing-page view
+     * at all -- a purchase whose payer never passed through the tracked
+     * /offers/visibility-audit/enter redirect, or one predating that
+     * tracking (2026-08-15).
+     */
+    private function timeToPaymentMinutes(Lead $lead, VisibilityAuditPurchase $purchase): ?int
+    {
+        $firstLandingView = VisibilityAuditFunnelEvent::query()
+            ->where('lead_id', $lead->id)
+            ->where('event_type', VisibilityAuditFunnelEventType::LandingViewed)
+            ->min('created_at');
+
+        if ($firstLandingView === null) {
+            return null;
+        }
+
+        return Carbon::parse($firstLandingView)->diffInMinutes($purchase->created_at);
     }
 
     private function attachToExistingLead(Lead $lead, ?VisibilityAuditTier $tier): Lead

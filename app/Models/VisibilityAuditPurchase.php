@@ -21,6 +21,7 @@ class VisibilityAuditPurchase extends Model
     protected $fillable = [
         'tier',
         'amount_paise',
+        'time_to_payment_minutes',
         'razorpay_payment_id',
         'razorpay_order_id',
         'payer_name',
@@ -43,6 +44,7 @@ class VisibilityAuditPurchase extends Model
         return [
             'tier' => VisibilityAuditTier::class,
             'amount_paise' => 'integer',
+            'time_to_payment_minutes' => 'integer',
             'in_progress_notified_at' => 'datetime',
             'in_progress_notified_email_at' => 'datetime',
             'audit_ready_at' => 'datetime',
