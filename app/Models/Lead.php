@@ -40,6 +40,7 @@ class Lead extends Model
         'converted_customer_id',
         'converted_deal_id',
         'converted_at',
+        'lost_at',
         'whatsapp_conversation_id',
         'utm_source',
         'utm_medium',
@@ -68,6 +69,7 @@ class Lead extends Model
             'estimated_value' => 'integer',
             'next_follow_up_at' => 'datetime',
             'converted_at' => 'datetime',
+            'lost_at' => 'datetime',
             'ai_score' => 'integer',
             'ai_scored_at' => 'datetime',
             'ai_budget_band' => LeadBudgetBand::class,
@@ -79,11 +81,79 @@ class Lead extends Model
         ];
     }
 
+    /**
+     * Stamp lost_at when status transitions to Lost (cleared if ever
+     * reopened) -- mirrors Task::completed_at's exact saving() pattern, and
+     * gives Lost the same "when did this actually close" timestamp
+     * converted_at already gives Converted (that one is set explicitly in
+     * ConvertLead instead, since conversion is a single funnel action; a
+     * Lead can reach Lost from several places, so a model hook is the
+     * single choke point that can't be missed). Powers the Score
+     * Calibration report's time-to-close figure.
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (Lead $lead) {
+            if (! $lead->isDirty('status')) {
+                return;
+            }
+
+            if ($lead->status === LeadStatus::Lost) {
+                $lead->lost_at ??= now();
+            } else {
+                $lead->lost_at = null;
+            }
+        });
+    }
+
     /** Hot leads get an immediate escalation notification instead of waiting for the digest. */
     public function isHot(): bool
     {
         return $this->ai_score !== null
             && $this->ai_score >= config('services.anthropic.hot_lead_threshold', 70);
+    }
+
+    /**
+     * The Cold/Warm/Hot banding already shown on every AI-scored lead badge
+     * (resources/views/components/lead-score.blade.php) — extracted here so
+     * the Score Calibration report buckets scores identically to what a rep
+     * already sees on the lead itself, rather than inventing a second
+     * banding. Hot's threshold follows the same configurable
+     * hot_lead_threshold isHot() uses; Warm/Cold's 40 boundary mirrors the
+     * badge component's own hardcoded value (not independently configurable).
+     *
+     * NOTE: this exact method is also added independently by the Loss
+     * Reason report (PR #147, branch feat-loss-reason-report), built the
+     * same day off master before either PR merged — deliberately kept
+     * duplicated rather than making one PR depend on the other's unmerged
+     * branch (see CLAUDE.md's "independently shippable" instruction for
+     * this phase). Whichever of the two merges second will hit a trivial
+     * conflict here; keep either copy, they're identical, and drop the
+     * duplicate from lead-score.blade.php's own refactor too.
+     *
+     * @return 'cold'|'warm'|'hot'|null null when there's no score to band.
+     */
+    public static function scoreBandFor(?int $score): ?string
+    {
+        if ($score === null) {
+            return null;
+        }
+
+        return match (true) {
+            $score >= config('services.anthropic.hot_lead_threshold', 70) => 'hot',
+            $score >= 40 => 'warm',
+            default => 'cold',
+        };
+    }
+
+    public static function scoreBandLabel(?string $band): string
+    {
+        return match ($band) {
+            'hot' => 'Hot',
+            'warm' => 'Warm',
+            'cold' => 'Cold',
+            default => 'No score data',
+        };
     }
 
     public function isFollowUpOverdue(): bool

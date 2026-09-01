@@ -383,6 +383,45 @@ class ReportController extends Controller
      * "Collections & Delivery" client health, optionally scoped to one
      * referring partner or to direct (unassigned) clients via ?partner_id=.
      */
+    /**
+     * "Is the 0-100 AI score actually predictive of outcome?" -- buckets
+     * closed Leads by score band and shows conversion rate + time-to-close
+     * per bucket. Same access gate as Employee Performance / Loss Reasons.
+     */
+    public function scoreCalibration(Request $request): View
+    {
+        $this->authorizePerformance($request);
+        [$from, $to] = $this->monthRange($request);
+
+        return view('reports.score-calibration', [
+            'data' => $this->metrics->scoreCalibration($from, $to),
+            'from' => $from,
+            'to' => $to,
+        ]);
+    }
+
+    public function exportScoreCalibration(Request $request): StreamedResponse
+    {
+        $this->authorizePerformance($request);
+        [$from, $to] = $this->monthRange($request);
+        $data = $this->metrics->scoreCalibration($from, $to);
+
+        return $this->csv("score-calibration-{$from->format('Y-m-d')}_to_{$to->format('Y-m-d')}.csv", function ($out) use ($data) {
+            fputcsv($out, [
+                'Score band', 'Total closed', 'Converted', 'Lost', 'Conversion %',
+                'Avg days to close (converted)', 'Median days to close (converted)',
+                'Avg days to close (lost)', 'Median days to close (lost)',
+            ]);
+            foreach ($data['buckets'] as $b) {
+                fputcsv($out, [
+                    $b['label'], $b['total'], $b['converted'], $b['lost'], $b['conversion_rate'],
+                    $b['avg_days_to_close_converted'] ?? '—', $b['median_days_to_close_converted'] ?? '—',
+                    $b['avg_days_to_close_lost'] ?? '—', $b['median_days_to_close_lost'] ?? '—',
+                ]);
+            }
+        });
+    }
+
     public function collections(Request $request): View
     {
         $this->authorizeRevenue($request);

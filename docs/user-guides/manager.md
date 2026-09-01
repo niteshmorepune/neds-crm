@@ -142,6 +142,14 @@ panel) — a near-term cash view, blending:
   same month you're looking at — so "how many of these actual leads came
   in" is one click away instead of a manual filter.
 
+**Score Calibration** — for a chosen month, is the 0-100 AI lead score
+actually predictive of outcome? Every closed lead (Converted or Lost,
+grouped by when it actually closed) is bucketed into Cold/Warm/Hot — the
+same bands shown on every lead's score badge — with conversion rate and
+average/median days-to-close per band. Meant to be read plainly: if Hot
+leads aren't converting noticeably more than Cold ones, that's exactly
+what this report is for surfacing. Export CSV.
+
 **AI Usage Report** — for a chosen month, which of the CRM's AI features are
 actually being used: calls per feature (lead scoring, draft replies, monthly
 wins notes, and the rest), tokens processed, and a rough estimated cost per
