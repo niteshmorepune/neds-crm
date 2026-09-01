@@ -220,7 +220,7 @@ class AiUsageMetrics
         return match ($feature) {
             'lead_scoring' => 'Lead Scoring',
             'draft_ticket_reply' => 'Draft Ticket Reply',
-            'draft_lead_followup' => 'Draft Lead Follow-up',
+            'draft_lead_followup' => 'Draft Follow-up', // key name predates Deal support; label kept neutral
             'draft_lead_nurture_followup' => 'Lead Nurture Follow-up',
             'draft_festival_greeting' => 'Festival Greeting Draft',
             'daily_priorities_summary' => 'Morning Digest Summary',
@@ -230,7 +230,7 @@ class AiUsageMetrics
             'summarize_ticket' => 'Ticket Summary',
             'summarize_meeting' => 'Meeting Summary',
             'summarize_customer' => 'Client Summary',
-            'summarize_lead' => 'Lead Summary',
+            'summarize_lead' => 'Notes Summary', // key name predates Deal support; label kept neutral
             'team_performance_summary' => 'Team Performance Summary',
             'team_productivity_gaps' => 'Team Productivity Suggestions',
             'productivity_improvement_suggestion' => 'Productivity Improvement Suggestion',

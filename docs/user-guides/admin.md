@@ -842,10 +842,11 @@ form) is automatically assigned to whichever active Sales user currently owns
 the fewest open leads, so leads never sit unowned. This runs independently of
 `AI_ENABLED` — it's routing, not an AI feature.
 
-**Draft follow-up / Draft reply (✨)** — a button on leads and tickets. When
-clicked, Claude reads the lead/ticket details and history, then writes a suggested
-message. The staff member edits it and sends it themselves. Claude never sends
-anything automatically.
+**Draft follow-up / Draft reply (✨)** — a button on leads, deals, and tickets.
+When clicked, Claude reads the record's details and history (for a deal, its
+own notes — deals have no call history of their own, only leads do), then
+writes a suggested message. The staff member edits it and sends it
+themselves. Claude never sends anything automatically.
 
 **Automated lead nurture follow-ups** — daily at 10:30 IST, any New lead its
 owner hasn't personally added a note or logged a call on gets an AI-drafted
@@ -857,9 +858,10 @@ automatically. The system-generated note created from the original enquiry
 that's never actually been worked still qualifies. Skips Sundays, same as
 the stagnation alerts.
 
-**Summarize** — a button on client pages and tickets. Claude reads the full
-timeline (notes, calls, interactions) and produces a short paragraph summarising
-the situation. Useful when picking up a colleague's account.
+**Summarize** — a button on client pages, deals, and tickets. Claude reads the
+full timeline (notes, and calls/interactions where the record has them) and
+produces a short paragraph summarising the situation. Useful when picking up
+a colleague's account.
 
 **Festival greeting drafts** — every morning, for clients with an active Social
 Media or GMB project, Claude drafts a festival greeting caption 7 days ahead of

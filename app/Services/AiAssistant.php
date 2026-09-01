@@ -96,35 +96,52 @@ class AiAssistant
         ));
     }
 
-    public function draftLeadFollowUp(Lead $lead): ?string
+    /**
+     * Lead and Deal share this one method rather than a per-type copy — the
+     * body is identical once the identifying header lines are branched. A
+     * Deal has no callLogs() of its own in this app (calls are only ever
+     * logged against a Lead), so that section is simply empty for one.
+     */
+    public function draftFollowUp(Lead|Deal $record): ?string
     {
         if (! Ai::enabled()) {
             return null;
         }
 
-        $lead->loadMissing(['service', 'notes', 'callLogs']);
+        if ($record instanceof Lead) {
+            $record->loadMissing(['service', 'notes', 'callLogs']);
+            $lines = [
+                'Lead: '.$record->name.($record->company ? ' ('.$record->company.')' : ''),
+                'Interested in: '.($record->service?->name ?? 'unspecified'),
+                'Source: '.$record->source->label(),
+            ];
+            $calls = $record->callLogs;
+        } else {
+            $record->loadMissing(['service', 'customer', 'notes']);
+            $lines = [
+                'Deal: '.$record->title.' ('.($record->customer?->company_name ?? 'client removed').')',
+                'Interested in: '.($record->service?->name ?? 'unspecified'),
+                'Stage: '.$record->stage->label(),
+            ];
+            $calls = collect();
+        }
 
-        $lines = [
-            'Lead: '.$lead->name.($lead->company ? ' ('.$lead->company.')' : ''),
-            'Interested in: '.($lead->service?->name ?? 'unspecified'),
-            'Source: '.$lead->source->label(),
-            '',
-            'Recent interactions:',
-        ];
+        $lines[] = '';
+        $lines[] = 'Recent interactions:';
 
-        foreach ($lead->notes->take(self::MAX_ITEMS) as $note) {
+        foreach ($record->notes->take(self::MAX_ITEMS) as $note) {
             $lines[] = '- Note: '.$note->body;
         }
 
-        foreach ($lead->callLogs->take(self::MAX_ITEMS) as $call) {
+        foreach ($calls->take(self::MAX_ITEMS) as $call) {
             $lines[] = '- Call ('.$call->direction->label().', '.$call->outcome->label().'): '.($call->notes ?: 'no notes');
         }
 
         $system = <<<'PROMPT'
         You draft short, warm follow-up messages a salesperson can send to a lead
-        (suitable for email or WhatsApp). Keep it under 90 words, reference what
-        the lead is interested in, and end with a clear, low-pressure next step.
-        Do not invent prices or promises. Output only the message body.
+        or deal contact (suitable for email or WhatsApp). Keep it under 90 words,
+        reference what they're interested in, and end with a clear, low-pressure
+        next step. Do not invent prices or promises. Output only the message body.
         PROMPT;
 
         return $this->trimmed($this->client->message(
@@ -206,8 +223,8 @@ class AiAssistant
 
     /**
      * A scheduled nurture-sequence follow-up for a lead nobody has personally
-     * followed up on yet. Unlike draftLeadFollowUp() (an on-demand button),
-     * this is written for an automated 3-touch cadence — the tone shifts by
+     * followed up on yet. Unlike draftFollowUp() (an on-demand button), this
+     * is written for an automated 3-touch cadence — the tone shifts by
      * $touch so a lead that's gone quiet for a week doesn't get the same
      * "nice to meet you" opener three times in a row.
      */
@@ -760,28 +777,39 @@ class AiAssistant
     }
 
     /**
-     * Summarizes a Lead's notes timeline — including every WhatsApp message
-     * captured there (inbound from the contact, outbound from a staffer or
-     * the wadesk.in AI assistant — see WhatsappWebhookController), since
-     * that's the only place a Lead's conversation history lives (unlike a
-     * Customer, a Lead has no Ticket to summarize separately).
+     * Summarizes a Lead's or Deal's notes timeline — for a Lead, including
+     * every WhatsApp message captured there (inbound from the contact,
+     * outbound from a staffer or the wadesk.in AI assistant — see
+     * WhatsappWebhookController), since that's the only place a Lead's
+     * conversation history lives (unlike a Customer, a Lead has no Ticket to
+     * summarize separately). Lead and Deal share this one method — see
+     * draftFollowUp()'s docblock for why.
      */
-    public function summarizeLead(Lead $lead): ?string
+    public function summarizeTimeline(Lead|Deal $record): ?string
     {
         if (! Ai::enabled()) {
             return null;
         }
 
-        $lead->loadMissing('notes');
+        $record->loadMissing('notes');
 
-        $lines = [
-            'Lead: '.$lead->name.($lead->company ? " ({$lead->company})" : ''),
-            'Status: '.$lead->status->label(),
-            '',
-            'Notes:',
-        ];
+        if ($record instanceof Lead) {
+            $lines = [
+                'Lead: '.$record->name.($record->company ? " ({$record->company})" : ''),
+                'Status: '.$record->status->label(),
+            ];
+        } else {
+            $record->loadMissing('customer');
+            $lines = [
+                'Deal: '.$record->title.' ('.($record->customer?->company_name ?? 'client removed').')',
+                'Stage: '.$record->stage->label(),
+            ];
+        }
 
-        foreach ($lead->notes->take(self::MAX_ITEMS) as $note) {
+        $lines[] = '';
+        $lines[] = 'Notes:';
+
+        foreach ($record->notes->take(self::MAX_ITEMS) as $note) {
             $lines[] = '- '.$note->body;
         }
 

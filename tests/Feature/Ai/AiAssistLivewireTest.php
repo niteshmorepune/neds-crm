@@ -141,11 +141,35 @@ it('lead: AI follow-up draft drops into the note box', function () {
     expect(AiUsage::where('feature', 'draft_lead_followup')->value('feedback'))->toBe('down');
 });
 
-it('record-notes: drafting is offered for leads but not deals', function () {
+it('deal: AI follow-up draft drops into the note box, from the deal\'s own notes', function () {
+    $admin = User::factory()->role(UserRole::Admin)->create();
+    $deal = withAi(fn () => Deal::factory()->create(['title' => 'Website revamp']));
+    $deal->notes()->create(['user_id' => null, 'body' => 'Asked about launch timeline.']);
+    fakeReply('Hi, just checking in on the website revamp — happy to walk through timelines whenever suits.');
+
+    Livewire::actingAs($admin)
+        ->test(RecordNotes::class, ['record' => $deal, 'canManage' => true])
+        ->assertSet('record.id', $deal->id)
+        ->call('draftFollowUp')
+        ->assertHasNoErrors()
+        ->assertSet('body', 'Hi, just checking in on the website revamp — happy to walk through timelines whenever suits.');
+
+    Http::assertSent(fn ($request) => str_contains(json_decode($request->body(), true)['messages'][0]['content'], 'Asked about launch timeline.'));
+});
+
+it('record-notes: drafting is offered for leads and deals', function () {
     $lead = withAi(fn () => Lead::factory()->create());
-    $deal = Deal::factory()->create();
+    $deal = withAi(fn () => Deal::factory()->create());
 
     expect(Livewire::test(RecordNotes::class, ['record' => $lead, 'canManage' => true])->instance()->canDraft())->toBeTrue();
+    expect(Livewire::test(RecordNotes::class, ['record' => $deal, 'canManage' => true])->instance()->canDraft())->toBeTrue();
+});
+
+it('record-notes: drafting is not offered when AI is off, for either', function () {
+    $lead = Lead::factory()->create();
+    $deal = Deal::factory()->create();
+
+    expect(Livewire::test(RecordNotes::class, ['record' => $lead, 'canManage' => true])->instance()->canDraft())->toBeFalse();
     expect(Livewire::test(RecordNotes::class, ['record' => $deal, 'canManage' => true])->instance()->canDraft())->toBeFalse();
 });
 
@@ -166,12 +190,27 @@ it('lead: summarize fills the panel and can be rated, dismissed', function () {
     $component->call('dismissSummary')->assertSet('summary', null)->assertSet('summaryFeedback', null);
 });
 
-it('record-notes: summarize is offered for leads but not deals', function () {
+it('deal: summarize fills the panel from the deal\'s own notes', function () {
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    $deal = withAi(fn () => Deal::factory()->create());
+    $deal->notes()->create(['user_id' => null, 'body' => 'Sent the proposal, awaiting sign-off.']);
+    fakeReply('- Proposal sent. - Awaiting client sign-off.');
+
+    Livewire::actingAs($sales)
+        ->test(RecordNotes::class, ['record' => $deal, 'canManage' => true])
+        ->call('summarize')
+        ->assertSet('summary', '- Proposal sent. - Awaiting client sign-off.')
+        ->assertSee('AI summary');
+
+    Http::assertSent(fn ($request) => str_contains(json_decode($request->body(), true)['messages'][0]['content'], 'Sent the proposal, awaiting sign-off.'));
+});
+
+it('record-notes: summarize is offered for leads and deals', function () {
     $lead = withAi(fn () => Lead::factory()->create());
     $deal = withAi(fn () => Deal::factory()->create());
 
     expect(Livewire::test(RecordNotes::class, ['record' => $lead, 'canManage' => true])->instance()->canSummarize())->toBeTrue();
-    expect(Livewire::test(RecordNotes::class, ['record' => $deal, 'canManage' => true])->instance()->canSummarize())->toBeFalse();
+    expect(Livewire::test(RecordNotes::class, ['record' => $deal, 'canManage' => true])->instance()->canSummarize())->toBeTrue();
 });
 
 it('record-notes: summarize button is hidden when AI is off', function () {
