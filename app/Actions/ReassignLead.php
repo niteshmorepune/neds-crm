@@ -4,6 +4,7 @@ namespace App\Actions;
 
 use App\Enums\LeadReassignmentReason;
 use App\Models\Lead;
+use App\Models\LeadReassignment;
 use App\Models\User;
 use App\Notifications\LeadReassignedNotification;
 
@@ -19,7 +20,9 @@ use App\Notifications\LeadReassignedNotification;
  * UI, and the point of capturing a reason is for the team to actually see it.
  * owner_id itself still goes through Lead's normal update() save, so
  * LogsActivity's generic 'updated' event still records the raw field change
- * for the audit trail as usual.
+ * for the audit trail as usual. Also writes a LeadReassignment row -- a
+ * structured, aggregable log for the Reassignment Analytics report, since
+ * the Note's own reason is free text inside a sentence.
  */
 class ReassignLead
 {
@@ -38,6 +41,19 @@ class ReassignLead
                 $to->name,
                 $reason->label(),
             ),
+        ]);
+
+        // Structured log for the Reassignment Analytics report -- the Note
+        // above stays the visible timeline entry; this is purely for
+        // aggregation, since the Note's reason is free text inside a
+        // sentence, not reliably reportable on its own.
+        LeadReassignment::create([
+            'lead_id' => $lead->id,
+            'from_user_id' => $from?->id,
+            'to_user_id' => $to->id,
+            'reassigned_by' => $by->id,
+            'reason' => $reason,
+            'created_at' => now(),
         ]);
 
         $to->notify(new LeadReassignedNotification($lead, $from, $reason));

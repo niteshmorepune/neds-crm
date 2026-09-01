@@ -1,8 +1,10 @@
 <?php
 
+use App\Enums\LeadReassignmentReason;
 use App\Enums\LeadStatus;
 use App\Enums\UserRole;
 use App\Models\Lead;
+use App\Models\LeadReassignment;
 use App\Models\User;
 use App\Notifications\LeadReassignedNotification;
 use Database\Seeders\MenuItemsSeeder;
@@ -25,6 +27,25 @@ it('lets a Sales owner hand their lead off to another active Sales peer', functi
 
     expect($lead->fresh()->owner_id)->toBe($peer->id);
     Notification::assertSentTo($peer, LeadReassignedNotification::class);
+});
+
+it('writes a structured LeadReassignment log row for the Reassignment Analytics report', function () {
+    $owner = User::factory()->role(UserRole::Sales)->create();
+    $peer = User::factory()->role(UserRole::Sales)->create();
+    $lead = Lead::factory()->ownedBy($owner->id)->create();
+
+    $this->actingAs($owner)->post(route('leads.reassign', $lead), [
+        'to_user_id' => $peer->id,
+        'reason' => 'on_leave',
+    ]);
+
+    $log = LeadReassignment::where('lead_id', $lead->id)->first();
+    expect($log)->not->toBeNull()
+        ->and($log->from_user_id)->toBe($owner->id)
+        ->and($log->to_user_id)->toBe($peer->id)
+        ->and($log->reassigned_by)->toBe($owner->id)
+        ->and($log->reason)->toBe(LeadReassignmentReason::OnLeave)
+        ->and($log->created_at)->not->toBeNull();
 });
 
 it('appends a visible note explaining the reassignment', function () {

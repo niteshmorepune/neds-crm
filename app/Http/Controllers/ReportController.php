@@ -383,6 +383,37 @@ class ReportController extends Controller
      * "Collections & Delivery" client health, optionally scoped to one
      * referring partner or to direct (unassigned) clients via ?partner_id=.
      */
+    /**
+     * A management signal that's already captured (every lead handoff logs a
+     * reason via App\Actions\ReassignLead) and never reported on until now.
+     */
+    public function reassignmentAnalytics(Request $request): View
+    {
+        $this->authorizePerformance($request);
+        [$from, $to] = $this->monthRange($request);
+
+        return view('reports.reassignment-analytics', [
+            'data' => $this->metrics->reassignmentAnalytics($from, $to),
+            'from' => $from,
+            'to' => $to,
+        ]);
+    }
+
+    public function exportReassignmentAnalytics(Request $request): StreamedResponse
+    {
+        $this->authorizePerformance($request);
+        [$from, $to] = $this->monthRange($request);
+        $data = $this->metrics->reassignmentAnalytics($from, $to);
+
+        return $this->csv("reassignment-analytics-{$from->format('Y-m-d')}_to_{$to->format('Y-m-d')}.csv", function ($out) use ($data) {
+            fputcsv($out, ['Rep', 'Reassigned away', 'Reasons', 'Reassigned to']);
+            foreach ($data['rows'] as $r) {
+                $reasons = collect($r['reassigned_away_reasons'])->map(fn ($x) => "{$x['label']} ({$x['count']})")->implode('; ');
+                fputcsv($out, [$r['user'], $r['reassigned_away_count'], $reasons ?: '—', $r['reassigned_to_count']]);
+            }
+        });
+    }
+
     public function collections(Request $request): View
     {
         $this->authorizeRevenue($request);

@@ -821,6 +821,14 @@ the same way later, same as the single-lead **Reassign** button (Sales
 guide). This is the same mechanism the Users page's deactivation handover
 (Section 9) uses when a leaving Sales user still owns open leads.
 
+**Reassignment Analytics report** (Reports panel, Admin/Manager) — every
+handoff above (single, bulk, and the deactivation handover — one shared
+mechanism) is logged with its reason, but had never been reported on
+until now. Per active Sales rep, for a chosen month: how many leads were
+reassigned away from them (with a reasons breakdown), and how many were
+reassigned to them. Deliberately simple — a single table, no multi-cut
+breakdown. Export CSV.
+
 ## 17. AI features (optional)
 Several AI helpers are built into the CRM, powered by Anthropic's Claude. They are
 **off by default** and never take action, send, publish, or score an employee
