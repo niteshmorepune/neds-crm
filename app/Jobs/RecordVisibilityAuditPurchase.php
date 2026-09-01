@@ -8,6 +8,7 @@ use App\Enums\VisibilityAuditTier;
 use App\Models\Lead;
 use App\Models\Service;
 use App\Models\VisibilityAuditPurchase;
+use App\Support\Ai;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\QueryException;
@@ -114,6 +115,17 @@ class RecordVisibilityAuditPurchase implements ShouldQueue
             : $this->createLead($tier);
 
         $purchase->update(['lead_id' => $lead->id]);
+
+        // A completed payment is the strongest buying-intent signal this
+        // lead will ever produce -- re-score so ai_score/priorityScore pick
+        // it up immediately, same "real engagement re-scores" precedent as
+        // RecordNotes::addNote()/CallLogController::store(). Covers the
+        // new-lead branch too: Lead::create() above already triggered an
+        // initial score via LeadObserver, but that ran before the payment
+        // note (createLead()/attachToExistingLead() both add one) existed.
+        if (Ai::enabled()) {
+            ScoreLead::dispatch($lead->id);
+        }
     }
 
     private function attachToExistingLead(Lead $lead, ?VisibilityAuditTier $tier): Lead

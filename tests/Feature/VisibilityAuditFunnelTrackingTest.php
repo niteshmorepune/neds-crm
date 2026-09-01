@@ -1,8 +1,10 @@
 <?php
 
 use App\Enums\VisibilityAuditFunnelEventType;
+use App\Jobs\ScoreLead;
 use App\Models\Lead;
 use App\Models\VisibilityAuditFunnelEvent;
+use Illuminate\Support\Facades\Queue;
 
 it('logs an anonymous landing-page hit and redirects to the offer page when no lead is given', function () {
     $response = $this->get(route('offers.visibility-audit.enter'));
@@ -69,4 +71,44 @@ it('attributes a payment-page hit to a real lead', function () {
         ->assertRedirect('https://pages.razorpay.com/gbp-audit');
 
     expect(VisibilityAuditFunnelEvent::first()->lead_id)->toBe($lead->id);
+});
+
+it('re-scores an identified lead when it views the landing page', function () {
+    config(['services.anthropic.enabled' => true, 'services.anthropic.key' => 'sk-test']);
+    $lead = Lead::factory()->create();
+
+    Queue::fake();
+    $this->get(route('offers.visibility-audit.enter', ['lead' => $lead->id]));
+
+    Queue::assertPushed(ScoreLead::class, fn (ScoreLead $job) => $job->leadId === $lead->id);
+});
+
+it('re-scores an identified lead when it reaches checkout', function () {
+    config(['services.anthropic.enabled' => true, 'services.anthropic.key' => 'sk-test']);
+    config(['services.razorpay.payment_pages.gbp_audit' => 'https://pages.razorpay.com/gbp-audit']);
+    $lead = Lead::factory()->create();
+
+    Queue::fake();
+    $this->get(route('offers.visibility-audit.checkout', ['tier' => 'gbp', 'lead' => $lead->id]));
+
+    Queue::assertPushed(ScoreLead::class, fn (ScoreLead $job) => $job->leadId === $lead->id);
+});
+
+it('does not re-score anything for an anonymous funnel hit with no attributed lead', function () {
+    config(['services.anthropic.enabled' => true, 'services.anthropic.key' => 'sk-test']);
+
+    Queue::fake();
+    $this->get(route('offers.visibility-audit.enter'));
+
+    Queue::assertNothingPushed();
+});
+
+it('does not re-score when AI is disabled', function () {
+    config(['services.anthropic.enabled' => false]);
+    $lead = Lead::factory()->create();
+
+    Queue::fake();
+    $this->get(route('offers.visibility-audit.enter', ['lead' => $lead->id]));
+
+    Queue::assertNothingPushed();
 });

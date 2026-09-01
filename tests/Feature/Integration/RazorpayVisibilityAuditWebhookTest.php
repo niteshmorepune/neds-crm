@@ -2,9 +2,11 @@
 
 use App\Enums\LeadSource;
 use App\Enums\LeadStatus;
+use App\Jobs\ScoreLead;
 use App\Models\Lead;
 use App\Models\Service;
 use App\Models\VisibilityAuditPurchase;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Testing\TestResponse;
 
 beforeEach(function () {
@@ -192,4 +194,46 @@ it('is idempotent on a duplicate webhook delivery for the same payment', functio
 
     expect(VisibilityAuditPurchase::where('razorpay_payment_id', 'pay_va_test1')->count())->toBe(1);
     expect($lead->notes()->count())->toBe(1);
+});
+
+it('re-scores the matched existing lead once a purchase is recorded', function () {
+    config(['services.anthropic.enabled' => true, 'services.anthropic.key' => 'sk-test']);
+    $lead = Lead::factory()->create(['phone' => '9876543210', 'status' => LeadStatus::New]);
+
+    // Fake only ScoreLead -- RecordVisibilityAuditPurchase itself must still
+    // run for real (the sync queue connection would otherwise never execute
+    // it, and there'd be nothing to assert a re-score against).
+    Queue::fake([ScoreLead::class]);
+    visibilityAuditWebhook(visibilityAuditPayload())->assertOk();
+
+    Queue::assertPushed(ScoreLead::class, fn (ScoreLead $job) => $job->leadId === $lead->id);
+});
+
+it('re-scores a newly created lead once a purchase is recorded for it', function () {
+    config(['services.anthropic.enabled' => true, 'services.anthropic.key' => 'sk-test']);
+
+    // Fake only ScoreLead -- RecordVisibilityAuditPurchase itself must still
+    // run for real (the sync queue connection would otherwise never execute
+    // it, and there'd be nothing to assert a re-score against).
+    Queue::fake([ScoreLead::class]);
+    visibilityAuditWebhook(visibilityAuditPayload())->assertOk();
+
+    $lead = Lead::where('phone', '+919876543210')->first();
+    // Lead::create() fires an initial score dispatch via LeadObserver before
+    // the payment note exists -- the job's own re-score after attaching the
+    // note is the second push, and is the one that actually reflects payment.
+    Queue::assertPushed(ScoreLead::class, fn (ScoreLead $job) => $job->leadId === $lead->id);
+});
+
+it('does not re-score when AI is disabled', function () {
+    config(['services.anthropic.enabled' => false]);
+    Lead::factory()->create(['phone' => '9876543210', 'status' => LeadStatus::New]);
+
+    // Fake only ScoreLead -- RecordVisibilityAuditPurchase itself must still
+    // run for real (the sync queue connection would otherwise never execute
+    // it, and there'd be nothing to assert a re-score against).
+    Queue::fake([ScoreLead::class]);
+    visibilityAuditWebhook(visibilityAuditPayload())->assertOk();
+
+    Queue::assertNothingPushed();
 });

@@ -76,6 +76,10 @@ own leads. A lead's own page also shows a colored **"Visibility Audit:"**
 badge right under its name, so opening the lead directly tells you the
 same thing this queue does.
 
+Reaching checkout or paying re-scores the lead's AI score immediately, so
+it also rises in the Priority sort above — the two lists stay in sync
+without you needing to check both.
+
 ## 4. Calling
 Use **☎ Log a call** (top bar) or **Calling** to record every call you make.
 Pick the **Lead** you called, the **direction**, **outcome**, and any notes —

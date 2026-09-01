@@ -526,6 +526,11 @@ once that call has actually happened) — see the Sales guide's Lead
 Generation section for the full step-by-step, since Sales is who
 normally clicks these.
 
+That same funnel stage feeds the lead's AI score, so a lead who reaches
+checkout or pays is re-scored immediately and rises accordingly in the
+Lead Generation page's Priority sort — you don't need to cross-check this
+dashboard against the Priority list by hand to confirm they agree.
+
 ## Employee 360°
 Sidebar → **Employee 360°** — one consolidated page per employee: this
 month's performance (the same score/rank/focus-area the Employee
