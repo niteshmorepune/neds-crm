@@ -9,7 +9,9 @@
         <p class="text-sm text-gray-500">
             New leads are auto-assigned to whichever active Sales rep currently has the fewest open leads.
             A rule below overrides that for leads matching a specific Meta ad campaign name, or a whole service line —
-            a campaign match wins over a service match when both could apply.
+            a campaign match wins over a service match when both could apply. A VA-Paid rule instead routes a lead
+            the moment it pays for the Visibility Audit offer, but only while it's still unowned — it never
+            reassigns a lead that already has an owner.
         </p>
 
         {{-- Add a rule --}}
@@ -26,7 +28,15 @@
                         <input type="radio" name="match_type" value="service" x-model="matchType" class="border-gray-300 text-indigo-600" @checked(old('match_type') === 'service')>
                         Match by service
                     </label>
+                    <label class="flex items-center gap-1.5">
+                        <input type="radio" name="match_type" value="va_paid" x-model="matchType" class="border-gray-300 text-indigo-600" @checked(old('match_type') === 'va_paid')>
+                        Match Visibility Audit — Paid
+                    </label>
                 </div>
+
+                <p x-show="matchType === 'va_paid'" class="text-xs text-gray-400">
+                    Applies the moment a lead pays for the Visibility Audit offer, only if it has no owner yet.
+                </p>
 
                 <div x-show="matchType === 'campaign'">
                     <x-input-label for="utm_campaign" value="Campaign name (exact match, e.g. CRM-ERP-Pune-Aug2026-V1)" />
@@ -78,6 +88,8 @@
                             <td class="px-4 py-3">
                                 @if ($rule->utm_campaign)
                                     <span class="text-gray-900">Campaign:</span> {{ $rule->utm_campaign }}
+                                @elseif ($rule->va_paid)
+                                    <span class="text-gray-900">Visibility Audit</span> — Paid
                                 @else
                                     <span class="text-gray-900">Service:</span> {{ $rule->service?->name ?? 'Service removed' }}
                                 @endif
@@ -113,7 +125,7 @@
         @foreach ($rules as $rule)
             <form id="rule-update-{{ $rule->id }}" method="POST" action="{{ route('lead-assignment-rules.update', $rule) }}" class="hidden">
                 @csrf @method('PUT')
-                <input type="hidden" name="match_type" value="{{ $rule->utm_campaign ? 'campaign' : 'service' }}">
+                <input type="hidden" name="match_type" value="{{ $rule->utm_campaign ? 'campaign' : ($rule->va_paid ? 'va_paid' : 'service') }}">
                 <input type="hidden" name="utm_campaign" value="{{ $rule->utm_campaign }}">
                 <input type="hidden" name="service_id" value="{{ $rule->service_id }}">
             </form>

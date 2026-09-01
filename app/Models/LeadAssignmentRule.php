@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\UserRole;
 use App\Models\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -10,9 +11,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * Admin/manager-configured lead routing rule. Exactly one of utm_campaign /
- * service_id is set — see LeadAssignmentRuleRequest for the XOR validation.
- * Checked by LeadObserver::autoAssign() before its least-loaded round-robin
- * fallback, campaign match taking priority over service match.
+ * service_id / va_paid is set — see LeadAssignmentRuleRequest for the XOR
+ * validation. Campaign/service rules are checked by
+ * LeadObserver::autoAssign() before its least-loaded round-robin fallback,
+ * campaign match taking priority over service match. A va_paid rule is
+ * checked separately, by RecordVisibilityAuditPurchase, at the moment a lead
+ * pays for the Visibility Audit offer — see that job's own docblock for why
+ * it can't reuse autoAssign()'s per-lead-creation flow.
  */
 class LeadAssignmentRule extends Model
 {
@@ -21,6 +26,7 @@ class LeadAssignmentRule extends Model
     protected $fillable = [
         'utm_campaign',
         'service_id',
+        'va_paid',
         'assigned_user_id',
         'active',
     ];
@@ -29,6 +35,7 @@ class LeadAssignmentRule extends Model
     {
         return [
             'active' => 'boolean',
+            'va_paid' => 'boolean',
         ];
     }
 
@@ -45,5 +52,19 @@ class LeadAssignmentRule extends Model
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('active', true);
+    }
+
+    /**
+     * This rule's target user, but only if still an eligible active Sales
+     * rep — a rule whose target was later deactivated or role-changed must
+     * never silently route to someone ineligible. Shared by
+     * LeadObserver::matchRule() and RecordVisibilityAuditPurchase so both
+     * call sites enforce the exact same eligibility check.
+     */
+    public function eligibleAssignee(): ?User
+    {
+        $user = $this->assignedUser;
+
+        return $user && $user->is_active && $user->role === UserRole::Sales ? $user : null;
     }
 }

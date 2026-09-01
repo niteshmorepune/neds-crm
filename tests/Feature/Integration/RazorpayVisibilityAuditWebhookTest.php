@@ -2,9 +2,12 @@
 
 use App\Enums\LeadSource;
 use App\Enums\LeadStatus;
+use App\Enums\UserRole;
 use App\Jobs\ScoreLead;
 use App\Models\Lead;
+use App\Models\LeadAssignmentRule;
 use App\Models\Service;
+use App\Models\User;
 use App\Models\VisibilityAuditPurchase;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Testing\TestResponse;
@@ -236,4 +239,45 @@ it('does not re-score when AI is disabled', function () {
     visibilityAuditWebhook(visibilityAuditPayload())->assertOk();
 
     Queue::assertNothingPushed();
+});
+
+it('routes a brand-new lead created by the payment to the VA-Paid rule target, not round robin', function () {
+    $target = User::factory()->role(UserRole::Sales)->create();
+    $busy = User::factory()->role(UserRole::Sales)->create(); // would win round-robin otherwise
+    LeadAssignmentRule::factory()->for($target, 'assignedUser')->vaPaid()->create();
+
+    visibilityAuditWebhook(visibilityAuditPayload(['contact' => '+919876500001']))->assertOk();
+
+    $lead = Lead::where('phone', '+919876500001')->first();
+    expect($lead->owner_id)->toBe($target->id);
+});
+
+it('assigns a pre-existing but unowned lead via the VA-Paid rule when it reaches Paid', function () {
+    $target = User::factory()->role(UserRole::Sales)->create();
+    LeadAssignmentRule::factory()->for($target, 'assignedUser')->vaPaid()->create();
+    $lead = Lead::factory()->create(['phone' => '9876543210', 'status' => LeadStatus::New, 'owner_id' => null]);
+
+    visibilityAuditWebhook(visibilityAuditPayload())->assertOk();
+
+    expect($lead->fresh()->owner_id)->toBe($target->id);
+});
+
+it('does not reassign an already-owned lead when it reaches VA-Paid', function () {
+    $originalOwner = User::factory()->role(UserRole::Sales)->create();
+    $ruleTarget = User::factory()->role(UserRole::Sales)->create();
+    LeadAssignmentRule::factory()->for($ruleTarget, 'assignedUser')->vaPaid()->create();
+    $lead = Lead::factory()->create(['phone' => '9876543210', 'status' => LeadStatus::New, 'owner_id' => $originalOwner->id]);
+
+    visibilityAuditWebhook(visibilityAuditPayload())->assertOk();
+
+    expect($lead->fresh()->owner_id)->toBe($originalOwner->id);
+});
+
+it('falls back to normal round-robin when no VA-Paid rule is configured', function () {
+    $sales = User::factory()->role(UserRole::Sales)->create();
+
+    visibilityAuditWebhook(visibilityAuditPayload(['contact' => '+919876500002']))->assertOk();
+
+    $lead = Lead::where('phone', '+919876500002')->first();
+    expect($lead->owner_id)->toBe($sales->id);
 });

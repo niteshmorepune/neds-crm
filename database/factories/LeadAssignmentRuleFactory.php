@@ -28,4 +28,9 @@ class LeadAssignmentRuleFactory extends Factory
     {
         return $this->state(fn () => ['utm_campaign' => null, 'service_id' => $serviceId]);
     }
+
+    public function vaPaid(): static
+    {
+        return $this->state(fn () => ['utm_campaign' => null, 'service_id' => null, 'va_paid' => true]);
+    }
 }
