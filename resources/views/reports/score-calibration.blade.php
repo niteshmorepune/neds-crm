@@ -66,5 +66,42 @@
             "No score data" covers a lead that closed before AI scoring was live, or with AI
             turned off at the time — not a data-entry gap.
         </p>
+
+        <div class="rounded-lg bg-white p-6 shadow-sm">
+            <h3 class="text-base font-semibold text-gray-900">Trend over time</h3>
+            <p class="mt-1 text-xs text-gray-400">
+                Conversion % per band, recorded monthly (on the 1st, for the month that just ended) —
+                separate from the on-demand view above, which always reflects the month picked at the top.
+                Is calibration drifting, or holding steady?
+            </p>
+            @if (count($trend) > 0)
+                <div class="mt-3 overflow-x-auto">
+                    <table class="min-w-full text-sm">
+                        <thead class="text-left text-xs uppercase tracking-wide text-gray-500">
+                            <tr>
+                                <th class="py-2">Period</th>
+                                <th class="py-2 text-right">Hot</th>
+                                <th class="py-2 text-right">Warm</th>
+                                <th class="py-2 text-right">Cold</th>
+                                <th class="py-2 text-right">No score data</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            @foreach ($trend as $row)
+                                <tr>
+                                    <td class="py-2 font-medium text-gray-800">{{ $row['period_label'] }}</td>
+                                    <td class="py-2 text-right text-gray-600">{{ $row['hot'] !== null ? $row['hot'].'%' : '—' }}</td>
+                                    <td class="py-2 text-right text-gray-600">{{ $row['warm'] !== null ? $row['warm'].'%' : '—' }}</td>
+                                    <td class="py-2 text-right text-gray-600">{{ $row['cold'] !== null ? $row['cold'].'%' : '—' }}</td>
+                                    <td class="py-2 text-right text-gray-600">{{ $row['no_score'] !== null ? $row['no_score'].'%' : '—' }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @else
+                <p class="mt-4 text-center text-gray-400">No snapshots recorded yet — the first one lands after the current month closes.</p>
+            @endif
+        </div>
     </div>
 </x-app-layout>

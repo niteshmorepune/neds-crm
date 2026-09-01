@@ -145,6 +145,16 @@ Schedule::command('app:finalize-referral-settlements')->monthlyOn(1, '08:10')->t
 // which templates are due today based on frequency (weekly/biweekly/monthly/quarterly).
 Schedule::command('app:dispatch-scheduled-tasks')->dailyAt('08:00')->timezone('Asia/Kolkata');
 
+// "Lead to Won" Phase 3 — measurement-only, no scoring/routing changes.
+// Records the Score Calibration report's numbers as a dated snapshot for
+// the month that just ended. Frequency is config-driven (default: same
+// 1st-of-month slot as the other month-close jobs above) rather than a
+// fixed ->monthlyOn() call, so it can be tuned without a code change; the
+// command itself no-ops entirely when SCORE_CALIBRATION_SNAPSHOT_ENABLED=false.
+Schedule::command('app:snapshot-score-calibration')
+    ->cron(config('services.reports.score_calibration_snapshot_cron', '30 7 1 * *'))
+    ->timezone('Asia/Kolkata');
+
 // AI-drafts festival greeting content for active Social Media/GMB projects
 // 7 days ahead of each festival. Idempotent (checks for an existing content
 // piece per project+festival) so a missed run just catches up the next day.

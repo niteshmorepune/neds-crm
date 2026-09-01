@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\LeadStatus;
 use App\Models\Lead;
+use App\Models\ScoreCalibrationSnapshot;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
@@ -114,5 +115,40 @@ class ScoreCalibrationMetrics
         }
 
         return (int) $days->get($mid);
+    }
+
+    /**
+     * Trend view over the recorded ScoreCalibrationSnapshot rows (written
+     * monthly by App\Console\Commands\SnapshotScoreCalibration) — one row
+     * per period, with each band's conversion rate that period, oldest
+     * first. Purely reads what was already snapshotted; never recomputes
+     * a past period live, and never feeds anything back into scoring.
+     *
+     * @return list<array{period: string, period_label: string, hot: ?int, warm: ?int, cold: ?int, no_score: ?int}>
+     */
+    public function trend(int $months = 12): array
+    {
+        $bandOrder = ['hot', 'warm', 'cold', 'no_score'];
+
+        $byPeriod = ScoreCalibrationSnapshot::query()
+            ->orderBy('period_start')
+            ->get()
+            ->groupBy(fn (ScoreCalibrationSnapshot $s) => $s->period_start->format('Y-m'));
+
+        $periods = $byPeriod->keys()->sort()->values()->slice(-$months)->values();
+
+        return $periods->map(function (string $period) use ($byPeriod, $bandOrder) {
+            $snapshotsForPeriod = $byPeriod->get($period, collect());
+            $row = [
+                'period' => $period,
+                'period_label' => Carbon::createFromFormat('Y-m', $period)->format('M Y'),
+            ];
+
+            foreach ($bandOrder as $band) {
+                $row[$band] = $snapshotsForPeriod->firstWhere('band', $band)?->conversion_rate;
+            }
+
+            return $row;
+        })->all();
     }
 }
