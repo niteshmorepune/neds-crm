@@ -822,7 +822,7 @@ guide). This is the same mechanism the Users page's deactivation handover
 (Section 9) uses when a leaving Sales user still owns open leads.
 
 ## 17. AI features (optional)
-Nine AI helpers are built into the CRM, powered by Anthropic's Claude. They are
+Several AI helpers are built into the CRM, powered by Anthropic's Claude. They are
 **off by default** and never take action, send, publish, or score an employee
 automatically — they only draft or summarize for a human to review.
 
@@ -846,6 +846,15 @@ the fewest open leads, so leads never sit unowned. This runs independently of
 clicked, Claude reads the lead/ticket details and history, then writes a suggested
 message. The staff member edits it and sends it themselves. Claude never sends
 anything automatically.
+
+**AI-suggested Lost reason** — moving a Deal to Lost (drag-and-drop on the
+Sales Pipeline board, or the Stage field on the deal's own page) briefly
+checks its notes — and its originating lead's notes/calls, if it was
+converted from one — for a suggested reason, pre-highlighted with a
+one-line "why" underneath. It's always just a starting point: the rep
+picks any of the 5 options with no extra friction, and a deal with too
+little history simply shows the plain picker with nothing pre-selected —
+never a guessed default.
 
 **Automated lead nurture follow-ups** — daily at 10:30 IST, any New lead its
 owner hasn't personally added a note or logged a call on gets an AI-drafted

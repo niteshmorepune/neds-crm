@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\CrmQueryType;
+use App\Enums\DealLostReason;
 use App\Enums\DealStage;
 use App\Enums\InvoiceStatus;
 use App\Enums\TargetMetric;
@@ -697,6 +698,117 @@ class AiAssistant
             system: $system,
             maxTokens: 500,
         ));
+    }
+
+    /**
+     * Suggests which of the 5 DealLostReason values best fits a deal about
+     * to be marked Lost, from its own notes plus — since a Deal never has
+     * call logs of its own (calls are only ever logged against a Lead in
+     * this app) — the originating Lead's notes AND calls, when the deal was
+     * converted from one. This is the one place in this class that reaches
+     * through Deal->lead for history; see SimilarDealFinder for the same
+     * precedent used for a different purpose.
+     *
+     * Returns null when AI is off, the call fails, or there's no real
+     * history to go on at all (deliberately no guessed default — a blank
+     * suggestion beats a fabricated one). A non-null result can still carry
+     * a null `reason` alongside a `rationale` explaining why nothing fit —
+     * callers should show that rationale even with nothing pre-selected.
+     *
+     * @return array{reason: ?DealLostReason, rationale: ?string}|null
+     */
+    public function suggestDealLostReason(Deal $deal): ?array
+    {
+        if (! Ai::enabled()) {
+            return null;
+        }
+
+        $deal->loadMissing(['customer', 'notes', 'lead.notes', 'lead.callLogs']);
+
+        $hasHistory = $deal->notes->isNotEmpty()
+            || ($deal->lead !== null && ($deal->lead->notes->isNotEmpty() || $deal->lead->callLogs->isNotEmpty()));
+
+        if (! $hasHistory) {
+            return null;
+        }
+
+        $lines = [
+            'Deal: '.$deal->title.' ('.($deal->customer?->company_name ?? 'client removed').')',
+            'Stage before Lost: '.$deal->stage->label(),
+            '',
+            'History:',
+        ];
+
+        foreach ($deal->notes->take(self::MAX_ITEMS) as $note) {
+            $lines[] = '- Deal note: '.$note->body;
+        }
+
+        if ($deal->lead !== null) {
+            foreach ($deal->lead->notes->take(self::MAX_ITEMS) as $note) {
+                $lines[] = '- Lead note (before conversion): '.$note->body;
+            }
+
+            foreach ($deal->lead->callLogs->take(self::MAX_ITEMS) as $call) {
+                $lines[] = '- Lead call ('.$call->direction->label().', '.$call->outcome->label().'): '.($call->notes ?: 'no notes');
+            }
+        }
+
+        $system = <<<'PROMPT'
+        A salesperson at a digital-solutions agency in India is marking a deal
+        Lost. Read the history and suggest which ONE of these five reasons best
+        explains it, or none if the history genuinely doesn't say:
+
+        price       - they said or implied it costs too much
+        timing      - bad timing, paused, budget cycle, "not right now"
+        competitor  - they went with, or are seriously considering, another provider
+        went_dark   - they stopped responding, no reason ever given
+        not_a_fit   - the service/scope genuinely didn't match what they needed
+
+        Ground the suggestion only in what's actually in the history — never guess
+        a reason the notes don't support.
+
+        Respond with ONLY a JSON object, no markdown, no prose:
+        {"reason": "<price|timing|competitor|went_dark|not_a_fit|null>",
+         "rationale": "<one short sentence citing the actual signal, or null>"}
+        PROMPT;
+
+        $result = $this->client->message(
+            feature: 'suggest_deal_lost_reason',
+            prompt: implode("\n", $lines),
+            system: $system,
+            maxTokens: 200,
+        );
+
+        $this->lastUsageId = $result?->usageId;
+
+        return $result === null ? null : $this->parseLostReasonSuggestion($result->text);
+    }
+
+    /**
+     * @return array{reason: ?DealLostReason, rationale: ?string}|null
+     */
+    private function parseLostReasonSuggestion(string $text): ?array
+    {
+        if (! preg_match('/\{.*\}/s', $text, $match)) {
+            return null;
+        }
+
+        $decoded = json_decode($match[0], true);
+
+        if (! is_array($decoded)) {
+            return null;
+        }
+
+        $reason = DealLostReason::tryFrom((string) ($decoded['reason'] ?? ''));
+        $rationale = is_string($decoded['rationale'] ?? null)
+            ? mb_substr(trim($decoded['rationale']), 0, 255)
+            : null;
+
+        if ($reason === null && $rationale === null) {
+            return null;
+        }
+
+        return ['reason' => $reason, 'rationale' => $rationale];
     }
 
     public function summarizeTicket(Ticket $ticket): ?string

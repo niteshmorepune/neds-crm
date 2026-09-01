@@ -80,7 +80,7 @@
             @endphp
             <div class="flex flex-col rounded-lg border-t-4 {{ $stageColors['border'] }} bg-gray-50 p-3"
                  x-on:dragover.prevent
-                 x-on:drop.prevent="if (dragId) { @if ($stage === \App\Enums\DealStage::Lost) pendingLostDealId = dragId @else $wire.moveDeal(dragId, '{{ $stage->value }}') @endif; dragId = null }">
+                 x-on:drop.prevent="if (dragId) { @if ($stage === \App\Enums\DealStage::Lost) pendingLostDealId = dragId; $wire.suggestLostReason(dragId) @else $wire.moveDeal(dragId, '{{ $stage->value }}') @endif; dragId = null }">
                 <div class="mb-2 flex items-center justify-between">
                     <h3 class="text-sm font-semibold text-gray-700">{{ $stage->label() }}</h3>
                     <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $stageColors['badge'] }}">
@@ -120,15 +120,38 @@
          class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/40 p-4">
         <div class="w-full max-w-sm rounded-lg bg-white p-5 shadow-xl">
             <h3 class="text-sm font-semibold text-gray-900">Why was this deal lost?</h3>
-            <div class="mt-3 space-y-1.5">
-                @foreach (\App\Enums\DealLostReason::cases() as $reason)
-                    <button type="button"
-                            x-on:click="$wire.moveDeal(pendingLostDealId, 'lost', '{{ $reason->value }}'); pendingLostDealId = null"
-                            class="block w-full rounded-md border border-gray-200 px-3 py-2 text-left text-sm text-gray-700 hover:border-red-300 hover:bg-red-50">
-                        {{ $reason->label() }}
-                    </button>
-                @endforeach
+
+            <p wire:loading wire:target="suggestLostReason" class="mt-3 text-xs text-gray-400">
+                Checking notes for a suggestion&hellip;
+            </p>
+
+            <div wire:loading.remove wire:target="suggestLostReason">
+                @if ($lostReasonRationale)
+                    <p class="mt-3 rounded-md bg-indigo-50 px-3 py-2 text-xs text-indigo-700">
+                        ✨ {{ $lostReasonRationale }}
+                    </p>
+                @elseif ($suggestedLostReason === null)
+                    <p class="mt-3 text-xs text-gray-400">No suggestion available — pick the one that fits.</p>
+                @endif
+
+                <div class="mt-3 space-y-1.5">
+                    @foreach (\App\Enums\DealLostReason::cases() as $reason)
+                        <button type="button"
+                                x-on:click="$wire.moveDeal(pendingLostDealId, 'lost', '{{ $reason->value }}'); pendingLostDealId = null"
+                                @class([
+                                    'block w-full rounded-md border px-3 py-2 text-left text-sm hover:bg-red-50',
+                                    'border-indigo-300 bg-indigo-50 text-indigo-900 hover:border-indigo-400' => $suggestedLostReason === $reason->value,
+                                    'border-gray-200 text-gray-700 hover:border-red-300' => $suggestedLostReason !== $reason->value,
+                                ])>
+                            {{ $reason->label() }}
+                            @if ($suggestedLostReason === $reason->value)
+                                <span class="ml-1 text-xs text-indigo-500">✨ Suggested</span>
+                            @endif
+                        </button>
+                    @endforeach
+                </div>
             </div>
+
             <button type="button" x-on:click="pendingLostDealId = null" class="mt-3 text-xs text-gray-400 hover:text-gray-600">Cancel</button>
         </div>
     </div>
