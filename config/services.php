@@ -302,4 +302,18 @@ return [
         'chat_id' => env('TELEGRAM_CHAT_ID'),
     ],
 
+    // Phase 3 ("Lead to Won") measurement-only scheduled snapshots — no
+    // scoring/routing logic reads these, they exist purely so a trend
+    // exists to evaluate later. Each can be turned off independently
+    // without touching anything else; the cron expression controls how
+    // often the snapshot command actually runs (App\Console\Commands\
+    // SnapshotScoreCalibration), registered in routes/console.php via
+    // Schedule::command(...)->cron(config(...)).
+    'reports' => [
+        'score_calibration_snapshot_enabled' => env('SCORE_CALIBRATION_SNAPSHOT_ENABLED', true),
+        // Default: 1st of the month, 07:30 IST -- same slot FinalizeIncentives
+        // and friends already use for "the month that just ended" jobs.
+        'score_calibration_snapshot_cron' => env('SCORE_CALIBRATION_SNAPSHOT_CRON', '30 7 1 * *'),
+    ],
+
 ];
