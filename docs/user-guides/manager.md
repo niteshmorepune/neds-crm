@@ -164,6 +164,14 @@ what this report is for surfacing. Export CSV.
   deal is dropped on Lost (see Sales guide, Section 2) — a running check
   on whether that suggestion is actually pulling its weight. Export CSV.
 
+**Reassignment Analytics** — every lead handoff (single, bulk, and a
+departing Sales user's deactivation handover) is logged with its
+reason; this report is where that finally gets surfaced, per active
+Sales rep for a chosen month: leads reassigned away from them (with a
+reasons breakdown — On leave / Left the company / Rebalancing workload
+/ Other) and leads reassigned to them. A rep with none this month still
+shows a clean zero rather than being left off the table. Export CSV.
+
 **AI Usage Report** — for a chosen month, which of the CRM's AI features are
 actually being used: calls per feature (lead scoring, draft replies, monthly
 wins notes, and the rest), tokens processed, and a rough estimated cost per

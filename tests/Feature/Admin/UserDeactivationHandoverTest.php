@@ -3,6 +3,7 @@
 use App\Enums\LeadStatus;
 use App\Enums\UserRole;
 use App\Models\Lead;
+use App\Models\LeadReassignment;
 use App\Models\User;
 use App\Notifications\LeadReassignedNotification;
 use Database\Seeders\MenuItemsSeeder;
@@ -52,6 +53,11 @@ it('bulk-reassigns open leads to the chosen Sales user when deactivating', funct
     expect($closed->fresh()->owner_id)->toBe($departing->id);
 
     Notification::assertSentTo($successor, LeadReassignedNotification::class);
+
+    // The bulk handover reuses ReassignLead per lead, so each open lead also
+    // gets its own structured LeadReassignment log row (Reassignment
+    // Analytics report) — not just the single Note-based trail.
+    expect(LeadReassignment::where('to_user_id', $successor->id)->count())->toBe(2);
 });
 
 it('does not require a handover target when deactivating a user with no open leads', function () {
