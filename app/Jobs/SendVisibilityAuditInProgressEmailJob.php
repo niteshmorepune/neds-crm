@@ -24,6 +24,12 @@ use Illuminate\Support\Facades\Mail;
  * Idempotent on VisibilityAuditPurchase.in_progress_notified_email_at — a
  * DEDICATED column, separate from the WhatsApp job's
  * in_progress_notified_at.
+ *
+ * Give-up-after-MAX_ATTEMPTS guard: same reasoning and shape as the
+ * WhatsApp job's own (see its docblock for the real incident this closes)
+ * — its own attempts/give-up columns, tracked independently so an email
+ * channel that's permanently failing (e.g. a malformed payer_email) never
+ * blocks or is blocked by the WhatsApp channel's own retry state.
  */
 class SendVisibilityAuditInProgressEmailJob implements ShouldQueue
 {
@@ -32,6 +38,8 @@ class SendVisibilityAuditInProgressEmailJob implements ShouldQueue
     public int $tries = 3;
 
     public int $backoff = 60;
+
+    private const MAX_ATTEMPTS = 5;
 
     public function __construct(public int $purchaseId) {}
 
@@ -43,6 +51,10 @@ class SendVisibilityAuditInProgressEmailJob implements ShouldQueue
             return;
         }
 
+        if ($purchase->in_progress_email_gave_up_at !== null) {
+            return;
+        }
+
         try {
             Mail::to($purchase->payer_email)->send(new VisibilityAuditInProgressEmail($purchase));
         } catch (\Throwable $e) {
@@ -51,7 +63,7 @@ class SendVisibilityAuditInProgressEmailJob implements ShouldQueue
                 'error' => $e->getMessage(),
             ]);
 
-            $this->logTouch($purchase, false, ['error' => $e->getMessage()]);
+            $this->recordFailedAttempt($purchase, ['error' => $e->getMessage()]);
 
             return;
         }
@@ -59,6 +71,29 @@ class SendVisibilityAuditInProgressEmailJob implements ShouldQueue
         $this->logTouch($purchase, true, null);
 
         $purchase->forceFill(['in_progress_notified_email_at' => now()])->saveQuietly();
+    }
+
+    /**
+     * Same shape as SendVisibilityAuditInProgressJob::recordFailedAttempt()
+     * — see that method's docblock.
+     */
+    private function recordFailedAttempt(VisibilityAuditPurchase $purchase, array $meta): void
+    {
+        $this->logTouch($purchase, false, $meta);
+
+        $attempts = $purchase->in_progress_email_attempts + 1;
+        $values = ['in_progress_email_attempts' => $attempts];
+
+        if ($attempts >= self::MAX_ATTEMPTS) {
+            $values['in_progress_email_gave_up_at'] = now();
+
+            Log::warning('SendVisibilityAuditInProgressEmailJob: giving up after max attempts, needs manual follow-up', [
+                'purchase_id' => $this->purchaseId,
+                'attempts' => $attempts,
+            ]);
+        }
+
+        $purchase->forceFill($values)->saveQuietly();
     }
 
     /**

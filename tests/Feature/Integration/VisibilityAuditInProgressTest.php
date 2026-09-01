@@ -77,7 +77,7 @@ it('logs no touch for an anonymous purchase with no matched lead', function () {
     expect($purchase->fresh()->in_progress_notified_at)->not->toBeNull();
 });
 
-it('logs a failed touch when wadesk.in returns non-2xx', function () {
+it('logs a failed touch when wadesk.in returns non-2xx, and counts the attempt without giving up yet', function () {
     Http::fake(['https://wadesk.test/api/send-template' => Http::response(['error' => 'bad'], 500)]);
 
     $lead = Lead::factory()->create();
@@ -87,7 +87,30 @@ it('logs a failed touch when wadesk.in returns non-2xx', function () {
 
     $touch = VisibilityAuditTouch::firstOrFail();
     expect($touch->success)->toBeFalse();
-    expect($purchase->fresh()->in_progress_notified_at)->toBeNull();
+    $fresh = $purchase->fresh();
+    expect($fresh->in_progress_notified_at)->toBeNull()
+        ->and($fresh->in_progress_whatsapp_attempts)->toBe(1)
+        ->and($fresh->in_progress_whatsapp_gave_up_at)->toBeNull();
+});
+
+it('gives up after MAX_ATTEMPTS consecutive failures and stops attempting the HTTP call', function () {
+    Http::fake(['https://wadesk.test/api/send-template' => Http::response(['error' => 'Template not found or not approved'], 404)]);
+
+    $purchase = inProgressPurchase();
+
+    foreach (range(1, 5) as $attempt) {
+        (new SendVisibilityAuditInProgressJob($purchase->id))->handle();
+    }
+
+    $fresh = $purchase->fresh();
+    expect($fresh->in_progress_whatsapp_attempts)->toBe(5)
+        ->and($fresh->in_progress_whatsapp_gave_up_at)->not->toBeNull();
+
+    Http::fake(); // reset the recorded request count
+    (new SendVisibilityAuditInProgressJob($purchase->id))->handle();
+    Http::assertNothingSent(); // 6th call never even attempts the HTTP request
+
+    expect($purchase->fresh()->in_progress_whatsapp_attempts)->toBe(5); // unchanged
 });
 
 it('never sends twice once already in-progress-notified', function () {
@@ -200,6 +223,27 @@ it('logs a failed touch but does not throw when the in-progress email send fails
     expect($purchase->fresh()->in_progress_notified_email_at)->toBeNull();
 });
 
+it('gives up on the email channel after MAX_ATTEMPTS consecutive failures and stops attempting the send', function () {
+    Mail::shouldReceive('to')->andThrow(new Exception('SMTP down'));
+
+    $purchase = inProgressPurchase();
+
+    foreach (range(1, 5) as $attempt) {
+        (new SendVisibilityAuditInProgressEmailJob($purchase->id))->handle();
+    }
+
+    $fresh = $purchase->fresh();
+    expect($fresh->in_progress_email_attempts)->toBe(5)
+        ->and($fresh->in_progress_email_gave_up_at)->not->toBeNull();
+
+    // 6th call: the guard must return before ever calling Mail::to() again,
+    // so the still-throwing mock above is never re-triggered and the
+    // attempt counter stays put.
+    (new SendVisibilityAuditInProgressEmailJob($purchase->id))->handle();
+
+    expect($purchase->fresh()->in_progress_email_attempts)->toBe(5); // unchanged
+});
+
 it('skips the in-progress email when the purchase no longer exists', function () {
     Mail::fake();
 
@@ -238,6 +282,42 @@ it('still surfaces a purchase whose WhatsApp side already went out but email did
 
 it('excludes a purchase once both channels are done', function () {
     $purchase = inProgressPurchase(['in_progress_notified_at' => now(), 'in_progress_notified_email_at' => now()]);
+    $purchase->created_at = now()->subHours(1);
+    $purchase->save();
+
+    $pending = app(VisibilityAuditFunnelMetrics::class)->pendingInProgressNudges(now()->subMinutes(30))->pluck('id');
+
+    expect($pending)->not->toContain($purchase->id);
+});
+
+it('still surfaces a purchase for its email retry once WhatsApp has given up', function () {
+    $purchase = inProgressPurchase(['in_progress_whatsapp_gave_up_at' => now()]);
+    $purchase->created_at = now()->subHours(1);
+    $purchase->save();
+
+    $pending = app(VisibilityAuditFunnelMetrics::class)->pendingInProgressNudges(now()->subMinutes(30))->pluck('id');
+
+    expect($pending)->toContain($purchase->id);
+});
+
+it('excludes a purchase once WhatsApp has given up and email already went out', function () {
+    $purchase = inProgressPurchase([
+        'in_progress_whatsapp_gave_up_at' => now(),
+        'in_progress_notified_email_at' => now(),
+    ]);
+    $purchase->created_at = now()->subHours(1);
+    $purchase->save();
+
+    $pending = app(VisibilityAuditFunnelMetrics::class)->pendingInProgressNudges(now()->subMinutes(30))->pluck('id');
+
+    expect($pending)->not->toContain($purchase->id);
+});
+
+it('excludes a purchase once both channels have given up', function () {
+    $purchase = inProgressPurchase([
+        'in_progress_whatsapp_gave_up_at' => now(),
+        'in_progress_email_gave_up_at' => now(),
+    ]);
     $purchase->created_at = now()->subHours(1);
     $purchase->save();
 

@@ -153,13 +153,22 @@ class VisibilityAuditFunnelMetrics
      * so a purchase that already got its WhatsApp nudge but whose email
      * failed still needs to be surfaced here for the email side to retry.
      *
+     * A channel that's given up (SendVisibilityAuditInProgressJob/
+     * -EmailJob's own MAX_ATTEMPTS guard) no longer counts as "missing" for
+     * that channel — a purchase stuck failing on WhatsApp but done on email
+     * stops being returned at all once WhatsApp also gives up, rather than
+     * dispatching a job every 15 minutes forever that immediately no-ops.
+     *
      * @return Collection<int, VisibilityAuditPurchase>
      */
     public function pendingInProgressNudges(Carbon $olderThan): Collection
     {
         return VisibilityAuditPurchase::query()
             ->where('created_at', '<=', $olderThan)
-            ->where(fn ($q) => $q->whereNull('in_progress_notified_at')->orWhereNull('in_progress_notified_email_at'))
+            ->where(fn ($q) => $q
+                ->where(fn ($q2) => $q2->whereNull('in_progress_notified_at')->whereNull('in_progress_whatsapp_gave_up_at'))
+                ->orWhere(fn ($q2) => $q2->whereNull('in_progress_notified_email_at')->whereNull('in_progress_email_gave_up_at'))
+            )
             ->get();
     }
 
