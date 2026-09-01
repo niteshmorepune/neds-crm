@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\CrmQueryType;
+use App\Enums\DealLostReason;
 use App\Enums\DealStage;
 use App\Enums\InvoiceStatus;
 use App\Enums\TargetMetric;
@@ -96,35 +97,52 @@ class AiAssistant
         ));
     }
 
-    public function draftLeadFollowUp(Lead $lead): ?string
+    /**
+     * Lead and Deal share this one method rather than a per-type copy — the
+     * body is identical once the identifying header lines are branched. A
+     * Deal has no callLogs() of its own in this app (calls are only ever
+     * logged against a Lead), so that section is simply empty for one.
+     */
+    public function draftFollowUp(Lead|Deal $record): ?string
     {
         if (! Ai::enabled()) {
             return null;
         }
 
-        $lead->loadMissing(['service', 'notes', 'callLogs']);
+        if ($record instanceof Lead) {
+            $record->loadMissing(['service', 'notes', 'callLogs']);
+            $lines = [
+                'Lead: '.$record->name.($record->company ? ' ('.$record->company.')' : ''),
+                'Interested in: '.($record->service?->name ?? 'unspecified'),
+                'Source: '.$record->source->label(),
+            ];
+            $calls = $record->callLogs;
+        } else {
+            $record->loadMissing(['service', 'customer', 'notes']);
+            $lines = [
+                'Deal: '.$record->title.' ('.($record->customer?->company_name ?? 'client removed').')',
+                'Interested in: '.($record->service?->name ?? 'unspecified'),
+                'Stage: '.$record->stage->label(),
+            ];
+            $calls = collect();
+        }
 
-        $lines = [
-            'Lead: '.$lead->name.($lead->company ? ' ('.$lead->company.')' : ''),
-            'Interested in: '.($lead->service?->name ?? 'unspecified'),
-            'Source: '.$lead->source->label(),
-            '',
-            'Recent interactions:',
-        ];
+        $lines[] = '';
+        $lines[] = 'Recent interactions:';
 
-        foreach ($lead->notes->take(self::MAX_ITEMS) as $note) {
+        foreach ($record->notes->take(self::MAX_ITEMS) as $note) {
             $lines[] = '- Note: '.$note->body;
         }
 
-        foreach ($lead->callLogs->take(self::MAX_ITEMS) as $call) {
+        foreach ($calls->take(self::MAX_ITEMS) as $call) {
             $lines[] = '- Call ('.$call->direction->label().', '.$call->outcome->label().'): '.($call->notes ?: 'no notes');
         }
 
         $system = <<<'PROMPT'
         You draft short, warm follow-up messages a salesperson can send to a lead
-        (suitable for email or WhatsApp). Keep it under 90 words, reference what
-        the lead is interested in, and end with a clear, low-pressure next step.
-        Do not invent prices or promises. Output only the message body.
+        or deal contact (suitable for email or WhatsApp). Keep it under 90 words,
+        reference what they're interested in, and end with a clear, low-pressure
+        next step. Do not invent prices or promises. Output only the message body.
         PROMPT;
 
         return $this->trimmed($this->client->message(
@@ -206,8 +224,8 @@ class AiAssistant
 
     /**
      * A scheduled nurture-sequence follow-up for a lead nobody has personally
-     * followed up on yet. Unlike draftLeadFollowUp() (an on-demand button),
-     * this is written for an automated 3-touch cadence — the tone shifts by
+     * followed up on yet. Unlike draftFollowUp() (an on-demand button), this
+     * is written for an automated 3-touch cadence — the tone shifts by
      * $touch so a lead that's gone quiet for a week doesn't get the same
      * "nice to meet you" opener three times in a row.
      */
@@ -746,6 +764,117 @@ class AiAssistant
         ));
     }
 
+    /**
+     * Suggests which of the 5 DealLostReason values best fits a deal about
+     * to be marked Lost, from its own notes plus — since a Deal never has
+     * call logs of its own (calls are only ever logged against a Lead in
+     * this app) — the originating Lead's notes AND calls, when the deal was
+     * converted from one. This is the one place in this class that reaches
+     * through Deal->lead for history; see SimilarDealFinder for the same
+     * precedent used for a different purpose.
+     *
+     * Returns null when AI is off, the call fails, or there's no real
+     * history to go on at all (deliberately no guessed default — a blank
+     * suggestion beats a fabricated one). A non-null result can still carry
+     * a null `reason` alongside a `rationale` explaining why nothing fit —
+     * callers should show that rationale even with nothing pre-selected.
+     *
+     * @return array{reason: ?DealLostReason, rationale: ?string}|null
+     */
+    public function suggestDealLostReason(Deal $deal): ?array
+    {
+        if (! Ai::enabled()) {
+            return null;
+        }
+
+        $deal->loadMissing(['customer', 'notes', 'lead.notes', 'lead.callLogs']);
+
+        $hasHistory = $deal->notes->isNotEmpty()
+            || ($deal->lead !== null && ($deal->lead->notes->isNotEmpty() || $deal->lead->callLogs->isNotEmpty()));
+
+        if (! $hasHistory) {
+            return null;
+        }
+
+        $lines = [
+            'Deal: '.$deal->title.' ('.($deal->customer?->company_name ?? 'client removed').')',
+            'Stage before Lost: '.$deal->stage->label(),
+            '',
+            'History:',
+        ];
+
+        foreach ($deal->notes->take(self::MAX_ITEMS) as $note) {
+            $lines[] = '- Deal note: '.$note->body;
+        }
+
+        if ($deal->lead !== null) {
+            foreach ($deal->lead->notes->take(self::MAX_ITEMS) as $note) {
+                $lines[] = '- Lead note (before conversion): '.$note->body;
+            }
+
+            foreach ($deal->lead->callLogs->take(self::MAX_ITEMS) as $call) {
+                $lines[] = '- Lead call ('.$call->direction->label().', '.$call->outcome->label().'): '.($call->notes ?: 'no notes');
+            }
+        }
+
+        $system = <<<'PROMPT'
+        A salesperson at a digital-solutions agency in India is marking a deal
+        Lost. Read the history and suggest which ONE of these five reasons best
+        explains it, or none if the history genuinely doesn't say:
+
+        price       - they said or implied it costs too much
+        timing      - bad timing, paused, budget cycle, "not right now"
+        competitor  - they went with, or are seriously considering, another provider
+        went_dark   - they stopped responding, no reason ever given
+        not_a_fit   - the service/scope genuinely didn't match what they needed
+
+        Ground the suggestion only in what's actually in the history — never guess
+        a reason the notes don't support.
+
+        Respond with ONLY a JSON object, no markdown, no prose:
+        {"reason": "<price|timing|competitor|went_dark|not_a_fit|null>",
+         "rationale": "<one short sentence citing the actual signal, or null>"}
+        PROMPT;
+
+        $result = $this->client->message(
+            feature: 'suggest_deal_lost_reason',
+            prompt: implode("\n", $lines),
+            system: $system,
+            maxTokens: 200,
+        );
+
+        $this->lastUsageId = $result?->usageId;
+
+        return $result === null ? null : $this->parseLostReasonSuggestion($result->text);
+    }
+
+    /**
+     * @return array{reason: ?DealLostReason, rationale: ?string}|null
+     */
+    private function parseLostReasonSuggestion(string $text): ?array
+    {
+        if (! preg_match('/\{.*\}/s', $text, $match)) {
+            return null;
+        }
+
+        $decoded = json_decode($match[0], true);
+
+        if (! is_array($decoded)) {
+            return null;
+        }
+
+        $reason = DealLostReason::tryFrom((string) ($decoded['reason'] ?? ''));
+        $rationale = is_string($decoded['rationale'] ?? null)
+            ? mb_substr(trim($decoded['rationale']), 0, 255)
+            : null;
+
+        if ($reason === null && $rationale === null) {
+            return null;
+        }
+
+        return ['reason' => $reason, 'rationale' => $rationale];
+    }
+
     public function summarizeTicket(Ticket $ticket): ?string
     {
         if (! Ai::enabled()) {
@@ -807,28 +936,39 @@ class AiAssistant
     }
 
     /**
-     * Summarizes a Lead's notes timeline — including every WhatsApp message
-     * captured there (inbound from the contact, outbound from a staffer or
-     * the wadesk.in AI assistant — see WhatsappWebhookController), since
-     * that's the only place a Lead's conversation history lives (unlike a
-     * Customer, a Lead has no Ticket to summarize separately).
+     * Summarizes a Lead's or Deal's notes timeline — for a Lead, including
+     * every WhatsApp message captured there (inbound from the contact,
+     * outbound from a staffer or the wadesk.in AI assistant — see
+     * WhatsappWebhookController), since that's the only place a Lead's
+     * conversation history lives (unlike a Customer, a Lead has no Ticket to
+     * summarize separately). Lead and Deal share this one method — see
+     * draftFollowUp()'s docblock for why.
      */
-    public function summarizeLead(Lead $lead): ?string
+    public function summarizeTimeline(Lead|Deal $record): ?string
     {
         if (! Ai::enabled()) {
             return null;
         }
 
-        $lead->loadMissing('notes');
+        $record->loadMissing('notes');
 
-        $lines = [
-            'Lead: '.$lead->name.($lead->company ? " ({$lead->company})" : ''),
-            'Status: '.$lead->status->label(),
-            '',
-            'Notes:',
-        ];
+        if ($record instanceof Lead) {
+            $lines = [
+                'Lead: '.$record->name.($record->company ? " ({$record->company})" : ''),
+                'Status: '.$record->status->label(),
+            ];
+        } else {
+            $record->loadMissing('customer');
+            $lines = [
+                'Deal: '.$record->title.' ('.($record->customer?->company_name ?? 'client removed').')',
+                'Stage: '.$record->stage->label(),
+            ];
+        }
 
-        foreach ($lead->notes->take(self::MAX_ITEMS) as $note) {
+        $lines[] = '';
+        $lines[] = 'Notes:';
+
+        foreach ($record->notes->take(self::MAX_ITEMS) as $note) {
             $lines[] = '- '.$note->body;
         }
 

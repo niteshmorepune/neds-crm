@@ -220,7 +220,7 @@ class AiUsageMetrics
         return match ($feature) {
             'lead_scoring' => 'Lead Scoring',
             'draft_ticket_reply' => 'Draft Ticket Reply',
-            'draft_lead_followup' => 'Draft Lead Follow-up',
+            'draft_lead_followup' => 'Draft Follow-up', // key name predates Deal support; label kept neutral
             'draft_lead_nurture_followup' => 'Lead Nurture Follow-up',
             'draft_deal_stall_followup' => 'Deal Stall Check-in',
             'draft_festival_greeting' => 'Festival Greeting Draft',
@@ -231,7 +231,7 @@ class AiUsageMetrics
             'summarize_ticket' => 'Ticket Summary',
             'summarize_meeting' => 'Meeting Summary',
             'summarize_customer' => 'Client Summary',
-            'summarize_lead' => 'Lead Summary',
+            'summarize_lead' => 'Notes Summary', // key name predates Deal support; label kept neutral
             'team_performance_summary' => 'Team Performance Summary',
             'team_productivity_gaps' => 'Team Productivity Suggestions',
             'productivity_improvement_suggestion' => 'Productivity Improvement Suggestion',
@@ -245,6 +245,7 @@ class AiUsageMetrics
             'ticket_triage_suggestion' => 'Ticket Triage Suggestion',
             'onboarding_task_suggestion' => 'Onboarding Task Suggestion',
             'quotation_line_item_suggestion' => 'Quotation Line Item Suggestion',
+            'suggest_deal_lost_reason' => 'Deal Lost Reason Suggestion',
             'crm_query_classify' => 'Ask the CRM (classify)',
             'crm_query_answer' => 'Ask the CRM (answer)',
             'visibility_audit_activity_summary' => 'VA Funnel Activity Summary',

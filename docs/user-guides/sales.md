@@ -282,6 +282,13 @@ on **Sales Dashboard** — see 2a below.
   to Lost from the deal's own page instead. This is required — a deal
   can't move to Lost without a reason, so the team can actually see why
   deals are lost, not just how many.
+- If AI is enabled, the picker briefly checks the deal's notes (and its
+  original lead's notes/calls, if it came from one) and pre-highlights the
+  option it thinks fits, with a one-line "why" underneath — e.g. "✨
+  Mentioned choosing a rival agency in the last call." It's only ever a
+  suggestion: pick a different one any time with zero extra steps, and a
+  deal with too little history to go on just shows the plain picker with
+  no pre-selection, never a guessed default.
 - Won and Lost are final — once set, a deal's **stage** can't change again.
   Its **Value** can still be corrected afterwards, though (e.g. if the final
   amount was entered wrong) — every report, dashboard, and revenue figure
@@ -309,6 +316,11 @@ on **Sales Dashboard** — see 2a below.
   to actually go. It needs a service set on the deal to show anything, and
   won't appear until this service has at least one other closed deal to
   compare against.
+- **Draft follow-up (✨) and Summarize (✨)** — the same two AI buttons from
+  the Lead Generation notes box (Section 1) are also on a deal's own Notes
+  section, working from that deal's own notes (a deal has no call history
+  of its own — only leads do). Handy once a lead has converted and the
+  conversation keeps going as a deal instead.
 - **If a deal goes quiet, AI drafts a check-in for you.** Any open deal with
   no note or edit for 7 days gets an AI-drafted check-in note automatically
   — a bell notification tells you it's ready. It's a staff-only draft, same

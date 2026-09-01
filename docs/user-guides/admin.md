@@ -822,7 +822,7 @@ guide). This is the same mechanism the Users page's deactivation handover
 (Section 9) uses when a leaving Sales user still owns open leads.
 
 ## 17. AI features (optional)
-Nine AI helpers are built into the CRM, powered by Anthropic's Claude. They are
+Several AI helpers are built into the CRM, powered by Anthropic's Claude. They are
 **off by default** and never take action, send, publish, or score an employee
 automatically — they only draft or summarize for a human to review.
 
@@ -842,10 +842,20 @@ form) is automatically assigned to whichever active Sales user currently owns
 the fewest open leads, so leads never sit unowned. This runs independently of
 `AI_ENABLED` — it's routing, not an AI feature.
 
-**Draft follow-up / Draft reply (✨)** — a button on leads and tickets. When
-clicked, Claude reads the lead/ticket details and history, then writes a suggested
-message. The staff member edits it and sends it themselves. Claude never sends
-anything automatically.
+**Draft follow-up / Draft reply (✨)** — a button on leads, deals, and tickets.
+When clicked, Claude reads the record's details and history (for a deal, its
+own notes — deals have no call history of their own, only leads do), then
+writes a suggested message. The staff member edits it and sends it
+themselves. Claude never sends anything automatically.
+
+**AI-suggested Lost reason** — moving a Deal to Lost (drag-and-drop on the
+Sales Pipeline board, or the Stage field on the deal's own page) briefly
+checks its notes — and its originating lead's notes/calls, if it was
+converted from one — for a suggested reason, pre-highlighted with a
+one-line "why" underneath. It's always just a starting point: the rep
+picks any of the 5 options with no extra friction, and a deal with too
+little history simply shows the plain picker with nothing pre-selected —
+never a guessed default.
 
 **Automated lead nurture follow-ups** — daily at 10:30 IST, any New lead its
 owner hasn't personally added a note or logged a call on gets an AI-drafted
@@ -867,9 +877,10 @@ go quiet, get worked, then go quiet again any number of times: each
 genuinely new note or edit resets the clock, so it can draft another
 check-in the next time 7 days pass with nothing happening. Skips Sundays.
 
-**Summarize** — a button on client pages and tickets. Claude reads the full
-timeline (notes, calls, interactions) and produces a short paragraph summarising
-the situation. Useful when picking up a colleague's account.
+**Summarize** — a button on client pages, deals, and tickets. Claude reads the
+full timeline (notes, and calls/interactions where the record has them) and
+produces a short paragraph summarising the situation. Useful when picking up
+a colleague's account.
 
 **Festival greeting drafts** — every morning, for clients with an active Social
 Media or GMB project, Claude drafts a festival greeting caption 7 days ahead of
