@@ -9,6 +9,7 @@ use App\Models\Deal;
 use App\Models\Service;
 use App\Models\User;
 use Database\Seeders\MenuItemsSeeder;
+use Illuminate\Support\Facades\Http;
 use Livewire\Livewire;
 
 beforeEach(function () {
@@ -68,6 +69,57 @@ it('moves a deal to Lost from the board once a reason is picked', function () {
     $fresh = $deal->fresh();
     expect($fresh->stage)->toBe(DealStage::Lost)
         ->and($fresh->lost_reason)->toBe(DealLostReason::Price);
+});
+
+it('suggests a lost reason once a deal is dropped on the Lost column', function () {
+    config(['services.anthropic.enabled' => true, 'services.anthropic.key' => 'sk-test']);
+    Http::fake(['api.anthropic.com/*' => Http::response([
+        'content' => [['type' => 'text', 'text' => json_encode(['reason' => 'went_dark', 'rationale' => 'No reply since the last call.'])]],
+        'usage' => ['input_tokens' => 40, 'output_tokens' => 15],
+    ])]);
+    $deal = Deal::factory()->stage(DealStage::Negotiation)->create();
+    $deal->notes()->create(['user_id' => null, 'body' => 'They stopped replying after the proposal.']);
+
+    Livewire::actingAs($this->admin)
+        ->test(DealsBoard::class)
+        ->call('suggestLostReason', $deal->id)
+        ->assertSet('suggestedLostReason', 'went_dark')
+        ->assertSet('lostReasonRationale', 'No reply since the last call.')
+        ->assertSee('Suggested')
+        ->assertSee('No reply since the last call.');
+});
+
+it('overriding the suggested lost reason persists the chosen value, not the suggestion', function () {
+    config(['services.anthropic.enabled' => true, 'services.anthropic.key' => 'sk-test']);
+    Http::fake(['api.anthropic.com/*' => Http::response([
+        'content' => [['type' => 'text', 'text' => json_encode(['reason' => 'went_dark', 'rationale' => 'No reply since the last call.'])]],
+        'usage' => ['input_tokens' => 40, 'output_tokens' => 15],
+    ])]);
+    $deal = Deal::factory()->stage(DealStage::Negotiation)->create();
+    $deal->notes()->create(['user_id' => null, 'body' => 'They stopped replying after the proposal.']);
+
+    Livewire::actingAs($this->admin)
+        ->test(DealsBoard::class)
+        ->call('suggestLostReason', $deal->id)
+        ->assertSet('suggestedLostReason', 'went_dark')
+        ->call('moveDeal', $deal->id, DealStage::Lost->value, 'price');
+
+    expect($deal->fresh()->lost_reason)->toBe(DealLostReason::Price);
+});
+
+it('does not suggest anything for an unauthorized deal', function () {
+    config(['services.anthropic.enabled' => true, 'services.anthropic.key' => 'sk-test']);
+    Http::fake();
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    $otherOwner = User::factory()->role(UserRole::Sales)->create();
+    $deal = Deal::factory()->ownedBy($otherOwner->id)->stage(DealStage::Negotiation)->create();
+
+    Livewire::actingAs($sales)
+        ->test(DealsBoard::class)
+        ->call('suggestLostReason', $deal->id)
+        ->assertSet('suggestedLostReason', null);
+
+    Http::assertNothingSent();
 });
 
 it('creates a deal from the board', function () {

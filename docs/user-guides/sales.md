@@ -282,6 +282,13 @@ on **Sales Dashboard** — see 2a below.
   to Lost from the deal's own page instead. This is required — a deal
   can't move to Lost without a reason, so the team can actually see why
   deals are lost, not just how many.
+- If AI is enabled, the picker briefly checks the deal's notes (and its
+  original lead's notes/calls, if it came from one) and pre-highlights the
+  option it thinks fits, with a one-line "why" underneath — e.g. "✨
+  Mentioned choosing a rival agency in the last call." It's only ever a
+  suggestion: pick a different one any time with zero extra steps, and a
+  deal with too little history to go on just shows the plain picker with
+  no pre-selection, never a guessed default.
 - Won and Lost are final — once set, a deal's **stage** can't change again.
   Its **Value** can still be corrected afterwards, though (e.g. if the final
   amount was entered wrong) — every report, dashboard, and revenue figure
