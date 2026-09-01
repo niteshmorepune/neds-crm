@@ -126,6 +126,32 @@ it('creates a service-matching rule via the admin form', function () {
         ->and($rule->utm_campaign)->toBeNull();
 });
 
+it('creates a VA-Paid rule via the admin form', function () {
+    $admin = User::factory()->role(UserRole::Admin)->create();
+    $target = User::factory()->role(UserRole::Sales)->create();
+
+    $this->actingAs($admin)->post(route('lead-assignment-rules.store'), [
+        'match_type' => 'va_paid',
+        'assigned_user_id' => $target->id,
+    ])->assertRedirect();
+
+    $rule = LeadAssignmentRule::first();
+    expect($rule->va_paid)->toBeTrue()
+        ->and($rule->utm_campaign)->toBeNull()
+        ->and($rule->service_id)->toBeNull()
+        ->and($rule->assigned_user_id)->toBe($target->id);
+});
+
+it('rejects a second active VA-Paid rule', function () {
+    $admin = User::factory()->role(UserRole::Admin)->create();
+    $target = User::factory()->role(UserRole::Sales)->create();
+    LeadAssignmentRule::factory()->for($target, 'assignedUser')->vaPaid()->create();
+
+    $this->actingAs($admin)->post(route('lead-assignment-rules.store'), [
+        'match_type' => 'va_paid', 'assigned_user_id' => $target->id,
+    ])->assertSessionHasErrors('match_type');
+});
+
 it('rejects a rule targeting a non-Sales or inactive user', function () {
     $admin = User::factory()->role(UserRole::Admin)->create();
     $manager = User::factory()->role(UserRole::Manager)->create();

@@ -739,16 +739,22 @@ least loaded that week.
 - **Match by service** — matches any lead tagged with that service, from any
   source. Use this to route a whole service line rather than one ad — a
   campaign match always wins over a service match if a lead could match both.
+- **Match Visibility Audit — Paid** — routes a lead the moment it pays for
+  the Visibility Audit offer, but only while that lead is still unowned. It
+  never reassigns a lead that already has an owner, even one assigned by
+  plain round-robin moments earlier — use Reassign on the lead itself for
+  that.
 - Only **active Sales users** can be a rule's target. If a rule's target is
   later deactivated or moved off Sales, the rule stops applying and new
   matching leads fall back to the normal least-loaded assignment — it doesn't
   error or assign to someone ineligible.
-- Only one **active** rule is allowed per campaign/service at a time. To
-  change what a rule matches, delete it and add a new one — only the assigned
-  rep and active status can be edited in place on an existing rule.
-- This only affects **new** leads going forward. To move an already-assigned
-  lead, use Reassign on the lead itself, or **Reassign All** below — see
-  the Sales guide for the single-lead action.
+- Only one **active** rule is allowed per campaign/service/VA-Paid at a time.
+  To change what a rule matches, delete it and add a new one — only the
+  assigned rep and active status can be edited in place on an existing rule.
+- This only affects **new** leads going forward (or a still-unowned lead, for
+  the VA-Paid rule). To move an already-assigned lead, use Reassign on the
+  lead itself, or **Reassign All** below — see the Sales guide for the
+  single-lead action.
 
 ## 16b. Lead Generation productivity — priority sort, Needs Attention, speed-to-lead
 Lead Generation (2026-08-13) got a pass aimed at helping Sales/Telecaller
