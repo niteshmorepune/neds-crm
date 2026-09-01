@@ -276,6 +276,12 @@ on **Sales Dashboard** — see 2a below.
 
 - **Drag a deal** to the next column as it progresses (or open it and change the
   stage).
+- **Dropping a deal on Lost** asks you to pick why — Price, Bad timing,
+  Chose a competitor, Went dark / unresponsive, or Not a good fit. Pick one
+  and the move completes; the same picker appears if you change the stage
+  to Lost from the deal's own page instead. This is required — a deal
+  can't move to Lost without a reason, so the team can actually see why
+  deals are lost, not just how many.
 - Won and Lost are final — once set, a deal's **stage** can't change again.
   Its **Value** can still be corrected afterwards, though (e.g. if the final
   amount was entered wrong) — every report, dashboard, and revenue figure

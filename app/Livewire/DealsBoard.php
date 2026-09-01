@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Enums\DealLostReason;
 use App\Enums\DealStage;
 use App\Models\Customer;
 use App\Models\Deal;
@@ -33,7 +34,7 @@ class DealsBoard extends Component
         abort_unless(auth()->user()?->can('viewAny', Deal::class), 403);
     }
 
-    public function moveDeal(int $dealId, string $stage): void
+    public function moveDeal(int $dealId, string $stage, ?string $lostReason = null): void
     {
         $deal = Deal::visibleTo(auth()->user())->findOrFail($dealId);
         abort_unless(auth()->user()->can('update', $deal), 403);
@@ -43,7 +44,9 @@ class DealsBoard extends Component
             return;
         }
 
-        if (! $deal->moveToStage($target)) {
+        $reason = $lostReason !== null ? DealLostReason::tryFrom($lostReason) : null;
+
+        if (! $deal->moveToStage($target, $reason)) {
             $this->dispatch('deal-move-blocked');
         }
     }

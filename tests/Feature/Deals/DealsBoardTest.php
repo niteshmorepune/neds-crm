@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\DealLostReason;
 use App\Enums\DealStage;
 use App\Enums\UserRole;
 use App\Livewire\DealsBoard;
@@ -43,6 +44,30 @@ it('does not move a terminal deal and signals the block', function () {
         ->assertDispatched('deal-move-blocked');
 
     expect($deal->fresh()->stage)->toBe(DealStage::Won);
+});
+
+it('signals the block when a deal is dropped on Lost with no reason', function () {
+    $deal = Deal::factory()->stage(DealStage::Negotiation)->create();
+
+    Livewire::actingAs($this->admin)
+        ->test(DealsBoard::class)
+        ->call('moveDeal', $deal->id, DealStage::Lost->value)
+        ->assertDispatched('deal-move-blocked');
+
+    expect($deal->fresh()->stage)->toBe(DealStage::Negotiation);
+});
+
+it('moves a deal to Lost from the board once a reason is picked', function () {
+    $deal = Deal::factory()->stage(DealStage::Negotiation)->create();
+
+    Livewire::actingAs($this->admin)
+        ->test(DealsBoard::class)
+        ->call('moveDeal', $deal->id, DealStage::Lost->value, 'price')
+        ->assertNotDispatched('deal-move-blocked');
+
+    $fresh = $deal->fresh();
+    expect($fresh->stage)->toBe(DealStage::Lost)
+        ->and($fresh->lost_reason)->toBe(DealLostReason::Price);
 });
 
 it('creates a deal from the board', function () {

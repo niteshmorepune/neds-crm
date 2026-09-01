@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\CustomerStatus;
+use App\Enums\DealLostReason;
 use App\Enums\DealStage;
 use App\Enums\UserRole;
 use App\Jobs\ProvisionClientExternallyJob;
@@ -28,6 +29,7 @@ class Deal extends Model
         'service_id',
         'value',
         'stage',
+        'lost_reason',
         'owner_id',
         'next_follow_up_at',
         'won_at',
@@ -49,6 +51,7 @@ class Deal extends Model
     {
         return [
             'stage' => DealStage::class,
+            'lost_reason' => DealLostReason::class,
             'value' => 'integer',
             'next_follow_up_at' => 'datetime',
             'won_at' => 'datetime',
@@ -168,15 +171,29 @@ class Deal extends Model
 
     /**
      * Move the deal to a new stage. Won/Lost are terminal — once set, the deal
-     * cannot move again. Returns false if the move is not allowed.
+     * cannot move again. Returns false if the move is not allowed, same
+     * boolean-return contract as the existing terminal-stage guard below —
+     * moving to Lost without a reason is treated as just another disallowed
+     * move, not a separate exception path. Deliberately only enforced here,
+     * not in a model-level saving() guard: several existing tests (and any
+     * future backfill/import) create an already-Lost Deal directly via the
+     * factory/mass-assignment, which must keep working unconditionally.
      */
-    public function moveToStage(DealStage $stage): bool
+    public function moveToStage(DealStage $stage, ?DealLostReason $lostReason = null): bool
     {
         if ($this->stage->isTerminal() && $this->stage !== $stage) {
             return false;
         }
 
+        if ($stage === DealStage::Lost && $lostReason === null) {
+            return false;
+        }
+
         $this->stage = $stage;
+
+        if ($stage === DealStage::Lost) {
+            $this->lost_reason = $lostReason;
+        }
 
         return $this->save();
     }

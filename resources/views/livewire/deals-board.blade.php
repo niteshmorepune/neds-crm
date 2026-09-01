@@ -1,5 +1,5 @@
-<div x-data="{ dragId: null }"
-     x-on:deal-move-blocked.window="alert('That deal is Won or Lost and can\'t be moved.')">
+<div x-data="{ dragId: null, pendingLostDealId: null }"
+     x-on:deal-move-blocked.window="pendingLostDealId = null; alert('That deal is Won or Lost and can\'t be moved.')">
     <div class="mb-4 flex items-center justify-between">
         <div>
             <h1 class="text-xl font-semibold text-gray-900">Sales Pipeline</h1>
@@ -80,7 +80,7 @@
             @endphp
             <div class="flex flex-col rounded-lg border-t-4 {{ $stageColors['border'] }} bg-gray-50 p-3"
                  x-on:dragover.prevent
-                 x-on:drop.prevent="if (dragId) { $wire.moveDeal(dragId, '{{ $stage->value }}'); dragId = null }">
+                 x-on:drop.prevent="if (dragId) { @if ($stage === \App\Enums\DealStage::Lost) pendingLostDealId = dragId @else $wire.moveDeal(dragId, '{{ $stage->value }}') @endif; dragId = null }">
                 <div class="mb-2 flex items-center justify-between">
                     <h3 class="text-sm font-semibold text-gray-700">{{ $stage->label() }}</h3>
                     <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $stageColors['badge'] }}">
@@ -114,5 +114,22 @@
                 </div>
             </div>
         @endforeach
+    </div>
+
+    <div x-show="pendingLostDealId !== null" x-cloak
+         class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/40 p-4">
+        <div class="w-full max-w-sm rounded-lg bg-white p-5 shadow-xl">
+            <h3 class="text-sm font-semibold text-gray-900">Why was this deal lost?</h3>
+            <div class="mt-3 space-y-1.5">
+                @foreach (\App\Enums\DealLostReason::cases() as $reason)
+                    <button type="button"
+                            x-on:click="$wire.moveDeal(pendingLostDealId, 'lost', '{{ $reason->value }}'); pendingLostDealId = null"
+                            class="block w-full rounded-md border border-gray-200 px-3 py-2 text-left text-sm text-gray-700 hover:border-red-300 hover:bg-red-50">
+                        {{ $reason->label() }}
+                    </button>
+                @endforeach
+            </div>
+            <button type="button" x-on:click="pendingLostDealId = null" class="mt-3 text-xs text-gray-400 hover:text-gray-600">Cancel</button>
+        </div>
     </div>
 </div>

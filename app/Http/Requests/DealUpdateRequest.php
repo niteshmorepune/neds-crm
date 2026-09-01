@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\DealLostReason;
 use App\Enums\DealStage;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -18,6 +19,7 @@ class DealUpdateRequest extends FormRequest
         return [
             'title' => ['required', 'string', 'max:255'],
             'stage' => ['required', Rule::enum(DealStage::class)],
+            'lost_reason' => ['required_if:stage,lost', 'nullable', Rule::enum(DealLostReason::class)],
             'service_id' => ['nullable', Rule::exists('services', 'id')],
             'owner_id' => ['nullable', Rule::exists('users', 'id')],
             'value' => ['required', 'numeric', 'min:0', 'max:999999999'],
