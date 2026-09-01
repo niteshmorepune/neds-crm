@@ -4,13 +4,13 @@ use App\Enums\LeadStatus;
 use App\Enums\UserRole;
 use App\Models\Lead;
 use App\Models\User;
-use App\Services\ReportMetrics;
+use App\Services\ScoreCalibrationMetrics;
 use Database\Seeders\MenuItemsSeeder;
 use Illuminate\Support\Carbon;
 
 beforeEach(function () {
     $this->seed(MenuItemsSeeder::class);
-    $this->metrics = app(ReportMetrics::class);
+    $this->metrics = app(ScoreCalibrationMetrics::class);
 });
 
 /** Transitions a Lead to Lost via a real update() (not mass-assigned at create) so Lead::booted()'s saving() hook actually stamps lost_at, exactly as it would in production. */

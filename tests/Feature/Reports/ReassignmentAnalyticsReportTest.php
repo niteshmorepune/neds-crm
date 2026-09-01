@@ -5,13 +5,13 @@ use App\Enums\UserRole;
 use App\Models\Lead;
 use App\Models\LeadReassignment;
 use App\Models\User;
-use App\Services\ReportMetrics;
+use App\Services\ReassignmentMetrics;
 use Database\Seeders\MenuItemsSeeder;
 use Illuminate\Support\Carbon;
 
 beforeEach(function () {
     $this->seed(MenuItemsSeeder::class);
-    $this->metrics = app(ReportMetrics::class);
+    $this->metrics = app(ReassignmentMetrics::class);
 });
 
 function logReassignment(?User $from, User $to, LeadReassignmentReason $reason, ?Carbon $at = null): LeadReassignment
