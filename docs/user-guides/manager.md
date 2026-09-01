@@ -172,6 +172,14 @@ reasons breakdown — On leave / Left the company / Rebalancing workload
 / Other) and leads reassigned to them. A rep with none this month still
 shows a clean zero rather than being left off the table. Export CSV.
 
+**Rep Win Rates** — win rate (Won ÷ Won+Lost) per Sales rep for a
+chosen month, by lead source and by the originating lead's score band.
+Recorded automatically on the 1st of each month, for the month that
+just ended — the page shows only what's already been recorded, so an
+in-progress month shows a "not recorded yet" message rather than a
+live figure. Measurement only for now: not used anywhere in lead
+routing or assignment.
+
 **AI Usage Report** — for a chosen month, which of the CRM's AI features are
 actually being used: calls per feature (lead scoring, draft replies, monthly
 wins notes, and the rest), tokens processed, and a rough estimated cost per

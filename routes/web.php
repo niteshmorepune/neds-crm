@@ -346,6 +346,8 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
     Route::get('reports/loss-reasons/export', [ReportController::class, 'exportLossReasons'])->name('reports.loss-reasons.export');
     Route::get('reports/reassignment-analytics', [ReportController::class, 'reassignmentAnalytics'])->name('reports.reassignment-analytics');
     Route::get('reports/reassignment-analytics/export', [ReportController::class, 'exportReassignmentAnalytics'])->name('reports.reassignment-analytics.export');
+    Route::get('reports/rep-win-rates', [ReportController::class, 'repWinRates'])->name('reports.rep-win-rates');
+    Route::get('reports/rep-win-rates/export', [ReportController::class, 'exportRepWinRates'])->name('reports.rep-win-rates.export');
     Route::get('reports/ai-usage', [ReportController::class, 'aiUsage'])->name('reports.ai-usage');
     Route::get('reports/ai-usage/export', [ReportController::class, 'exportAiUsage'])->name('reports.ai-usage.export');
     Route::post('reports/ai-usage/settings', [ReportController::class, 'updateAiUsageSettings'])->name('reports.ai-usage.settings.update');

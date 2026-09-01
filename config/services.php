@@ -302,4 +302,16 @@ return [
         'chat_id' => env('TELEGRAM_CHAT_ID'),
     ],
 
+    // Phase 3 ("Lead to Won") measurement-only scheduled snapshots — no
+    // scoring/routing logic reads these, they exist purely so a trend
+    // exists to evaluate later. Each can be turned off independently
+    // without touching anything else.
+    'reports' => [
+        // Default: 1st of the month, 07:55 IST -- same slot family
+        // FinalizeIncentives and friends already use for "the month that
+        // just ended" jobs (see routes/console.php).
+        'rep_win_rate_snapshot_enabled' => env('REP_WIN_RATE_SNAPSHOT_ENABLED', true),
+        'rep_win_rate_snapshot_cron' => env('REP_WIN_RATE_SNAPSHOT_CRON', '55 7 1 * *'),
+    ],
+
 ];
