@@ -40,6 +40,7 @@ class Lead extends Model
         'converted_customer_id',
         'converted_deal_id',
         'converted_at',
+        'lost_at',
         'whatsapp_conversation_id',
         'utm_source',
         'utm_medium',
@@ -68,6 +69,7 @@ class Lead extends Model
             'estimated_value' => 'integer',
             'next_follow_up_at' => 'datetime',
             'converted_at' => 'datetime',
+            'lost_at' => 'datetime',
             'ai_score' => 'integer',
             'ai_scored_at' => 'datetime',
             'ai_budget_band' => LeadBudgetBand::class,
@@ -77,6 +79,31 @@ class Lead extends Model
             'visibility_audit_invited_at' => 'datetime',
             'visibility_audit_invite_emailed_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Stamp lost_at when status transitions to Lost (cleared if ever
+     * reopened) -- mirrors Task::completed_at's exact saving() pattern, and
+     * gives Lost the same "when did this actually close" timestamp
+     * converted_at already gives Converted (that one is set explicitly in
+     * ConvertLead instead, since conversion is a single funnel action; a
+     * Lead can reach Lost from several places, so a model hook is the
+     * single choke point that can't be missed). Powers the Score
+     * Calibration report's time-to-close figure.
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (Lead $lead) {
+            if (! $lead->isDirty('status')) {
+                return;
+            }
+
+            if ($lead->status === LeadStatus::Lost) {
+                $lead->lost_at ??= now();
+            } else {
+                $lead->lost_at = null;
+            }
+        });
     }
 
     /** Hot leads get an immediate escalation notification instead of waiting for the digest. */
