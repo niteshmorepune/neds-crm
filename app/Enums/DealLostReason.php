@@ -4,7 +4,10 @@ namespace App\Enums;
 
 /**
  * Captured on the point of moving a Deal to Lost — see Deal::moveToStage().
- * Fixed set for now (no free-text "Other"); reportable, not yet AI-suggested.
+ * Fixed set for now (no free-text "Other"). AI-suggested via
+ * AiAssistant::suggestDealLostReason(); the suggestion itself is separately
+ * persisted on Deal::$ai_suggested_lost_reason for calibration reporting —
+ * see Deal::aiSuggestionOutcome().
  */
 enum DealLostReason: string
 {

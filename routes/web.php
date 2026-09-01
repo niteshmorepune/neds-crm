@@ -340,6 +340,10 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
     Route::get('reports/revenue/export', [ReportController::class, 'exportRevenue'])->name('reports.revenue.export');
     Route::get('reports/lead-sources', [ReportController::class, 'leadSources'])->name('reports.lead-sources');
     Route::get('reports/lead-sources/export', [ReportController::class, 'exportLeadSources'])->name('reports.lead-sources.export');
+    Route::get('reports/score-calibration', [ReportController::class, 'scoreCalibration'])->name('reports.score-calibration');
+    Route::get('reports/score-calibration/export', [ReportController::class, 'exportScoreCalibration'])->name('reports.score-calibration.export');
+    Route::get('reports/loss-reasons', [ReportController::class, 'lossReasons'])->name('reports.loss-reasons');
+    Route::get('reports/loss-reasons/export', [ReportController::class, 'exportLossReasons'])->name('reports.loss-reasons.export');
     Route::get('reports/reassignment-analytics', [ReportController::class, 'reassignmentAnalytics'])->name('reports.reassignment-analytics');
     Route::get('reports/reassignment-analytics/export', [ReportController::class, 'exportReassignmentAnalytics'])->name('reports.reassignment-analytics.export');
     Route::get('reports/ai-usage', [ReportController::class, 'aiUsage'])->name('reports.ai-usage');

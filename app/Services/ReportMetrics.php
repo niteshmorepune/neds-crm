@@ -3,13 +3,16 @@
 namespace App\Services;
 
 use App\Enums\AttendanceStatus;
+use App\Enums\DealLostReason;
 use App\Enums\DealStage;
 use App\Enums\InvoiceStatus;
 use App\Enums\LeadReassignmentReason;
+use App\Enums\LeadStatus;
 use App\Enums\UserRole;
 use App\Models\Attendance;
 use App\Models\CallLog;
 use App\Models\DailyReport;
+use App\Models\Deal;
 use App\Models\Invoice;
 use App\Models\Lead;
 use App\Models\LeadReassignment;
@@ -485,6 +488,213 @@ class ReportMetrics
         return [
             'total' => $reassignments->count(),
             'rows' => $rows,
+        ];
+    }
+
+    /**
+     * Score Calibration report — is the 0-100 AI score actually predictive of
+     * outcome? Buckets closed Leads (Converted or Lost) by their ai_score
+     * into the same Cold/Warm/Hot bands already shown on every lead's score
+     * badge (see Lead::scoreBandFor()), with conversion rate and time-to-
+     * close per bucket. ai_score itself is the "final snapshot" -- there's
+     * no separate column, but LeadObserver guarantees a re-score on the
+     * actual transition into a terminal status, so it's never stale by the
+     * time a lead closes.
+     *
+     * Scoped by when the lead actually CLOSED (converted_at / lost_at), not
+     * created_at -- matches the Loss Reason report's same choice for Deals,
+     * and is what makes a rolling monthly re-run meaningful ("what closed
+     * this month"), not "what was captured this month."
+     *
+     * @return array{total: int, buckets: list<array>}
+     */
+    public function scoreCalibration(Carbon $from, Carbon $to): array
+    {
+        $leads = Lead::query()
+            ->where(function ($query) use ($from, $to) {
+                $query->where(fn ($q) => $q->where('status', LeadStatus::Converted)->whereBetween('converted_at', [$from, $to]))
+                    ->orWhere(fn ($q) => $q->where('status', LeadStatus::Lost)->whereBetween('lost_at', [$from, $to]));
+            })
+            ->get();
+
+        $bandOrder = ['hot' => 0, 'warm' => 1, 'cold' => 2, 'no_score' => 3];
+
+        $byBand = $leads->groupBy(fn (Lead $lead) => Lead::scoreBandFor($lead->ai_score) ?? 'no_score');
+
+        // Every band always appears, even with zero leads -- so "Hot: 0" reads
+        // as a real answer (no hot leads closed this period) rather than a
+        // silently missing row a manager might mistake for a report bug.
+        $buckets = collect(array_keys($bandOrder))
+            ->map(fn (string $band) => $this->scoreBandRow($band, $byBand->get($band, collect())))
+            ->sortBy(fn (array $row) => $bandOrder[$row['band']])
+            ->values()
+            ->all();
+
+        return [
+            'total' => $leads->count(),
+            'buckets' => $buckets,
+        ];
+    }
+
+    /**
+     * @param  Collection<int, Lead>  $leads  Every closed lead already in this one score band.
+     * @return array{band: string, label: string, total: int, converted: int, lost: int, conversion_rate: int, avg_days_to_close_converted: ?int, median_days_to_close_converted: ?int, avg_days_to_close_lost: ?int, median_days_to_close_lost: ?int}
+     */
+    private function scoreBandRow(string $band, Collection $leads): array
+    {
+        $total = $leads->count();
+        $converted = $leads->where('status', LeadStatus::Converted);
+        $lost = $leads->where('status', LeadStatus::Lost);
+
+        return [
+            'band' => $band,
+            'label' => Lead::scoreBandLabel($band === 'no_score' ? null : $band),
+            'total' => $total,
+            'converted' => $converted->count(),
+            'lost' => $lost->count(),
+            'conversion_rate' => $total > 0 ? (int) round($converted->count() / $total * 100) : 0,
+            'avg_days_to_close_converted' => $this->avgDaysToClose($converted, 'converted_at'),
+            'median_days_to_close_converted' => $this->medianDaysToClose($converted, 'converted_at'),
+            'avg_days_to_close_lost' => $this->avgDaysToClose($lost, 'lost_at'),
+            'median_days_to_close_lost' => $this->medianDaysToClose($lost, 'lost_at'),
+        ];
+    }
+
+    /**
+     * @param  Collection<int, Lead>  $leads
+     */
+    private function avgDaysToClose(Collection $leads, string $closedAtField): ?int
+    {
+        $days = $leads->map(fn (Lead $lead) => $lead->created_at->diffInDays($lead->{$closedAtField}));
+
+        return $days->isEmpty() ? null : (int) round($days->avg());
+    }
+
+    /**
+     * @param  Collection<int, Lead>  $leads
+     */
+    private function medianDaysToClose(Collection $leads, string $closedAtField): ?int
+    {
+        $days = $leads->map(fn (Lead $lead) => $lead->created_at->diffInDays($lead->{$closedAtField}))->sort()->values();
+
+        if ($days->isEmpty()) {
+            return null;
+        }
+
+        $count = $days->count();
+        $mid = intdiv($count, 2);
+
+        if ($count % 2 === 0) {
+            return (int) round(($days->get($mid - 1) + $days->get($mid)) / 2);
+        }
+
+        return (int) $days->get($mid);
+    }
+
+    /**
+     * Loss Reason report — why Deals are actually being lost, cut four ways.
+     * Scoped by stage_changed_at (when the deal reached Lost), not created_at
+     * — "Lost deals in this window" means the loss happened here, not that
+     * the deal originated here. stage_changed_at is safe to filter on because
+     * Lost is terminal (Deal::moveToStage() forbids any further stage change,
+     * so it can't have been bumped by an unrelated later edit).
+     *
+     * @return array{
+     *     total: int,
+     *     overall: list<array>,
+     *     by_rep: list<array>,
+     *     by_source: list<array>,
+     *     by_score_band: list<array>,
+     *     ai_suggestion_stats: array{accepted: int, overridden: int, no_suggestion: int, accepted_pct: int},
+     * }
+     */
+    public function lossReasonBreakdown(Carbon $from, Carbon $to): array
+    {
+        $deals = Deal::query()
+            ->where('stage', DealStage::Lost)
+            ->whereBetween('stage_changed_at', [$from, $to])
+            ->with(['owner', 'lead'])
+            ->get();
+
+        $total = $deals->count();
+        $reasons = DealLostReason::cases();
+
+        $overall = collect($reasons)
+            ->map(fn (DealLostReason $reason) => $this->lossReasonRow($reason, $deals->filter(fn (Deal $d) => $d->lost_reason === $reason), $total))
+            ->values()
+            ->all();
+
+        $byRep = $deals
+            ->groupBy(fn (Deal $deal) => $deal->owner?->name ?? 'Unassigned')
+            ->map(fn (Collection $group, string $rep) => [
+                'label' => $rep,
+                'total' => $group->count(),
+                'by_reason' => collect($reasons)
+                    ->map(fn (DealLostReason $reason) => $this->lossReasonRow($reason, $group->filter(fn (Deal $d) => $d->lost_reason === $reason), $group->count()))
+                    ->values()->all(),
+            ])
+            ->sortByDesc('total')
+            ->values()
+            ->all();
+
+        $bySource = $deals
+            ->groupBy(fn (Deal $deal) => $deal->lead?->source?->label() ?? 'Direct (no lead)')
+            ->map(fn (Collection $group, string $source) => [
+                'label' => $source,
+                'total' => $group->count(),
+                'by_reason' => collect($reasons)
+                    ->map(fn (DealLostReason $reason) => $this->lossReasonRow($reason, $group->filter(fn (Deal $d) => $d->lost_reason === $reason), $group->count()))
+                    ->values()->all(),
+            ])
+            ->sortByDesc('total')
+            ->values()
+            ->all();
+
+        $bandOrder = ['hot' => 0, 'warm' => 1, 'cold' => 2, 'no_score' => 3];
+        $byScoreBand = $deals
+            ->groupBy(fn (Deal $deal) => Lead::scoreBandFor($deal->lead?->ai_score) ?? 'no_score')
+            ->map(fn (Collection $group, string $band) => [
+                'label' => $band === 'no_score' ? 'No score data' : Lead::scoreBandLabel($band),
+                'total' => $group->count(),
+                'by_reason' => collect($reasons)
+                    ->map(fn (DealLostReason $reason) => $this->lossReasonRow($reason, $group->filter(fn (Deal $d) => $d->lost_reason === $reason), $group->count()))
+                    ->values()->all(),
+            ])
+            ->sortBy(fn (array $row, int|string $key) => $bandOrder[$key] ?? 4)
+            ->values()
+            ->all();
+
+        $outcomes = $deals->countBy(fn (Deal $deal) => $deal->aiSuggestionOutcome());
+
+        return [
+            'total' => $total,
+            'overall' => $overall,
+            'by_rep' => $byRep,
+            'by_source' => $bySource,
+            'by_score_band' => $byScoreBand,
+            'ai_suggestion_stats' => [
+                'accepted' => $outcomes->get('accepted', 0),
+                'overridden' => $outcomes->get('overridden', 0),
+                'no_suggestion' => $outcomes->get('no_suggestion', 0),
+                'accepted_pct' => $total > 0 ? (int) round($outcomes->get('accepted', 0) / $total * 100) : 0,
+            ],
+        ];
+    }
+
+    /**
+     * @param  Collection<int, Deal>  $deals  Already filtered to this one reason within the current group.
+     * @return array{reason: string, label: string, count: int, pct: int, value: int}
+     */
+    private function lossReasonRow(DealLostReason $reason, Collection $deals, int $groupTotal): array
+    {
+        $count = $deals->count();
+
+        return [
+            'reason' => $reason->value,
+            'label' => $reason->label(),
+            'count' => $count,
+            'pct' => $groupTotal > 0 ? (int) round($count / $groupTotal * 100) : 0,
+            'value' => (int) $deals->sum('value'),
         ];
     }
 }

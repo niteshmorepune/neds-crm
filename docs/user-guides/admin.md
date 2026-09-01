@@ -845,6 +845,15 @@ flagged 🔥 Hot and its owner gets an immediate bell notification instead of
 waiting for the next morning digest — configurable via `AI_HOT_LEAD_THRESHOLD`
 in `.env` (default 70).
 
+**Score Calibration report** (Reports panel, Admin/Manager) — the honest
+answer to "is the 0-100 AI score actually predictive of outcome?" Buckets
+every closed lead (Converted or Lost, by when it closed) into the same
+Cold/Warm/Hot bands as the score badge, and shows conversion rate plus
+average/median time-to-close per band. If Hot leads aren't converting
+meaningfully more than Cold ones, this report is built to show that
+plainly rather than hide it — it's measurement only and never adjusts
+scoring on its own. Filterable by month; exports to CSV.
+
 **Lead auto-assignment** — a new lead with no owner (e.g. from the website
 form) is automatically assigned to whichever active Sales user currently owns
 the fewest open leads, so leads never sit unowned. This runs independently of
@@ -864,6 +873,19 @@ one-line "why" underneath. It's always just a starting point: the rep
 picks any of the 5 options with no extra friction, and a deal with too
 little history simply shows the plain picker with nothing pre-selected —
 never a guessed default.
+
+**Loss Reasons report** (Reports panel, Admin/Manager) — a real-numbers
+answer to "why are we actually losing deals," broken down by reason
+alone, by reason per rep ("Loss reasons by rep" — a coaching signal, not
+a ranking), by reason per lead source, and by reason against the
+originating lead's AI score band (Cold/Warm/Hot, the same bands shown on
+every lead's score badge) — so a pattern like "high-scored leads mostly
+lost to going dark" stands out from "high-scored leads mostly lost to a
+competitor." Also shows how often a rep accepted vs. overrode the
+AI-suggested Lost reason above, as a running check on whether that
+suggestion is actually useful. Filterable by month; exports to CSV. Pure
+aggregation over what's already recorded — it doesn't call Claude and
+never changes.
 
 **Automated lead nurture follow-ups** — daily at 10:30 IST, any New lead its
 owner hasn't personally added a note or logged a call on gets an AI-drafted
