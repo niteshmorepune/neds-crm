@@ -7,13 +7,13 @@ use App\Enums\UserRole;
 use App\Models\Deal;
 use App\Models\Lead;
 use App\Models\User;
-use App\Services\ReportMetrics;
+use App\Services\LossReasonMetrics;
 use Database\Seeders\MenuItemsSeeder;
 use Illuminate\Support\Carbon;
 
 beforeEach(function () {
     $this->seed(MenuItemsSeeder::class);
-    $this->metrics = app(ReportMetrics::class);
+    $this->metrics = app(LossReasonMetrics::class);
 });
 
 /** Creates an already-Lost deal with a specific stage_changed_at, bypassing moveToStage() like the rest of this app's tests do (see Deal::moveToStage()'s own docblock). */

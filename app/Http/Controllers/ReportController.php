@@ -12,9 +12,12 @@ use App\Models\WeeklyDigest;
 use App\Services\AiUsageMetrics;
 use App\Services\BusinessOverviewMetrics;
 use App\Services\CollectionsMetrics;
+use App\Services\LossReasonMetrics;
+use App\Services\ReassignmentMetrics;
 use App\Services\ReportMetrics;
 use App\Services\RoleTargetMetrics;
 use App\Services\SalesPipelineMetrics;
+use App\Services\ScoreCalibrationMetrics;
 use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -31,6 +34,9 @@ class ReportController extends Controller
         private readonly SalesPipelineMetrics $pipelineMetrics,
         private readonly AiUsageMetrics $aiUsageMetrics,
         private readonly RoleTargetMetrics $roleTargets,
+        private readonly ScoreCalibrationMetrics $scoreCalibrationMetrics,
+        private readonly LossReasonMetrics $lossReasonMetrics,
+        private readonly ReassignmentMetrics $reassignmentMetrics,
     ) {}
 
     public function employeePerformance(Request $request): View
@@ -390,7 +396,7 @@ class ReportController extends Controller
         [$from, $to] = $this->monthRange($request);
 
         return view('reports.score-calibration', [
-            'data' => $this->metrics->scoreCalibration($from, $to),
+            'data' => $this->scoreCalibrationMetrics->scoreCalibration($from, $to),
             'from' => $from,
             'to' => $to,
         ]);
@@ -400,7 +406,7 @@ class ReportController extends Controller
     {
         $this->authorizePerformance($request);
         [$from, $to] = $this->monthRange($request);
-        $data = $this->metrics->scoreCalibration($from, $to);
+        $data = $this->scoreCalibrationMetrics->scoreCalibration($from, $to);
 
         return $this->csv("score-calibration-{$from->format('Y-m-d')}_to_{$to->format('Y-m-d')}.csv", function ($out) use ($data) {
             fputcsv($out, [
@@ -429,7 +435,7 @@ class ReportController extends Controller
         [$from, $to] = $this->monthRange($request);
 
         return view('reports.loss-reasons', [
-            'data' => $this->metrics->lossReasonBreakdown($from, $to),
+            'data' => $this->lossReasonMetrics->lossReasonBreakdown($from, $to),
             'from' => $from,
             'to' => $to,
         ]);
@@ -439,7 +445,7 @@ class ReportController extends Controller
     {
         $this->authorizePerformance($request);
         [$from, $to] = $this->monthRange($request);
-        $data = $this->metrics->lossReasonBreakdown($from, $to);
+        $data = $this->lossReasonMetrics->lossReasonBreakdown($from, $to);
 
         return $this->csv("loss-reasons-{$from->format('Y-m-d')}_to_{$to->format('Y-m-d')}.csv", function ($out) use ($data) {
             fputcsv($out, ['Overall distribution']);
@@ -501,7 +507,7 @@ class ReportController extends Controller
         [$from, $to] = $this->monthRange($request);
 
         return view('reports.reassignment-analytics', [
-            'data' => $this->metrics->reassignmentAnalytics($from, $to),
+            'data' => $this->reassignmentMetrics->reassignmentAnalytics($from, $to),
             'from' => $from,
             'to' => $to,
         ]);
@@ -511,7 +517,7 @@ class ReportController extends Controller
     {
         $this->authorizePerformance($request);
         [$from, $to] = $this->monthRange($request);
-        $data = $this->metrics->reassignmentAnalytics($from, $to);
+        $data = $this->reassignmentMetrics->reassignmentAnalytics($from, $to);
 
         return $this->csv("reassignment-analytics-{$from->format('Y-m-d')}_to_{$to->format('Y-m-d')}.csv", function ($out) use ($data) {
             fputcsv($out, ['Rep', 'Reassigned away', 'Reasons', 'Reassigned to']);
