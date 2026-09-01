@@ -857,6 +857,16 @@ automatically. The system-generated note created from the original enquiry
 that's never actually been worked still qualifies. Skips Sundays, same as
 the stagnation alerts.
 
+**Automated deal stall check-ins** — daily at 10:35 IST, any open deal
+(not Won/Lost) with no note or logged edit in **7 days** gets an
+AI-drafted check-in, landed the same way as the lead nurture drafts above
+(a staff-only note plus a bell notification to the owner, never sent
+automatically). Unlike the lead version's fixed day-1/3/7 cadence — which
+never fires again once a New lead is touched even once — a deal here can
+go quiet, get worked, then go quiet again any number of times: each
+genuinely new note or edit resets the clock, so it can draft another
+check-in the next time 7 days pass with nothing happening. Skips Sundays.
+
 **Summarize** — a button on client pages and tickets. Claude reads the full
 timeline (notes, calls, interactions) and produces a short paragraph summarising
 the situation. Useful when picking up a colleague's account.

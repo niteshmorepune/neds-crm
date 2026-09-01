@@ -46,6 +46,13 @@ Schedule::command('app:draft-lead-nurture-followups')
     ->dailyAt('10:30')
     ->timezone('Asia/Kolkata');
 
+// AI-drafts a check-in (staff-only note) for any open deal that's gone
+// quiet 7+ days. Re-arms after any genuine new touch, so a missed run just
+// catches up the next day.
+Schedule::command('app:draft-deal-stall-followups')
+    ->dailyAt('10:35')
+    ->timezone('Asia/Kolkata');
+
 // Billing schedule (India time): generate recurring invoices, flag overdue,
 // then send payment reminders. Recurring invoice reminders go out at 09:00 IST
 // on days 7, 5, 3, and 1 before the next billing date (alternate days in that window).

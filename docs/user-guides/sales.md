@@ -309,6 +309,12 @@ on **Sales Dashboard** — see 2a below.
   to actually go. It needs a service set on the deal to show anything, and
   won't appear until this service has at least one other closed deal to
   compare against.
+- **If a deal goes quiet, AI drafts a check-in for you.** Any open deal with
+  no note or edit for 7 days gets an AI-drafted check-in note automatically
+  — a bell notification tells you it's ready. It's a staff-only draft, same
+  as everywhere else: you review and send it yourself, nothing goes out on
+  its own. This can happen more than once on the same deal — work it, go
+  quiet again for a week, get another draft.
 
 **Stale-deal badge** — each card shows how many days it's been sitting in its
 current stage, turning red past 10 days. A red badge is a nudge to follow up

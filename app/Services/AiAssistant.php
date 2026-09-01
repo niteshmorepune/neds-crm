@@ -244,6 +244,53 @@ class AiAssistant
         ));
     }
 
+    /**
+     * A scheduled check-in draft for a Deal that's gone quiet mid-pipeline —
+     * proactive, unlike draftFollowUp() (an on-demand button), matching the
+     * same New-lead-nurture-vs-Draft-Reply split above. Grounded in the
+     * deal's own notes only, same scope as draftFollowUp()'s Deal-side case.
+     * Never skips for an empty history (mirrors draftLeadNurtureFollowUp's
+     * own "first touch" case, which drafts from source/service alone) --
+     * a deal that's sat untouched since creation still gets a reasonable
+     * check-in built from its title/service/stage.
+     */
+    public function draftDealStallFollowUp(Deal $deal, int $daysSinceLastTouch): ?string
+    {
+        if (! Ai::enabled()) {
+            return null;
+        }
+
+        $deal->loadMissing(['service', 'customer', 'notes']);
+
+        $lines = [
+            'Deal: '.$deal->title.' ('.($deal->customer?->company_name ?? 'client removed').')',
+            'Interested in: '.($deal->service?->name ?? 'unspecified'),
+            'Stage: '.$deal->stage->label(),
+            'Days since any activity: '.$daysSinceLastTouch,
+            '',
+            'Notes:',
+        ];
+
+        foreach ($deal->notes->take(self::MAX_ITEMS) as $note) {
+            $lines[] = '- '.$note->body;
+        }
+
+        $system = <<<'PROMPT'
+        You draft a short, low-pressure check-in message (under 80 words,
+        suitable for WhatsApp or email) a salesperson at a digital-solutions
+        agency in India can send about a deal that has gone quiet mid-pipeline.
+        Reference what the deal is about and its current stage where natural.
+        Do not invent prices, timelines, or promises not already in the notes.
+        Output only the message body.
+        PROMPT;
+
+        return $this->trimmed($this->client->message(
+            feature: 'draft_deal_stall_followup',
+            prompt: implode("\n", $lines),
+            system: $system,
+        ));
+    }
+
     public function draftFestivalGreeting(Festival $festival, Project $project): ?string
     {
         if (! Ai::enabled()) {

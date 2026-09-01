@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 class Deal extends Model
 {
@@ -167,6 +168,25 @@ class Deal extends Model
     public function stageTransitions(): HasMany
     {
         return $this->hasMany(DealStageTransition::class)->latest();
+    }
+
+    /**
+     * The most recent real touch of any kind — a note, or a logged
+     * activity (an edit; LogsActivity's own "created" row counts too, which
+     * makes this fall back to roughly created_at for an untouched deal).
+     * Shared by DraftDealStallFollowUps and DraftDealStallFollowUp so both
+     * agree on exactly the same definition of "already handled this stale
+     * period" — the stall-draft job's own Activity marker is itself one of
+     * these rows, so once written it correctly counts as the deal's latest
+     * touch until a genuine new note/edit supersedes it.
+     */
+    public function lastTouchedAt(): Carbon
+    {
+        return collect([
+            $this->notes()->max('created_at'),
+            $this->activities()->max('created_at'),
+            $this->created_at,
+        ])->filter()->map(fn ($value) => Carbon::parse($value))->max();
     }
 
     /**
