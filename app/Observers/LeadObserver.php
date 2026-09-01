@@ -153,15 +153,7 @@ class LeadObserver
      */
     private function matchRule($query): ?User
     {
-        $rule = $query->with('assignedUser')->first();
-
-        if ($rule === null || $rule->assignedUser === null) {
-            return null;
-        }
-
-        $user = $rule->assignedUser;
-
-        return $user->is_active && $user->role === UserRole::Sales ? $user : null;
+        return $query->with('assignedUser')->first()?->eligibleAssignee();
     }
 
     private function resolveLeastLoadedSales(): ?User

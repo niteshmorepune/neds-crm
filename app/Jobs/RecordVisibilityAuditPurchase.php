@@ -6,7 +6,9 @@ use App\Enums\LeadSource;
 use App\Enums\LeadStatus;
 use App\Enums\VisibilityAuditTier;
 use App\Models\Lead;
+use App\Models\LeadAssignmentRule;
 use App\Models\Service;
+use App\Models\User;
 use App\Models\VisibilityAuditPurchase;
 use App\Support\Ai;
 use Illuminate\Bus\Queueable;
@@ -33,6 +35,12 @@ use Illuminate\Support\Facades\Log;
  * Idempotent on visibility_audit_purchases.razorpay_payment_id (unique
  * column) — same "check, then let the unique constraint win a race" pattern
  * as RazorpayPaymentRecorder.
+ *
+ * Also the one place a LeadAssignmentRule with va_paid=true gets checked —
+ * LeadObserver::autoAssign() can't see this signal, since a lead's VA
+ * funnel state isn't known yet at the moment a bare Lead::create() fires it.
+ * Only ever assigns an unowned lead; never reassigns one that already has
+ * an owner (see assignViaVaPaidRuleIfUnowned()).
  */
 class RecordVisibilityAuditPurchase implements ShouldQueue
 {
@@ -114,6 +122,13 @@ class RecordVisibilityAuditPurchase implements ShouldQueue
             ? $this->attachToExistingLead($lead, $tier)
             : $this->createLead($tier);
 
+        // A pre-existing lead that was never assigned (e.g. it predates any
+        // active Sales user) gets one more chance at the VA-Paid rule here.
+        // createLead() below already resolves it for the brand-new-lead case
+        // up front, before round-robin ever runs -- this is a no-op for that
+        // branch once it has already found an owner.
+        $this->assignViaVaPaidRuleIfUnowned($lead);
+
         $purchase->update(['lead_id' => $lead->id]);
 
         // A completed payment is the strongest buying-intent signal this
@@ -143,6 +158,12 @@ class RecordVisibilityAuditPurchase implements ShouldQueue
 
     private function createLead(?VisibilityAuditTier $tier): Lead
     {
+        // Resolved BEFORE create() so a matching VA-Paid rule wins outright --
+        // if owner_id already arrives non-null, LeadObserver::autoAssign()
+        // sees it's set and never runs its own round-robin fallback, so
+        // there is no reassignment to guard against for this branch.
+        $ownerId = $this->resolveVaPaidAssignee()?->id;
+
         $lead = Lead::create([
             'name' => $this->name ?: 'Visibility Audit Customer',
             'email' => $this->email,
@@ -150,13 +171,37 @@ class RecordVisibilityAuditPurchase implements ShouldQueue
             'source' => LeadSource::Other->value,
             'service_id' => $this->serviceIdForTier($tier),
             'status' => LeadStatus::New->value,
-            'owner_id' => null,
+            'owner_id' => $ownerId,
             'utm_source' => 'visibility-audit-offer',
         ]);
 
         $lead->notes()->create(['user_id' => null, 'body' => $this->noteBody($tier)]);
 
         return $lead;
+    }
+
+    /**
+     * Only ever assigns a lead that is currently unowned -- an owned lead is
+     * left alone, no matter how it got its owner. Reassignment in this app
+     * is always a visible, logged, human action (ReassignLead), never a
+     * silent side effect of a payment webhook.
+     */
+    private function assignViaVaPaidRuleIfUnowned(Lead $lead): void
+    {
+        if ($lead->owner_id !== null) {
+            return;
+        }
+
+        $assignee = $this->resolveVaPaidAssignee();
+
+        if ($assignee !== null) {
+            $lead->update(['owner_id' => $assignee->id]);
+        }
+    }
+
+    private function resolveVaPaidAssignee(): ?User
+    {
+        return LeadAssignmentRule::active()->where('va_paid', true)->with('assignedUser')->first()?->eligibleAssignee();
     }
 
     private function noteBody(?VisibilityAuditTier $tier): string

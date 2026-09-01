@@ -19,7 +19,7 @@ class LeadAssignmentRuleRequest extends FormRequest
         $rule = $this->route('leadAssignmentRule');
 
         return [
-            'match_type' => ['required', Rule::in(['campaign', 'service'])],
+            'match_type' => ['required', Rule::in(['campaign', 'service', 'va_paid'])],
             'utm_campaign' => ['nullable', 'required_if:match_type,campaign', 'string', 'max:255'],
             'service_id' => ['nullable', 'required_if:match_type,service', Rule::exists('services', 'id')],
             'assigned_user_id' => [
@@ -71,23 +71,34 @@ class LeadAssignmentRuleRequest extends FormRequest
                     $validator->errors()->add('service_id', 'An active rule for this service already exists.');
                 }
             }
+
+            if ($this->input('match_type') === 'va_paid') {
+                $exists = LeadAssignmentRule::active()
+                    ->where('va_paid', true)
+                    ->when($rule, fn ($q) => $q->whereKeyNot($rule->id))
+                    ->exists();
+
+                if ($exists) {
+                    $validator->errors()->add('match_type', 'An active VA-Paid rule already exists.');
+                }
+            }
         });
     }
 
     /**
-     * Normalizes match_type into the two nullable columns actually stored —
-     * the controller passes this straight to create()/update().
+     * Normalizes match_type into the three nullable/boolean columns actually
+     * stored — the controller passes this straight to create()/update().
      *
      * @return array<string, mixed>
      */
     public function payload(): array
     {
         $data = $this->validated();
-        $isCampaign = $data['match_type'] === 'campaign';
 
         return [
-            'utm_campaign' => $isCampaign ? $data['utm_campaign'] : null,
-            'service_id' => $isCampaign ? null : $data['service_id'],
+            'utm_campaign' => $data['match_type'] === 'campaign' ? $data['utm_campaign'] : null,
+            'service_id' => $data['match_type'] === 'service' ? $data['service_id'] : null,
+            'va_paid' => $data['match_type'] === 'va_paid',
             'assigned_user_id' => $data['assigned_user_id'],
             'active' => $data['active'],
         ];
