@@ -791,6 +791,19 @@ every 5 minutes (`app:escalate-untouched-leads`); no configuration needed.
 "Engaged with" means any note, logged call, or edit on the lead — adding
 any of those clears it from consideration immediately.
 
+**Stalled-lead escalation (any open lead, not just brand-new):** separately,
+the daily stagnation check (below) also escalates to you if a lead that
+was once worked has since gone cold. An open lead (New/Contacted/
+Qualified) with no note, call, or edit for **7 days** emails its owner
+daily until it's touched again; if it's *still* untouched **3 days after
+that** (10 days total), every active Admin/Manager also gets a bell
+notification — a different failure mode from a brand-new lead nobody ever
+started on, so it's a separate alert with its own wording ("Lead stalled —
+no activity in N+ days"). Both thresholds are `app:send-stagnation-alerts`
+command options (`--lead-days`, `--manager-days`), not an admin-editable
+setting — change the scheduled command in `routes/console.php` to adjust
+them.
+
 **Reassign All (bulk handover):** filter Lead Generation by **Owner**
 (the filter row) and, if you can reassign (Admin/Manager), a panel appears
 showing how many open leads that person has, with a one-click **Reassign
