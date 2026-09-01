@@ -63,6 +63,7 @@
                                 'lead_reassigned'              => '🔄',
                                 'lead_owner_reminder'          => '⏱️',
                                 'lead_escalated_untouched'     => '🚨',
+                                'lead_stagnation_escalated'    => '❄️',
                                 'hot_lead'                    => '🔥',
                                 'new_quotation'               => '📄',
                                 'deal_won'                    => '🏆',

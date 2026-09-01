@@ -905,7 +905,10 @@ trendlines, which is recorded every Monday regardless of whether AI is on.
 
 **Stagnation alerts (10 AM daily)** — if any lead owned by a team member has had
 no activity for 7 days, or a deal for 10 days, the owner is emailed automatically.
-You don't need to chase people — the system does it.
+You don't need to chase people — the system does it. If a lead is still
+untouched **10 days** in (3 more days past the owner's own email), you get a
+bell notification too — the system's safety net for when the owner's own
+daily email hasn't been enough.
 
 ## Tip
 Check the **SLA at-risk** tickets and the **Overdue follow-ups** widget on the
