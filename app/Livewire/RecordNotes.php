@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Jobs\ScoreLead;
 use App\Jobs\SendWhatsappLeadReplyJob;
 use App\Livewire\Concerns\RatesAiDrafts;
+use App\Models\Deal;
 use App\Models\Lead;
 use App\Models\Note;
 use App\Models\Project;
@@ -67,10 +68,10 @@ class RecordNotes extends Component
         $this->visibleToClient = $showPortalToggle; // default ON when portal toggle is shown
     }
 
-    /** AI follow-up drafting is offered on leads only, when AI is on and the user can write. */
+    /** AI follow-up drafting is offered on leads and deals, when AI is on and the user can write. */
     public function canDraft(): bool
     {
-        return Ai::enabled() && $this->canManage && $this->record instanceof Lead;
+        return Ai::enabled() && $this->canManage && ($this->record instanceof Lead || $this->record instanceof Deal);
     }
 
     /** Only a Lead that actually has an open WhatsApp thread can be replied to over it. */
@@ -82,15 +83,16 @@ class RecordNotes extends Component
     }
 
     /**
-     * Summarizing the notes timeline is offered on leads only — a Customer's
-     * timeline is better summarized via its own dedicated "Client summary"
-     * (AiAssistant::summarizeCustomer(), which also pulls in calls/tickets),
-     * and other RecordNotes-embedding models (Deal, Project, …) don't have a
-     * comparable "communication journey" concern this was built for.
+     * Summarizing the notes timeline is offered on leads and deals — a
+     * Customer's timeline is better summarized via its own dedicated "Client
+     * summary" (AiAssistant::summarizeCustomer(), which also pulls in
+     * calls/tickets), and other RecordNotes-embedding models (Project, …)
+     * don't have a comparable "communication journey" concern this was
+     * built for.
      */
     public function canSummarize(): bool
     {
-        return Ai::enabled() && $this->record instanceof Lead;
+        return Ai::enabled() && ($this->record instanceof Lead || $this->record instanceof Deal);
     }
 
     /**
@@ -102,7 +104,7 @@ class RecordNotes extends Component
 
         $this->draftFeedback = null;
 
-        if ($draft = $assistant->draftLeadFollowUp($this->record)) {
+        if ($draft = $assistant->draftFollowUp($this->record)) {
             $this->body = $draft;
             $this->draftUsageId = $assistant->lastUsageId;
         } else {
@@ -121,7 +123,7 @@ class RecordNotes extends Component
         abort_unless($this->canSummarize() && auth()->user()?->can('view', $this->record), 403);
 
         $this->summaryFeedback = null;
-        $this->summary = $assistant->summarizeLead($this->record)
+        $this->summary = $assistant->summarizeTimeline($this->record)
             ?? 'Could not generate a summary right now. Please try again.';
         $this->summaryUsageId = $assistant->lastUsageId;
     }

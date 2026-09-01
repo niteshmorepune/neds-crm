@@ -74,10 +74,30 @@ it('drafts a lead follow-up message', function () {
     fakeAiText('Hi Ravi, just following up on the SEO plan — shall we hop on a quick call?');
     $lead = Lead::factory()->create(['name' => 'Ravi']);
 
-    $draft = app(AiAssistant::class)->draftLeadFollowUp($lead);
+    $draft = app(AiAssistant::class)->draftFollowUp($lead);
 
     expect($draft)->toContain('Ravi');
     expect(AiUsage::where('feature', 'draft_lead_followup')->exists())->toBeTrue();
+});
+
+it('drafts a deal follow-up message from the deal\'s own notes, with no call-history section', function () {
+    aiOn();
+    fakeAiText('Hi, checking in on the website revamp — happy to walk through next steps.');
+    $deal = Deal::factory()->create(['title' => 'Website revamp']);
+    $deal->notes()->create(['user_id' => null, 'body' => 'Client asked about the launch timeline.']);
+
+    $draft = app(AiAssistant::class)->draftFollowUp($deal);
+
+    expect($draft)->toContain('website revamp');
+    expect(AiUsage::where('feature', 'draft_lead_followup')->exists())->toBeTrue();
+
+    Http::assertSent(function ($request) {
+        $prompt = json_decode($request->body(), true)['messages'][0]['content'];
+
+        return str_contains($prompt, 'Deal: Website revamp')
+            && str_contains($prompt, 'Client asked about the launch timeline.')
+            && ! str_contains($prompt, 'Call (');
+    });
 });
 
 it('summarizes a customer timeline', function () {
@@ -98,10 +118,30 @@ it('summarizes a lead\'s notes timeline, including WhatsApp messages captured th
     $lead->notes()->create(['user_id' => null, 'body' => 'What are your charges for GMB?']);
     $lead->notes()->create(['user_id' => null, 'body' => "[Sent via WhatsApp by Kiran Katte]\nIt's ₹12,000/month."]);
 
-    $summary = app(AiAssistant::class)->summarizeLead($lead);
+    $summary = app(AiAssistant::class)->summarizeTimeline($lead);
 
     expect($summary)->toContain('GMB');
     expect(AiUsage::where('feature', 'summarize_lead')->exists())->toBeTrue();
+});
+
+it('summarizes a deal\'s own notes timeline, not the parent lead\'s', function () {
+    aiOn();
+    fakeAiText('- Proposal sent. - Awaiting sign-off.');
+    $lead = Lead::factory()->create();
+    $lead->notes()->create(['user_id' => null, 'body' => 'Pre-conversion note that must not leak into the deal summary.']);
+    $deal = Deal::factory()->create(['lead_id' => $lead->id, 'title' => 'GMB retainer']);
+    $deal->notes()->create(['user_id' => null, 'body' => 'Sent the proposal, awaiting sign-off.']);
+
+    $summary = app(AiAssistant::class)->summarizeTimeline($deal);
+
+    expect($summary)->toContain('sign-off');
+
+    Http::assertSent(function ($request) {
+        $prompt = json_decode($request->body(), true)['messages'][0]['content'];
+
+        return str_contains($prompt, 'Sent the proposal, awaiting sign-off.')
+            && ! str_contains($prompt, 'Pre-conversion note that must not leak into the deal summary.');
+    });
 });
 
 it('returns null and makes no call when summarizing a lead with AI disabled', function () {
@@ -109,7 +149,7 @@ it('returns null and makes no call when summarizing a lead with AI disabled', fu
     Http::fake();
     $lead = Lead::factory()->create();
 
-    expect(app(AiAssistant::class)->summarizeLead($lead))->toBeNull();
+    expect(app(AiAssistant::class)->summarizeTimeline($lead))->toBeNull();
     Http::assertNothingSent();
 });
 

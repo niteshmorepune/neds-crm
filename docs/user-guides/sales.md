@@ -316,6 +316,11 @@ on **Sales Dashboard** — see 2a below.
   to actually go. It needs a service set on the deal to show anything, and
   won't appear until this service has at least one other closed deal to
   compare against.
+- **Draft follow-up (✨) and Summarize (✨)** — the same two AI buttons from
+  the Lead Generation notes box (Section 1) are also on a deal's own Notes
+  section, working from that deal's own notes (a deal has no call history
+  of its own — only leads do). Handy once a lead has converted and the
+  conversation keeps going as a deal instead.
 
 **Stale-deal badge** — each card shows how many days it's been sitting in its
 current stage, turning red past 10 days. A red badge is a nudge to follow up
