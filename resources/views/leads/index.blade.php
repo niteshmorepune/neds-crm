@@ -109,6 +109,17 @@
                             <option value="{{ $owner->id }}" @selected((string) ($filters['owner_id'] ?? '') === (string) $owner->id)>{{ $owner->name }}</option>
                         @endforeach
                     </select>
+                    {{-- Only ever matches a Converted lead (only they have a
+                         linked Deal), so this filter is independent of the
+                         Status filter above — pick it alone to see every
+                         Converted lead stuck at that stage, regardless of
+                         what Status is set to. --}}
+                    <select name="deal_stage" class="rounded-md border-gray-300 text-sm shadow-sm">
+                        <option value="">All deal stages</option>
+                        @foreach ($dealStages as $stage)
+                            <option value="{{ $stage->value }}" @selected(($filters['deal_stage'] ?? '') === $stage->value)>{{ $stage->label() }}</option>
+                        @endforeach
+                    </select>
                     <button type="submit" class="rounded-md bg-gray-800 px-3 py-2 text-sm font-medium text-white hover:bg-gray-700">Filter</button>
                 </div>
 

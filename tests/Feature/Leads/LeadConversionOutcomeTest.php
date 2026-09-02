@@ -136,3 +136,36 @@ it('colors "Deal: Lost" red and "Deal: Won..." green, distinct from the plain gr
     expect($html)->toContain('text-red-500">Deal: Lost')
         ->and($html)->toContain('text-green-600">Deal: Won (unbilled)');
 });
+
+it('filters the leads list by the linked deal\'s stage, so Sales can find every deal stuck at e.g. Negotiation', function () {
+    $negotiationDeal = Deal::factory()->stage(DealStage::Negotiation)->create();
+    $negotiationLead = Lead::factory()->create(['status' => LeadStatus::Converted, 'converted_deal_id' => $negotiationDeal->id, 'name' => 'Negotiation Lead']);
+
+    $proposalDeal = Deal::factory()->stage(DealStage::Proposal)->create();
+    $proposalLead = Lead::factory()->create(['status' => LeadStatus::Converted, 'converted_deal_id' => $proposalDeal->id, 'name' => 'Proposal Lead']);
+
+    $wonDeal = Deal::factory()->stage(DealStage::Won)->create();
+    $wonLead = Lead::factory()->create(['status' => LeadStatus::Converted, 'converted_deal_id' => $wonDeal->id, 'name' => 'Won Lead']);
+
+    $unconvertedLead = Lead::factory()->create(['status' => LeadStatus::New, 'name' => 'Unconverted Lead']);
+
+    $response = $this->actingAs($this->admin)->get(route('leads.index', ['deal_stage' => DealStage::Negotiation->value]));
+
+    $response->assertOk()
+        ->assertSee('Negotiation Lead')
+        ->assertDontSee('Proposal Lead')
+        ->assertDontSee('Won Lead')
+        ->assertDontSee('Unconverted Lead');
+});
+
+it('excludes a Converted lead whose linked deal has been soft-deleted from every deal_stage filter', function () {
+    $deal = Deal::factory()->stage(DealStage::Negotiation)->create();
+    $dealId = $deal->id;
+    $deal->delete();
+    Lead::factory()->create(['status' => LeadStatus::Converted, 'converted_deal_id' => $dealId, 'name' => 'Removed Deal Lead']);
+
+    $this->actingAs($this->admin)
+        ->get(route('leads.index', ['deal_stage' => DealStage::Negotiation->value]))
+        ->assertOk()
+        ->assertDontSee('Removed Deal Lead');
+});

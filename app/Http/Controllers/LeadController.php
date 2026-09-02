@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\ConvertLead;
 use App\Actions\ReassignLead;
+use App\Enums\DealStage;
 use App\Enums\LeadReassignmentReason;
 use App\Enums\LeadSource;
 use App\Enums\LeadStatus;
@@ -63,7 +64,8 @@ class LeadController extends Controller
 
         return view('leads.index', $this->formData() + [
             'leads' => $leads,
-            'filters' => $request->only(['search', 'source', 'status', 'service_id', 'owner_id', 'follow_up_due', 'attention', 'sort']) + ['month' => $month],
+            'filters' => $request->only(['search', 'source', 'status', 'service_id', 'owner_id', 'deal_stage', 'follow_up_due', 'attention', 'sort']) + ['month' => $month],
+            'dealStages' => DealStage::cases(),
             'sort' => $sort,
             'statusCounts' => $this->statusCounts($request),
             'attentionCounts' => $this->attentionCounts($request),
@@ -315,6 +317,15 @@ class LeadController extends Controller
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->input('status')))
             ->when($request->filled('service_id'), fn ($q) => $q->where('service_id', $request->integer('service_id')))
             ->when($request->filled('owner_id'), fn ($q) => $q->where('owner_id', $request->integer('owner_id')))
+            // Lets Sales find exactly which of their Converted leads have a
+            // Deal stuck at a given pipeline stage (e.g. "show me every
+            // Negotiation") — only a Converted lead ever has a
+            // convertedDeal at all, so this naturally scopes to those
+            // regardless of the `status` filter's own value.
+            ->when($request->filled('deal_stage'), fn ($q) => $q->whereHas(
+                'convertedDeal',
+                fn ($dealQuery) => $dealQuery->where('stage', $request->input('deal_stage'))
+            ))
             // Mirrors DashboardMetrics::salesStats()'s 'followups_due' query
             // exactly, for the Sales dashboard's "Follow-ups due" drill-down
             // AND this page's own "Needs attention" strip (kept as the same
