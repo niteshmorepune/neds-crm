@@ -1,5 +1,7 @@
 <?php
 
+use App\Enums\CustomerStatus;
+use App\Enums\LeadStatus;
 use App\Enums\UserRole;
 use App\Enums\VisibilityAuditFunnelEventType;
 use App\Enums\VisibilityAuditTouchChannel;
@@ -50,6 +52,65 @@ it('logs a call against a lead', function () {
     ])->assertRedirect(route('leads.show', $lead));
 
     expect($lead->callLogs()->count())->toBe(1);
+});
+
+it('auto-promotes a New lead to Contacted the moment any call is logged against it', function () {
+    // Real gap (2026-09-02): a lead with a real logged conversation sat at
+    // New because nobody separately flipped the status field — the "New"
+    // tile was overcounting genuinely-untouched leads.
+    $lead = Lead::factory()->create(['status' => LeadStatus::New]);
+
+    $this->actingAs($this->sales)->post(route('calls.store'), [
+        'lead_id' => $lead->id,
+        'direction' => 'outgoing',
+        'outcome' => 'connected',
+        'called_at' => now()->format('Y-m-d H:i:s'),
+    ]);
+
+    expect($lead->fresh()->status)->toBe(LeadStatus::Contacted);
+});
+
+it('still promotes New to Contacted even on a failed attempt (no answer) — an attempt is an attempt', function () {
+    $lead = Lead::factory()->create(['status' => LeadStatus::New]);
+
+    $this->actingAs($this->sales)->post(route('calls.store'), [
+        'lead_id' => $lead->id,
+        'direction' => 'outgoing',
+        'outcome' => 'no_answer',
+        'called_at' => now()->format('Y-m-d H:i:s'),
+    ]);
+
+    expect($lead->fresh()->status)->toBe(LeadStatus::Contacted);
+});
+
+it('never demotes or otherwise touches a lead already past New (Qualified, Converted, Lost)', function (LeadStatus $status) {
+    $lead = Lead::factory()->create(['status' => $status]);
+
+    $this->actingAs($this->sales)->post(route('calls.store'), [
+        'lead_id' => $lead->id,
+        'direction' => 'outgoing',
+        'outcome' => 'connected',
+        'called_at' => now()->format('Y-m-d H:i:s'),
+    ]);
+
+    expect($lead->fresh()->status)->toBe($status);
+})->with([
+    'qualified' => LeadStatus::Qualified,
+    'converted' => LeadStatus::Converted,
+    'lost' => LeadStatus::Lost,
+]);
+
+it('does not promote a Customer\'s status when logging a call against a client, not a lead', function () {
+    $customer = Customer::factory()->create(['status' => CustomerStatus::Prospect]);
+
+    $this->actingAs($this->sales)->post(route('calls.store'), [
+        'customer_id' => $customer->id,
+        'direction' => 'outgoing',
+        'outcome' => 'connected',
+        'called_at' => now()->format('Y-m-d H:i:s'),
+    ]);
+
+    expect($customer->fresh()->status)->toBe(CustomerStatus::Prospect);
 });
 
 it('shows a staff member only their own calls but managers all', function () {

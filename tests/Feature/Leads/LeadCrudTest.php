@@ -1,10 +1,12 @@
 <?php
 
+use App\Enums\DealStage;
 use App\Enums\LeadSource;
 use App\Enums\LeadStatus;
 use App\Enums\UserRole;
 use App\Enums\VisibilityAuditFunnelEventType;
 use App\Enums\VisibilityAuditTier;
+use App\Models\Deal;
 use App\Models\Lead;
 use App\Models\User;
 use App\Models\VisibilityAuditFunnelEvent;
@@ -290,7 +292,24 @@ it('shows summary cards with lead counts per status, unaffected by list filters'
             'qualified' => 1,
             'converted' => 1,
             'lost' => 3,
+            'converted_won' => 0,
         ]);
+});
+
+it('shows how many Converted leads are actually Won, distinct from the bare Converted count', function () {
+    // Real confusion (2026-09-02): "Converted" only ever means "became a
+    // real Deal," but the bare tile read like a win count.
+    $wonDeal = Deal::factory()->stage(DealStage::Won)->create();
+    Lead::factory()->create(['status' => LeadStatus::Converted, 'converted_deal_id' => $wonDeal->id]);
+
+    $negotiationDeal = Deal::factory()->stage(DealStage::Negotiation)->create();
+    Lead::factory()->create(['status' => LeadStatus::Converted, 'converted_deal_id' => $negotiationDeal->id]);
+
+    $response = $this->actingAs($this->admin)->get(route('leads.index'));
+
+    $response->assertOk()
+        ->assertViewHas('statusCounts', fn ($counts) => $counts['converted'] === 2 && $counts['converted_won'] === 1)
+        ->assertSee('1 Won');
 });
 
 it('makes each status summary tile a link that filters the list to that status', function () {

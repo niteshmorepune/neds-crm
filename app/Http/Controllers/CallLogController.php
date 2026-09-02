@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\CallDirection;
 use App\Enums\CallOutcome;
+use App\Enums\LeadStatus;
 use App\Enums\UserRole;
 use App\Enums\VisibilityAuditTouchChannel;
 use App\Enums\VisibilityAuditTouchType;
@@ -126,6 +127,8 @@ class CallLogController extends Controller
             ScoreLead::dispatch($id);
         }
 
+        $this->promoteLeadOnFirstOutreach($type, $id);
+
         if ($request->hasFile('voice_note') && Ai::voiceTranscriptionEnabled()) {
             $this->attachVoiceNote($call, $request);
         }
@@ -143,6 +146,32 @@ class CallLogController extends Controller
         }
 
         return redirect()->route('calls.index')->with('status', 'Call logged.');
+    }
+
+    /**
+     * "New" should reliably mean "genuinely never attempted" — logging ANY
+     * call against a still-New lead (regardless of outcome; even a failed
+     * attempt is a real outreach attempt, and the team already treats it
+     * that way in practice — several "call not answered" leads already sit
+     * at Contacted) promotes it to Contacted automatically, rather than
+     * depending on every rep remembering to also flip the status field by
+     * hand. Real gap (2026-09-02): a lead with a real logged conversation
+     * ("he's out of town, will confirm") sat at New because nobody updated
+     * the status separately — the "New" tile count on Lead Generation was
+     * silently overcounting genuinely-untouched leads. Goes through the
+     * model (not a bulk query update) so LogsActivity still records it.
+     */
+    private function promoteLeadOnFirstOutreach(?string $type, ?int $id): void
+    {
+        if ($type !== Lead::class || $id === null) {
+            return;
+        }
+
+        $lead = Lead::find($id);
+
+        if ($lead !== null && $lead->status === LeadStatus::New) {
+            $lead->update(['status' => LeadStatus::Contacted->value]);
+        }
     }
 
     /**

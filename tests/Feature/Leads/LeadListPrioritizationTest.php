@@ -1,7 +1,9 @@
 <?php
 
+use App\Enums\CallOutcome;
 use App\Enums\LeadStatus;
 use App\Enums\UserRole;
+use App\Models\CallLog;
 use App\Models\Lead;
 use App\Models\User;
 use Database\Seeders\MenuItemsSeeder;
@@ -92,6 +94,41 @@ it('filters the list to hot untouched leads via the attention=hot_untouched link
     expect($ids)->toContain($hotUntouched->id)
         ->not->toContain($hotButScheduled->id)
         ->not->toContain($coldUntouched->id);
+});
+
+it('filters the list to unresponsive leads: 3+ call attempts, never connected, still open', function () {
+    $manager = User::factory()->role(UserRole::Manager)->create();
+
+    $unresponsive = Lead::factory()->create(['status' => LeadStatus::Contacted, 'name' => 'Unresponsive Lead']);
+    CallLog::factory()->count(3)->create(['callable_type' => Lead::class, 'callable_id' => $unresponsive->id, 'outcome' => CallOutcome::NoAnswer]);
+
+    $tooFewAttempts = Lead::factory()->create(['status' => LeadStatus::Contacted, 'name' => 'Only Called Twice']);
+    CallLog::factory()->count(2)->create(['callable_type' => Lead::class, 'callable_id' => $tooFewAttempts->id, 'outcome' => CallOutcome::NoAnswer]);
+
+    $eventuallyConnected = Lead::factory()->create(['status' => LeadStatus::Contacted, 'name' => 'Eventually Connected']);
+    CallLog::factory()->count(3)->create(['callable_type' => Lead::class, 'callable_id' => $eventuallyConnected->id, 'outcome' => CallOutcome::NoAnswer]);
+    CallLog::factory()->create(['callable_type' => Lead::class, 'callable_id' => $eventuallyConnected->id, 'outcome' => CallOutcome::Connected]);
+
+    $convertedAnyway = Lead::factory()->create(['status' => LeadStatus::Converted, 'name' => 'Converted Despite No Answer']);
+    CallLog::factory()->count(3)->create(['callable_type' => Lead::class, 'callable_id' => $convertedAnyway->id, 'outcome' => CallOutcome::NoAnswer]);
+
+    $response = $this->actingAs($manager)->get(route('leads.index', ['attention' => 'unresponsive']));
+
+    $ids = $response->viewData('leads')->pluck('id')->all();
+    expect($ids)->toContain($unresponsive->id)
+        ->not->toContain($tooFewAttempts->id)
+        ->not->toContain($eventuallyConnected->id)
+        ->not->toContain($convertedAnyway->id);
+});
+
+it('shows the unresponsive count on the Needs Attention strip', function () {
+    $manager = User::factory()->role(UserRole::Manager)->create();
+    $unresponsive = Lead::factory()->create(['status' => LeadStatus::Contacted]);
+    CallLog::factory()->count(3)->create(['callable_type' => Lead::class, 'callable_id' => $unresponsive->id, 'outcome' => CallOutcome::NoAnswer]);
+
+    $this->actingAs($manager)->get(route('leads.index'))
+        ->assertOk()
+        ->assertSee('1 unresponsive (3+ calls, no answer)');
 });
 
 it('shows an Overdue badge on the list row for a lead with a past follow-up date', function () {

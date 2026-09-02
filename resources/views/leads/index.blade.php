@@ -47,6 +47,11 @@
                @class(['block rounded-lg bg-white p-4 shadow-sm hover:bg-gray-50', 'ring-2 ring-indigo-400' => $currentStatus === \App\Enums\LeadStatus::Converted->value])>
                 <p class="text-xs font-medium uppercase tracking-wide text-gray-400">Converted</p>
                 <p class="mt-1 text-2xl font-semibold text-green-700">{{ $statusCounts['converted'] }}</p>
+                {{-- Converted only ever means "became a real Deal," not "we
+                     won" — this line is the fast answer to "how many of
+                     these are actually Won" without clicking through to the
+                     deal_stage filter. --}}
+                <p class="mt-0.5 text-xs text-gray-400">{{ $statusCounts['converted_won'] }} Won</p>
             </a>
             <a href="{{ route('leads.index', ['status' => \App\Enums\LeadStatus::Lost->value]) }}"
                @class(['block rounded-lg bg-white p-4 shadow-sm hover:bg-gray-50', 'ring-2 ring-indigo-400' => $currentStatus === \App\Enums\LeadStatus::Lost->value])>
@@ -72,6 +77,11 @@
                 <a href="{{ route('leads.index', array_merge($ownerScope, ['attention' => 'hot_untouched'])) }}"
                    class="rounded-md border border-orange-200 bg-white px-3 py-2 text-sm font-medium text-orange-700 hover:bg-orange-50">
                     🔥 {{ $attentionCounts['hot_untouched'] }} hot, not yet followed up
+                </a>
+                <a href="{{ route('leads.index', array_merge($ownerScope, ['attention' => 'unresponsive'])) }}"
+                   title="3+ calls made, never connected — still open, not yet Converted or Lost"
+                   class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                    📵 {{ $attentionCounts['unresponsive'] }} unresponsive (3+ calls, no answer)
                 </a>
             </div>
         </div>

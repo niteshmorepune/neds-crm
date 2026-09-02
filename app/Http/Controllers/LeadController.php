@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\ConvertLead;
 use App\Actions\ReassignLead;
+use App\Enums\CallOutcome;
 use App\Enums\DealStage;
 use App\Enums\LeadReassignmentReason;
 use App\Enums\LeadSource;
@@ -91,7 +92,7 @@ class LeadController extends Controller
      * same distinction LeadPolicy already draws) and for Admin/Manager
      * (oversight, not personal worklist).
      *
-     * @return array{overdue: int, due_today: int, hot_untouched: int, scoped_to_own: bool}
+     * @return array{overdue: int, due_today: int, hot_untouched: int, unresponsive: int, scoped_to_own: bool}
      */
     private function attentionCounts(Request $request): array
     {
@@ -109,8 +110,30 @@ class LeadController extends Controller
             'hot_untouched' => (int) $base()->where('status', LeadStatus::New->value)
                 ->whereNull('next_follow_up_at')
                 ->where('ai_score', '>=', config('services.anthropic.hot_lead_threshold', 70))->count(),
+            'unresponsive' => (int) $this->unresponsiveQuery($base())->count(),
             'scoped_to_own' => $scopedToOwn,
         ];
+    }
+
+    /**
+     * Real gap flagged by the owner (2026-09-02): a lead called 5 times with
+     * no answer looked identical on the list to one called once and picked
+     * up — both just sit at "Contacted." This surfaces the ones genuinely
+     * stuck: UNRESPONSIVE_ATTEMPT_THRESHOLD+ logged call attempts (any
+     * outcome counts as a real attempt — see CallLogController::
+     * promoteLeadOnFirstOutreach()'s same reasoning), none of which ever
+     * connected, and still open (a Converted/Lost lead isn't "stuck," it's
+     * resolved). Scoped to calls only for now, not WhatsApp sends — a call
+     * has a clean outcome field (connected vs not); a WhatsApp send doesn't
+     * carry an equally reliable "did they respond" signal yet.
+     */
+    private const UNRESPONSIVE_ATTEMPT_THRESHOLD = 3;
+
+    private function unresponsiveQuery(Builder $query): Builder
+    {
+        return $query->whereIn('status', LeadStatus::openValues())
+            ->whereDoesntHave('callLogs', fn ($q) => $q->where('outcome', CallOutcome::Connected->value))
+            ->whereHas('callLogs', fn ($q) => $q, '>=', self::UNRESPONSIVE_ATTEMPT_THRESHOLD);
     }
 
     /**
@@ -155,11 +178,23 @@ class LeadController extends Controller
             ->groupBy('status')
             ->pluck('count', 'status');
 
+        // How many of the Converted count are actually Won — Converted only
+        // ever means "became a real Deal," so the bare tile reads like a
+        // win count when most of them still aren't (real confusion,
+        // 2026-09-02). Surfaced as a sub-caption on the Converted tile
+        // rather than making anyone click through deal_stage to find out.
+        $convertedWon = Lead::query()
+            ->visibleTo($request->user())
+            ->where('status', LeadStatus::Converted->value)
+            ->whereHas('convertedDeal', fn ($q) => $q->where('stage', DealStage::Won->value))
+            ->count();
+
         return [
             'total' => (int) $counts->sum(),
             ...collect(LeadStatus::cases())->mapWithKeys(
                 fn (LeadStatus $status) => [$status->value => (int) ($counts[$status->value] ?? 0)]
             )->all(),
+            'converted_won' => $convertedWon,
         ];
     }
 
@@ -341,6 +376,7 @@ class LeadController extends Controller
             ->when($request->input('attention') === 'hot_untouched', fn ($q) => $q->where('status', LeadStatus::New->value)
                 ->whereNull('next_follow_up_at')
                 ->where('ai_score', '>=', config('services.anthropic.hot_lead_threshold', 70)))
+            ->when($request->input('attention') === 'unresponsive', fn ($q) => $this->unresponsiveQuery($q))
             ->when($month, function ($q) use ($month) {
                 [$year, $monthNum] = explode('-', $month);
                 $q->whereYear('created_at', $year)->whereMonth('created_at', $monthNum);
