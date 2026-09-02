@@ -61,38 +61,57 @@
             </div>
         </div>
 
-        <div class="flex flex-wrap items-center justify-between gap-3">
-            <form method="GET" class="flex flex-wrap items-center gap-2">
-                <input type="text" name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Search name, company, email"
-                       class="rounded-md border-gray-300 text-sm shadow-sm" />
-                <select name="source" class="rounded-md border-gray-300 text-sm shadow-sm">
-                    <option value="">All sources</option>
-                    @foreach ($sources as $source)
-                        <option value="{{ $source->value }}" @selected(($filters['source'] ?? '') === $source->value)>{{ $source->label() }}</option>
-                    @endforeach
-                </select>
-                <select name="status" class="rounded-md border-gray-300 text-sm shadow-sm">
-                    <option value="">All statuses</option>
-                    @foreach (\App\Enums\LeadStatus::cases() as $status)
-                        <option value="{{ $status->value }}" @selected(($filters['status'] ?? '') === $status->value)>{{ $status->label() }}</option>
-                    @endforeach
-                </select>
-                <select name="service_id" class="rounded-md border-gray-300 text-sm shadow-sm">
-                    <option value="">All services</option>
-                    @foreach ($services as $service)
-                        <option value="{{ $service->id }}" @selected((string) ($filters['service_id'] ?? '') === (string) $service->id)>{{ $service->name }}</option>
-                    @endforeach
-                </select>
-                <select name="owner_id" class="rounded-md border-gray-300 text-sm shadow-sm">
-                    <option value="">All owners</option>
-                    @foreach ($owners as $owner)
-                        <option value="{{ $owner->id }}" @selected((string) ($filters['owner_id'] ?? '') === (string) $owner->id)>{{ $owner->name }}</option>
-                    @endforeach
-                </select>
-                <button type="submit" class="rounded-md bg-gray-800 px-3 py-2 text-sm font-medium text-white hover:bg-gray-700">Filter</button>
-            </form>
+        <form method="GET" class="space-y-3">
+            {{-- Row 1: page-scoped search (left) + primary actions (right) —
+                 mirrors the Clients page's toolbar layout. --}}
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="relative max-w-md flex-1 min-w-[220px]">
+                    <input type="text" name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Search name, company, email"
+                           class="w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
+                </div>
 
-            <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2">
+                    <a href="{{ route('leads.visibility-audit-recovery') }}" class="rounded-md border border-indigo-200 bg-white px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50">VA Recovery</a>
+                    @can('export', \App\Models\Lead::class)
+                        <a href="{{ route('leads.export', request()->query()) }}" class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Export CSV</a>
+                    @endcan
+                    @can('create', \App\Models\Lead::class)
+                        <a href="{{ route('leads.create') }}" class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">Add Lead</a>
+                    @endcan
+                </div>
+            </div>
+
+            {{-- Row 2: filters (left, same form as the search box above so
+                 Filter submits both together) + sort toggle (right). --}}
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="flex flex-wrap items-center gap-2">
+                    <select name="source" class="rounded-md border-gray-300 text-sm shadow-sm">
+                        <option value="">All sources</option>
+                        @foreach ($sources as $source)
+                            <option value="{{ $source->value }}" @selected(($filters['source'] ?? '') === $source->value)>{{ $source->label() }}</option>
+                        @endforeach
+                    </select>
+                    <select name="status" class="rounded-md border-gray-300 text-sm shadow-sm">
+                        <option value="">All statuses</option>
+                        @foreach (\App\Enums\LeadStatus::cases() as $status)
+                            <option value="{{ $status->value }}" @selected(($filters['status'] ?? '') === $status->value)>{{ $status->label() }}</option>
+                        @endforeach
+                    </select>
+                    <select name="service_id" class="rounded-md border-gray-300 text-sm shadow-sm">
+                        <option value="">All services</option>
+                        @foreach ($services as $service)
+                            <option value="{{ $service->id }}" @selected((string) ($filters['service_id'] ?? '') === (string) $service->id)>{{ $service->name }}</option>
+                        @endforeach
+                    </select>
+                    <select name="owner_id" class="rounded-md border-gray-300 text-sm shadow-sm">
+                        <option value="">All owners</option>
+                        @foreach ($owners as $owner)
+                            <option value="{{ $owner->id }}" @selected((string) ($filters['owner_id'] ?? '') === (string) $owner->id)>{{ $owner->name }}</option>
+                        @endforeach
+                    </select>
+                    <button type="submit" class="rounded-md bg-gray-800 px-3 py-2 text-sm font-medium text-white hover:bg-gray-700">Filter</button>
+                </div>
+
                 <div class="flex items-center gap-2 text-sm">
                     <span class="text-gray-400">Sort:</span>
                     <a href="{{ route('leads.index', array_merge(request()->except(['sort', 'page']), ['sort' => 'priority'])) }}"
@@ -101,15 +120,8 @@
                     <a href="{{ route('leads.index', array_merge(request()->except(['sort', 'page']), ['sort' => 'newest'])) }}"
                        class="{{ $sort === 'newest' ? 'font-semibold text-indigo-600' : 'text-gray-500 hover:text-gray-700' }}">Newest</a>
                 </div>
-                <a href="{{ route('leads.visibility-audit-recovery') }}" class="rounded-md border border-indigo-200 bg-white px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50">Audit Recovery</a>
-                @can('export', \App\Models\Lead::class)
-                    <a href="{{ route('leads.export', request()->query()) }}" class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Export CSV</a>
-                @endcan
-                @can('create', \App\Models\Lead::class)
-                    <a href="{{ route('leads.create') }}" class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">Add Lead</a>
-                @endcan
             </div>
-        </div>
+        </form>
 
         @if ($canBulkReassign && $filterOwner)
             <div class="rounded-lg border border-indigo-200 bg-indigo-50 p-4" x-data>
