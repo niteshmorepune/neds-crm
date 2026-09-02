@@ -41,7 +41,7 @@ class LeadController extends Controller
         // try to parse the raw, possibly-malformed request value.
         $month = $this->validMonth($request);
 
-        $query = $this->filteredLeads($request, $month)->with(['owner', 'service', 'latestNote', 'convertedDeal.invoices']);
+        $query = $this->filteredLeads($request, $month)->with(['owner', 'service', 'latestNote']);
 
         $sort = $request->input('sort') === 'newest' ? 'newest' : 'priority';
 

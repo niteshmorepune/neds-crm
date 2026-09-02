@@ -259,27 +259,46 @@ class Lead extends Model
      * which "Converted" leads were genuinely paying clients vs. still mid-
      * pipeline with a quotation sent but not yet accepted/paid.
      *
+     * Deliberately queries fresh (Deal::withTrashed(), a direct Invoice
+     * query) rather than relying on eager-loaded relations — two real gaps
+     * caught by checking this against actual production data before
+     * shipping: convertedDeal() excludes soft-deleted deals by default (2
+     * of the 24 real Converted leads pointed at a since-deleted Deal), and
+     * not every Invoice records which Deal it's for (Devraj Kanakappan/
+     * ADTA Group's fully-paid ₹15,750 invoice has deal_id=NULL — logged via
+     * the manual "Log Invoice" flow). Both would have silently under-
+     * reported a real paying client as "unbilled" or shown nothing at all.
+     *
      * Returns null when there's nothing more specific to say (not
-     * Converted, or a Converted lead with no reachable linked Deal — the
-     * latter shouldn't happen but degrades safely rather than erroring).
+     * Converted, or a Converted lead with no converted_deal_id at all).
      */
     public function conversionOutcomeLabel(): ?string
     {
-        if ($this->status !== LeadStatus::Converted) {
+        if ($this->status !== LeadStatus::Converted || $this->converted_deal_id === null) {
             return null;
         }
 
-        $deal = $this->convertedDeal;
+        $deal = Deal::withTrashed()->find($this->converted_deal_id);
 
         if ($deal === null) {
             return null;
+        }
+
+        if ($deal->trashed()) {
+            return 'Deal removed';
         }
 
         if ($deal->stage !== DealStage::Won) {
             return $deal->stage->label();
         }
 
-        $invoices = $deal->invoices;
+        // Match an invoice explicitly tied to this deal, OR one for the
+        // same customer with no deal_id at all (see docblock above) — but
+        // never one explicitly tied to a DIFFERENT deal, for a customer
+        // with more than one.
+        $invoices = Invoice::where('customer_id', $deal->customer_id)
+            ->where(fn ($q) => $q->whereNull('deal_id')->orWhere('deal_id', $deal->id))
+            ->get();
 
         if ($invoices->isEmpty()) {
             return 'Won (unbilled)';
