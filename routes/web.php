@@ -172,6 +172,12 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
      * so /clients/import isn't captured by the {client} wildcard.
      */
     Route::middleware('menu.access:customer')->group(function () {
+        // Declared before the resource below so /clients/export isn't
+        // swallowed by the {client} wildcard. Further gated to Admin-only
+        // inside the controller via CustomerPolicy::export() — menu access
+        // alone (shared with every other role that can see Clients) isn't
+        // enough here.
+        Route::get('clients/export', [CustomerController::class, 'export'])->name('clients.export');
         Route::get('clients/import', ClientImport::class)->name('clients.import');
         Route::get('clients/import/template', function () {
             $headers = ['company_name', 'email', 'phone', 'gstin', 'website', 'address_line1', 'address_line2', 'city', 'state_code', 'pincode', 'status', 'owner', 'tags'];
@@ -211,6 +217,10 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
     Route::middleware('menu.access:lead-generation')->group(function () {
         // Declared before the resource below so these literal segments
         // aren't swallowed by the resource's leads/{lead} wildcard.
+        // /leads/export is further gated to Admin-only inside the
+        // controller via LeadPolicy::export() — see the matching
+        // /clients/export comment above.
+        Route::get('leads/export', [LeadController::class, 'export'])->name('leads.export');
         Route::get('leads/visibility-audit-recovery', [VisibilityAuditRecoveryController::class, 'index'])->name('leads.visibility-audit-recovery');
         Route::get('leads/merge', [LeadMergeController::class, 'show'])->name('leads.merge.show');
         Route::post('leads/merge', [LeadMergeController::class, 'store'])->name('leads.merge.store');

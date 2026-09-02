@@ -101,4 +101,15 @@ class LeadPolicy
     {
         return $user->hasRole(UserRole::Admin, UserRole::Manager, UserRole::Sales, UserRole::Support);
     }
+
+    /**
+     * Bulk CSV export of the lead list — deliberately Admin-only, not even
+     * Manager, same reasoning as CustomerPolicy::export(): a raw data-
+     * extraction ability, not a day-to-day CRM action, so it doesn't follow
+     * this file's usual "Admin+Manager together" pattern.
+     */
+    public function export(User $user): bool
+    {
+        return $user->isAdmin();
+    }
 }

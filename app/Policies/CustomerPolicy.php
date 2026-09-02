@@ -140,6 +140,20 @@ class CustomerPolicy
     }
 
     /**
+     * Bulk CSV export of the client list — deliberately Admin-only, not even
+     * Manager (unlike every other capability in this Policy, which bundles
+     * Admin+Manager together). This is a raw data-extraction ability, not a
+     * day-to-day CRM action, so it doesn't follow the "additional role
+     * widens access" pattern the rest of this file uses — isAdmin() already
+     * covers an Admin role held as either primary or additional (see
+     * User::hasRole()), it just never includes Manager on its own.
+     */
+    public function export(User $user): bool
+    {
+        return $user->isAdmin();
+    }
+
+    /**
      * Any role that independently grants full (unowned) client visibility —
      * checked before the Sales narrowing in view(), so a Sales rep who also
      * holds one of these as an additional role isn't wrongly narrowed down

@@ -26,6 +26,12 @@
                 </div>
 
                 <div class="flex items-center gap-2">
+                    @can('export', \App\Models\Customer::class)
+                        <a href="{{ route('clients.export', request()->query()) }}"
+                           class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            Export CSV
+                        </a>
+                    @endcan
                     <a href="{{ route('clients.import') }}"
                        class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
                         Import CSV

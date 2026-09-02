@@ -181,3 +181,24 @@ it('manageLinks: excludes accounts, intern, and telecaller', function (UserRole 
     'intern' => UserRole::Intern,
     'telecaller' => UserRole::Telecaller,
 ]);
+
+it('export: is Admin-only, deliberately excluding Manager unlike every other capability here', function (UserRole $role) {
+    $user = User::factory()->role($role)->create();
+
+    expect($user->can('export', Customer::class))->toBeFalse();
+})->with([
+    'manager' => UserRole::Manager,
+    'sales' => UserRole::Sales,
+    'support' => UserRole::Support,
+    'accounts' => UserRole::Accounts,
+    'intern' => UserRole::Intern,
+    'telecaller' => UserRole::Telecaller,
+]);
+
+it('export: allows Admin, whether held as the primary role or an additional one', function () {
+    $primaryAdmin = User::factory()->role(UserRole::Admin)->create();
+    $additionalAdmin = User::factory()->role(UserRole::Sales)->withAdditionalRoles(UserRole::Admin)->create();
+
+    expect($primaryAdmin->can('export', Customer::class))->toBeTrue()
+        ->and($additionalAdmin->can('export', Customer::class))->toBeTrue();
+});

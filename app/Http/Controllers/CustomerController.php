@@ -16,9 +16,11 @@ use App\Models\User;
 use App\Services\ClientHealthMetrics;
 use App\Services\CollectionsMetrics;
 use App\Support\Money;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CustomerController extends Controller
 {
@@ -30,22 +32,9 @@ class CustomerController extends Controller
         $statusFilter = $request->input('status', CustomerStatus::Active->value);
         $sort = in_array($request->input('sort'), ['name', 'oldest', 'location'], true) ? $request->input('sort') : 'newest';
 
-        $customers = Customer::query()
-            ->visibleTo($request->user())
+        $customers = $this->filteredCustomers($request, $statusFilter)
             ->with(['owner', 'primaryContact', 'recurringInvoices.service', 'projects.service'])
             ->withCount('contacts')
-            ->when($request->string('search')->trim()->value(), function ($query, $search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('company_name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%")
-                        ->orWhere('gstin', 'like', "%{$search}%");
-                });
-            })
-            ->when($statusFilter !== 'all', fn ($q) => $q->where('status', $statusFilter))
-            ->when($request->filled('owner_id'), fn ($q) => $q->where('owner_id', $request->integer('owner_id')))
-            ->when($request->filled('referring_partner_id'), fn ($q) => $q->where('referring_partner_id', $request->integer('referring_partner_id')))
-            ->when($request->filled('state'), fn ($q) => $q->where('state', $request->string('state')->value()))
-            ->when($request->filled('city'), fn ($q) => $q->where('city', $request->string('city')->value()))
             ->when($sort === 'name', fn ($q) => $q->orderBy('company_name'))
             ->when($sort === 'oldest', fn ($q) => $q->oldest())
             ->when($sort === 'location', fn ($q) => $q->orderByRaw('state IS NULL, state')->orderByRaw('city IS NULL, city')->orderBy('company_name'))
@@ -261,6 +250,70 @@ class CustomerController extends Controller
         return redirect()
             ->route('clients.index')
             ->with('status', 'Client and all related records deleted.');
+    }
+
+    /**
+     * CSV export of the client list — Admin-only (CustomerPolicy::export(),
+     * deliberately excludes Manager, unlike every other Customer capability).
+     * Honors the same search/status/owner/partner/state/city filters as the
+     * index page, so an admin can filter first and export exactly what they
+     * see. Not paginated — a full, unfiltered export is expected to be the
+     * common case.
+     */
+    public function export(Request $request): StreamedResponse
+    {
+        $this->authorize('export', Customer::class);
+
+        $statusFilter = $request->input('status', CustomerStatus::Active->value);
+
+        $customers = $this->filteredCustomers($request, $statusFilter)
+            ->with(['owner', 'referringPartner'])
+            ->orderBy('company_name')
+            ->get();
+
+        return response()->streamDownload(function () use ($customers) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['Company', 'Email', 'Phone', 'GSTIN', 'City', 'State', 'Status', 'Owner', 'Referring Partner', 'Created At']);
+            foreach ($customers as $customer) {
+                fputcsv($out, [
+                    $customer->company_name,
+                    $customer->email,
+                    $customer->phone,
+                    $customer->gstin,
+                    $customer->city,
+                    $customer->state,
+                    $customer->status->label(),
+                    $customer->owner?->name,
+                    $customer->referringPartner?->name,
+                    $customer->created_at?->timezone(config('app.display_timezone', 'Asia/Kolkata'))->format('Y-m-d'),
+                ]);
+            }
+            fclose($out);
+        }, 'clients-'.now()->timezone(config('app.display_timezone', 'Asia/Kolkata'))->format('Y-m-d').'.csv', ['Content-Type' => 'text/csv']);
+    }
+
+    /**
+     * Shared filter chain between index() and export() — search/status/
+     * owner/referring-partner/state/city — kept as a single source so the
+     * two can never silently drift apart on what counts as "filtered".
+     * Sort/pagination stay in each caller since only index() needs them.
+     */
+    private function filteredCustomers(Request $request, string $statusFilter): Builder
+    {
+        return Customer::query()
+            ->visibleTo($request->user())
+            ->when($request->string('search')->trim()->value(), function ($query, $search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('company_name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhere('gstin', 'like', "%{$search}%");
+                });
+            })
+            ->when($statusFilter !== 'all', fn ($q) => $q->where('status', $statusFilter))
+            ->when($request->filled('owner_id'), fn ($q) => $q->where('owner_id', $request->integer('owner_id')))
+            ->when($request->filled('referring_partner_id'), fn ($q) => $q->where('referring_partner_id', $request->integer('referring_partner_id')))
+            ->when($request->filled('state'), fn ($q) => $q->where('state', $request->string('state')->value()))
+            ->when($request->filled('city'), fn ($q) => $q->where('city', $request->string('city')->value()));
     }
 
     /**

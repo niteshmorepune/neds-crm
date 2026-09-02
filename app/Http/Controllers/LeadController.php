@@ -21,12 +21,14 @@ use App\Models\VisibilityAuditPurchase;
 use App\Notifications\VisibilityAuditReadyForGmeet;
 use App\Services\VisibilityAuditFunnelMetrics;
 use App\Support\Money;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class LeadController extends Controller
 {
@@ -39,37 +41,7 @@ class LeadController extends Controller
         // try to parse the raw, possibly-malformed request value.
         $month = $this->validMonth($request);
 
-        $query = Lead::query()
-            ->visibleTo($request->user())
-            ->with(['owner', 'service', 'latestNote'])
-            ->when($request->string('search')->trim()->value(), function ($query, $search) {
-                $query->where(fn ($q) => $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('company', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%"));
-            })
-            ->when($request->filled('source'), fn ($q) => $q->where('source', $request->input('source')))
-            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->input('status')))
-            ->when($request->filled('service_id'), fn ($q) => $q->where('service_id', $request->integer('service_id')))
-            ->when($request->filled('owner_id'), fn ($q) => $q->where('owner_id', $request->integer('owner_id')))
-            // Mirrors DashboardMetrics::salesStats()'s 'followups_due' query
-            // exactly, for the Sales dashboard's "Follow-ups due" drill-down
-            // AND this page's own "Needs attention" strip (kept as the same
-            // param rather than folded into `attention` below, so the
-            // existing dashboard link never has to change).
-            ->when($request->boolean('follow_up_due'), fn ($q) => $q->where('status', '!=', LeadStatus::Converted->value)
-                ->whereNotNull('next_follow_up_at')
-                ->where('next_follow_up_at', '<=', now()))
-            ->when($request->input('attention') === 'due_today', fn ($q) => $q->whereIn('status', LeadStatus::openValues())
-                ->whereNotNull('next_follow_up_at')
-                ->whereDate('next_follow_up_at', today())
-                ->where('next_follow_up_at', '>', now()))
-            ->when($request->input('attention') === 'hot_untouched', fn ($q) => $q->where('status', LeadStatus::New->value)
-                ->whereNull('next_follow_up_at')
-                ->where('ai_score', '>=', config('services.anthropic.hot_lead_threshold', 70)))
-            ->when($month, function ($q) use ($month) {
-                [$year, $monthNum] = explode('-', $month);
-                $q->whereYear('created_at', $year)->whereMonth('created_at', $monthNum);
-            });
+        $query = $this->filteredLeads($request, $month)->with(['owner', 'service', 'latestNote']);
 
         $sort = $request->input('sort') === 'newest' ? 'newest' : 'priority';
 
@@ -281,6 +253,87 @@ class LeadController extends Controller
         $lead->delete();
 
         return redirect()->route('leads.index')->with('status', 'Lead deleted.');
+    }
+
+    /**
+     * CSV export of the lead list — Admin-only (LeadPolicy::export(),
+     * deliberately excludes Manager, unlike every other Lead capability).
+     * Honors every filter the index page's query can — search/source/status/
+     * service/owner/month, plus the follow_up_due/attention dashboard
+     * drill-down params — so exporting from a filtered/drilled-down list
+     * matches exactly what's on screen. Not paginated.
+     */
+    public function export(Request $request): StreamedResponse
+    {
+        $this->authorize('export', Lead::class);
+
+        $month = $this->validMonth($request);
+
+        $leads = $this->filteredLeads($request, $month)
+            ->with(['owner', 'service'])
+            ->orderBy('name')
+            ->get();
+
+        return response()->streamDownload(function () use ($leads) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['Name', 'Company', 'Email', 'Phone', 'Source', 'Service', 'Status', 'Owner', 'AI Score', 'Next Follow-up', 'Created At']);
+            foreach ($leads as $lead) {
+                fputcsv($out, [
+                    $lead->name,
+                    $lead->company,
+                    $lead->email,
+                    $lead->phone,
+                    $lead->source?->label(),
+                    $lead->service?->name,
+                    $lead->status->label(),
+                    $lead->owner?->name,
+                    $lead->ai_score,
+                    $lead->next_follow_up_at?->timezone(config('app.display_timezone', 'Asia/Kolkata'))->format('Y-m-d H:i'),
+                    $lead->created_at?->timezone(config('app.display_timezone', 'Asia/Kolkata'))->format('Y-m-d'),
+                ]);
+            }
+            fclose($out);
+        }, 'leads-'.now()->timezone(config('app.display_timezone', 'Asia/Kolkata'))->format('Y-m-d').'.csv', ['Content-Type' => 'text/csv']);
+    }
+
+    /**
+     * Shared filter chain between index() and export() — search/source/
+     * status/service/owner/month plus the follow_up_due/attention dashboard
+     * drill-down params — kept as a single source so the two views of
+     * "what's filtered" can't drift apart.
+     */
+    private function filteredLeads(Request $request, ?string $month): Builder
+    {
+        return Lead::query()
+            ->visibleTo($request->user())
+            ->when($request->string('search')->trim()->value(), function ($query, $search) {
+                $query->where(fn ($q) => $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('company', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%"));
+            })
+            ->when($request->filled('source'), fn ($q) => $q->where('source', $request->input('source')))
+            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->input('status')))
+            ->when($request->filled('service_id'), fn ($q) => $q->where('service_id', $request->integer('service_id')))
+            ->when($request->filled('owner_id'), fn ($q) => $q->where('owner_id', $request->integer('owner_id')))
+            // Mirrors DashboardMetrics::salesStats()'s 'followups_due' query
+            // exactly, for the Sales dashboard's "Follow-ups due" drill-down
+            // AND this page's own "Needs attention" strip (kept as the same
+            // param rather than folded into `attention` below, so the
+            // existing dashboard link never has to change).
+            ->when($request->boolean('follow_up_due'), fn ($q) => $q->where('status', '!=', LeadStatus::Converted->value)
+                ->whereNotNull('next_follow_up_at')
+                ->where('next_follow_up_at', '<=', now()))
+            ->when($request->input('attention') === 'due_today', fn ($q) => $q->whereIn('status', LeadStatus::openValues())
+                ->whereNotNull('next_follow_up_at')
+                ->whereDate('next_follow_up_at', today())
+                ->where('next_follow_up_at', '>', now()))
+            ->when($request->input('attention') === 'hot_untouched', fn ($q) => $q->where('status', LeadStatus::New->value)
+                ->whereNull('next_follow_up_at')
+                ->where('ai_score', '>=', config('services.anthropic.hot_lead_threshold', 70)))
+            ->when($month, function ($q) use ($month) {
+                [$year, $monthNum] = explode('-', $month);
+                $q->whereYear('created_at', $year)->whereMonth('created_at', $monthNum);
+            });
     }
 
     public function convert(Lead $lead, ConvertLead $converter): RedirectResponse
