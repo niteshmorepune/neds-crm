@@ -70,12 +70,24 @@
 
     <div>
         <x-input-label for="status" value="Status *" />
-        <select id="status" name="status" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-            @foreach ($statuses as $status)
-                <option value="{{ $status->value }}" @selected(old('status', $lead->status?->value) === $status->value)>{{ $status->label() }}</option>
-            @endforeach
-        </select>
-        <p class="mt-1 text-xs text-gray-400">Qualified = real budget & need confirmed, not just contacted. Converted = this lead became a real Deal + Client.</p>
+        @if ($lead->status === \App\Enums\LeadStatus::Converted)
+            {{-- No <select> at all, on purpose — this lead already became a
+                 real Deal + Client via the Convert action, and status is not
+                 a legal value in the New/Contacted/Qualified/Lost dropdown
+                 below, so it must never be resubmitted through this form
+                 (see LeadUpdateRequest::rules()). --}}
+            <div class="mt-1">
+                <span class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">Converted</span>
+                <p class="mt-1 text-xs text-gray-400">This lead became a client — status can't be changed here. See the linked Client/Deal on the lead's page.</p>
+            </div>
+        @else
+            <select id="status" name="status" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                @foreach ($statuses as $status)
+                    <option value="{{ $status->value }}" @selected(old('status', $lead->status?->value) === $status->value)>{{ $status->label() }}</option>
+                @endforeach
+            </select>
+            <p class="mt-1 text-xs text-gray-400">Qualified = real budget & need confirmed, not just contacted. Converted = this lead became a real Deal + Client.</p>
+        @endif
         <x-input-error :messages="$errors->get('status')" class="mt-1" />
     </div>
 

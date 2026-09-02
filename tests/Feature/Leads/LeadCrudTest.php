@@ -214,6 +214,55 @@ it('renders the lead index, create, show and edit pages', function () {
     $this->actingAs($this->admin)->get(route('leads.edit', $lead))->assertOk()->assertSee('Save Changes');
 });
 
+it('never lets editing a Converted lead change its status away from Converted', function () {
+    // Real incident (2026-09-02): a routine edit (e.g. fixing a phone number)
+    // on an already-converted lead silently reset its status to Qualified,
+    // because the old status dropdown didn't offer "Converted" as an option
+    // and the FormRequest required one of new/contacted/qualified/lost.
+    $lead = Lead::factory()->create([
+        'status' => LeadStatus::Converted,
+        'phone' => '9000000000',
+    ]);
+
+    $this->actingAs($this->admin)
+        ->put(route('leads.update', $lead), [
+            'name' => $lead->name,
+            'source' => $lead->source->value,
+            'phone' => '9111111111',
+            // No 'status' field at all — matches the real form, which no
+            // longer renders a status input for a Converted lead.
+        ])
+        ->assertRedirect(route('leads.show', $lead));
+
+    $fresh = $lead->fresh();
+    expect($fresh->status)->toBe(LeadStatus::Converted)
+        ->and($fresh->phone)->toBe('9111111111');
+});
+
+it('rejects an explicit attempt to submit a non-Converted status for an already-Converted lead', function () {
+    $lead = Lead::factory()->create(['status' => LeadStatus::Converted]);
+
+    $this->actingAs($this->admin)
+        ->put(route('leads.update', $lead), [
+            'name' => $lead->name,
+            'source' => $lead->source->value,
+            'status' => LeadStatus::Qualified->value,
+        ])
+        ->assertSessionHasErrors('status');
+
+    expect($lead->fresh()->status)->toBe(LeadStatus::Converted);
+});
+
+it('shows a read-only Converted badge instead of an editable status dropdown once a lead is Converted', function () {
+    $lead = Lead::factory()->create(['status' => LeadStatus::Converted]);
+
+    $response = $this->actingAs($this->admin)->get(route('leads.edit', $lead));
+
+    $response->assertOk()
+        ->assertSee("status can't be changed here", false)
+        ->assertDontSee('name="status"', false);
+});
+
 it('shows an inline hint clarifying Qualified vs Converted on the lead form', function () {
     $lead = Lead::factory()->create();
 
