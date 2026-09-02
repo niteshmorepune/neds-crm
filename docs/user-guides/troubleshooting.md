@@ -700,6 +700,42 @@ retroactively change anything already saved.
 
 ---
 
+## 20. A lead shows "Converted" but doesn't look like a real client yet
+
+**Symptom:** a lead's status reads **Converted**, but the deal never
+closed, no quotation was approved, or the client hasn't paid — it doesn't
+feel like a real, won client.
+
+**Not a bug — this is the intended meaning of Converted.** Converted only
+ever records that the lead became a real Deal (`ConvertLead` ran) — it's
+a historical fact and never reverts, even if that Deal is later Lost or
+is still being negotiated months later. Whether it's actually a closed
+sale lives on the Deal itself, not the Lead. To see the real picture:
+- The Lead Generation list shows a small caption under a Converted lead's
+  status badge — "Deal: Won", "Deal: Won (partial payment)", "Deal:
+  Negotiation", "Deal: Lost", etc.
+- The **Converted** summary card shows a "X Won" sub-count.
+- Use the **deal stage** filter to pull up every Converted lead stuck at
+  a specific stage.
+- A **Prospect**-status client (Clients list) is exactly this: a real
+  client record exists because a lead converted, but the Deal hasn't
+  reached Won yet — it only promotes to **Active** automatically once
+  the Deal is marked Won.
+
+**If a Converted lead's status looks wrong** (e.g. it silently changed to
+something else): this was a real bug, fixed 2026-09-02 — editing any
+field on an already-converted lead (even something unrelated, like a
+phone number) used to silently reset its status, because the Edit form's
+status dropdown never offered "Converted" as an option. It's now
+read-only once a lead is Converted, and the backend rejects any attempt
+to move it away from Converted through that form. If you're on a version
+from before this fix, or you spot a lead that clearly converted (check
+its page for a linked Deal/Client) but shows a different status, that's
+this bug — the Deal/Client link itself is unaffected, only the Lead's own
+status field needs correcting back to Converted.
+
+---
+
 ## General: when in doubt, run these four commands
 
 After any deployment, `.env` edit, or unexpected behaviour:

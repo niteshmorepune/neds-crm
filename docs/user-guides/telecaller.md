@@ -44,8 +44,10 @@ up on yet, then everything else) — not newest. Switch to **Newest** via
 the toggle above the list if you want plain chronological order. A red
 **Overdue** or amber **Due today** badge shows right on a lead's row. The
 **"Needs attention today"** strip above the list gives one-click counts
-for all three — since your queue is shared, not owned, these cover every
-lead in the system, not just some subset.
+for all four — overdue, due today, Hot-but-untouched, and **unresponsive**
+(3+ call/WhatsApp attempts with no answer or reply, still open) — since
+your queue is shared, not owned, these cover every lead in the system,
+not just some subset.
 
 You **cannot create a brand-new lead** from scratch, **convert** a lead into
 a client/deal, or **delete** a lead — those stay with Sales/Manager/Admin.
@@ -59,7 +61,7 @@ checkbox before saving (it only appears when the lead has an open WhatsApp
 conversation). Leave it unchecked for a normal internal note — that's the
 default, so nothing goes to the client unless you explicitly tick it.
 
-**Visibility Audit Funnel:** **Lead Generation → Audit Recovery** shows the
+**Visibility Audit Funnel:** **Lead Generation → VA Recovery** shows the
 whole Meta Ads → offer page → checkout → paid journey for GMB-tagged
 leads, plus a queue of who's stuck at which stage — worth a follow-up
 call. The CRM automatically WhatsApps a first invite as soon as one of
@@ -84,7 +86,10 @@ without you needing to check both.
 Use **☎ Log a call** (top bar) or **Calling** to record every call you make.
 Pick the **Lead** you called, the **direction**, **outcome**, and any notes —
 set a **follow-up date** if you need to call back. Your own call history is
-under **Calling** in the sidebar.
+under **Calling** in the sidebar. Logging a call against a brand-new
+(**New**) lead automatically moves its status to **Contacted** for you.
+Logged one by mistake? A **Delete** link appears next to it — you can
+remove your own, or a manager/admin can remove anyone's.
 
 ## 5. Daily report
 At the end of each working day, open **Daily Reports** and fill in a brief

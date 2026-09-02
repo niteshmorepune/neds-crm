@@ -39,10 +39,16 @@ folder, and similar. Anyone who can open the client's page can see these.
 The top of the page shows **summary cards** — Total, New, Contacted,
 Qualified, Converted, Lost — a quick read on the pipeline before you scroll
 the list. They reflect everyone's leads regardless of any filter you've
-applied to the list below, so they stay a stable overview. The list itself
-has a **Latest Note** column showing each lead's most recent note (hover
-over a truncated one to read the full text) — no need to open a lead just
-to check what was last said.
+applied to the list below, so they stay a stable overview. **Each card is
+clickable** — click any number to jump straight to the list filtered to
+that status (click **Total** to clear the status filter and see
+everyone). The **Converted** card also shows a small **"X Won"** line
+underneath — Converted only ever means the lead became a real Deal, not
+that it's a closed sale, so this tells you at a glance how many of those
+Converted leads have actually been won without opening each one. The list
+itself has a **Latest Note** column showing each lead's most recent note
+(hover over a truncated one to read the full text) — no need to open a
+lead just to check what was last said.
 
 **What to work first:** the list sorts by **Priority** by default, not
 newest — an overdue follow-up always comes first, then a follow-up due
@@ -50,8 +56,25 @@ today, then a Hot lead nobody's followed up on yet, then everything else.
 Switch to **Newest** (toggle above the list) if you want plain
 chronological order instead. A red **Overdue** or amber **Due today**
 badge shows right on a lead's row when relevant. Above the list, the
-**"Needs your attention today"** strip gives you three one-click counts —
-overdue, due today, and Hot-but-untouched — scoped to your own leads.
+**"Needs your attention today"** strip gives you four one-click counts —
+overdue, due today, Hot-but-untouched, and **unresponsive** (3 or more
+call/WhatsApp attempts with no answer and no reply, on a lead that's
+still open) — scoped to your own leads. Unresponsive is worth a second
+look before you keep dialling the same number the same way — try a
+different time of day, or switch channels if you've only tried calls (or
+only WhatsApp) so far.
+
+**A Converted lead that isn't Won yet:** once a lead converts, its Status
+column shows **Converted** plus a small caption underneath describing
+what actually happened to the Deal — **"Deal: Negotiation"**, **"Deal:
+Proposal"** (gray), **"Deal: Won"** or **"Deal: Won (partial payment)"**
+(green), or **"Deal: Lost"** (red). Use the **deal stage** filter (next to
+the other filters above the list) to pull up exactly which of your
+Converted leads are stuck at a given stage — e.g. filter to Negotiation to
+see every one that needs a push to actually close. A lead's status never
+reverts once it's Converted, even if the resulting Deal is later Lost —
+that's intentional, it keeps the historical record of "this became a real
+opportunity" separate from how that opportunity turned out.
 
 **If you leave a brand-new lead untouched:** the CRM reminds you with a
 bell notification about 20 minutes after a new lead lands with you, if you
@@ -128,7 +151,7 @@ lead automatically (source = Meta Ads). Any question on the ad form beyond
 name/email/phone/company (e.g. a custom budget question) appears as a note
 on the lead.
 
-**Visibility Audit Funnel:** **Lead Generation → Audit Recovery** shows the
+**Visibility Audit Funnel:** **Lead Generation → VA Recovery** shows the
 whole journey for Meta Ads leads tagged the GMB service — how many came in,
 how many were invited, how many viewed the offer page, reached checkout,
 and paid — plus the same "who's stuck, at which stage" queue as before.
@@ -204,7 +227,12 @@ your "follow-ups due" list — same list, no separate place to look.
 **Working a lead:**
 - Open the lead to add **notes**, see the timeline, and log activity.
 - **Log a call** (top bar or the lead page) after you phone them — record the
-  outcome (connected, no answer, follow-up needed).
+  outcome (connected, no answer, follow-up needed). Logging a call against a
+  brand-new lead automatically moves its status from **New** to
+  **Contacted** — you don't need to also edit the lead separately just to
+  flip that field. Logged a call by mistake (wrong lead, duplicate entry)?
+  A **Delete** link appears next to it (Calls tab, lead page, or the
+  Calling list) — only you or a manager/admin can delete it.
 - On the Notes field, click **Dictate** and speak instead of typing — your
   browser transcribes it live into the box, and you can still edit before
   saving. (Chrome/Edge only; the button doesn't appear in browsers that
@@ -461,6 +489,13 @@ which version the client accepted.
 your clients and unassigned clients appear in your list — clients owned by other
 sales reps are not shown. Open a client to see its contacts, notes, calls, deals,
 invoices and tickets in one place.
+
+The top of the list has clickable **Total Clients / Active / Prospect /
+Inactive** cards, same one-click-filter idea as the Leads cards above.
+**Prospect** is worth checking regularly — it's every client record that
+exists because one of your leads converted, but whose Deal hasn't been
+Won yet. In other words: your "on the way to becoming a real client" list,
+in one place, separate from your already-Active clients.
 
 Every active client's page opens with a **summary strip** — **MRR**, **Next
 Renewal**, **Total Revenue**, and **Outstanding** (clickable, jumps to the

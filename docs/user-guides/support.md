@@ -93,7 +93,9 @@ instead of typing (Chrome/Edge only). If AI features are enabled, you can also
 **Record voice note (Hindi/Marathi/English)** — speak the recap in whichever
 language is fastest and the CRM transcribes and translates it to English
 automatically, shown as a separate block under your typed notes on the
-**Calling** page within about a minute.
+**Calling** page within about a minute. Logged one by mistake (wrong
+client, duplicate entry)? A **Delete** link appears next to it — you can
+remove your own, or a manager/admin can remove anyone's.
 
 **Create Meeting and Meet notes (optional):** once an admin has connected
 NEDS's Google account (**Profile → Google Account**, admin-only), click

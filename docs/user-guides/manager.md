@@ -237,8 +237,23 @@ them to someone else at once, with a reason and a note left on each lead.
 See the Admin guide (Section 16b) for the full walkthrough. The list itself
 also defaults to a **Priority** sort (overdue → due today → Hot-but-
 untouched → everything else) with a "Needs attention today" strip above
-it — same as what Sales/Telecaller see, just showing the whole team's
-picture for you rather than one person's.
+it — including an **unresponsive** count (3+ call/WhatsApp attempts, no
+reply, still open) — same as what Sales/Telecaller see, just showing the
+whole team's picture for you rather than one person's. The status summary
+cards at the top (Lead Generation and Clients both) are clickable — click
+a number to filter the list to it — and the **Converted** card shows a
+small "X Won" line so you can see the real close rate without opening
+each lead; a **deal stage** filter lets you (or a rep) pull up exactly
+which Converted leads are stuck at a given stage.
+
+**Clients — Prospect tile:** the Clients list also has clickable Total/
+Active/Prospect/Inactive cards. **Prospect** is every client record created
+by a lead converting whose Deal hasn't been Won yet — a quick "who's on
+the way to becoming a real client, team-wide" view.
+
+**Fixing a mistaken call log:** a **Delete** link appears on any logged
+call (Calls tab, lead/client page, or the Calling list) — the rep who
+logged it, or you/Admin, can remove a wrong or duplicate entry.
 
 **Ticket escalations:** anyone on Support (or Sales, for their own clients)
 can click **🔺 Escalate to managers** on a ticket to flag it for you
@@ -559,8 +574,8 @@ lead**, with a link to the matched lead if one exists. Check this list
 if the two numbers ever disagree and you want to see exactly who
 accounts for the difference.
 
-The **Visibility Audit Recovery** worklist (Lead Generation → the "Audit
-Recovery" button) is where you or Sales/Telecaller actually work a stuck
+The **VA Recovery** worklist (Lead Generation → the "VA Recovery"
+button) is where you or Sales/Telecaller actually work a stuck
 lead one at a time — this dashboard is the oversight view, not a place to
 take action from directly. That worklist also carries two sections
 personal to whoever's viewing it — **Your gaps** and **Your message

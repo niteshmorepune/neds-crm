@@ -15,7 +15,16 @@ Admins can do everything a manager can, plus manage **users**, **services**, the
 
 The Clients list defaults to showing Active clients. Use the status filter to
 view Prospects, Inactive, or all. You can also set the status manually on the
-client's edit page.
+client's edit page. The **Total Clients / Active / Prospect / Inactive**
+cards at the top of the list are clickable shortcuts to the same filter —
+click a number instead of using the dropdown.
+
+**Export CSV (admin-only):** both the Clients and Lead Generation lists
+have an **Export CSV** button — deliberately not shown to any other role,
+this is a raw data-extraction ability rather than a day-to-day CRM action.
+It exports whatever the list is currently filtered/searched to, so filter
+first (e.g. to Prospect, or to a specific owner) if you want a narrower
+export.
 
 **Services column:** the Clients list shows each client's currently active
 services (a badge per service, e.g. "SEO", "GMB") — this is never manually
@@ -517,7 +526,7 @@ content per Meta's rules, not a plain order update). Gated by
 silently off until its own template is approved and its env var set. A
 human can still see the full funnel (eligible → invited → viewed offer
 page → reached checkout → paid) and follow up on the same stuck leads any
-time via **Lead Generation → Audit Recovery**, whether or not the
+time via **Lead Generation → VA Recovery**, whether or not the
 automated invite/nudge has fired yet.
 
 **Visibility Audit delivery-failure feedback:** wadesk.in's own send call
@@ -792,12 +801,45 @@ lead, regardless of its AI score — there's nothing left to follow up on,
 so a lead that scored well before it died no longer crowds out live leads
 at the top of the list (fixed 2026-08-31).
 
-**"Needs attention today" strip:** three clickable counts above the list —
-overdue follow-ups, follow-ups due today, and Hot leads (AI score ≥ 70)
-nobody's even set a follow-up on yet. For a Sales viewer this is scoped to
-their own leads (their personal worklist); for Telecaller, Admin, and
-Manager it shows the whole shared picture, matching how those roles
-already see leads. Each count links straight to the filtered list.
+**"Needs attention today" strip:** four clickable counts above the list —
+overdue follow-ups, follow-ups due today, Hot leads (AI score ≥ 70)
+nobody's even set a follow-up on yet, and **unresponsive** (added
+2026-09-02: 3+ logged call and/or outbound WhatsApp attempts, never a
+connected call or an inbound reply, and still open) — a lead called or
+messaged repeatedly with total silence no longer looks identical to one
+reached on the first try. For a Sales viewer this is scoped to their own
+leads (their personal worklist); for Telecaller, Admin, and Manager it
+shows the whole shared picture, matching how those roles already see
+leads. Each count links straight to the filtered list.
+
+**Status cards (top of the list) are clickable** — click New/Contacted/
+Qualified/Converted/Lost/Total to filter to it, same idea as the Needs
+Attention counts. The **Converted** card also shows a small **"X Won"**
+sub-count — Converted only ever records that the lead became a real Deal,
+independent of whether that Deal was later Won, Lost, or is still being
+negotiated (a Lead never reverts out of Converted once it gets there,
+even if its Deal is later Lost — that's intentional, see the incident
+note below). A **deal stage** filter (added 2026-09-02, alongside the
+other list filters) lets anyone pull up exactly which Converted leads are
+sitting at a given stage — e.g. every one stuck at Negotiation — instead
+of having to open each one to check. Each Converted lead's own row also
+shows the same info as a small caption under its status badge — "Deal:
+Won", "Deal: Won (partial payment)", "Deal: Negotiation", "Deal: Lost",
+etc. — colored green/red for the two terminal outcomes.
+
+**Real incident this closed (2026-09-02):** the owner spotted a
+"Converted" lead still sitting under its old status weeks after real
+conversion, and separately noticed several genuinely-converted leads
+(quotation not yet approved) reading as if they were already Won. Root
+cause: the Edit Lead form's status dropdown never offered "Converted" as
+an option (by design — Converted is only ever reached via the Convert
+action), so saving *any* edit on an already-converted lead — even just
+fixing a phone number — silently reset its status to whatever the
+dropdown happened to submit. Fixed: the status field is now read-only
+once a lead is Converted, and the backend rejects any attempt to move it
+away from Converted through this form. 24 real leads that had already
+drifted this way were found (by scanning for a converted_customer_id/
+converted_deal_id with a non-Converted status) and corrected back.
 
 **Overdue/Due today badges** now show right on the list, next to the AI
 score badge, so urgency is visible without opening a lead.
@@ -963,7 +1005,7 @@ outstanding (including the 90+ days overdue figure), how many clients
 Client Radar has flagged (and why), and the Visibility Audit funnel for
 the last 7 days (new Meta leads tagged GMB, invited, viewed the offer
 page, reached checkout, paid). It's a synthesis of the existing
-Business Overview, Cash Forecast, Client Radar, and Audit Recovery
+Business Overview, Cash Forecast, Client Radar, and VA Recovery
 reports — the email links to all of them — and also appears as a
 dashboard banner for the rest
 of that Monday. The email/summary paragraph is skipped if AI is turned
