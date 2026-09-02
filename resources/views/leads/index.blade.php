@@ -13,31 +13,46 @@
             </div>
         @endif
 
+        @php
+            // Each tile is a clean reset to just that one status (or no
+            // filter at all for Total) — statusCounts() itself deliberately
+            // ignores every ad-hoc filter (search/source/service/owner/deal
+            // stage) to stay a stable "whole picture" strip, so a tile's own
+            // link must do the same or its number and the resulting list
+            // would silently disagree.
+            $currentStatus = $filters['status'] ?? '';
+        @endphp
         <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            <div class="rounded-lg bg-white p-4 shadow-sm">
+            <a href="{{ route('leads.index') }}"
+               @class(['block rounded-lg bg-white p-4 shadow-sm hover:bg-gray-50', 'ring-2 ring-indigo-400' => $currentStatus === ''])>
                 <p class="text-xs font-medium uppercase tracking-wide text-gray-400">Total Leads</p>
                 <p class="mt-1 text-2xl font-semibold text-gray-900">{{ $statusCounts['total'] }}</p>
-            </div>
-            <div class="rounded-lg bg-white p-4 shadow-sm">
+            </a>
+            <a href="{{ route('leads.index', ['status' => \App\Enums\LeadStatus::New->value]) }}"
+               @class(['block rounded-lg bg-white p-4 shadow-sm hover:bg-gray-50', 'ring-2 ring-indigo-400' => $currentStatus === \App\Enums\LeadStatus::New->value])>
                 <p class="text-xs font-medium uppercase tracking-wide text-gray-400">New</p>
                 <p class="mt-1 text-2xl font-semibold text-blue-700">{{ $statusCounts['new'] }}</p>
-            </div>
-            <div class="rounded-lg bg-white p-4 shadow-sm">
+            </a>
+            <a href="{{ route('leads.index', ['status' => \App\Enums\LeadStatus::Contacted->value]) }}"
+               @class(['block rounded-lg bg-white p-4 shadow-sm hover:bg-gray-50', 'ring-2 ring-indigo-400' => $currentStatus === \App\Enums\LeadStatus::Contacted->value])>
                 <p class="text-xs font-medium uppercase tracking-wide text-gray-400">Contacted</p>
                 <p class="mt-1 text-2xl font-semibold text-yellow-700">{{ $statusCounts['contacted'] }}</p>
-            </div>
-            <div class="rounded-lg bg-white p-4 shadow-sm">
+            </a>
+            <a href="{{ route('leads.index', ['status' => \App\Enums\LeadStatus::Qualified->value]) }}"
+               @class(['block rounded-lg bg-white p-4 shadow-sm hover:bg-gray-50', 'ring-2 ring-indigo-400' => $currentStatus === \App\Enums\LeadStatus::Qualified->value])>
                 <p class="text-xs font-medium uppercase tracking-wide text-gray-400">Qualified</p>
                 <p class="mt-1 text-2xl font-semibold text-yellow-700">{{ $statusCounts['qualified'] }}</p>
-            </div>
-            <div class="rounded-lg bg-white p-4 shadow-sm">
+            </a>
+            <a href="{{ route('leads.index', ['status' => \App\Enums\LeadStatus::Converted->value]) }}"
+               @class(['block rounded-lg bg-white p-4 shadow-sm hover:bg-gray-50', 'ring-2 ring-indigo-400' => $currentStatus === \App\Enums\LeadStatus::Converted->value])>
                 <p class="text-xs font-medium uppercase tracking-wide text-gray-400">Converted</p>
                 <p class="mt-1 text-2xl font-semibold text-green-700">{{ $statusCounts['converted'] }}</p>
-            </div>
-            <div class="rounded-lg bg-white p-4 shadow-sm">
+            </a>
+            <a href="{{ route('leads.index', ['status' => \App\Enums\LeadStatus::Lost->value]) }}"
+               @class(['block rounded-lg bg-white p-4 shadow-sm hover:bg-gray-50', 'ring-2 ring-indigo-400' => $currentStatus === \App\Enums\LeadStatus::Lost->value])>
                 <p class="text-xs font-medium uppercase tracking-wide text-gray-400">Lost</p>
                 <p class="mt-1 text-2xl font-semibold text-gray-600">{{ $statusCounts['lost'] }}</p>
-            </div>
+            </a>
         </div>
 
         <div class="rounded-lg border border-amber-200 bg-amber-50 p-4">

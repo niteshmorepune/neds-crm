@@ -293,6 +293,29 @@ it('shows summary cards with lead counts per status, unaffected by list filters'
         ]);
 });
 
+it('makes each status summary tile a link that filters the list to that status', function () {
+    Lead::factory()->create(['status' => LeadStatus::New, 'name' => 'New Co']);
+    Lead::factory()->create(['status' => LeadStatus::Lost, 'name' => 'Lost Co']);
+
+    $html = $this->actingAs($this->admin)->get(route('leads.index'))->getContent();
+
+    expect($html)->toContain('href="'.route('leads.index', ['status' => LeadStatus::New->value]).'"')
+        ->and($html)->toContain('href="'.route('leads.index', ['status' => LeadStatus::Lost->value]).'"')
+        ->and($html)->toContain('href="'.route('leads.index').'"');
+
+    // Clicking through actually filters the list, not just decorates it.
+    $this->actingAs($this->admin)->get(route('leads.index', ['status' => LeadStatus::Lost->value]))
+        ->assertOk()->assertSee('Lost Co')->assertDontSee('New Co');
+});
+
+it('highlights the currently active status tile', function () {
+    $html = $this->actingAs($this->admin)
+        ->get(route('leads.index', ['status' => LeadStatus::Converted->value]))
+        ->getContent();
+
+    expect(substr_count($html, 'ring-2 ring-indigo-400'))->toBe(1);
+});
+
 it('shows the most recent note in the Latest Note column, truncated with the full text available on hover', function () {
     $lead = Lead::factory()->create(['name' => 'Ganesh Auto Parts']);
     $lead->notes()->create(['user_id' => $this->admin->id, 'body' => 'Called, no answer.']);
