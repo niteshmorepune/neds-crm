@@ -407,3 +407,48 @@ it('does not touch another client\'s pending reminder', function () {
 
     expect($otherReminder->fresh()->follow_up_at)->not->toBeNull();
 });
+
+it('lets the rep who logged a call delete it, redirecting back to the client', function () {
+    $customer = Customer::factory()->create();
+    $call = CallLog::factory()->create([
+        'user_id' => $this->sales->id,
+        'callable_type' => Customer::class,
+        'callable_id' => $customer->id,
+    ]);
+
+    $this->actingAs($this->sales)->delete(route('calls.destroy', $call))
+        ->assertRedirect(route('clients.show', $customer))
+        ->assertSessionHas('status', 'Call log deleted.');
+
+    expect(CallLog::find($call->id))->toBeNull();
+});
+
+it('redirects back to the lead when deleting a call logged against a lead', function () {
+    $lead = Lead::factory()->create();
+    $call = CallLog::factory()->create([
+        'user_id' => $this->sales->id,
+        'callable_type' => Lead::class,
+        'callable_id' => $lead->id,
+    ]);
+
+    $this->actingAs($this->sales)->delete(route('calls.destroy', $call))
+        ->assertRedirect(route('leads.show', $lead));
+});
+
+it('forbids one rep from deleting another rep\'s call log', function () {
+    $otherSales = User::factory()->role(UserRole::Sales)->create();
+    $call = CallLog::factory()->create(['user_id' => $otherSales->id]);
+
+    $this->actingAs($this->sales)->delete(route('calls.destroy', $call))->assertForbidden();
+
+    expect(CallLog::find($call->id))->not->toBeNull();
+});
+
+it('lets an admin delete any rep\'s call log', function () {
+    $admin = User::factory()->role(UserRole::Admin)->create();
+    $call = CallLog::factory()->create(['user_id' => $this->sales->id]);
+
+    $this->actingAs($admin)->delete(route('calls.destroy', $call))->assertRedirect();
+
+    expect(CallLog::find($call->id))->toBeNull();
+});

@@ -23,4 +23,14 @@ class CallLogPolicy
         return $callLog->user_id === $user->id
             || $user->hasRole(UserRole::Admin, UserRole::Manager);
     }
+
+    /**
+     * A logging mistake (wrong client, duplicate entry) needs to be
+     * correctable — same "own record or Admin/Manager" rule as view().
+     */
+    public function delete(User $user, CallLog $callLog): bool
+    {
+        return $callLog->user_id === $user->id
+            || $user->hasRole(UserRole::Admin, UserRole::Manager);
+    }
 }

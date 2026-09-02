@@ -552,6 +552,7 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
         Route::get('calls', [CallLogController::class, 'index'])->name('calls.index');
         Route::get('calls/create', [CallLogController::class, 'create'])->name('calls.create');
         Route::post('calls', [CallLogController::class, 'store'])->name('calls.store');
+        Route::delete('calls/{callLog}', [CallLogController::class, 'destroy'])->name('calls.destroy');
     });
 
     /*

@@ -146,6 +146,29 @@ class CallLogController extends Controller
     }
 
     /**
+     * A logging mistake (wrong client, duplicate entry) — no soft-delete on
+     * CallLog (a lightweight log, unlike Customer/Lead/Deal/Invoice/Ticket),
+     * so this is a real hard delete. Any voice-note attachment is deleted
+     * individually (not a bulk query delete) so Attachment's own booted()
+     * hook fires and removes the file from disk too, not just the DB row.
+     */
+    public function destroy(CallLog $callLog): RedirectResponse
+    {
+        $this->authorize('delete', $callLog);
+
+        $redirect = match ($callLog->callable_type) {
+            Customer::class => redirect()->route('clients.show', $callLog->callable_id),
+            Lead::class => redirect()->route('leads.show', $callLog->callable_id),
+            default => redirect()->route('calls.index'),
+        };
+
+        $callLog->attachments->each->delete();
+        $callLog->delete();
+
+        return $redirect->with('status', 'Call log deleted.');
+    }
+
+    /**
      * A newly-logged call that actually reached the client/lead supersedes
      * any earlier pending reminder set on a previous call to the same
      * record — otherwise a rep who calls back early (or right on schedule)

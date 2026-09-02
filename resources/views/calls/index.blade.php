@@ -51,6 +51,7 @@
                         <th class="px-4 py-3">Mins</th>
                         <th class="px-4 py-3">Notes</th>
                         <th class="px-4 py-3">Follow-up</th>
+                        <th class="px-4 py-3">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -93,9 +94,17 @@
                                     <span class="text-gray-300">—</span>
                                 @endif
                             </td>
+                            <td class="px-4 py-2 text-right">
+                                @can('delete', $call)
+                                    <form method="POST" action="{{ route('calls.destroy', $call) }}" onsubmit="return confirm('Delete this call log? This cannot be undone.')">
+                                        @csrf @method('DELETE')
+                                        <button type="submit" class="text-xs font-medium text-red-500 hover:text-red-600">Delete</button>
+                                    </form>
+                                @endcan
+                            </td>
                         </tr>
                     @empty
-                        <tr><td colspan="8" class="px-4 py-10 text-center text-gray-400">No calls logged.</td></tr>
+                        <tr><td colspan="9" class="px-4 py-10 text-center text-gray-400">No calls logged.</td></tr>
                     @endforelse
                 </tbody>
             </table>

@@ -194,7 +194,15 @@
                     <li class="py-2">
                         <div class="flex items-center justify-between">
                             <span class="text-gray-700">{{ $call->direction->label() }} · {{ $call->outcome->label() }}{{ $call->duration_minutes ? " · {$call->duration_minutes}m" : '' }}</span>
-                            <span class="text-xs text-gray-400">{{ $call->called_at->timezone(config('app.display_timezone'))->format('d M, g:i A') }} · {{ $call->user?->name }}</span>
+                            <div class="flex items-center gap-3">
+                                <span class="text-xs text-gray-400">{{ $call->called_at->timezone(config('app.display_timezone'))->format('d M, g:i A') }} · {{ $call->user?->name }}</span>
+                                @can('delete', $call)
+                                    <form method="POST" action="{{ route('calls.destroy', $call) }}" onsubmit="return confirm('Delete this call log? This cannot be undone.')">
+                                        @csrf @method('DELETE')
+                                        <button type="submit" class="text-xs font-medium text-red-500 hover:text-red-600">Delete</button>
+                                    </form>
+                                @endcan
+                            </div>
                         </div>
                         @if ($call->notes)<p class="mt-1 text-gray-500">{{ $call->notes }}</p>@endif
                     </li>
