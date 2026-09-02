@@ -75,6 +75,15 @@ need updating** note appears under its Status badge (and it's counted in
 the strip above), so it doesn't silently look untouched to you or anyone
 scanning the New tile.
 
+**Fixing an already-flagged lead:** open the lead itself — a flagged lead
+shows a **✨ Suggest a status** button. Click it and, if AI is enabled,
+Claude reads the lead's own notes and calls and suggests Contacted,
+Qualified, or Lost with a one-line reason (e.g. "they asked for a formal
+quote" → Qualified). Nothing changes automatically — pick the status from
+the dropdown (the AI's pick is pre-selected but you can choose a different
+one) and click **Apply**. If AI can't suggest anything, or is off, you
+still get the same dropdown to pick from yourself.
+
 **A Converted lead that isn't Won yet:** once a lead converts, its Status
 column shows **Converted** plus a small caption underneath describing
 what actually happened to the Deal — **"Deal: Negotiation"**, **"Deal:

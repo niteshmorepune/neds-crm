@@ -6,6 +6,7 @@ use App\Enums\CrmQueryType;
 use App\Enums\DealLostReason;
 use App\Enums\DealStage;
 use App\Enums\InvoiceStatus;
+use App\Enums\LeadStatus;
 use App\Enums\TargetMetric;
 use App\Enums\TicketPriority;
 use App\Models\Customer;
@@ -166,6 +167,128 @@ class AiAssistant
             prompt: implode("\n", $lines),
             system: $system,
         ));
+    }
+
+    /**
+     * Suggests which status a lead stuck at New should actually be, once it
+     * already has real notes/calls against it — see Lead::hasStaleNewStatus(),
+     * the flag this powers. Root cause (2026-09-02): a rep types a note
+     * describing a real outreach attempt without ticking "This was a call",
+     * so the lead never auto-promotes and just sits flagged; this gives the
+     * rep something concrete to act on instead of only a flag. Mirrors
+     * suggestDealLostReason()'s shape exactly (bounded enum, JSON out,
+     * rationale, null when there's nothing to go on) — deliberately a
+     * suggestion the rep applies via LeadStatusSuggestion, never applied
+     * automatically, confirmed with the owner via AskUserQuestion (the
+     * alternative — auto-backfilling every already-flagged lead straight to
+     * Contacted — was explicitly not chosen, since some of these notes may
+     * carry a stronger signal than a bare attempt).
+     *
+     * Only ever returns Contacted/Qualified/Lost — never New (that's the
+     * status being corrected away from) or Converted (that requires an
+     * actual Deal, not a status flip).
+     *
+     * @return array{status: ?LeadStatus, rationale: ?string}|null
+     */
+    public function suggestLeadStatusUpdate(Lead $lead): ?array
+    {
+        if (! Ai::enabled() || ! $lead->hasStaleNewStatus()) {
+            return null;
+        }
+
+        $lead->loadMissing(['service', 'notes', 'callLogs']);
+
+        $lines = [
+            'Lead: '.$lead->name.($lead->company ? ' ('.$lead->company.')' : ''),
+            'Interested in: '.($lead->service?->name ?? 'unspecified'),
+            'Source: '.$lead->source->label(),
+            'Current status: New (but has activity below — that\'s the problem being fixed)',
+            '',
+            'History:',
+        ];
+
+        foreach ($lead->notes->take(self::MAX_ITEMS) as $note) {
+            $lines[] = '- Note: '.$note->body;
+        }
+
+        foreach ($lead->callLogs->take(self::MAX_ITEMS) as $call) {
+            $lines[] = '- Call ('.$call->direction->label().', '.$call->outcome->label().'): '.($call->notes ?: 'no notes');
+        }
+
+        $system = <<<'PROMPT'
+        A lead at a digital-solutions agency in India is still marked "New"
+        despite already having real notes or call history recorded against it
+        — the status was never updated when the outreach happened. Read the
+        history and suggest which ONE of these three statuses it should
+        actually be:
+
+        contacted  - default: some real outreach was attempted (a call made,
+                     a message sent), regardless of whether it succeeded —
+                     "Contacted" means an attempt was made, not that they
+                     answered or replied
+        qualified  - the history shows genuine interest or a real need
+                     confirmed (they engaged back, asked questions, requested
+                     pricing or a quote) — a step further than a bare attempt
+        lost       - the history clearly shows they said no, asked to stop
+                     being contacted, or the contact info is permanently
+                     unusable (e.g. explicitly wrong number, out of business)
+                     — not just one unanswered call
+
+        Default to "contacted" unless the notes clearly support qualified or
+        lost — never suggest a status stronger than what the history actually
+        shows. A string of unanswered call attempts alone is still just
+        "contacted", not "lost".
+
+        Respond with ONLY a JSON object, no markdown, no prose:
+        {"status": "<contacted|qualified|lost>",
+         "rationale": "<one short sentence citing the actual signal>"}
+        PROMPT;
+
+        $result = $this->client->message(
+            feature: 'suggest_lead_status_update',
+            prompt: implode("\n", $lines),
+            system: $system,
+            maxTokens: 200,
+        );
+
+        $this->lastUsageId = $result?->usageId;
+
+        return $result === null ? null : $this->parseLeadStatusSuggestion($result->text);
+    }
+
+    /**
+     * @return array{status: ?LeadStatus, rationale: ?string}|null
+     */
+    private function parseLeadStatusSuggestion(string $text): ?array
+    {
+        if (! preg_match('/\{.*\}/s', $text, $match)) {
+            return null;
+        }
+
+        $decoded = json_decode($match[0], true);
+
+        if (! is_array($decoded)) {
+            return null;
+        }
+
+        $status = LeadStatus::tryFrom((string) ($decoded['status'] ?? ''));
+
+        // Never accept a suggestion outside the 3 offered — a model
+        // hallucinating "new" or "converted" back at us would be nonsensical
+        // here (see this method's own docblock for why those are excluded).
+        if (! in_array($status, [LeadStatus::Contacted, LeadStatus::Qualified, LeadStatus::Lost], true)) {
+            $status = null;
+        }
+
+        $rationale = is_string($decoded['rationale'] ?? null)
+            ? mb_substr(trim($decoded['rationale']), 0, 255)
+            : null;
+
+        if ($status === null && $rationale === null) {
+            return null;
+        }
+
+        return ['status' => $status, 'rationale' => $rationale];
     }
 
     /**

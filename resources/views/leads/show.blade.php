@@ -50,6 +50,10 @@
                             {{ $lead->next_follow_up_at?->timezone(config('app.display_timezone'))->format('d M Y, g:i A') ?? '—' }}</div>
                     </dl>
 
+                    @if ($canManage && $lead->hasStaleNewStatus())
+                        <livewire:lead-status-suggestion :lead="$lead" :key="'lead-status-suggestion-'.$lead->id" />
+                    @endif
+
                     @if ($lead->convertedCustomer)
                         <div class="mt-3 rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">
                             Converted →

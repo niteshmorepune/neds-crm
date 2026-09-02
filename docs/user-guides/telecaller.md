@@ -51,7 +51,10 @@ logged against it) — since your queue is shared, not owned, these cover
 every lead in the system, not just some subset. Tip: if you type a note
 describing a call, tick **📞 This was a call** and pick an outcome in the
 note box — it logs a real call AND moves the lead off New automatically,
-so it never shows up in that last count.
+so it never shows up in that last count. For a lead already flagged, open
+it and click **✨ Suggest a status** — AI reads its notes/calls and
+suggests Contacted/Qualified/Lost with a reason; pick from the dropdown
+(overridable) and click **Apply**.
 
 You **cannot create a brand-new lead** from scratch, **convert** a lead into
 a client/deal, or **delete** a lead — those stay with Sales/Manager/Admin.
