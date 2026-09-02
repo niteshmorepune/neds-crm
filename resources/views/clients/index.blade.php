@@ -8,6 +8,36 @@
             </div>
         @endif
 
+        {{-- Each tile resets to just that one status (Total = status=all,
+             since the list itself defaults to Active-only with no status
+             param at all) — same "clean reset, ignores every other filter"
+             treatment as Lead Generation's status tiles. Prospect is the
+             Sales team's "on the way to becoming a client" worklist: a
+             Customer already exists (created the moment a lead converts)
+             but the linked Deal hasn't reached Won yet. --}}
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <a href="{{ route('clients.index', ['status' => 'all']) }}"
+               @class(['block rounded-lg bg-white p-4 shadow-sm hover:bg-gray-50', 'ring-2 ring-indigo-400' => $statusFilter === 'all'])>
+                <p class="text-xs font-medium uppercase tracking-wide text-gray-400">Total Clients</p>
+                <p class="mt-1 text-2xl font-semibold text-gray-900">{{ $statusCounts['total'] }}</p>
+            </a>
+            <a href="{{ route('clients.index', ['status' => \App\Enums\CustomerStatus::Active->value]) }}"
+               @class(['block rounded-lg bg-white p-4 shadow-sm hover:bg-gray-50', 'ring-2 ring-indigo-400' => $statusFilter === \App\Enums\CustomerStatus::Active->value])>
+                <p class="text-xs font-medium uppercase tracking-wide text-gray-400">Active</p>
+                <p class="mt-1 text-2xl font-semibold text-green-700">{{ $statusCounts['active'] }}</p>
+            </a>
+            <a href="{{ route('clients.index', ['status' => \App\Enums\CustomerStatus::Prospect->value]) }}"
+               @class(['block rounded-lg bg-white p-4 shadow-sm hover:bg-gray-50', 'ring-2 ring-indigo-400' => $statusFilter === \App\Enums\CustomerStatus::Prospect->value])>
+                <p class="text-xs font-medium uppercase tracking-wide text-gray-400">Prospect</p>
+                <p class="mt-1 text-2xl font-semibold text-amber-700">{{ $statusCounts['prospect'] }}</p>
+            </a>
+            <a href="{{ route('clients.index', ['status' => \App\Enums\CustomerStatus::Inactive->value]) }}"
+               @class(['block rounded-lg bg-white p-4 shadow-sm hover:bg-gray-50', 'ring-2 ring-indigo-400' => $statusFilter === \App\Enums\CustomerStatus::Inactive->value])>
+                <p class="text-xs font-medium uppercase tracking-wide text-gray-400">Inactive</p>
+                <p class="mt-1 text-2xl font-semibold text-gray-600">{{ $statusCounts['inactive'] }}</p>
+            </a>
+        </div>
+
         <form method="GET" class="space-y-3">
             {{-- Row 1: page-scoped search (distinct from the global omnisearch
                  in the top bar — this one only searches clients and drives

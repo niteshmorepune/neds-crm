@@ -55,7 +55,37 @@ class CustomerController extends Controller
             'states' => Customer::query()->visibleTo($request->user())->whereNotNull('state')->distinct()->orderBy('state')->pluck('state'),
             'cities' => Customer::query()->visibleTo($request->user())->whereNotNull('city')->distinct()->orderBy('city')->pluck('city'),
             'filters' => $request->only(['search', 'status', 'owner_id', 'referring_partner_id', 'state', 'city', 'sort']),
+            'statusCounts' => $this->statusCounts($request),
         ]);
+    }
+
+    /**
+     * Client counts per status for the summary tiles — Prospect surfaces the
+     * Sales team's "on the way to becoming a client" worklist (a Customer
+     * created by ConvertLead but not yet Won, so still status=Prospect —
+     * see the 2026-09-02 decisions log entry) as its own clickable tile,
+     * same treatment as Lead Generation's status tiles. Deliberately scoped
+     * only by visibleTo() — ignores search/owner/partner/state/city so the
+     * tiles stay a stable "whole picture" rather than echoing whatever the
+     * list happens to be filtered to, same convention as LeadController::
+     * statusCounts().
+     *
+     * @return array<string, int>
+     */
+    private function statusCounts(Request $request): array
+    {
+        $counts = Customer::query()
+            ->visibleTo($request->user())
+            ->selectRaw('status, count(*) as count')
+            ->groupBy('status')
+            ->pluck('count', 'status');
+
+        return [
+            'total' => (int) $counts->sum(),
+            ...collect(CustomerStatus::cases())->mapWithKeys(
+                fn (CustomerStatus $status) => [$status->value => (int) ($counts[$status->value] ?? 0)]
+            )->all(),
+        ];
     }
 
     public function create(): View
