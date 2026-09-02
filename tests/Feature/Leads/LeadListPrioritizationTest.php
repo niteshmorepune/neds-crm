@@ -210,6 +210,42 @@ it('flags a New lead with a call log (but no note) as stale too', function () {
     expect($lead->hasStaleNewStatus())->toBeTrue();
 });
 
+it('does NOT flag a fresh Meta Lead Ads lead whose only note is the auto-generated intake note', function () {
+    // Real bug, 2026-09-03 (owner screenshot): ImportMetaLead's own
+    // createLead()/attachToExistingLead() auto-creates an "Additional form
+    // answers:" / "Also submitted a Meta Ads form" note right at capture —
+    // that's restating data the lead itself submitted, not a sign anyone
+    // did anything after intake, so it must NOT count as "real activity."
+    $manager = User::factory()->role(UserRole::Manager)->create();
+    $lead = Lead::factory()->create(['status' => LeadStatus::New]);
+    $lead->notes()->create(['user_id' => null, 'body' => "Additional form answers:\nBudget: 5000"]);
+
+    expect($lead->hasStaleNewStatus())->toBeFalse();
+
+    $response = $this->actingAs($manager)->get(route('leads.index', ['sort' => 'newest']));
+    $leads = $response->viewData('leads')->keyBy('id');
+    expect($leads[$lead->id]->hasStaleNewStatus())->toBeFalse();
+
+    $ids = $this->actingAs($manager)->get(route('leads.index', ['attention' => 'stale_status']))
+        ->viewData('leads')->pluck('id')->all();
+    expect($ids)->not->toContain($lead->id);
+});
+
+it('does NOT flag a lead whose only note is "Also submitted a Meta Ads form" (a second-source dedupe note)', function () {
+    $lead = Lead::factory()->create(['status' => LeadStatus::New]);
+    $lead->notes()->create(['user_id' => null, 'body' => 'Also submitted a Meta Ads form (Campaign: CRM & ERP).']);
+
+    expect($lead->hasStaleNewStatus())->toBeFalse();
+});
+
+it('DOES flag a Meta lead once a real note is added alongside its auto-generated intake note', function () {
+    $lead = Lead::factory()->create(['status' => LeadStatus::New]);
+    $lead->notes()->create(['user_id' => null, 'body' => "Additional form answers:\nBudget: 5000"]);
+    $lead->notes()->create(['user_id' => null, 'body' => 'Called, no answer.']); // a real (checkbox-less) rep note
+
+    expect($lead->hasStaleNewStatus())->toBeTrue();
+});
+
 it('never flags a lead already past New as having a stale status', function () {
     $user = User::factory()->create();
     $lead = Lead::factory()->create(['status' => LeadStatus::Contacted]);

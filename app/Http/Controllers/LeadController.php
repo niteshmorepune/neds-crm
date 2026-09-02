@@ -43,9 +43,14 @@ class LeadController extends Controller
         // try to parse the raw, possibly-malformed request value.
         $month = $this->validMonth($request);
 
+        // notes:body (not withCount) so Lead::hasStaleNewStatus() can tell a
+        // real note from an auto-generated intake note (e.g. Meta Lead Ads'
+        // "Additional form answers:") — a bare count can't distinguish those.
+        // Cheap at this scale (15/page), same "eager-load, filter in PHP"
+        // precedent as unresponsiveLeadIds() below.
         $query = $this->filteredLeads($request, $month)
-            ->with(['owner', 'service', 'latestNote'])
-            ->withCount(['notes', 'callLogs']);
+            ->with(['owner', 'service', 'latestNote', 'notes:id,notable_id,notable_type,body'])
+            ->withCount('callLogs');
 
         $sort = $request->input('sort') === 'newest' ? 'newest' : 'priority';
 
@@ -122,12 +127,35 @@ class LeadController extends Controller
      * Companion to unresponsiveQuery() from the same 2026-09-02
      * investigation: a lead still at "New" that already has a note or a
      * call log against it is a status the team forgot to update, not a
-     * genuinely untouched lead — see Lead::hasStaleNewStatus().
+     * genuinely untouched lead — see Lead::hasStaleNewStatus(). Computed via
+     * a PHP pass (not a single SQL query), same reasoning and shape as
+     * unresponsiveLeadIds() below: hasStaleNewStatus() must inspect note
+     * BODY text to exclude an auto-generated intake note (e.g. Meta Lead
+     * Ads' "Additional form answers:" — see Lead::NON_OUTREACH_NOTE_PREFIXES),
+     * which a bare has('notes') can't express. The initial has()->orHas()
+     * keeps the candidate set small.
      */
     private function staleStatusQuery(Builder $query): Builder
     {
-        return $query->where('status', LeadStatus::New->value)
-            ->where(fn ($q) => $q->has('notes')->orHas('callLogs'));
+        return $query->whereIn('id', $this->staleStatusLeadIds($query));
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function staleStatusLeadIds(Builder $query): array
+    {
+        return $query->clone()
+            ->where('status', LeadStatus::New->value)
+            ->where(fn ($q) => $q->has('notes')->orHas('callLogs'))
+            ->with([
+                'notes:id,notable_id,notable_type,body',
+                'callLogs:id,callable_id,callable_type',
+            ])
+            ->get()
+            ->filter(fn (Lead $lead) => $lead->hasStaleNewStatus())
+            ->pluck('id')
+            ->all();
     }
 
     /**

@@ -268,17 +268,44 @@ class Lead extends Model
     }
 
     /**
+     * A note body PREFIX (matched via str_starts_with) that means "this note
+     * was auto-generated at intake, restating data the lead itself already
+     * submitted" rather than a sign that anyone actually did anything after
+     * the lead was created. Real bug (2026-09-03, owner screenshot): two
+     * fresh Meta Lead Ads leads (Raj Kadam, Bhaskar Bhadke) showed "Status
+     * may need updating" the moment they were captured — ImportMetaLead's
+     * own createLead()/attachToExistingLead() auto-creates a "Additional
+     * form answers:" / "Also submitted a Meta Ads form" note right at
+     * intake (see app/Jobs/ImportMetaLead.php), which hasStaleNewStatus()
+     * was counting as "real activity" identically to a rep's own outreach
+     * note. Deliberately does NOT exclude RecordVisibilityAuditPurchase's
+     * notes ("Purchased Visibility Audit…") — a real payment IS a genuine
+     * post-intake event, not raw intake data, so a New lead who already
+     * paid should still be flagged.
+     *
+     * @var list<string>
+     */
+    private const NON_OUTREACH_NOTE_PREFIXES = [
+        'Additional form answers:',
+        'Also submitted a Meta Ads form',
+    ];
+
+    /**
      * Flags a lead still sitting at "New" that already has real activity
-     * (a note or a call log) against it — the exact gap
-     * promoteFromNewOnOutreach() closes only going forward: historical
-     * leads, and any future one where a rep types a plain note without
-     * ticking "This was a call," still won't auto-promote. Surfaced as a
-     * "Status may need updating" badge on the Lead Generation list so a
-     * stale New count isn't silently indistinguishable from a genuinely
-     * untouched one (2026-09-02, same investigation as
-     * promoteFromNewOnOutreach()). Uses withCount()'s notes_count/
-     * call_logs_count when eager-loaded (LeadController::index()), falling
-     * back to a real query otherwise so this stays safe to call anywhere.
+     * (a note that isn't just auto-captured intake data, or a call log)
+     * against it — the exact gap promoteFromNewOnOutreach() closes only
+     * going forward: historical leads, and any future one where a rep
+     * types a plain note without ticking "This was a call," still won't
+     * auto-promote. Surfaced as a "Status may need updating" badge on the
+     * Lead Generation list so a stale New count isn't silently
+     * indistinguishable from a genuinely untouched one (2026-09-02, same
+     * investigation as promoteFromNewOnOutreach()).
+     *
+     * Prefers already-loaded notes()/callLogs() relations (LeadController::
+     * index()'s per-page eager load, or AiAssistant::suggestLeadStatusUpdate()'s
+     * loadMissing()) so this stays cheap in a list; falls back to a real
+     * query otherwise so it's still safe to call on a single unloaded model
+     * (e.g. the lead show page).
      */
     public function hasStaleNewStatus(): bool
     {
@@ -286,10 +313,28 @@ class Lead extends Model
             return false;
         }
 
-        $noteCount = $this->notes_count ?? $this->notes()->count();
-        $callCount = $this->call_logs_count ?? $this->callLogs()->count();
+        $callCount = $this->relationLoaded('callLogs')
+            ? $this->callLogs->count()
+            : ($this->call_logs_count ?? $this->callLogs()->count());
 
-        return $noteCount > 0 || $callCount > 0;
+        if ($callCount > 0) {
+            return true;
+        }
+
+        $notes = $this->relationLoaded('notes') ? $this->notes : $this->notes()->get(['id', 'body']);
+
+        return $notes->contains(fn (Note $note) => ! self::isNonOutreachSystemNote($note->body));
+    }
+
+    private static function isNonOutreachSystemNote(string $body): bool
+    {
+        foreach (self::NON_OUTREACH_NOTE_PREFIXES as $prefix) {
+            if (str_starts_with($body, $prefix)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
