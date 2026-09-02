@@ -213,6 +213,9 @@
                                     'bg-green-100 text-green-800' => $lead->status === \App\Enums\LeadStatus::Converted,
                                     'bg-gray-100 text-gray-600' => $lead->status === \App\Enums\LeadStatus::Lost,
                                 ])>{{ $lead->status->label() }}</span>
+                                @if ($lead->status === \App\Enums\LeadStatus::Converted && ($outcome = $lead->conversionOutcomeLabel()))
+                                    <div class="mt-1 text-xs text-gray-400">{{ $outcome }}</div>
+                                @endif
                             </td>
                             <td class="px-4 py-3 max-w-xs">
                                 @if ($lead->latestNote)

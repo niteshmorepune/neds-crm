@@ -167,6 +167,11 @@ class Deal extends Model
         return $this->hasMany(Quotation::class)->latest();
     }
 
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
     public function stageTransitions(): HasMany
     {
         return $this->hasMany(DealStageTransition::class)->latest();

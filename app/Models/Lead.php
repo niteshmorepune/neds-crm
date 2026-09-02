@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\DealStage;
 use App\Enums\LeadBudgetBand;
 use App\Enums\LeadSource;
 use App\Enums\LeadStatus;
@@ -246,6 +247,52 @@ class Lead extends Model
     public function convertedDeal(): BelongsTo
     {
         return $this->belongsTo(Deal::class, 'converted_deal_id');
+    }
+
+    /**
+     * What "Converted" actually means for this lead right now, beyond the
+     * bare status label. Lead.status = Converted only ever records that
+     * ConvertLead::handle() ran — a Deal exists — it says nothing about
+     * whether that Deal has since been won, lost, or is still being worked,
+     * or whether a Won deal has actually been paid. Real incident
+     * (2026-09-02): the owner couldn't tell from the Lead Generation list
+     * which "Converted" leads were genuinely paying clients vs. still mid-
+     * pipeline with a quotation sent but not yet accepted/paid.
+     *
+     * Returns null when there's nothing more specific to say (not
+     * Converted, or a Converted lead with no reachable linked Deal — the
+     * latter shouldn't happen but degrades safely rather than erroring).
+     */
+    public function conversionOutcomeLabel(): ?string
+    {
+        if ($this->status !== LeadStatus::Converted) {
+            return null;
+        }
+
+        $deal = $this->convertedDeal;
+
+        if ($deal === null) {
+            return null;
+        }
+
+        if ($deal->stage !== DealStage::Won) {
+            return $deal->stage->label();
+        }
+
+        $invoices = $deal->invoices;
+
+        if ($invoices->isEmpty()) {
+            return 'Won (unbilled)';
+        }
+
+        $totalInvoiced = $invoices->sum('total');
+        $totalPaid = $invoices->sum('amount_paid');
+
+        return match (true) {
+            $totalPaid >= $totalInvoiced => 'Won',
+            $totalPaid > 0 => 'Won (partial payment)',
+            default => 'Won (unpaid)',
+        };
     }
 
     public function notes(): MorphMany
