@@ -184,3 +184,51 @@ it('shows an Overdue badge on the list row for a lead with a past follow-up date
         ->assertOk()
         ->assertSee('Overdue');
 });
+
+it('flags a New lead with a note as having a stale status, but not a genuinely untouched New lead', function () {
+    $manager = User::factory()->role(UserRole::Manager)->create();
+    $stale = Lead::factory()->create(['name' => 'Typed A Note Instead', 'status' => LeadStatus::New]);
+    $stale->notes()->create(['user_id' => $manager->id, 'body' => 'Called, no answer']);
+    $fresh = Lead::factory()->create(['name' => 'Genuinely Untouched', 'status' => LeadStatus::New]);
+
+    $response = $this->actingAs($manager)->get(route('leads.index', ['sort' => 'newest']));
+
+    $response->assertOk();
+    expect($stale->hasStaleNewStatus())->toBeTrue();
+    expect($fresh->hasStaleNewStatus())->toBeFalse();
+
+    $leads = $response->viewData('leads')->keyBy('id');
+    expect($leads[$stale->id]->hasStaleNewStatus())->toBeTrue();
+    expect($leads[$fresh->id]->hasStaleNewStatus())->toBeFalse();
+});
+
+it('flags a New lead with a call log (but no note) as stale too', function () {
+    $manager = User::factory()->role(UserRole::Manager)->create();
+    $lead = Lead::factory()->create(['status' => LeadStatus::New]);
+    CallLog::factory()->create(['callable_type' => Lead::class, 'callable_id' => $lead->id, 'outcome' => CallOutcome::NoAnswer]);
+
+    expect($lead->hasStaleNewStatus())->toBeTrue();
+});
+
+it('never flags a lead already past New as having a stale status', function () {
+    $user = User::factory()->create();
+    $lead = Lead::factory()->create(['status' => LeadStatus::Contacted]);
+    $lead->notes()->create(['user_id' => $user->id, 'body' => 'Some note']);
+
+    expect($lead->hasStaleNewStatus())->toBeFalse();
+});
+
+it('shows the "status may need updating" count on the Needs Attention strip and filters via attention=stale_status', function () {
+    $manager = User::factory()->role(UserRole::Manager)->create();
+    $stale = Lead::factory()->create(['name' => 'Stale Status Lead', 'status' => LeadStatus::New]);
+    $stale->notes()->create(['user_id' => $manager->id, 'body' => 'Talked to him yesterday']);
+    $fresh = Lead::factory()->create(['status' => LeadStatus::New]);
+
+    $this->actingAs($manager)->get(route('leads.index'))
+        ->assertOk()
+        ->assertSee('1 status may need updating');
+
+    $response = $this->actingAs($manager)->get(route('leads.index', ['attention' => 'stale_status']));
+    $ids = $response->viewData('leads')->pluck('id')->all();
+    expect($ids)->toContain($stale->id)->not->toContain($fresh->id);
+});

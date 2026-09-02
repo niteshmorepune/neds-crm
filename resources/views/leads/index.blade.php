@@ -83,6 +83,11 @@
                    class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
                     📵 {{ $attentionCounts['unresponsive'] }} unresponsive (3+ attempts, no reply)
                 </a>
+                <a href="{{ route('leads.index', array_merge($ownerScope, ['attention' => 'stale_status'])) }}"
+                   title="Still marked New, but already has a note or a logged call against it — the status was never updated"
+                   class="rounded-md border border-purple-200 bg-white px-3 py-2 text-sm font-medium text-purple-700 hover:bg-purple-50">
+                    ✏️ {{ $attentionCounts['stale_status'] }} status may need updating
+                </a>
             </div>
         </div>
 
@@ -249,6 +254,11 @@
                                     'bg-green-100 text-green-800' => $lead->status === \App\Enums\LeadStatus::Converted,
                                     'bg-gray-100 text-gray-600' => $lead->status === \App\Enums\LeadStatus::Lost,
                                 ])>{{ $lead->status->label() }}</span>
+                                @if ($lead->hasStaleNewStatus())
+                                    <div class="mt-1 text-xs text-purple-600" title="Still marked New, but already has a note or a logged call — the status was never updated">
+                                        ✏️ Status may need updating
+                                    </div>
+                                @endif
                                 @if ($lead->status === \App\Enums\LeadStatus::Converted && ($outcome = $lead->conversionOutcomeLabel()))
                                     <div @class([
                                         'mt-1 text-xs',

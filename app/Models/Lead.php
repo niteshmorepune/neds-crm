@@ -268,6 +268,31 @@ class Lead extends Model
     }
 
     /**
+     * Flags a lead still sitting at "New" that already has real activity
+     * (a note or a call log) against it — the exact gap
+     * promoteFromNewOnOutreach() closes only going forward: historical
+     * leads, and any future one where a rep types a plain note without
+     * ticking "This was a call," still won't auto-promote. Surfaced as a
+     * "Status may need updating" badge on the Lead Generation list so a
+     * stale New count isn't silently indistinguishable from a genuinely
+     * untouched one (2026-09-02, same investigation as
+     * promoteFromNewOnOutreach()). Uses withCount()'s notes_count/
+     * call_logs_count when eager-loaded (LeadController::index()), falling
+     * back to a real query otherwise so this stays safe to call anywhere.
+     */
+    public function hasStaleNewStatus(): bool
+    {
+        if ($this->status !== LeadStatus::New) {
+            return false;
+        }
+
+        $noteCount = $this->notes_count ?? $this->notes()->count();
+        $callCount = $this->call_logs_count ?? $this->callLogs()->count();
+
+        return $noteCount > 0 || $callCount > 0;
+    }
+
+    /**
      * What "Converted" actually means for this lead right now, beyond the
      * bare status label. Lead.status = Converted only ever records that
      * ConvertLead::handle() ran — a Deal exists — it says nothing about

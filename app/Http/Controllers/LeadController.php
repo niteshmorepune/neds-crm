@@ -43,7 +43,9 @@ class LeadController extends Controller
         // try to parse the raw, possibly-malformed request value.
         $month = $this->validMonth($request);
 
-        $query = $this->filteredLeads($request, $month)->with(['owner', 'service', 'latestNote']);
+        $query = $this->filteredLeads($request, $month)
+            ->with(['owner', 'service', 'latestNote'])
+            ->withCount(['notes', 'callLogs']);
 
         $sort = $request->input('sort') === 'newest' ? 'newest' : 'priority';
 
@@ -111,8 +113,21 @@ class LeadController extends Controller
                 ->whereNull('next_follow_up_at')
                 ->where('ai_score', '>=', config('services.anthropic.hot_lead_threshold', 70))->count(),
             'unresponsive' => (int) $this->unresponsiveQuery($base())->count(),
+            'stale_status' => (int) $this->staleStatusQuery($base())->count(),
             'scoped_to_own' => $scopedToOwn,
         ];
+    }
+
+    /**
+     * Companion to unresponsiveQuery() from the same 2026-09-02
+     * investigation: a lead still at "New" that already has a note or a
+     * call log against it is a status the team forgot to update, not a
+     * genuinely untouched lead — see Lead::hasStaleNewStatus().
+     */
+    private function staleStatusQuery(Builder $query): Builder
+    {
+        return $query->where('status', LeadStatus::New->value)
+            ->where(fn ($q) => $q->has('notes')->orHas('callLogs'));
     }
 
     /**
@@ -424,6 +439,7 @@ class LeadController extends Controller
                 ->whereNull('next_follow_up_at')
                 ->where('ai_score', '>=', config('services.anthropic.hot_lead_threshold', 70)))
             ->when($request->input('attention') === 'unresponsive', fn ($q) => $this->unresponsiveQuery($q))
+            ->when($request->input('attention') === 'stale_status', fn ($q) => $this->staleStatusQuery($q))
             ->when($month, function ($q) use ($month) {
                 [$year, $monthNum] = explode('-', $month);
                 $q->whereYear('created_at', $year)->whereMonth('created_at', $monthNum);
