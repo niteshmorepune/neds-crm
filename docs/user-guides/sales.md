@@ -56,13 +56,24 @@ today, then a Hot lead nobody's followed up on yet, then everything else.
 Switch to **Newest** (toggle above the list) if you want plain
 chronological order instead. A red **Overdue** or amber **Due today**
 badge shows right on a lead's row when relevant. Above the list, the
-**"Needs your attention today"** strip gives you four one-click counts —
-overdue, due today, Hot-but-untouched, and **unresponsive** (3 or more
+**"Needs your attention today"** strip gives you five one-click counts —
+overdue, due today, Hot-but-untouched, **unresponsive** (3 or more
 call/WhatsApp attempts with no answer and no reply, on a lead that's
-still open) — scoped to your own leads. Unresponsive is worth a second
-look before you keep dialling the same number the same way — try a
-different time of day, or switch channels if you've only tried calls (or
-only WhatsApp) so far.
+still open), and **status may need updating** (see below) — scoped to
+your own leads. Unresponsive is worth a second look before you keep
+dialling the same number the same way — try a different time of day, or
+switch channels if you've only tried calls (or only WhatsApp) so far.
+
+**Keep "New" honest — the "This was a call" shortcut:** a lead only
+counts as genuinely untouched while it's **New**. The moment you log any
+real outreach against it — a call via **Log a call**, or a note where you
+tick **📞 This was a call** and pick an outcome right there in the note
+box — it auto-promotes to **Contacted**, no separate status edit needed.
+If you type a plain note describing a call without ticking that box, the
+lead stays New with real activity against it — a purple **✏️ Status may
+need updating** note appears under its Status badge (and it's counted in
+the strip above), so it doesn't silently look untouched to you or anyone
+scanning the New tile.
 
 **A Converted lead that isn't Won yet:** once a lead converts, its Status
 column shows **Converted** plus a small caption underneath describing

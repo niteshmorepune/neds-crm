@@ -44,10 +44,14 @@ up on yet, then everything else) — not newest. Switch to **Newest** via
 the toggle above the list if you want plain chronological order. A red
 **Overdue** or amber **Due today** badge shows right on a lead's row. The
 **"Needs attention today"** strip above the list gives one-click counts
-for all four — overdue, due today, Hot-but-untouched, and **unresponsive**
-(3+ call/WhatsApp attempts with no answer or reply, still open) — since
-your queue is shared, not owned, these cover every lead in the system,
-not just some subset.
+for all five — overdue, due today, Hot-but-untouched, **unresponsive**
+(3+ call/WhatsApp attempts with no answer or reply, still open), and
+**status may need updating** (a New lead that already has a note or call
+logged against it) — since your queue is shared, not owned, these cover
+every lead in the system, not just some subset. Tip: if you type a note
+describing a call, tick **📞 This was a call** and pick an outcome in the
+note box — it logs a real call AND moves the lead off New automatically,
+so it never shows up in that last count.
 
 You **cannot create a brand-new lead** from scratch, **convert** a lead into
 a client/deal, or **delete** a lead — those stay with Sales/Manager/Admin.
