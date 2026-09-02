@@ -119,21 +119,68 @@ class LeadController extends Controller
      * Real gap flagged by the owner (2026-09-02): a lead called 5 times with
      * no answer looked identical on the list to one called once and picked
      * up — both just sit at "Contacted." This surfaces the ones genuinely
-     * stuck: UNRESPONSIVE_ATTEMPT_THRESHOLD+ logged call attempts (any
-     * outcome counts as a real attempt — see CallLogController::
-     * promoteLeadOnFirstOutreach()'s same reasoning), none of which ever
-     * connected, and still open (a Converted/Lost lead isn't "stuck," it's
-     * resolved). Scoped to calls only for now, not WhatsApp sends — a call
-     * has a clean outcome field (connected vs not); a WhatsApp send doesn't
-     * carry an equally reliable "did they respond" signal yet.
+     * stuck: UNRESPONSIVE_ATTEMPT_THRESHOLD+ combined outreach attempts
+     * (calls of any outcome, plus outbound WhatsApp sends — same "any
+     * attempt counts" reasoning as CallLogController::
+     * promoteLeadOnFirstOutreach()), with NO successful response on either
+     * channel, and still open (a Converted/Lost lead isn't "stuck," it's
+     * resolved).
+     *
+     * WhatsApp attempts/replies are read off Note (WhatsappWebhookController
+     * writes both directions there with user_id always NULL — see its own
+     * noteBody() docblock): an outbound send is prefixed "[Sent via
+     * WhatsApp by ...]", an inbound customer reply has no prefix. A manual
+     * staff note always has a real user_id, so checking user_id === null
+     * cleanly excludes those from being mistaken for either signal.
+     *
+     * Computed in PHP, not a single SQL query — combining a count threshold
+     * across two different relations (callLogs + notes) isn't expressible
+     * as one whereHas clause, and this app already accepts a PHP pass at
+     * this scale for the same reason (see Lead::priorityScore()'s own
+     * sort). The initial has()->orHas() keeps the candidate set (and
+     * therefore what actually loads into PHP) to only leads with some
+     * outreach at all.
      */
     private const UNRESPONSIVE_ATTEMPT_THRESHOLD = 3;
 
+    private const WHATSAPP_OUTBOUND_PREFIX = '[Sent via WhatsApp by';
+
     private function unresponsiveQuery(Builder $query): Builder
     {
-        return $query->whereIn('status', LeadStatus::openValues())
-            ->whereDoesntHave('callLogs', fn ($q) => $q->where('outcome', CallOutcome::Connected->value))
-            ->whereHas('callLogs', fn ($q) => $q, '>=', self::UNRESPONSIVE_ATTEMPT_THRESHOLD);
+        return $query->whereIn('id', $this->unresponsiveLeadIds($query));
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function unresponsiveLeadIds(Builder $query): array
+    {
+        return $query->clone()
+            ->whereIn('status', LeadStatus::openValues())
+            ->where(fn ($q) => $q->has('callLogs')->orHas('notes'))
+            ->with([
+                'callLogs:id,callable_id,callable_type,outcome',
+                'notes:id,notable_id,notable_type,user_id,body',
+            ])
+            ->get()
+            ->filter(function (Lead $lead) {
+                $connectedCall = $lead->callLogs->contains(fn ($c) => $c->outcome === CallOutcome::Connected);
+                $waInboundReply = $lead->notes->contains(
+                    fn ($n) => $n->user_id === null && ! str_starts_with($n->body, self::WHATSAPP_OUTBOUND_PREFIX)
+                );
+
+                if ($connectedCall || $waInboundReply) {
+                    return false;
+                }
+
+                $waOutboundCount = $lead->notes
+                    ->filter(fn ($n) => $n->user_id === null && str_starts_with($n->body, self::WHATSAPP_OUTBOUND_PREFIX))
+                    ->count();
+
+                return ($lead->callLogs->count() + $waOutboundCount) >= self::UNRESPONSIVE_ATTEMPT_THRESHOLD;
+            })
+            ->pluck('id')
+            ->all();
     }
 
     /**

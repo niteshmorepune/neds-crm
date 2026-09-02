@@ -79,9 +79,9 @@
                     🔥 {{ $attentionCounts['hot_untouched'] }} hot, not yet followed up
                 </a>
                 <a href="{{ route('leads.index', array_merge($ownerScope, ['attention' => 'unresponsive'])) }}"
-                   title="3+ calls made, never connected — still open, not yet Converted or Lost"
+                   title="3+ combined call/WhatsApp attempts, never a connected call or a WhatsApp reply — still open, not yet Converted or Lost"
                    class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
-                    📵 {{ $attentionCounts['unresponsive'] }} unresponsive (3+ calls, no answer)
+                    📵 {{ $attentionCounts['unresponsive'] }} unresponsive (3+ attempts, no reply)
                 </a>
             </div>
         </div>

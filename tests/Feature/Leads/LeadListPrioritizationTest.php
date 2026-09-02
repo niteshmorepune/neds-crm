@@ -121,6 +121,51 @@ it('filters the list to unresponsive leads: 3+ call attempts, never connected, s
         ->not->toContain($convertedAnyway->id);
 });
 
+it('counts outbound WhatsApp sends toward the unresponsive threshold, combined with calls', function () {
+    $manager = User::factory()->role(UserRole::Manager)->create();
+
+    // 1 call + 2 WhatsApp sends = 3 combined attempts, never a reply.
+    $waAttempts = Lead::factory()->create(['status' => LeadStatus::Contacted, 'name' => 'WhatsApp Attempts Lead']);
+    CallLog::factory()->create(['callable_type' => Lead::class, 'callable_id' => $waAttempts->id, 'outcome' => CallOutcome::NoAnswer]);
+    $waAttempts->notes()->create(['user_id' => null, 'body' => "[Sent via WhatsApp by Kiran Katte]\nHi, following up"]);
+    $waAttempts->notes()->create(['user_id' => null, 'body' => "[Sent via WhatsApp by AI Assistant (auto-reply)]\nStill there?"]);
+
+    $response = $this->actingAs($manager)->get(route('leads.index', ['attention' => 'unresponsive']));
+
+    $ids = $response->viewData('leads')->pluck('id')->all();
+    expect($ids)->toContain($waAttempts->id);
+});
+
+it('excludes a lead from unresponsive once it has a real inbound WhatsApp reply, even with 3+ prior attempts', function () {
+    $manager = User::factory()->role(UserRole::Manager)->create();
+
+    $replied = Lead::factory()->create(['status' => LeadStatus::Contacted, 'name' => 'Replied Via WhatsApp']);
+    CallLog::factory()->count(3)->create(['callable_type' => Lead::class, 'callable_id' => $replied->id, 'outcome' => CallOutcome::NoAnswer]);
+    // Inbound customer reply: no prefix, user_id null.
+    $replied->notes()->create(['user_id' => null, 'body' => 'Yes I am interested, please call tomorrow']);
+
+    $response = $this->actingAs($manager)->get(route('leads.index', ['attention' => 'unresponsive']));
+
+    expect($response->viewData('leads')->pluck('id')->all())->not->toContain($replied->id);
+});
+
+it('does not mistake a manually-typed staff note for a WhatsApp signal (real user_id, no prefix)', function () {
+    $manager = User::factory()->role(UserRole::Manager)->create();
+
+    // 3 manual staff notes, no calls, no real WhatsApp activity at all —
+    // must NOT count as 3 attempts (a manual note has a real user_id).
+    $lead = Lead::factory()->create(['status' => LeadStatus::Contacted, 'name' => 'Only Manual Notes']);
+    $lead->notes()->createMany([
+        ['user_id' => $manager->id, 'body' => 'Called office, will try again'],
+        ['user_id' => $manager->id, 'body' => 'Checked LinkedIn'],
+        ['user_id' => $manager->id, 'body' => 'Reminder set'],
+    ]);
+
+    $response = $this->actingAs($manager)->get(route('leads.index', ['attention' => 'unresponsive']));
+
+    expect($response->viewData('leads')->pluck('id')->all())->not->toContain($lead->id);
+});
+
 it('shows the unresponsive count on the Needs Attention strip', function () {
     $manager = User::factory()->role(UserRole::Manager)->create();
     $unresponsive = Lead::factory()->create(['status' => LeadStatus::Contacted]);
@@ -128,7 +173,7 @@ it('shows the unresponsive count on the Needs Attention strip', function () {
 
     $this->actingAs($manager)->get(route('leads.index'))
         ->assertOk()
-        ->assertSee('1 unresponsive (3+ calls, no answer)');
+        ->assertSee('1 unresponsive (3+ attempts, no reply)');
 });
 
 it('shows an Overdue badge on the list row for a lead with a past follow-up date', function () {
