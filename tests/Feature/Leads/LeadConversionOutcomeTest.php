@@ -27,11 +27,16 @@ it('returns null for a Converted lead with no linked deal', function () {
     expect($lead->conversionOutcomeLabel())->toBeNull();
 });
 
-it('shows the deal stage label for a non-Won deal', function (DealStage $stage) {
+it('shows the deal stage label, prefixed "Deal: " so it never reads as the lead\'s own status, for a non-Won deal', function (DealStage $stage) {
+    // Real confusion (2026-09-02): a bare "Lost" caption under a green
+    // "Converted" badge looked like a contradiction. The lead genuinely
+    // stays Converted forever (a real Deal was created — a historical
+    // fact) even if that Deal is later Lost; the prefix disambiguates
+    // which of the two the caption is describing.
     $deal = Deal::factory()->stage($stage)->create();
     $lead = Lead::factory()->create(['status' => LeadStatus::Converted, 'converted_deal_id' => $deal->id]);
 
-    expect($lead->conversionOutcomeLabel())->toBe($stage->label());
+    expect($lead->conversionOutcomeLabel())->toBe('Deal: '.$stage->label());
 })->with([
     'proposal' => DealStage::Proposal,
     'negotiation' => DealStage::Negotiation,
@@ -39,36 +44,36 @@ it('shows the deal stage label for a non-Won deal', function (DealStage $stage) 
     'lost' => DealStage::Lost,
 ]);
 
-it('shows "Won (unbilled)" for a Won deal with no invoices at all', function () {
+it('shows "Deal: Won (unbilled)" for a Won deal with no invoices at all', function () {
     $deal = Deal::factory()->stage(DealStage::Won)->create();
     $lead = Lead::factory()->create(['status' => LeadStatus::Converted, 'converted_deal_id' => $deal->id]);
 
-    expect($lead->conversionOutcomeLabel())->toBe('Won (unbilled)');
+    expect($lead->conversionOutcomeLabel())->toBe('Deal: Won (unbilled)');
 });
 
-it('shows "Won (unpaid)" for a Won deal whose invoice has zero paid', function () {
+it('shows "Deal: Won (unpaid)" for a Won deal whose invoice has zero paid', function () {
     $deal = Deal::factory()->stage(DealStage::Won)->create();
     Invoice::factory()->create(['deal_id' => $deal->id, 'customer_id' => $deal->customer_id, 'total' => 100000, 'amount_paid' => 0]);
     $lead = Lead::factory()->create(['status' => LeadStatus::Converted, 'converted_deal_id' => $deal->id]);
 
-    expect($lead->conversionOutcomeLabel())->toBe('Won (unpaid)');
+    expect($lead->conversionOutcomeLabel())->toBe('Deal: Won (unpaid)');
 });
 
-it('shows "Won (partial payment)" for a Won deal partially paid', function () {
+it('shows "Deal: Won (partial payment)" for a Won deal partially paid', function () {
     $deal = Deal::factory()->stage(DealStage::Won)->create();
     Invoice::factory()->create(['deal_id' => $deal->id, 'customer_id' => $deal->customer_id, 'total' => 100000, 'amount_paid' => 40000]);
     $lead = Lead::factory()->create(['status' => LeadStatus::Converted, 'converted_deal_id' => $deal->id]);
 
-    expect($lead->conversionOutcomeLabel())->toBe('Won (partial payment)');
+    expect($lead->conversionOutcomeLabel())->toBe('Deal: Won (partial payment)');
 });
 
-it('shows plain "Won" for a Won deal fully paid, even across multiple invoices', function () {
+it('shows plain "Deal: Won" for a Won deal fully paid, even across multiple invoices', function () {
     $deal = Deal::factory()->stage(DealStage::Won)->create();
     Invoice::factory()->create(['deal_id' => $deal->id, 'customer_id' => $deal->customer_id, 'total' => 60000, 'amount_paid' => 60000]);
     Invoice::factory()->create(['deal_id' => $deal->id, 'customer_id' => $deal->customer_id, 'total' => 40000, 'amount_paid' => 40000]);
     $lead = Lead::factory()->create(['status' => LeadStatus::Converted, 'converted_deal_id' => $deal->id]);
 
-    expect($lead->conversionOutcomeLabel())->toBe('Won');
+    expect($lead->conversionOutcomeLabel())->toBe('Deal: Won');
 });
 
 it('counts an invoice with no deal_id at all toward the same customer\'s Won deal', function () {
@@ -79,7 +84,7 @@ it('counts an invoice with no deal_id at all toward the same customer\'s Won dea
     Invoice::factory()->create(['deal_id' => null, 'customer_id' => $deal->customer_id, 'total' => 157500, 'amount_paid' => 157500]);
     $lead = Lead::factory()->create(['status' => LeadStatus::Converted, 'converted_deal_id' => $deal->id]);
 
-    expect($lead->conversionOutcomeLabel())->toBe('Won');
+    expect($lead->conversionOutcomeLabel())->toBe('Deal: Won');
 });
 
 it('never counts an invoice explicitly tied to a DIFFERENT deal for the same customer', function () {
@@ -90,7 +95,7 @@ it('never counts an invoice explicitly tied to a DIFFERENT deal for the same cus
     Invoice::factory()->create(['deal_id' => $otherDeal->id, 'customer_id' => $customer->id, 'total' => 100000, 'amount_paid' => 100000]);
     $lead = Lead::factory()->create(['status' => LeadStatus::Converted, 'converted_deal_id' => $deal->id]);
 
-    expect($lead->conversionOutcomeLabel())->toBe('Won (unbilled)');
+    expect($lead->conversionOutcomeLabel())->toBe('Deal: Won (unbilled)');
 });
 
 it('shows "Deal removed" when the linked deal has been soft-deleted', function () {
@@ -114,5 +119,20 @@ it('shows the conversion outcome caption on the Lead Generation list', function 
         ->get(route('leads.index', ['status' => LeadStatus::Converted->value]))
         ->assertOk()
         ->assertSee('Test Outcome Lead')
-        ->assertSee('Negotiation');
+        ->assertSee('Deal: Negotiation');
+});
+
+it('colors "Deal: Lost" red and "Deal: Won..." green, distinct from the plain gray pipeline captions', function () {
+    $lostDeal = Deal::factory()->stage(DealStage::Lost)->create();
+    $lostLead = Lead::factory()->create(['status' => LeadStatus::Converted, 'converted_deal_id' => $lostDeal->id]);
+
+    $wonDeal = Deal::factory()->stage(DealStage::Won)->create();
+    $wonLead = Lead::factory()->create(['status' => LeadStatus::Converted, 'converted_deal_id' => $wonDeal->id]);
+
+    $html = $this->actingAs($this->admin)
+        ->get(route('leads.index', ['status' => LeadStatus::Converted->value]))
+        ->getContent();
+
+    expect($html)->toContain('text-red-500">Deal: Lost')
+        ->and($html)->toContain('text-green-600">Deal: Won (unbilled)');
 });

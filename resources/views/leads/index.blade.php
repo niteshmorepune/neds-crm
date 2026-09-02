@@ -214,7 +214,12 @@
                                     'bg-gray-100 text-gray-600' => $lead->status === \App\Enums\LeadStatus::Lost,
                                 ])>{{ $lead->status->label() }}</span>
                                 @if ($lead->status === \App\Enums\LeadStatus::Converted && ($outcome = $lead->conversionOutcomeLabel()))
-                                    <div class="mt-1 text-xs text-gray-400">{{ $outcome }}</div>
+                                    <div @class([
+                                        'mt-1 text-xs',
+                                        'text-red-500' => $outcome === 'Deal: Lost',
+                                        'text-green-600' => str_starts_with($outcome, 'Deal: Won'),
+                                        'text-gray-400' => $outcome !== 'Deal: Lost' && ! str_starts_with($outcome, 'Deal: Won'),
+                                    ])>{{ $outcome }}</div>
                                 @endif
                             </td>
                             <td class="px-4 py-3 max-w-xs">

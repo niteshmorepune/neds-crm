@@ -269,6 +269,14 @@ class Lead extends Model
      * the manual "Log Invoice" flow). Both would have silently under-
      * reported a real paying client as "unbilled" or shown nothing at all.
      *
+     * Every non-null return is prefixed "Deal: " (except "Deal removed",
+     * already unambiguous) — real confusion (2026-09-02): a plain "Lost"
+     * caption under a green "Converted" badge read as a direct
+     * contradiction ("Converted AND Lost?") even though it's correct — the
+     * LEAD stayed Converted (a real Deal was created, a historical fact
+     * that never changes), it's the resulting DEAL that was later lost.
+     * The prefix makes clear which of the two the caption describes.
+     *
      * Returns null when there's nothing more specific to say (not
      * Converted, or a Converted lead with no converted_deal_id at all).
      */
@@ -289,7 +297,7 @@ class Lead extends Model
         }
 
         if ($deal->stage !== DealStage::Won) {
-            return $deal->stage->label();
+            return 'Deal: '.$deal->stage->label();
         }
 
         // Match an invoice explicitly tied to this deal, OR one for the
@@ -301,16 +309,16 @@ class Lead extends Model
             ->get();
 
         if ($invoices->isEmpty()) {
-            return 'Won (unbilled)';
+            return 'Deal: Won (unbilled)';
         }
 
         $totalInvoiced = $invoices->sum('total');
         $totalPaid = $invoices->sum('amount_paid');
 
         return match (true) {
-            $totalPaid >= $totalInvoiced => 'Won',
-            $totalPaid > 0 => 'Won (partial payment)',
-            default => 'Won (unpaid)',
+            $totalPaid >= $totalInvoiced => 'Deal: Won',
+            $totalPaid > 0 => 'Deal: Won (partial payment)',
+            default => 'Deal: Won (unpaid)',
         };
     }
 
