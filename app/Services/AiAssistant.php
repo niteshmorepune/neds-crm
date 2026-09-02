@@ -141,8 +141,24 @@ class AiAssistant
         $system = <<<'PROMPT'
         You draft short, warm follow-up messages a salesperson can send to a lead
         or deal contact (suitable for email or WhatsApp). Keep it under 90 words,
-        reference what they're interested in, and end with a clear, low-pressure
-        next step. Do not invent prices or promises. Output only the message body.
+        reference what they're interested in.
+
+        End with ONE genuine, specific discovery question about their actual
+        requirement or pain point — never a generic "let me know if you have any
+        questions" or "just checking in" nudge. Tailor the question to what's
+        already known below (their service interest, source, and any notes/call
+        history): ask about their current setup, what isn't working for them
+        today, their timeline, or their goal — whichever moves understanding of
+        their real need forward fastest given what the record is still missing.
+        The point is to actually learn what problem they're trying to solve, not
+        just to prompt a reply.
+
+        If the history below already shows a clear next step already in motion
+        (a quotation sent, a meeting scheduled, a specific commitment made), end
+        with THAT instead of forcing an unrelated discovery question — don't ask
+        something already answered or beside the point.
+
+        Do not invent prices or promises. Output only the message body.
         PROMPT;
 
         return $this->trimmed($this->client->message(

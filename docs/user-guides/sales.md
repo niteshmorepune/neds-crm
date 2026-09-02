@@ -274,9 +274,14 @@ your "follow-ups due" list — same list, no separate place to look.
 - Set a **next follow-up date** on the lead itself so it shows up in your
   "follow-ups due" dashboard widget.
 - **Draft follow-up (✨)** — click this button to have AI write a suggested
-  follow-up message based on the lead's details and history. Read it, edit it to
-  match your voice, then send it yourself (WhatsApp, email, or call). The AI
-  never sends anything automatically.
+  follow-up message based on the lead's details and history. It ends with one
+  genuine, specific discovery question about their requirement or pain point
+  (their current setup, what isn't working, their goal, their timeline) —
+  never a generic "let me know if you have questions" — unless the history
+  already shows a real next step in motion (a quotation sent, a meeting
+  booked), in which case it points to that instead. Read it, edit it to match
+  your voice, then send it yourself (WhatsApp, email, or call). The AI never
+  sends anything automatically.
 - **Summarize (✨)** — click this button (above the notes list, next to Draft
   follow-up) to have AI condense a lead's whole notes timeline — including
   every WhatsApp message on it — into a few sentences. Handy for a lead

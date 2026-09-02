@@ -100,6 +100,22 @@ it('drafts a deal follow-up message from the deal\'s own notes, with no call-his
     });
 });
 
+it('instructs the model to end a lead follow-up with a genuine discovery question, not a generic check-in', function () {
+    aiOn();
+    fakeAiText('Hi Ravi, what does your current SEO setup look like today?');
+    $lead = Lead::factory()->create(['name' => 'Ravi']);
+
+    app(AiAssistant::class)->draftFollowUp($lead);
+
+    Http::assertSent(function ($request) {
+        $system = json_decode($request->body(), true)['system'];
+
+        return str_contains($system, 'genuine, specific discovery question')
+            && str_contains($system, 'requirement or pain point')
+            && ! str_contains($system, 'clear, low-pressure');
+    });
+});
+
 it('summarizes a customer timeline', function () {
     aiOn();
     fakeAiText('- Long-time client. - One open ticket about billing. - Next: follow up on renewal.');
