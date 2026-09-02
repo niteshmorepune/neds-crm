@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Enums\CallDirection;
 use App\Enums\CallOutcome;
-use App\Enums\LeadStatus;
 use App\Enums\UserRole;
 use App\Enums\VisibilityAuditTouchChannel;
 use App\Enums\VisibilityAuditTouchType;
@@ -167,11 +166,7 @@ class CallLogController extends Controller
             return;
         }
 
-        $lead = Lead::find($id);
-
-        if ($lead !== null && $lead->status === LeadStatus::New) {
-            $lead->update(['status' => LeadStatus::Contacted->value]);
-        }
+        Lead::find($id)?->promoteFromNewOnOutreach();
     }
 
     /**

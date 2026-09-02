@@ -250,6 +250,24 @@ class Lead extends Model
     }
 
     /**
+     * "New" should reliably mean "genuinely never attempted" — promotes to
+     * Contacted the moment ANY real outreach is recorded against a
+     * still-New lead (any call outcome, or a note logged as a call via the
+     * RecordNotes "This was a call" toggle — see
+     * CallLogController::promoteLeadOnFirstOutreach() and
+     * RecordNotes::addNote(), the two call sites), rather than depending on
+     * every rep remembering to also flip the status field by hand. No-op
+     * for a lead already past New. Goes through update() (not a raw query)
+     * so LogsActivity still records it.
+     */
+    public function promoteFromNewOnOutreach(): void
+    {
+        if ($this->status === LeadStatus::New) {
+            $this->update(['status' => LeadStatus::Contacted->value]);
+        }
+    }
+
+    /**
      * What "Converted" actually means for this lead right now, beyond the
      * bare status label. Lead.status = Converted only ever records that
      * ConvertLead::handle() ran — a Deal exists — it says nothing about

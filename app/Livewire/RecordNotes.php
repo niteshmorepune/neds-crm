@@ -2,9 +2,13 @@
 
 namespace App\Livewire;
 
+use App\Enums\CallDirection;
+use App\Enums\CallOutcome;
 use App\Jobs\ScoreLead;
 use App\Jobs\SendWhatsappLeadReplyJob;
 use App\Livewire\Concerns\RatesAiDrafts;
+use App\Models\CallLog;
+use App\Models\Customer;
 use App\Models\Deal;
 use App\Models\Lead;
 use App\Models\Note;
@@ -40,6 +44,19 @@ class RecordNotes extends Component
 
     /** Opt-in only — Lead notes are internal by default, unlike Ticket replies. */
     public bool $sendViaWhatsapp = false;
+
+    /**
+     * Real gap found 2026-09-02: reps were typing a note describing a call
+     * ("called, no answer") instead of using the separate Log a Call
+     * feature — so status never auto-promoted, the unresponsive detector
+     * never saw the attempt, and call-timing reports were blind to it.
+     * Rather than asking reps to change habits, this meets the habit where
+     * it already is: ticking this turns the note being typed right now
+     * into a real logged call too, in one step.
+     */
+    public bool $logAsCall = false;
+
+    public ?string $callOutcome = null;
 
     // Edit state
     public ?int $editingNoteId = null;
@@ -80,6 +97,12 @@ class RecordNotes extends Component
         return $this->canManage
             && $this->record instanceof Lead
             && filled($this->record->whatsapp_conversation_id);
+    }
+
+    /** The "This was a call" shortcut is offered on the same two models CallLogController::store() already accepts. */
+    public function canLogAsCall(): bool
+    {
+        return $this->canManage && ($this->record instanceof Lead || $this->record instanceof Customer);
     }
 
     /**
@@ -147,6 +170,14 @@ class RecordNotes extends Component
 
         $this->validate();
 
+        $logAsCall = $this->canLogAsCall() && $this->logAsCall;
+
+        if ($logAsCall && ! in_array($this->callOutcome, CallOutcome::values(), true)) {
+            $this->addError('callOutcome', 'Pick an outcome to log this as a call.');
+
+            return;
+        }
+
         $sendViaWhatsapp = $this->canReplyViaWhatsapp() && $this->sendViaWhatsapp;
 
         $note = $this->record->notes()->create([
@@ -158,6 +189,30 @@ class RecordNotes extends Component
 
         if ($sendViaWhatsapp) {
             SendWhatsappLeadReplyJob::dispatch($note->id);
+        }
+
+        if ($logAsCall) {
+            // Reuses the note's own text as the CallLog's notes too — the
+            // rep already described what happened, no reason to ask for it
+            // twice. Deliberately a lighter-weight path than
+            // CallLogController::store(): promotes New→Contacted (the
+            // actual point of this shortcut), but doesn't replicate that
+            // controller's Visibility Audit touch logging or
+            // superseded-follow-up clearing — a full "Log a Call" is still
+            // there for anyone who needs those.
+            CallLog::create([
+                'user_id' => auth()->id(),
+                'callable_type' => $this->record::class,
+                'callable_id' => $this->record->id,
+                'direction' => CallDirection::Outgoing->value,
+                'outcome' => $this->callOutcome,
+                'notes' => $this->body,
+                'called_at' => now(),
+            ]);
+
+            if ($this->record instanceof Lead) {
+                $this->record->promoteFromNewOnOutreach();
+            }
         }
 
         // A note is real post-intake signal ScoreLead's prompt now reads —
@@ -175,7 +230,7 @@ class RecordNotes extends Component
             );
         }
 
-        $this->reset(['body', 'draftUsageId', 'draftFeedback', 'sendViaWhatsapp']);
+        $this->reset(['body', 'draftUsageId', 'draftFeedback', 'sendViaWhatsapp', 'logAsCall', 'callOutcome']);
         $this->visibleToClient = $this->showPortalToggle;
     }
 
@@ -236,6 +291,8 @@ class RecordNotes extends Component
             'canDraft' => $this->canDraft(),
             'canReplyViaWhatsapp' => $this->canReplyViaWhatsapp(),
             'canSummarize' => $this->canSummarize(),
+            'canLogAsCall' => $this->canLogAsCall(),
+            'callOutcomes' => CallOutcome::cases(),
         ]);
     }
 }

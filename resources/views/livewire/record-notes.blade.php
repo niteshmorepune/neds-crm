@@ -47,7 +47,25 @@
                             <span>Also send as WhatsApp reply</span>
                         </label>
                     @endif
+                    @if ($canLogAsCall)
+                        <label class="flex items-center gap-1.5 text-sm select-none cursor-pointer
+                               {{ $logAsCall ? 'text-indigo-600' : 'text-gray-400' }}">
+                            <input type="checkbox" wire:model.live="logAsCall"
+                                   class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" />
+                            <span>📞 This was a call</span>
+                        </label>
+                        @if ($logAsCall)
+                            <select wire:model="callOutcome"
+                                    class="rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <option value="">Outcome…</option>
+                                @foreach ($callOutcomes as $outcome)
+                                    <option value="{{ $outcome->value }}" @selected($callOutcome === $outcome->value)>{{ $outcome->label() }}</option>
+                                @endforeach
+                            </select>
+                        @endif
+                    @endif
                 </div>
+                @error('callOutcome') <div class="mt-1 text-xs text-red-600">{{ $message }}</div> @enderror
                 <div class="flex items-center gap-2">
                     @if ($canDraft)
                         <button type="button" wire:click="draftFollowUp" wire:loading.attr="disabled" wire:target="draftFollowUp"
