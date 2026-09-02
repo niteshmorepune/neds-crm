@@ -168,6 +168,24 @@ it('preserves unmapped custom question answers as a note', function () {
         ->and($lead->notes()->first()->body)->toContain('how_did_you_hear_about_us: Instagram');
 });
 
+it('does not flag a fresh Meta lead as "status may need updating" just for its own auto-captured form-answers note', function () {
+    // Real bug (owner screenshot, 2026-09-03, "Raj Kadam"/"Bhaskar Bhadke"):
+    // the "Additional form answers:" note this job auto-creates was counted
+    // by Lead::hasStaleNewStatus() identically to a rep's own outreach note
+    // — fixed by timing (a note created in the SAME request as the lead is
+    // intake data, not later activity), see Lead::INTAKE_NOTE_WINDOW_SECONDS.
+    fakeMetaGraphResponse([
+        ['name' => 'full_name', 'values' => ['Raj Kadam']],
+        ['name' => 'what_is_your_biggest_goal', 'values' => ['grow_my_business']],
+    ]);
+
+    ImportMetaLead::dispatchSync('lg-1');
+
+    $lead = Lead::where('meta_leadgen_id', 'lg-1')->first();
+    expect($lead->notes()->count())->toBe(1)
+        ->and($lead->hasStaleNewStatus())->toBeFalse();
+});
+
 it('maps a custom question answer to service_id when it matches an active service name', function () {
     $service = Service::factory()->create(['name' => 'SEO', 'is_active' => true]);
     fakeMetaGraphResponse([

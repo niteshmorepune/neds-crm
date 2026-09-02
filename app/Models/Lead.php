@@ -268,31 +268,31 @@ class Lead extends Model
     }
 
     /**
-     * A note body PREFIX (matched via str_starts_with) that means "this note
-     * was auto-generated at intake, restating data the lead itself already
-     * submitted" rather than a sign that anyone actually did anything after
-     * the lead was created. Real bug (2026-09-03, owner screenshot): two
-     * fresh Meta Lead Ads leads (Raj Kadam, Bhaskar Bhadke) showed "Status
-     * may need updating" the moment they were captured — ImportMetaLead's
-     * own createLead()/attachToExistingLead() auto-creates a "Additional
-     * form answers:" / "Also submitted a Meta Ads form" note right at
-     * intake (see app/Jobs/ImportMetaLead.php), which hasStaleNewStatus()
-     * was counting as "real activity" identically to a rep's own outreach
-     * note. Deliberately does NOT exclude RecordVisibilityAuditPurchase's
-     * notes ("Purchased Visibility Audit…") — a real payment IS a genuine
-     * post-intake event, not raw intake data, so a New lead who already
-     * paid should still be flagged.
-     *
-     * @var list<string>
+     * A note created within this many seconds of the LEAD's own creation is
+     * treated as part of the same intake transaction — the ingestion path
+     * that captured this lead recording what the person submitted (a form
+     * answer, a website enquiry message, a WhatsApp opening message), not
+     * something that happened afterward. Second real bug in the same hour
+     * (2026-09-03): fixed a body-prefix denylist for ImportMetaLead's
+     * "Additional form answers:" note first, but the owner then hit the
+     * identical false positive on a WEBSITE lead ("Ranu Jadhav") —
+     * LeadCaptureController::store() auto-creates a note from the raw
+     * `message` field with no prefix at all. A denylist keyed to specific
+     * wording is whack-a-mole against every current AND future lead-capture
+     * channel (Meta, website, WhatsApp, Visibility Audit purchase, and
+     * whatever comes next); timing is the one signal that's actually true
+     * of every intake path uniformly, without listing them out by name.
+     * 10s tolerance covers real request-processing lag between Lead::create()
+     * and the immediately-following notes()->create() call every one of
+     * these jobs makes; a rep's own note, a later WhatsApp exchange, or a
+     * Visibility Audit purchase on a lead that already existed will always
+     * land well outside this window because real time has to pass first.
      */
-    private const NON_OUTREACH_NOTE_PREFIXES = [
-        'Additional form answers:',
-        'Also submitted a Meta Ads form',
-    ];
+    private const INTAKE_NOTE_WINDOW_SECONDS = 10;
 
     /**
      * Flags a lead still sitting at "New" that already has real activity
-     * (a note that isn't just auto-captured intake data, or a call log)
+     * (a note created meaningfully after the lead itself, or a call log)
      * against it — the exact gap promoteFromNewOnOutreach() closes only
      * going forward: historical leads, and any future one where a rep
      * types a plain note without ticking "This was a call," still won't
@@ -321,20 +321,16 @@ class Lead extends Model
             return true;
         }
 
-        $notes = $this->relationLoaded('notes') ? $this->notes : $this->notes()->get(['id', 'body']);
+        $notes = $this->relationLoaded('notes') ? $this->notes : $this->notes()->get(['id', 'created_at']);
 
-        return $notes->contains(fn (Note $note) => ! self::isNonOutreachSystemNote($note->body));
-    }
-
-    private static function isNonOutreachSystemNote(string $body): bool
-    {
-        foreach (self::NON_OUTREACH_NOTE_PREFIXES as $prefix) {
-            if (str_starts_with($body, $prefix)) {
-                return true;
-            }
-        }
-
-        return false;
+        return $notes->contains(
+            // Carbon 3 defaults diffInSeconds() to a SIGNED difference (the
+            // note is normally later than the lead, giving a negative
+            // number here) — absolute: true, not abs(), so a note somehow
+            // backdated before the lead still counts as "outside the
+            // window" rather than silently comparing as if it were recent.
+            fn (Note $note) => $note->created_at->diffInSeconds($this->created_at, absolute: true) > self::INTAKE_NOTE_WINDOW_SECONDS
+        );
     }
 
     /**

@@ -43,13 +43,14 @@ class LeadController extends Controller
         // try to parse the raw, possibly-malformed request value.
         $month = $this->validMonth($request);
 
-        // notes:body (not withCount) so Lead::hasStaleNewStatus() can tell a
-        // real note from an auto-generated intake note (e.g. Meta Lead Ads'
-        // "Additional form answers:") — a bare count can't distinguish those.
-        // Cheap at this scale (15/page), same "eager-load, filter in PHP"
-        // precedent as unresponsiveLeadIds() below.
+        // notes:created_at (not withCount) so Lead::hasStaleNewStatus() can
+        // tell a real note from an auto-generated intake note (created in
+        // the same request as the lead itself, whatever the capture
+        // channel) — a bare count can't distinguish those. Cheap at this
+        // scale (15/page), same "eager-load, filter in PHP" precedent as
+        // unresponsiveLeadIds() below.
         $query = $this->filteredLeads($request, $month)
-            ->with(['owner', 'service', 'latestNote', 'notes:id,notable_id,notable_type,body'])
+            ->with(['owner', 'service', 'latestNote', 'notes:id,notable_id,notable_type,created_at'])
             ->withCount('callLogs');
 
         $sort = $request->input('sort') === 'newest' ? 'newest' : 'priority';
@@ -149,7 +150,7 @@ class LeadController extends Controller
             ->where('status', LeadStatus::New->value)
             ->where(fn ($q) => $q->has('notes')->orHas('callLogs'))
             ->with([
-                'notes:id,notable_id,notable_type,body',
+                'notes:id,notable_id,notable_type,created_at',
                 'callLogs:id,callable_id,callable_type',
             ])
             ->get()

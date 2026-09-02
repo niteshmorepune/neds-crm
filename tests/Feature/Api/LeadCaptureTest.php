@@ -38,6 +38,24 @@ it('creates an unassigned website lead with a valid token', function () {
         ->and($lead->notes()->count())->toBe(1);
 });
 
+it('does not flag a fresh website lead as "status may need updating" just for its own auto-captured message', function () {
+    // Real bug (owner screenshot, 2026-09-03, "Ranu Jadhav"): the note this
+    // controller auto-creates from the `message` field was being counted by
+    // Lead::hasStaleNewStatus() identically to a rep's own outreach note —
+    // fixed by timing (a note created in the SAME request as the lead is
+    // intake data, not later activity), see Lead::INTAKE_NOTE_WINDOW_SECONDS.
+    $this->postJson('/api/leads', [
+        'name' => 'Ranu Jadhav',
+        'email' => 'ranu@site.test',
+        'message' => "Hi, I'm interested in your SEO services.",
+    ], ['Authorization' => 'Bearer secret-token'])->assertOk();
+
+    $lead = Lead::firstWhere('email', 'ranu@site.test');
+
+    expect($lead->notes()->count())->toBe(1)
+        ->and($lead->hasStaleNewStatus())->toBeFalse();
+});
+
 it('captures UTM fields when the website form sends them', function () {
     $this->postJson('/api/leads', [
         'name' => 'Campaign Visitor',

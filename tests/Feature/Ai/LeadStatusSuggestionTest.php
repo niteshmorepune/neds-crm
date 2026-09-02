@@ -26,7 +26,7 @@ function enableAiForLeadStatus(): void
 it('returns null and makes no call when AI is disabled', function () {
     config(['services.anthropic.enabled' => false]);
     Http::fake();
-    $lead = Lead::factory()->create(['status' => LeadStatus::New]);
+    $lead = Lead::factory()->create(['status' => LeadStatus::New, 'created_at' => now()->subHour()]);
     $lead->notes()->create(['user_id' => null, 'body' => 'Called, no answer.']);
 
     expect(app(AiAssistant::class)->suggestLeadStatusUpdate($lead))->toBeNull();
@@ -59,7 +59,7 @@ it('returns null and makes no call for a lead already past New, even with notes'
 it('suggests Contacted from a note describing an unanswered call attempt', function () {
     enableAiForLeadStatus();
     fakeLeadStatusClaude();
-    $lead = Lead::factory()->create(['status' => LeadStatus::New]);
+    $lead = Lead::factory()->create(['status' => LeadStatus::New, 'created_at' => now()->subHour()]);
     $lead->notes()->create(['user_id' => null, 'body' => 'The call was not answered by the client.']);
 
     $result = app(AiAssistant::class)->suggestLeadStatusUpdate($lead);
@@ -89,7 +89,7 @@ it('sends the lead\'s own call log history in the prompt', function () {
 it('accepts a Qualified suggestion when the model returns one', function () {
     enableAiForLeadStatus();
     fakeLeadStatusClaude(status: 'qualified', rationale: 'They asked for a formal quote.');
-    $lead = Lead::factory()->create(['status' => LeadStatus::New]);
+    $lead = Lead::factory()->create(['status' => LeadStatus::New, 'created_at' => now()->subHour()]);
     $lead->notes()->create(['user_id' => null, 'body' => 'Client asked us to send a proposal.']);
 
     $result = app(AiAssistant::class)->suggestLeadStatusUpdate($lead);
@@ -100,7 +100,7 @@ it('accepts a Qualified suggestion when the model returns one', function () {
 it('accepts a Lost suggestion when the model returns one', function () {
     enableAiForLeadStatus();
     fakeLeadStatusClaude(status: 'lost', rationale: 'They explicitly said not interested and asked to stop calling.');
-    $lead = Lead::factory()->create(['status' => LeadStatus::New]);
+    $lead = Lead::factory()->create(['status' => LeadStatus::New, 'created_at' => now()->subHour()]);
     $lead->notes()->create(['user_id' => null, 'body' => 'Client said not interested, please stop calling.']);
 
     $result = app(AiAssistant::class)->suggestLeadStatusUpdate($lead);
@@ -111,7 +111,7 @@ it('accepts a Lost suggestion when the model returns one', function () {
 it('discards a hallucinated status outside the 3 offered (e.g. "new" or "converted")', function () {
     enableAiForLeadStatus();
     fakeLeadStatusClaude(status: 'converted', rationale: 'Nonsense suggestion.');
-    $lead = Lead::factory()->create(['status' => LeadStatus::New]);
+    $lead = Lead::factory()->create(['status' => LeadStatus::New, 'created_at' => now()->subHour()]);
     $lead->notes()->create(['user_id' => null, 'body' => 'Called, no answer.']);
 
     $result = app(AiAssistant::class)->suggestLeadStatusUpdate($lead);
@@ -126,7 +126,7 @@ it('returns null when Claude\'s reply cannot be parsed', function () {
         'content' => [['type' => 'text', 'text' => 'not json at all']],
         'usage' => ['input_tokens' => 10, 'output_tokens' => 5],
     ])]);
-    $lead = Lead::factory()->create(['status' => LeadStatus::New]);
+    $lead = Lead::factory()->create(['status' => LeadStatus::New, 'created_at' => now()->subHour()]);
     $lead->notes()->create(['user_id' => null, 'body' => 'Called, no answer.']);
 
     expect(app(AiAssistant::class)->suggestLeadStatusUpdate($lead))->toBeNull();
@@ -135,7 +135,7 @@ it('returns null when Claude\'s reply cannot be parsed', function () {
 it('returns null when the API call fails', function () {
     enableAiForLeadStatus();
     Http::fake(['api.anthropic.com/*' => Http::response('upstream error', 500)]);
-    $lead = Lead::factory()->create(['status' => LeadStatus::New]);
+    $lead = Lead::factory()->create(['status' => LeadStatus::New, 'created_at' => now()->subHour()]);
     $lead->notes()->create(['user_id' => null, 'body' => 'Called, no answer.']);
 
     expect(app(AiAssistant::class)->suggestLeadStatusUpdate($lead))->toBeNull();

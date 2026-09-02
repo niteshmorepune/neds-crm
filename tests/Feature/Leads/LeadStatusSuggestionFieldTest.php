@@ -10,7 +10,7 @@ use Livewire\Livewire;
 
 it('suggests a status when the Suggest button is clicked', function () {
     $admin = User::factory()->role(UserRole::Admin)->create();
-    $lead = Lead::factory()->create(['status' => LeadStatus::New]);
+    $lead = Lead::factory()->create(['status' => LeadStatus::New, 'created_at' => now()->subHour()]);
     $lead->notes()->create(['user_id' => null, 'body' => 'The call was not answered by the client.']);
     config(['services.anthropic.enabled' => true, 'services.anthropic.key' => 'sk-test']);
     Http::fake(['api.anthropic.com/*' => Http::response([
@@ -29,7 +29,7 @@ it('suggests a status when the Suggest button is clicked', function () {
 
 it('does not call Claude a second time if suggest is called twice', function () {
     $admin = User::factory()->role(UserRole::Admin)->create();
-    $lead = Lead::factory()->create(['status' => LeadStatus::New]);
+    $lead = Lead::factory()->create(['status' => LeadStatus::New, 'created_at' => now()->subHour()]);
     $lead->notes()->create(['user_id' => null, 'body' => 'Called, no answer.']);
     config(['services.anthropic.enabled' => true, 'services.anthropic.key' => 'sk-test']);
     Http::fake(['api.anthropic.com/*' => Http::response([
@@ -47,7 +47,7 @@ it('does not call Claude a second time if suggest is called twice', function () 
 
 it('shows a helpful message and no pre-selection when the model returns nothing usable', function () {
     $admin = User::factory()->role(UserRole::Admin)->create();
-    $lead = Lead::factory()->create(['status' => LeadStatus::New]);
+    $lead = Lead::factory()->create(['status' => LeadStatus::New, 'created_at' => now()->subHour()]);
     $lead->notes()->create(['user_id' => null, 'body' => 'Talked briefly.']);
     config(['services.anthropic.enabled' => true, 'services.anthropic.key' => 'sk-test']);
     Http::fake(['api.anthropic.com/*' => Http::response([
@@ -90,7 +90,7 @@ it('applies the selected status and redirects back to the lead', function () {
 
 it('lets the rep override the suggested status before applying', function () {
     $admin = User::factory()->role(UserRole::Admin)->create();
-    $lead = Lead::factory()->create(['status' => LeadStatus::New]);
+    $lead = Lead::factory()->create(['status' => LeadStatus::New, 'created_at' => now()->subHour()]);
     $lead->notes()->create(['user_id' => null, 'body' => 'Client said not interested.']);
     config(['services.anthropic.enabled' => true, 'services.anthropic.key' => 'sk-test']);
     Http::fake(['api.anthropic.com/*' => Http::response([

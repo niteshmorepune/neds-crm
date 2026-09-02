@@ -5,6 +5,7 @@ use App\Enums\LeadStatus;
 use App\Enums\UserRole;
 use App\Models\CallLog;
 use App\Models\Lead;
+use App\Models\Note;
 use App\Models\User;
 use Database\Seeders\MenuItemsSeeder;
 
@@ -185,9 +186,13 @@ it('shows an Overdue badge on the list row for a lead with a past follow-up date
         ->assertSee('Overdue');
 });
 
-it('flags a New lead with a note as having a stale status, but not a genuinely untouched New lead', function () {
+it('flags a New lead with a note added well after creation, but not a genuinely untouched New lead', function () {
     $manager = User::factory()->role(UserRole::Manager)->create();
-    $stale = Lead::factory()->create(['name' => 'Typed A Note Instead', 'status' => LeadStatus::New]);
+    // Backdated so the note below (added "now" in test time) lands a
+    // realistic gap after the lead's own creation — see
+    // Lead::INTAKE_NOTE_WINDOW_SECONDS's docblock for why hasStaleNewStatus()
+    // cares about timing, not just note existence.
+    $stale = Lead::factory()->create(['name' => 'Typed A Note Instead', 'status' => LeadStatus::New, 'created_at' => now()->subHour()]);
     $stale->notes()->create(['user_id' => $manager->id, 'body' => 'Called, no answer']);
     $fresh = Lead::factory()->create(['name' => 'Genuinely Untouched', 'status' => LeadStatus::New]);
 
@@ -202,7 +207,7 @@ it('flags a New lead with a note as having a stale status, but not a genuinely u
     expect($leads[$fresh->id]->hasStaleNewStatus())->toBeFalse();
 });
 
-it('flags a New lead with a call log (but no note) as stale too', function () {
+it('flags a New lead with a call log (but no note) as stale too, regardless of timing', function () {
     $manager = User::factory()->role(UserRole::Manager)->create();
     $lead = Lead::factory()->create(['status' => LeadStatus::New]);
     CallLog::factory()->create(['callable_type' => Lead::class, 'callable_id' => $lead->id, 'outcome' => CallOutcome::NoAnswer]);
@@ -210,14 +215,14 @@ it('flags a New lead with a call log (but no note) as stale too', function () {
     expect($lead->hasStaleNewStatus())->toBeTrue();
 });
 
-it('does NOT flag a fresh Meta Lead Ads lead whose only note is the auto-generated intake note', function () {
+it('does NOT flag a fresh Meta Lead Ads lead whose only note is the auto-generated intake note created at the same moment', function () {
     // Real bug, 2026-09-03 (owner screenshot): ImportMetaLead's own
     // createLead()/attachToExistingLead() auto-creates an "Additional form
-    // answers:" / "Also submitted a Meta Ads form" note right at capture —
-    // that's restating data the lead itself submitted, not a sign anyone
-    // did anything after intake, so it must NOT count as "real activity."
+    // answers:" note in the SAME request that creates the lead — that's
+    // restating data the lead itself submitted, not a sign anyone did
+    // anything after intake, so it must NOT count as "real activity."
     $manager = User::factory()->role(UserRole::Manager)->create();
-    $lead = Lead::factory()->create(['status' => LeadStatus::New]);
+    $lead = Lead::factory()->create(['status' => LeadStatus::New]); // created "now", same as the note below
     $lead->notes()->create(['user_id' => null, 'body' => "Additional form answers:\nBudget: 5000"]);
 
     expect($lead->hasStaleNewStatus())->toBeFalse();
@@ -231,17 +236,27 @@ it('does NOT flag a fresh Meta Lead Ads lead whose only note is the auto-generat
     expect($ids)->not->toContain($lead->id);
 });
 
-it('does NOT flag a lead whose only note is "Also submitted a Meta Ads form" (a second-source dedupe note)', function () {
+it('does NOT flag a fresh WEBSITE lead whose only note is the auto-captured enquiry message', function () {
+    // Second real bug in the same hour (2026-09-03, owner screenshot: "Ranu
+    // Jadhav"): LeadCaptureController::store() auto-creates a note from the
+    // website contact form's raw `message` field, same category of bug as
+    // the Meta one above but with no matching wording at all — confirms why
+    // this was fixed by TIMING (any capture channel), not a body denylist.
     $lead = Lead::factory()->create(['status' => LeadStatus::New]);
-    $lead->notes()->create(['user_id' => null, 'body' => 'Also submitted a Meta Ads form (Campaign: CRM & ERP).']);
+    $lead->notes()->create(['user_id' => null, 'body' => "Hi, I'm interested in SEO services for my restaurant."]);
 
     expect($lead->hasStaleNewStatus())->toBeFalse();
 });
 
-it('DOES flag a Meta lead once a real note is added alongside its auto-generated intake note', function () {
-    $lead = Lead::factory()->create(['status' => LeadStatus::New]);
-    $lead->notes()->create(['user_id' => null, 'body' => "Additional form answers:\nBudget: 5000"]);
-    $lead->notes()->create(['user_id' => null, 'body' => 'Called, no answer.']); // a real (checkbox-less) rep note
+it('DOES flag a lead once a real note is added well after its own (backdated) auto-generated intake note', function () {
+    $lead = Lead::factory()->create(['status' => LeadStatus::New, 'created_at' => now()->subHour()]);
+    // Note::factory() (not $lead->notes()->create()) so created_at can be
+    // backdated to match — Note's $fillable doesn't include created_at, so
+    // a plain relation create() would silently ignore it.
+    Note::factory()->for($lead, 'notable')->create([
+        'user_id' => null, 'body' => "Additional form answers:\nBudget: 5000", 'created_at' => now()->subHour(),
+    ]);
+    $lead->notes()->create(['user_id' => null, 'body' => 'Called, no answer.']); // a real (checkbox-less) rep note, added "now"
 
     expect($lead->hasStaleNewStatus())->toBeTrue();
 });
@@ -256,7 +271,7 @@ it('never flags a lead already past New as having a stale status', function () {
 
 it('shows the "status may need updating" count on the Needs Attention strip and filters via attention=stale_status', function () {
     $manager = User::factory()->role(UserRole::Manager)->create();
-    $stale = Lead::factory()->create(['name' => 'Stale Status Lead', 'status' => LeadStatus::New]);
+    $stale = Lead::factory()->create(['name' => 'Stale Status Lead', 'status' => LeadStatus::New, 'created_at' => now()->subHour()]);
     $stale->notes()->create(['user_id' => $manager->id, 'body' => 'Talked to him yesterday']);
     $fresh = Lead::factory()->create(['status' => LeadStatus::New]);
 
