@@ -470,16 +470,23 @@ The CRM is connected to **wadesk.in** (your WhatsApp dashboard), which runs
 **Marketing** line for pre-sale enquiries. Which line a message came in on
 decides how the CRM handles it:
 
-- **Support line** — when a client messages this number with a **new
-  conversation** (or reopens a resolved one), a support ticket is
-  automatically created. If the phone number matches an existing client
-  record, a **ticket** is created and linked to them; if no match is found,
-  a **lead** is created instead (source WhatsApp).
-- **Marketing line** — a message here **always** creates or updates a
-  **lead**, never a ticket, even if the phone number matches an existing
-  client. This is deliberate: the marketing number is for pre-sale traffic,
-  so a client texting it by mistake still shows up where Sales/Telecaller
-  will see it, not silently in Support's queue.
+- The CRM always checks the phone number against existing clients **first**,
+  regardless of which line the message came in on. If it matches an
+  existing client, that client is who it's logged against — a known client
+  never becomes a new lead, on either number.
+- **Support line, known client** — a **ticket** is created and linked to
+  them.
+- **Support line, no match** — a **lead** is created instead (source
+  WhatsApp).
+- **Marketing line, no match** — a **lead** is created (source WhatsApp).
+  This is deliberate: the marketing number is for pre-sale traffic, so an
+  unknown number texting it shows up where Sales/Telecaller will see it.
+- **Marketing line, known client** — never a ticket and never a lead. The
+  message is logged as a **note on the client's own record** instead, so
+  Sales/Support/whoever's looking still sees it without it being tracked
+  as a fresh sales opportunity. (Before 2026-09-03 this used to always
+  create a lead even for an existing client — fixed after a real client,
+  NSS Secure Solutions, got wrongly added to Lead Generation this way.)
 - Each conversation creates **one ticket** (or one lead) — subsequent
   messages in the same conversation don't create duplicates; for a lead,
   later messages are added as notes on it instead.

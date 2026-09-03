@@ -158,12 +158,16 @@ the lead page shows a **Campaign** line (e.g. "google / cpc /
 seo-pune-2026") so you know which channel it came from before you call.
 
 **WhatsApp leads:** there are two WhatsApp numbers — a Marketing line for
-pre-sale enquiries and a Support line for existing clients. Any message on
-the Marketing line always creates or updates a **lead** (source = WhatsApp),
-even from a number that already belongs to a client — the marketing number
-is pre-sale by definition, so it never gets silently absorbed into Support.
-If the same number messages again before you've converted them, the CRM
-adds it as a note on the same lead rather than creating a duplicate.
+pre-sale enquiries and a Support line for existing clients. A message on the
+Marketing line creates or updates a **lead** (source = WhatsApp) only when
+the phone number doesn't already belong to a client — the marketing number
+is pre-sale by definition, so an unmatched number never gets silently
+absorbed into Support. If the same number messages again before you've
+converted them, the CRM adds it as a note on the same lead rather than
+creating a duplicate. If the number already belongs to an existing client,
+it's never turned into a lead — it's logged as a note on that client's own
+record instead, so check there (not Lead Generation) if you're expecting to
+see it.
 
 **Replying to a lead over WhatsApp:** open the lead and use the note box —
 if the lead has an open WhatsApp conversation, you'll see an **"Also send

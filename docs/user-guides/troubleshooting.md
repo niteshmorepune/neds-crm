@@ -176,12 +176,18 @@ convert or delete it manually).
 
 **Check 4 — Is this actually a Marketing-line message, correctly becoming
 a Lead?**
-Messages on the **Marketing** number always become a Lead, never a Ticket —
-even from an existing client's phone number. This is expected behavior, not
-a bug — check Lead Generation before assuming something is broken. If a
-message that should be Support-line is landing as a Lead instead (or vice
-versa), check `WADESK_SUPPORT_NUMBER` in the CRM's `.env` matches the real
-Support number exactly (digits only, e.g. `918007733737`):
+A message on the **Marketing** number becomes a Lead, never a Ticket, only
+when the phone number doesn't match an existing client — check Lead
+Generation before assuming something is broken. If the phone number
+**does** match an existing client, it's never turned into a Lead — the CRM
+logs it as a note on that client's own record instead (fixed 2026-09-03;
+before that, a known client's Marketing-line message always became a Lead
+too, which is what wrongly happened to NSS Secure Solutions). So if a known
+client's Marketing-line message isn't showing up in Lead Generation, that's
+correct — check their client timeline instead. If a message that should be
+Support-line is landing as a Lead instead (or vice versa), check
+`WADESK_SUPPORT_NUMBER` in the CRM's `.env` matches the real Support number
+exactly (digits only, e.g. `918007733737`):
 ```
 cd /home/u314035009/neds-crm && grep WADESK_SUPPORT_NUMBER .env
 ```

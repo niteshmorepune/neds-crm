@@ -201,16 +201,25 @@ existing clients) and a **Marketing** line (pre-sale enquiries). Which line
 a message arrives on decides how the CRM routes it; wadesk.in tells the CRM
 which line via the `whatsapp_number` field on its webhook call.
 
-- **Inbound, Support line:** wadesk.in calls the CRM webhook, which matches
-  the phone number to a client and opens a **Ticket** (channel = WhatsApp) —
-  deduplicated per wadesk.in conversation, so replies in the same
-  conversation don't create new tickets. If the phone doesn't match any
-  client, a **Lead** is created instead (source = WhatsApp), same as before.
-- **Inbound, Marketing line:** **always** creates or updates a **Lead** —
-  never a Ticket, even when the phone number matches an existing client.
-  This is a deliberate routing rule (owner-confirmed 2026-08-03): the
-  marketing number is pre-sale by definition, so an existing client
-  messaging it by mistake still surfaces where Sales/Telecaller will see it.
+- The CRM always matches the phone number to a client **first**, regardless
+  of which line the message arrived on. A known client is never turned into
+  a new Lead, on either line.
+- **Inbound, Support line, known client:** opens a **Ticket** (channel =
+  WhatsApp) — deduplicated per wadesk.in conversation, so replies in the
+  same conversation don't create new tickets.
+- **Inbound, Support line, no match:** a **Lead** is created instead
+  (source = WhatsApp).
+- **Inbound, Marketing line, no match:** a **Lead** is created (source =
+  WhatsApp). This is a deliberate routing rule (owner-confirmed
+  2026-08-03): the marketing number is pre-sale by definition, so an
+  unknown number messaging it surfaces where Sales/Telecaller will see it.
+- **Inbound, Marketing line, known client:** never a Ticket and never a
+  Lead — logged as a **Note on the client's own Customer record** instead,
+  so the inquiry is still visible without being tracked as a fresh sales
+  opportunity. (Fixed 2026-09-03, real incident: an existing client — NSS
+  Secure Solutions — messaged the Marketing line and was wrongly filed as
+  a brand-new Lead under the old "Marketing line always = Lead, even for a
+  known client" rule.)
 - **Deduplication (both lines):** one Ticket or Lead per wadesk.in
   conversation — later messages in the same conversation are added as
   replies/notes rather than creating a duplicate. A new Lead is
@@ -260,8 +269,10 @@ which line via the `whatsapp_number` field on its webhook call.
   actually an existing client with an out-of-date phone number, fix the
   number on their client record and ask them to send another WhatsApp
   message so future replies open a proper ticket.
-- Any message on the Marketing line always lands in **Lead Generation**,
-  regardless of who the number belongs to — this is expected, not a bug.
+- A message on the Marketing line only lands in **Lead Generation** when the
+  phone number doesn't match an existing client. If it does match a client,
+  it's logged as a note on their own record instead — check the client's
+  timeline, not Lead Generation, if you're looking for it.
 
 **If a customer says they didn't receive a reply:**
 - Ticket reply: check it wasn't marked as an internal note by mistake.
