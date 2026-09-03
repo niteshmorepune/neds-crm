@@ -801,16 +801,35 @@ lead, regardless of its AI score — there's nothing left to follow up on,
 so a lead that scored well before it died no longer crowds out live leads
 at the top of the list (fixed 2026-08-31).
 
-**"Needs attention today" strip:** four clickable counts above the list —
+**"Needs attention today" strip:** five clickable counts above the list —
 overdue follow-ups, follow-ups due today, Hot leads (AI score ≥ 70)
-nobody's even set a follow-up on yet, and **unresponsive** (added
-2026-09-02: 3+ logged call and/or outbound WhatsApp attempts, never a
-connected call or an inbound reply, and still open) — a lead called or
-messaged repeatedly with total silence no longer looks identical to one
-reached on the first try. For a Sales viewer this is scoped to their own
-leads (their personal worklist); for Telecaller, Admin, and Manager it
-shows the whole shared picture, matching how those roles already see
-leads. Each count links straight to the filtered list.
+nobody's even set a follow-up on yet, **unresponsive** (3+ logged call
+and/or outbound WhatsApp attempts, never a connected call or an inbound
+reply, and still open — a lead called or messaged repeatedly with total
+silence no longer looks identical to one reached on the first try), and
+**status may need updating** (a lead still marked New that already has a
+note or a logged call against it, from before the "This was a call" note-
+box checkbox existed or from a rep typing a plain note without ticking
+it — see the Sales guide, Section 1). For a Sales viewer this is scoped
+to their own leads (their personal worklist); for Telecaller, Admin, and
+Manager it shows the whole shared picture, matching how those roles
+already see leads. Each count links straight to the filtered list.
+
+**Unresponsive lead guidance (2026-09-03):** an unresponsive lead is
+already correctly at Contacted, not New — Contacted only ever means an
+attempt was made, not that it succeeded. Open one and a new amber
+**"📵 Not responding — next best action"** box tells the rep exactly what
+to try: switch channels if only one's been attempted (calls-only →
+try WhatsApp; WhatsApp-only → try calling, with the historically best
+time to call appended when there's enough real connect-rate data), or —
+once both channels are genuinely exhausted — points to the
+**✨ Suggest a status** button, which reads the lead's own notes/calls
+and can now suggest Contacted, Qualified, **or Lost** (a genuinely
+sustained, multi-channel, zero-response pattern is a real signal toward
+Lost; one or two unanswered calls on a single channel is not). This same
+Suggest-a-status button also covers a stale-New lead flagged above.
+Nothing ever changes automatically — the rep always picks from the
+dropdown (AI's pick pre-selected, overridable) and clicks Apply.
 
 **Status cards (top of the list) are clickable** — click New/Contacted/
 Qualified/Converted/Lost/Total to filter to it, same idea as the Needs
