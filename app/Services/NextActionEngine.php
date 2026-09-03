@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Contracts\NextActionSource;
 use App\Models\User;
 use App\Services\NextAction\AttendanceCheckInSource;
+use App\Services\NextAction\MeetingStartingSoonSource;
 use App\Services\NextAction\SalesNewLeadCallSource;
 use App\Support\NextAction;
 
@@ -12,10 +13,13 @@ use App\Support\NextAction;
  * Computes the single next "do this now" prompt for a user, checking each
  * registered NextActionSource in order and returning the first one with
  * something pending. This list is the whole roadmap surface for adding
- * more per-role flows over time (meeting-starting-soon, etc.) without
- * touching the engine or the popup itself. Attendance is deliberately
- * first — the owner's own "very first task" framing, and it applies to
- * every role, so it should never be shadowed by a role-specific prompt.
+ * more per-role flows over time without touching the engine or the popup
+ * itself. Order is deliberate, by urgency, not registration date:
+ * Attendance first (the owner's own "very first task" framing — quick,
+ * universal, so it should never be shadowed by anything role-specific),
+ * then MeetingStartingSoon (genuinely time-critical — missing a meeting
+ * start is worse than a few seconds' delay on anything else), then
+ * SalesNewLeadCall (important, but never as time-boxed as a live meeting).
  *
  * @see NextActionSource
  */
@@ -24,6 +28,7 @@ class NextActionEngine
     /** @var array<class-string<NextActionSource>> */
     private const SOURCES = [
         AttendanceCheckInSource::class,
+        MeetingStartingSoonSource::class,
         SalesNewLeadCallSource::class,
     ];
 

@@ -10,7 +10,9 @@ namespace App\Support;
  * action happens on another page, e.g. the Log a Call form — no source
  * method needed). When null, the banner renders a button that calls back
  * into `NextActionSource::complete()` for a one-click, in-place action
- * (e.g. attendance check-in) — never both at once.
+ * (e.g. attendance check-in) — never both at once. `external` only applies
+ * when `actionUrl` is set: true opens it in a new tab (e.g. a Google Meet
+ * link), false navigates within the CRM (e.g. the Log a Call form).
  */
 final class NextAction
 {
@@ -22,9 +24,10 @@ final class NextAction
         public readonly string $body,
         public readonly ?string $actionUrl,
         public readonly string $actionLabel,
+        public readonly bool $external = false,
     ) {}
 
-    /** @return array{source_key: string, subject_type: string, subject_id: int, title: string, body: string, action_url: ?string, action_label: string} */
+    /** @return array{source_key: string, subject_type: string, subject_id: int, title: string, body: string, action_url: ?string, action_label: string, external: bool} */
     public function toArray(): array
     {
         return [
@@ -35,6 +38,7 @@ final class NextAction
             'body' => $this->body,
             'action_url' => $this->actionUrl,
             'action_label' => $this->actionLabel,
+            'external' => $this->external,
         ];
     }
 }
