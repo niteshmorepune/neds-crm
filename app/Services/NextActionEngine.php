@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Contracts\NextActionSource;
 use App\Models\User;
 use App\Services\NextAction\AttendanceCheckInSource;
+use App\Services\NextAction\CheckOutReminderSource;
+use App\Services\NextAction\DailyReportReminderSource;
 use App\Services\NextAction\LunchHourWadeskAiSource;
 use App\Services\NextAction\MeetingStartingSoonSource;
 use App\Services\NextAction\SalesNewLeadCallSource;
@@ -22,12 +24,20 @@ use App\Support\NextAction;
  * universal, so it should never be shadowed by anything role-specific),
  * then MeetingStartingSoon (genuinely time-critical — missing a meeting
  * start is worse than a few seconds' delay on anything else), then
- * LunchHourWadeskAi (a narrow ~15-minute window, still worth surfacing
- * ahead of a lead call that can wait), then the three "call/respond now"
- * role-specific sources (Sales/Telecaller lead calls, Support ticket
- * replies) — important, but never as time-boxed as anything ahead of
- * them. These three are mutually exclusive for almost everyone (gated on
- * different roles), so their relative order rarely matters in practice.
+ * DailyReportReminder and CheckOutReminder — both gated to only ever
+ * apply after 6pm (office hours end, confirmed with the owner), so they
+ * never affect daytime behavior at all, but once evening genuinely
+ * arrives they deliberately outrank everything below them (confirmed
+ * with the owner via AskUserQuestion) — closing the day out matters more
+ * than a stale, ignored lead-call/ticket reminder from earlier. Report
+ * before check-out, matching the owner's own "submit report, then check
+ * out" framing of the day's last two steps. Then LunchHourWadeskAi (a
+ * narrow ~15-minute window, still worth surfacing ahead of a lead call
+ * that can wait), then the three "call/respond now" role-specific
+ * sources (Sales/Telecaller lead calls, Support ticket replies) —
+ * important, but never as time-boxed as anything ahead of them. These
+ * three are mutually exclusive for almost everyone (gated on different
+ * roles), so their relative order rarely matters in practice.
  *
  * @see NextActionSource
  */
@@ -37,6 +47,8 @@ class NextActionEngine
     private const SOURCES = [
         AttendanceCheckInSource::class,
         MeetingStartingSoonSource::class,
+        DailyReportReminderSource::class,
+        CheckOutReminderSource::class,
         LunchHourWadeskAiSource::class,
         SalesNewLeadCallSource::class,
         TelecallerNewLeadCallSource::class,
