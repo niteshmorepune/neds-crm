@@ -101,6 +101,43 @@ it('does nothing when AI is disabled', function () {
     Http::assertNothingSent();
 });
 
+it('skips drafting when the project already has a stale unapproved draft', function () {
+    aiOnForProjectUpdate();
+    Http::fake();
+    $customer = Customer::factory()->create();
+    $project = Project::factory()->for($customer)->create();
+    $project->notes()->create([
+        'body' => 'Old draft nobody reviewed',
+        'ai_generated' => true,
+        'visible_to_client' => false,
+    ])->forceFill(['created_at' => now()->subDays(3)])->saveQuietly();
+    Task::factory()->for($project)->create(['status' => TaskStatus::Done])
+        ->forceFill(['completed_at' => now()])->saveQuietly();
+
+    DraftProjectDailyUpdate::dispatchSync($project->id, now()->toDateString());
+
+    expect($project->notes()->count())->toBe(1);
+    Http::assertNothingSent();
+});
+
+it('still drafts when the project only has recent (non-stale) unapproved drafts', function () {
+    aiOnForProjectUpdate();
+    fakeProjectUpdateText('Another day, another win.');
+    $customer = Customer::factory()->create();
+    $project = Project::factory()->for($customer)->create();
+    $project->notes()->create([
+        'body' => 'Yesterday\'s draft, still pending review',
+        'ai_generated' => true,
+        'visible_to_client' => false,
+    ])->forceFill(['created_at' => now()->subDay()])->saveQuietly();
+    Task::factory()->for($project)->create(['status' => TaskStatus::Done])
+        ->forceFill(['completed_at' => now()])->saveQuietly();
+
+    DraftProjectDailyUpdate::dispatchSync($project->id, now()->toDateString());
+
+    expect($project->notes()->count())->toBe(2);
+});
+
 it('only counts tasks completed on the target date', function () {
     aiOnForProjectUpdate();
     fakeProjectUpdateText('Great progress.');

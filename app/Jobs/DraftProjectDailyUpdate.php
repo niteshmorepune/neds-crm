@@ -23,12 +23,21 @@ use Illuminate\Queue\SerializesModels;
  * ProjectDailyUpdateReview, which is what actually shares it with the
  * client (portal + email). Referenced by project id, not a serialized
  * model, so a re-run always sees fresh data.
+ *
+ * Skips drafting a new note when the project already has an unapproved
+ * draft older than STALE_DAYS (same threshold SendProjectUpdatesDigest
+ * flags as "stale") — without this, a project whose drafts nobody reviews
+ * just accumulates one new note per active day forever. Forcing the
+ * backlog to be cleared before another lands keeps the Approval Center's
+ * Project Updates list to genuinely actionable items.
  */
 class DraftProjectDailyUpdate implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public const ACTIVITY_EVENT = 'project_daily_update_drafted';
+
+    public const STALE_DAYS = 2;
 
     /** @param  string  $date  Y-m-d of the day being reported on. */
     public function __construct(public int $projectId, public string $date) {}
@@ -48,6 +57,10 @@ class DraftProjectDailyUpdate implements ShouldQueue
         $project = Project::with('customer', 'owner')->find($this->projectId);
 
         if ($project === null || $project->customer === null) {
+            return;
+        }
+
+        if ($this->hasStaleUnapprovedDraft($project)) {
             return;
         }
 
@@ -92,6 +105,15 @@ class DraftProjectDailyUpdate implements ShouldQueue
             ->where('subject_id', $this->projectId)
             ->where('event', self::ACTIVITY_EVENT)
             ->whereJsonContains('changes->date', $this->date)
+            ->exists();
+    }
+
+    private function hasStaleUnapprovedDraft(Project $project): bool
+    {
+        return $project->notes()
+            ->where('ai_generated', true)
+            ->where('visible_to_client', false)
+            ->where('created_at', '<', now()->subDays(self::STALE_DAYS))
             ->exists();
     }
 }
