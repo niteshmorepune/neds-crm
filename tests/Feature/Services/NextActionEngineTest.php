@@ -5,6 +5,7 @@ use App\Enums\UserRole;
 use App\Models\Attendance;
 use App\Models\Lead;
 use App\Models\Meeting;
+use App\Models\Ticket;
 use App\Models\User;
 use App\Services\NextActionEngine;
 use Illuminate\Support\Carbon;
@@ -60,6 +61,29 @@ it('falls through to the next source once the earlier one has nothing pending', 
 
     expect($action->sourceKey)->toBe('sales_new_lead_call');
     expect($action->subjectId)->toBe($lead->id);
+});
+
+it('shows the telecaller lead-call prompt for a user holding Telecaller as an additional role', function () {
+    $telecaller = User::factory()->role(UserRole::Accounts)->create();
+    $telecaller->additionalRoles()->create(['role' => UserRole::Telecaller]);
+    Attendance::factory()->for($telecaller)->create();
+    $lead = Lead::factory()->create(['telecaller_id' => $telecaller->id, 'status' => LeadStatus::New]);
+
+    $action = nextActionEngine()->nextFor($telecaller);
+
+    expect($action->sourceKey)->toBe('telecaller_new_lead_call');
+    expect($action->subjectId)->toBe($lead->id);
+});
+
+it('shows the Support ticket-reply prompt once checked in', function () {
+    $support = User::factory()->role(UserRole::Support)->create();
+    Attendance::factory()->for($support)->create();
+    $ticket = Ticket::factory()->create(['assignee_id' => $support->id]);
+
+    $action = nextActionEngine()->nextFor($support);
+
+    expect($action->sourceKey)->toBe('support_new_ticket_reply');
+    expect($action->subjectId)->toBe($ticket->id);
 });
 
 it('returns null once every source has nothing pending', function () {
