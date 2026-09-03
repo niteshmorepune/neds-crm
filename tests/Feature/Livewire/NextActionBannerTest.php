@@ -9,6 +9,7 @@ use App\Models\Lead;
 use App\Models\Meeting;
 use App\Models\NextActionSnooze;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 use Livewire\Livewire;
 
 it('shows the attendance check-in prompt first, before any pending lead', function () {
@@ -100,6 +101,35 @@ it('shows the meeting join link, opening in a new tab, ahead of a pending lead',
         ->assertSee('Join: NEDS <> ADTA Group')
         ->assertSee('https://meet.google.com/abc-defg-hij')
         ->assertSee('target="_blank"', false);
+});
+
+it('shows the lunch-hour wadesk AI reminder to an Admin during the window, linking out to wadesk.in', function () {
+    Carbon::setTestNow(Carbon::parse('2026-09-07 13:00', config('app.display_timezone'))); // a real Monday
+    $admin = User::factory()->role(UserRole::Admin)->create();
+    Attendance::factory()->for($admin)->create();
+
+    Livewire::actingAs($admin)
+        ->test(NextActionBanner::class)
+        ->assertSet('action.source_key', 'lunch_hour_wadesk_ai')
+        ->assertSee('Turn on lunch-hour AI replies')
+        ->assertSee('https://wadesk.in/numbers')
+        ->assertSee('target="_blank"', false);
+
+    Carbon::setTestNow();
+});
+
+it('snoozing the lunch-hour AI reminder clears it for the rest of the window', function () {
+    Carbon::setTestNow(Carbon::parse('2026-09-07 13:00', config('app.display_timezone')));
+    $admin = User::factory()->role(UserRole::Admin)->create();
+    Attendance::factory()->for($admin)->create();
+
+    Livewire::actingAs($admin)
+        ->test(NextActionBanner::class)
+        ->assertSet('action.source_key', 'lunch_hour_wadesk_ai')
+        ->call('snooze')
+        ->assertSet('action', null);
+
+    Carbon::setTestNow();
 });
 
 it('poll re-evaluates and picks up a newly-created lead', function () {

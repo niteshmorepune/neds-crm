@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Contracts\NextActionSource;
 use App\Models\User;
 use App\Services\NextAction\AttendanceCheckInSource;
+use App\Services\NextAction\LunchHourWadeskAiSource;
 use App\Services\NextAction\MeetingStartingSoonSource;
 use App\Services\NextAction\SalesNewLeadCallSource;
 use App\Support\NextAction;
@@ -19,7 +20,9 @@ use App\Support\NextAction;
  * universal, so it should never be shadowed by anything role-specific),
  * then MeetingStartingSoon (genuinely time-critical — missing a meeting
  * start is worse than a few seconds' delay on anything else), then
- * SalesNewLeadCall (important, but never as time-boxed as a live meeting).
+ * LunchHourWadeskAi (a narrow ~15-minute window, still worth surfacing
+ * ahead of a lead call that can wait), then SalesNewLeadCall (important,
+ * but never as time-boxed as the sources ahead of it).
  *
  * @see NextActionSource
  */
@@ -29,6 +32,7 @@ class NextActionEngine
     private const SOURCES = [
         AttendanceCheckInSource::class,
         MeetingStartingSoonSource::class,
+        LunchHourWadeskAiSource::class,
         SalesNewLeadCallSource::class,
     ];
 
