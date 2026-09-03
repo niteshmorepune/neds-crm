@@ -7,6 +7,7 @@ use App\Models\Lead;
 use App\Models\Meeting;
 use App\Models\User;
 use App\Services\NextActionEngine;
+use Illuminate\Support\Carbon;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 function nextActionEngine(): NextActionEngine
@@ -36,6 +37,18 @@ it('shows the meeting-starting-soon prompt before the Sales lead-call prompt, on
 
     expect($action->sourceKey)->toBe('meeting_starting_soon');
     expect($action->subjectId)->toBe($meeting->id);
+});
+
+it('shows the lunch-hour AI reminder to an Admin during the window, ahead of nothing else applicable', function () {
+    Carbon::setTestNow(Carbon::parse('2026-09-07 13:00', config('app.display_timezone'))); // a real Monday
+    $admin = User::factory()->role(UserRole::Admin)->create();
+    Attendance::factory()->for($admin)->create();
+
+    $action = nextActionEngine()->nextFor($admin);
+
+    expect($action->sourceKey)->toBe('lunch_hour_wadesk_ai');
+
+    Carbon::setTestNow();
 });
 
 it('falls through to the next source once the earlier one has nothing pending', function () {

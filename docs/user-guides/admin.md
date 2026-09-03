@@ -569,6 +569,16 @@ over this — if someone should be replying to marketing-line leads but can't
 see the conversation in wadesk.in, that's a wadesk.in Agents-page grant, not
 a CRM permission.
 
+**Lunch-hour AI reminder:** wadesk.in's after-hours AI assistant runs off a
+weekly business-hours schedule (e.g. 10am–7pm) with no lunch break built
+in, so during 1–2pm the Marketing line reads as "open" and the AI stays
+off — even though nobody's necessarily watching WhatsApp then. If you're
+Admin or Manager, the CRM's "what to do next" popup will remind you around
+1pm to open wadesk.in's Numbers page and flip that line to Force On, and
+again around 2pm to switch it back to Auto. The CRM can't see or set this
+directly (same wadesk.in-only boundary as the Agents grants above) — it's
+a reminder with a link, not an automatic toggle.
+
 This integration is configured via `WADESK_API_URL`/`WADESK_SERVICE_KEY`
 (outbound replies), `WHATSAPP_WEBHOOK_TOKEN` (inbound), `WADESK_SUPPORT_NUMBER`
 (which line is "Support" for the routing logic above), `WADESK_MARKETING_NUMBER`,
