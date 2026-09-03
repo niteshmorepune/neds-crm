@@ -148,6 +148,14 @@ On the **Dashboard**, use the attendance widget:
 - **Check in** when you start your day.
 - **Check out** when you finish.
 
+If you haven't checked in yet, a small card also pops up in the
+bottom-right corner of every page reminding you — click **Check in now**
+right there (no need to go to the Dashboard first), or **Snooze 30 min**
+if you're not ready yet. This is the first step of a wider "what should I
+do next" guide the CRM walks you through — once you're checked in, it'll
+prompt you for anything else that needs your attention (e.g. Sales reps
+get prompted to call a fresh lead the moment one lands in their queue).
+
 **Also do your biometric fingerprint punch as usual** — do both, not one or
 the other. The two work together automatically: your CRM check-in/out marks
 you present immediately, and your biometric punch fills in or corrects the

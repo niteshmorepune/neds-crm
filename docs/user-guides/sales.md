@@ -45,8 +45,11 @@ every page (checks every ~45 seconds) telling you who to call, oldest
 uncalled lead first. Click **Log the call** to jump straight to the Log a
 Call form with that lead pre-selected, or **Snooze 30 min** if you can't
 call right now — it'll come back after that, and move on to your next
-oldest uncalled lead once you've logged one. This is the first piece of a
-larger "what should I do next" guide the CRM will keep building out.
+oldest uncalled lead once you've logged one. If you haven't checked in
+for attendance yet today, that comes first (see [Section 5](#5-attendance-check-in-and-out))
+— once you're checked in, this is what the same popup guides you through
+next. It's the first piece of a larger "what should I do next" guide the
+CRM will keep building out.
 
 The top of the page shows **summary cards** — Total, New, Contacted,
 Qualified, Converted, Lost — a quick read on your pipeline before you

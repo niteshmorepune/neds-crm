@@ -46,6 +46,15 @@ class NextActionBanner extends Component
         $this->refreshAction($engine);
     }
 
+    public function complete(NextActionEngine $engine): void
+    {
+        abort_unless($this->action !== null, 404);
+
+        $engine->completeFor(auth()->user(), $this->action['source_key'], $this->action['subject_id']);
+
+        $this->refreshAction($engine);
+    }
+
     private function refreshAction(NextActionEngine $engine): void
     {
         $this->action = auth()->check()
