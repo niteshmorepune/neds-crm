@@ -39,6 +39,15 @@ folder, and similar. Anyone who can open the client's page can see these.
 You only see leads you own (or that are unowned) here — not another Sales
 rep's leads (fixed 2026-09-03; this used to show everyone's).
 
+**"Call this lead now" popup:** the moment a new lead lands in your queue
+with no call logged yet, a small card appears in the bottom-right corner of
+every page (checks every ~45 seconds) telling you who to call, oldest
+uncalled lead first. Click **Log the call** to jump straight to the Log a
+Call form with that lead pre-selected, or **Snooze 30 min** if you can't
+call right now — it'll come back after that, and move on to your next
+oldest uncalled lead once you've logged one. This is the first piece of a
+larger "what should I do next" guide the CRM will keep building out.
+
 The top of the page shows **summary cards** — Total, New, Contacted,
 Qualified, Converted, Lost — a quick read on your pipeline before you
 scroll the list. They reflect your leads regardless of any filter you've

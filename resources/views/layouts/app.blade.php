@@ -98,6 +98,8 @@
             </div>
         </div>
 
+        <livewire:next-action-banner />
+
         @stack('scripts')
     </body>
 </html>
