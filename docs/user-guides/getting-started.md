@@ -160,7 +160,10 @@ right there (no need to go to the Dashboard first), or **Snooze 30 min**
 if you're not ready yet. This is the first step of a wider "what should I
 do next" guide the CRM walks you through — once you're checked in, it'll
 prompt you for anything else that needs your attention (e.g. Sales reps
-get prompted to call a fresh lead the moment one lands in their queue).
+get prompted to call a fresh lead the moment one lands in their queue),
+and at the end of the day (past 6pm office-hours close), the same popup
+reminds you to submit your daily report and then **Check out now** — the
+true last step, right from the popup, no need to go to the Dashboard.
 
 **Also do your biometric fingerprint punch as usual** — do both, not one or
 the other. The two work together automatically: your CRM check-in/out marks
@@ -195,7 +198,10 @@ row. You can cancel a request yourself as long as it's still pending.
 ## 6. Daily report — end of day
 At the end of the day, open **Daily Reports** and submit a short "what I did
 today". Some numbers (tasks completed, calls made) are filled in automatically;
-add a sentence or two on your day and submit. You'll get a reminder at 6 PM.
+add a sentence or two on your day and submit. You'll get an email reminder at
+6 PM, and the same "what should I do next" popup from Section 5 will also
+prompt you directly — it takes priority over anything else still showing once
+it's past 6pm, so you won't miss it under an older reminder.
 
 This page is also your daily work dashboard, so you don't have to remember
 what's still open from before:

@@ -5,6 +5,7 @@ use App\Enums\LeadStatus;
 use App\Enums\UserRole;
 use App\Livewire\NextActionBanner;
 use App\Models\Attendance;
+use App\Models\DailyReport;
 use App\Models\Lead;
 use App\Models\Meeting;
 use App\Models\NextActionSnooze;
@@ -13,7 +14,18 @@ use App\Models\User;
 use Illuminate\Support\Carbon;
 use Livewire\Livewire;
 
+// A real Monday, safely inside 9am-6pm office hours. Every test below
+// freezes explicitly (daytime or evening) so behavior never depends on the
+// real wall clock — DailyReportReminderSource/CheckOutReminderSource only
+// activate after 18:00, which would otherwise make a plain
+// Attendance::factory() fixture (checked in, not out) intermittently
+// pre-empt whatever prompt a test is actually trying to assert on.
+const BANNER_TEST_DAYTIME = '2026-09-07 11:00';
+
+const BANNER_TEST_EVENING = '2026-09-07 18:30';
+
 it('shows the attendance check-in prompt first, before any pending lead', function () {
+    Carbon::setTestNow(Carbon::parse(BANNER_TEST_DAYTIME, config('app.display_timezone')));
     $sales = User::factory()->role(UserRole::Sales)->create();
     Lead::factory()->create(['owner_id' => $sales->id, 'status' => LeadStatus::New]);
 
@@ -22,9 +34,12 @@ it('shows the attendance check-in prompt first, before any pending lead', functi
         ->assertSet('action.source_key', 'attendance_check_in')
         ->assertSee('Mark your attendance')
         ->assertSee('Check in now');
+
+    Carbon::setTestNow();
 });
 
 it('checking in via the button clears the attendance prompt and reveals the next one', function () {
+    Carbon::setTestNow(Carbon::parse(BANNER_TEST_DAYTIME, config('app.display_timezone')));
     $sales = User::factory()->role(UserRole::Sales)->create();
     $lead = Lead::factory()->create(['owner_id' => $sales->id, 'status' => LeadStatus::New, 'name' => 'Priya Deshmukh']);
 
@@ -40,9 +55,12 @@ it('checking in via the button clears the attendance prompt and reveals the next
     $attendance = Attendance::where('user_id', $sales->id)->whereDate('date', now())->first();
     expect($attendance)->not->toBeNull();
     expect($attendance->status)->toBe(AttendanceStatus::Present);
+
+    Carbon::setTestNow();
 });
 
-it('shows nothing once both attendance and lead prompts are resolved', function () {
+it('shows nothing once every daytime prompt is resolved', function () {
+    Carbon::setTestNow(Carbon::parse(BANNER_TEST_DAYTIME, config('app.display_timezone')));
     $sales = User::factory()->role(UserRole::Sales)->create();
     Attendance::factory()->for($sales)->create();
 
@@ -50,9 +68,12 @@ it('shows nothing once both attendance and lead prompts are resolved', function 
         ->test(NextActionBanner::class)
         ->assertDontSee('Call ')
         ->assertSet('action', null);
+
+    Carbon::setTestNow();
 });
 
 it('shows the attendance prompt to a non-Sales user, but never the Sales lead-call prompt', function () {
+    Carbon::setTestNow(Carbon::parse(BANNER_TEST_DAYTIME, config('app.display_timezone')));
     $support = User::factory()->role(UserRole::Support)->create();
     Lead::factory()->create(['owner_id' => $support->id, 'status' => LeadStatus::New]);
 
@@ -65,9 +86,12 @@ it('shows the attendance prompt to a non-Sales user, but never the Sales lead-ca
     Livewire::actingAs($support)
         ->test(NextActionBanner::class)
         ->assertSet('action', null);
+
+    Carbon::setTestNow();
 });
 
 it('snoozes the current lead prompt, creating a NextActionSnooze row and clearing it from the next poll', function () {
+    Carbon::setTestNow(Carbon::parse(BANNER_TEST_DAYTIME, config('app.display_timezone')));
     $sales = User::factory()->role(UserRole::Sales)->create();
     Attendance::factory()->for($sales)->create();
     $lead = Lead::factory()->create(['owner_id' => $sales->id, 'status' => LeadStatus::New]);
@@ -83,9 +107,12 @@ it('snoozes the current lead prompt, creating a NextActionSnooze row and clearin
         ->where('subject_id', $lead->id)
         ->where('snoozed_until', '>', now())
         ->exists())->toBeTrue();
+
+    Carbon::setTestNow();
 });
 
 it('shows the meeting join link, opening in a new tab, ahead of a pending lead', function () {
+    Carbon::setTestNow(Carbon::parse(BANNER_TEST_DAYTIME, config('app.display_timezone')));
     $sales = User::factory()->role(UserRole::Sales)->create();
     Attendance::factory()->for($sales)->create();
     Lead::factory()->create(['owner_id' => $sales->id, 'status' => LeadStatus::New]);
@@ -102,10 +129,12 @@ it('shows the meeting join link, opening in a new tab, ahead of a pending lead',
         ->assertSee('Join: NEDS <> ADTA Group')
         ->assertSee('https://meet.google.com/abc-defg-hij')
         ->assertSee('target="_blank"', false);
+
+    Carbon::setTestNow();
 });
 
 it('shows the lunch-hour wadesk AI reminder to an Admin during the window, linking out to wadesk.in', function () {
-    Carbon::setTestNow(Carbon::parse('2026-09-07 13:00', config('app.display_timezone'))); // a real Monday
+    Carbon::setTestNow(Carbon::parse('2026-09-07 13:00', config('app.display_timezone')));
     $admin = User::factory()->role(UserRole::Admin)->create();
     Attendance::factory()->for($admin)->create();
 
@@ -134,6 +163,7 @@ it('snoozing the lunch-hour AI reminder clears it for the rest of the window', f
 });
 
 it('shows the Support ticket-reply prompt, linking to the ticket page', function () {
+    Carbon::setTestNow(Carbon::parse(BANNER_TEST_DAYTIME, config('app.display_timezone')));
     $support = User::factory()->role(UserRole::Support)->create();
     Attendance::factory()->for($support)->create();
     $ticket = Ticket::factory()->create(['assignee_id' => $support->id, 'subject' => 'Cannot log into portal']);
@@ -143,9 +173,12 @@ it('shows the Support ticket-reply prompt, linking to the ticket page', function
         ->assertSet('action.source_key', 'support_new_ticket_reply')
         ->assertSee('Respond to: Cannot log into portal')
         ->assertSee(route('tickets.show', $ticket));
+
+    Carbon::setTestNow();
 });
 
 it('shows the Telecaller lead-call prompt for someone holding it as an additional role', function () {
+    Carbon::setTestNow(Carbon::parse(BANNER_TEST_DAYTIME, config('app.display_timezone')));
     $telecaller = User::factory()->role(UserRole::Accounts)->create();
     $telecaller->additionalRoles()->create(['role' => UserRole::Telecaller]);
     Attendance::factory()->for($telecaller)->create();
@@ -155,9 +188,45 @@ it('shows the Telecaller lead-call prompt for someone holding it as an additiona
         ->test(NextActionBanner::class)
         ->assertSet('action.source_key', 'telecaller_new_lead_call')
         ->assertSee('Call Ramesh Kulkarni');
+
+    Carbon::setTestNow();
+});
+
+it('shows the daily-report reminder in the evening, linking to the Daily Report page', function () {
+    Carbon::setTestNow(Carbon::parse(BANNER_TEST_EVENING, config('app.display_timezone')));
+    $support = User::factory()->role(UserRole::Support)->create();
+    Attendance::factory()->for($support)->create(['check_in_at' => Carbon::parse('2026-09-07 09:30'), 'check_out_at' => null]);
+
+    Livewire::actingAs($support)
+        ->test(NextActionBanner::class)
+        ->assertSet('action.source_key', 'daily_report_reminder')
+        ->assertSee('Submit your daily report')
+        ->assertSee(route('daily-reports.index'));
+
+    Carbon::setTestNow();
+});
+
+it('checking out via the button clears the check-out reminder', function () {
+    Carbon::setTestNow(Carbon::parse(BANNER_TEST_EVENING, config('app.display_timezone')));
+    $support = User::factory()->role(UserRole::Support)->create();
+    Attendance::factory()->for($support)->create(['check_in_at' => Carbon::parse('2026-09-07 09:30'), 'check_out_at' => null]);
+    DailyReport::factory()->create(['user_id' => $support->id, 'date' => Carbon::today(config('app.display_timezone'))]);
+
+    Livewire::actingAs($support)
+        ->test(NextActionBanner::class)
+        ->assertSet('action.source_key', 'checkout_reminder')
+        ->assertSee('Check out for the day')
+        ->call('complete')
+        ->assertSet('action', null);
+
+    $attendance = Attendance::where('user_id', $support->id)->whereDate('date', now())->first();
+    expect($attendance->check_out_at)->not->toBeNull();
+
+    Carbon::setTestNow();
 });
 
 it('poll re-evaluates and picks up a newly-created lead', function () {
+    Carbon::setTestNow(Carbon::parse(BANNER_TEST_DAYTIME, config('app.display_timezone')));
     $sales = User::factory()->role(UserRole::Sales)->create();
     Attendance::factory()->for($sales)->create();
 
@@ -168,4 +237,6 @@ it('poll re-evaluates and picks up a newly-created lead', function () {
     $lead = Lead::factory()->create(['owner_id' => $sales->id, 'status' => LeadStatus::New]);
 
     $component->call('poll')->assertSet('action.subject_id', $lead->id);
+
+    Carbon::setTestNow();
 });
