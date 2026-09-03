@@ -1675,3 +1675,27 @@ Record every "we chose X because Y" here — this is the project's memory.
   (Section 1's summary-cards description), `telecaller.md` (the dashboard
   tile and Lead Generation section, both previously describing the old
   shared-queue premise).
+  **Same-day correction, caught during deploy, not before**:
+  `resolveLeastLoadedTelecaller()`'s primary-role-only eligibility (as
+  described above, mirroring Sales) turned out to be silently non-
+  functional the moment it hit production — a real data check
+  (`User::where('role','telecaller')`) found **zero** users with
+  Telecaller as a PRIMARY role at all; the only 2 real people doing
+  telecaller work (Neha More, primary Accounts; Rohit Dhulasavant,
+  primary Intern) both hold it as an ADDITIONAL role only. A primary-
+  role-only round-robin would have matched nobody, forever, making the
+  entire feature inert in practice despite passing every test (no test
+  fixture happened to model "nobody has this as a primary role").
+  Confirmed with the owner via AskUserQuestion: broadened
+  `resolveLeastLoadedTelecaller()` to `User::withAnyRole(UserRole::
+  Telecaller)` — a deliberate divergence from `resolveLeastLoadedSales()`'s
+  own primary-role-only precedent (every real Sales rep genuinely has
+  Sales as primary; Telecaller in practice never does), justified by
+  actual production usage rather than blindly mirroring the Sales
+  pattern. Now consistent with how Telecaller *visibility* already
+  worked (`Lead::scopeVisibleTo()` already used `hasRole()`, not the bare
+  primary-role column) — routing and visibility now agree. Rewrote the
+  test that had asserted the old (wrong) behavior; full suite re-verified
+  2898 green (same 2 pre-existing flakes), Pint clean, pushed directly to
+  master post-deploy (no new PR — a same-session correction to code that
+  had only just merged, not yet acted on by anyone).

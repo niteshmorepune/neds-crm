@@ -131,16 +131,24 @@ it('ignores inactive Telecaller users when picking an assignee', function () {
     expect($lead->fresh()->telecaller_id)->toBe($active->id);
 });
 
-it('never auto-assigns a Sales or Manager/Admin user as telecaller, even as an additional role', function () {
-    User::factory()->role(UserRole::Sales)->withAdditionalRoles(UserRole::Telecaller)->create();
+it('DOES auto-assign a user with Telecaller as an additional role, unlike Sales\' primary-role-only round-robin', function () {
+    // Deliberate divergence from resolveLeastLoadedSales()'s primary-role-
+    // only rule, confirmed with the owner 2026-09-03 after real production
+    // data showed nobody holds Telecaller as a primary role at all — it's
+    // only ever granted as an additional role.
+    $telecaller = User::factory()->role(UserRole::Accounts)->withAdditionalRoles(UserRole::Telecaller)->create();
+
+    $lead = Lead::factory()->create();
+
+    expect($lead->fresh()->telecaller_id)->toBe($telecaller->id);
+});
+
+it('never auto-assigns a Manager/Admin user as telecaller when they hold no Telecaller role at all', function () {
     User::factory()->role(UserRole::Manager)->create();
     User::factory()->role(UserRole::Admin)->create();
 
     $lead = Lead::factory()->create();
 
-    // Telecaller auto-assignment, like Sales', is deliberately
-    // primary-role-only (CLAUDE.md 2026-08-08 multi-role decision) — a
-    // routing target must be unambiguous.
     expect($lead->fresh()->telecaller_id)->toBeNull();
 });
 

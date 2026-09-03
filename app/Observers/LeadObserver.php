@@ -168,17 +168,15 @@ class LeadObserver
     }
 
     /**
-     * Mirrors autoAssign()/resolveLeastLoadedSales() exactly, but for
-     * telecaller_id instead of owner_id — a separate assignment, checked
-     * independently (a lead gets both a Sales owner AND a Telecaller,
-     * assigned by two unrelated round-robins). Added 2026-09-03 alongside
-     * the Sales-visibility fix, reversing the 2026-07-26 "shared calling
-     * queue, no ownership" decision: without this, a brand-new lead would
-     * have telecaller_id=null and be invisible to every Telecaller (per the
-     * new Lead::scopeVisibleTo restriction) until someone manually assigned
-     * it — this keeps every new lead landing in some telecaller's queue
-     * immediately, same as it already does for Sales. No rule-based
-     * routing (LeadAssignmentRule is Sales-only, campaign/service-driven) —
+     * Mirrors autoAssign() for telecaller_id instead of owner_id — a
+     * separate assignment, checked independently (a lead gets both a Sales
+     * owner AND a Telecaller, assigned by two unrelated round-robins).
+     * Added 2026-09-03 alongside the Sales-visibility fix, reversing the
+     * 2026-07-26 "shared calling queue, no ownership" decision: without
+     * this, a brand-new lead would have telecaller_id=null and be invisible
+     * to every Telecaller (per the new Lead::scopeVisibleTo restriction)
+     * until someone manually assigned it. No rule-based routing
+     * (LeadAssignmentRule is Sales-only, campaign/service-driven) —
      * telecaller assignment is plain least-loaded round-robin only.
      */
     private function autoAssignTelecaller(Lead $lead): void
@@ -199,10 +197,22 @@ class LeadObserver
         $telecaller->notify(new NewLeadNotification($lead));
     }
 
+    /**
+     * Deliberately NOT primary-role-only like resolveLeastLoadedSales() —
+     * confirmed with the owner 2026-09-03 after checking real production
+     * data: nobody holds Telecaller as a PRIMARY role at all, it's only
+     * ever granted as an additional role (e.g. an Accounts or Intern person
+     * who also does calling duty). A primary-role-only rule here would
+     * silently never assign anyone, defeating the whole feature. Matches
+     * how Telecaller VISIBILITY already works (Lead::scopeVisibleTo() uses
+     * hasRole(), not the bare primary role column) — this just makes
+     * routing consistent with that, a deliberate divergence from the Sales
+     * round-robin's own primary-role-only precedent, not an oversight.
+     */
     private function resolveLeastLoadedTelecaller(): ?User
     {
         return User::where('is_active', true)
-            ->where('role', UserRole::Telecaller->value)
+            ->withAnyRole(UserRole::Telecaller)
             ->withCount(['telecallerLeads as open_leads_count' => fn ($query) => $query->whereIn('status', LeadStatus::openValues())])
             ->orderBy('open_leads_count')
             ->orderBy('id')
