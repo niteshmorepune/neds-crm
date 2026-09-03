@@ -4,6 +4,7 @@ use App\Enums\LeadStatus;
 use App\Enums\UserRole;
 use App\Models\Attendance;
 use App\Models\Lead;
+use App\Models\Meeting;
 use App\Models\User;
 use App\Services\NextActionEngine;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -23,6 +24,18 @@ it('shows the attendance prompt before a role-specific prompt, even when both ar
     expect($action->subjectId)->toBe($sales->id);
     // the lead is still there, just not surfaced yet
     expect(Lead::find($lead->id)->status)->toBe(LeadStatus::New);
+});
+
+it('shows the meeting-starting-soon prompt before the Sales lead-call prompt, once checked in', function () {
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    Attendance::factory()->for($sales)->create();
+    Lead::factory()->create(['owner_id' => $sales->id, 'status' => LeadStatus::New]);
+    $meeting = Meeting::factory()->create(['user_id' => $sales->id, 'meet_link' => 'https://meet.google.com/abc', 'occurred_at' => now()->addMinutes(5)]);
+
+    $action = nextActionEngine()->nextFor($sales);
+
+    expect($action->sourceKey)->toBe('meeting_starting_soon');
+    expect($action->subjectId)->toBe($meeting->id);
 });
 
 it('falls through to the next source once the earlier one has nothing pending', function () {

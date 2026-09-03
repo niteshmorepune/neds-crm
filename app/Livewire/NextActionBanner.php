@@ -16,7 +16,7 @@ use Livewire\Component;
  */
 class NextActionBanner extends Component
 {
-    /** @var array{source_key: string, subject_type: string, subject_id: int, title: string, body: string, action_url: string, action_label: string}|null */
+    /** @var array{source_key: string, subject_type: string, subject_id: int, title: string, body: string, action_url: ?string, action_label: string, external: bool}|null */
     public ?array $action = null;
 
     public function mount(NextActionEngine $engine): void

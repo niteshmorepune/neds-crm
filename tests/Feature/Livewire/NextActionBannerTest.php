@@ -6,6 +6,7 @@ use App\Enums\UserRole;
 use App\Livewire\NextActionBanner;
 use App\Models\Attendance;
 use App\Models\Lead;
+use App\Models\Meeting;
 use App\Models\NextActionSnooze;
 use App\Models\User;
 use Livewire\Livewire;
@@ -80,6 +81,25 @@ it('snoozes the current lead prompt, creating a NextActionSnooze row and clearin
         ->where('subject_id', $lead->id)
         ->where('snoozed_until', '>', now())
         ->exists())->toBeTrue();
+});
+
+it('shows the meeting join link, opening in a new tab, ahead of a pending lead', function () {
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    Attendance::factory()->for($sales)->create();
+    Lead::factory()->create(['owner_id' => $sales->id, 'status' => LeadStatus::New]);
+    Meeting::factory()->create([
+        'user_id' => $sales->id,
+        'title' => 'NEDS <> ADTA Group',
+        'meet_link' => 'https://meet.google.com/abc-defg-hij',
+        'occurred_at' => now()->addMinutes(5),
+    ]);
+
+    Livewire::actingAs($sales)
+        ->test(NextActionBanner::class)
+        ->assertSet('action.source_key', 'meeting_starting_soon')
+        ->assertSee('Join: NEDS <> ADTA Group')
+        ->assertSee('https://meet.google.com/abc-defg-hij')
+        ->assertSee('target="_blank"', false);
 });
 
 it('poll re-evaluates and picks up a newly-created lead', function () {

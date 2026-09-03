@@ -6,6 +6,7 @@
             <div class="mt-3 flex items-center gap-3">
                 @if ($action['action_url'])
                     <a href="{{ $action['action_url'] }}"
+                       @if ($action['external']) target="_blank" rel="noopener" @endif
                        class="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-500">
                         {{ $action['action_label'] }}
                     </a>

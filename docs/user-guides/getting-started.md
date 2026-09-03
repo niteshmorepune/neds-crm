@@ -124,6 +124,12 @@ real Google Calendar invite the client receives — it's just a CRM-side
 heads-up and RSVP so you don't have to check email to see it, and it only
 shows upcoming meetings, soonest first.
 
+On top of that, the same "what should I do next" popup (see Section 5
+above) will pop up a **Join now** reminder starting about 10 minutes
+before any meeting you organized or accepted, so you don't have to
+remember to check the Dashboard — it opens the Meet call in a new tab.
+Declining a meeting invitation stops this reminder too.
+
 ## 4g. Resources
 **Sidebar → Resources** has two tabs:
 - **Files** — a shared internal file library (plugin builds, certificates,
