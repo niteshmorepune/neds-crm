@@ -90,22 +90,32 @@ class WhatsappWebhookController extends Controller
             return $this->appendTicketReply($existingTicket, $data, $direction, $senderType);
         }
 
-        // Any line other than the configured support number is always
-        // pre-sale/lead activity — never a Ticket, even from a known
-        // Customer's phone (owner-confirmed 2026-08-03). A missing
-        // whatsapp_number (older wadesk.in build, or a not-yet-configured
-        // line) defaults to the support-line behavior for backward compatibility.
+        // A missing whatsapp_number (older wadesk.in build, or a
+        // not-yet-configured line) defaults to the support-line behavior for
+        // backward compatibility.
         $supportNumber = config('services.wadesk.support_number');
         $isSupportLine = blank($data['whatsapp_number'] ?? null) || $data['whatsapp_number'] === $supportNumber;
 
-        if (! $isSupportLine) {
-            return $this->handleUnmatchedNumber($data, $direction, $senderType);
-        }
-
+        // A known Customer's phone is checked BEFORE deciding what to do
+        // with a non-support line — regardless of which of NEDS' numbers
+        // they messaged, someone who's already a client never becomes a
+        // duplicate Lead (real incident 2026-09-03: an existing client,
+        // NSS Secure Solutions, messaged a non-support line and got filed
+        // as a brand-new Lead). Only a phone with NO matching Customer at
+        // all falls through to Lead capture.
         $customer = $this->findCustomer($data['phone']);
 
         if (! $customer) {
             return $this->handleUnmatchedNumber($data, $direction, $senderType);
+        }
+
+        // A known customer on a line OTHER than Support (e.g. Marketing) —
+        // still never a Ticket (owner-confirmed 2026-08-03: Marketing-line
+        // traffic is pre-sale, not support), but also never a Lead now that
+        // they're a client. Logged to their own timeline instead, so
+        // Sales/staff still see the inquiry.
+        if (! $isSupportLine) {
+            return $this->recordCustomerMessage($customer, $data, $direction, $senderType);
         }
 
         $preview = trim($data['message'] ?? '');
@@ -250,6 +260,25 @@ class WhatsappWebhookController extends Controller
         $this->recordLeadMessage($lead, $data, $direction, $senderType);
 
         return response()->json(['status' => 'lead_created', 'lead_id' => $lead->id]);
+    }
+
+    /**
+     * A known Customer messaged a non-support WhatsApp line (e.g.
+     * Marketing) — never creates a Lead for them (see handle()), just adds
+     * the message to their own timeline so Sales/staff still see it.
+     */
+    private function recordCustomerMessage(Customer $customer, array $data, string $direction, string $senderType): JsonResponse
+    {
+        if (blank($data['message'] ?? null)) {
+            return response()->json(['status' => 'ignored', 'reason' => 'no_message_body']);
+        }
+
+        $customer->notes()->create([
+            'user_id' => null,
+            'body' => $this->noteBody($data['message'], $direction, $senderType, $data['sender_name'] ?? null),
+        ]);
+
+        return response()->json(['status' => 'customer_note_added', 'customer_id' => $customer->id]);
     }
 
     /**

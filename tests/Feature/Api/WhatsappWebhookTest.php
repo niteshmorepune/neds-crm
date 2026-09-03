@@ -242,7 +242,7 @@ it('does not append a Drishti link when the customer has no drishti_client_id', 
     expect($ticket->description)->not->toContain('drishti');
 });
 
-it('routes a message on a non-support line to the Lead flow even when the phone matches an existing Customer', function () {
+it('logs a message on a non-support line to the Customer timeline instead of creating a duplicate Lead, when the phone matches an existing Customer', function () {
     config(['services.wadesk.support_number' => '918007733737']);
     $customer = Customer::factory()->create(['phone' => '919028099919']);
 
@@ -255,13 +255,14 @@ it('routes a message on a non-support line to the Lead flow even when the phone 
         'whatsapp_line_label' => 'Marketing',
     ], ['Authorization' => 'Bearer test-wa-token'])
         ->assertOk()
-        ->assertJson(['status' => 'lead_created']);
+        ->assertJson(['status' => 'customer_note_added', 'customer_id' => $customer->id]);
 
-    expect(Ticket::where('whatsapp_conversation_id', 'conv_marketing_known_customer')->exists())->toBeFalse();
+    expect(Ticket::where('whatsapp_conversation_id', 'conv_marketing_known_customer')->exists())->toBeFalse()
+        ->and(Lead::where('phone', '919028099919')->exists())->toBeFalse();
 
-    $lead = Lead::where('whatsapp_conversation_id', 'conv_marketing_known_customer')->first();
-    expect($lead)->not->toBeNull()
-        ->and($lead->phone)->toBe('919028099919');
+    $note = $customer->notes()->latest()->first();
+    expect($note)->not->toBeNull()
+        ->and($note->body)->toBe('Hi, tell me about your SEO packages');
 });
 
 it('still creates a Ticket when whatsapp_number explicitly matches the configured support line', function () {
