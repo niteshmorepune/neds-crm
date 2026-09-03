@@ -1,25 +1,47 @@
 <?php
 
+use App\Enums\AttendanceStatus;
 use App\Enums\LeadStatus;
 use App\Enums\UserRole;
 use App\Livewire\NextActionBanner;
+use App\Models\Attendance;
 use App\Models\Lead;
 use App\Models\NextActionSnooze;
 use App\Models\User;
 use Livewire\Livewire;
 
-it('shows the pending lead-call prompt to a Sales rep', function () {
+it('shows the attendance check-in prompt first, before any pending lead', function () {
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    Lead::factory()->create(['owner_id' => $sales->id, 'status' => LeadStatus::New]);
+
+    Livewire::actingAs($sales)
+        ->test(NextActionBanner::class)
+        ->assertSet('action.source_key', 'attendance_check_in')
+        ->assertSee('Mark your attendance')
+        ->assertSee('Check in now');
+});
+
+it('checking in via the button clears the attendance prompt and reveals the next one', function () {
     $sales = User::factory()->role(UserRole::Sales)->create();
     $lead = Lead::factory()->create(['owner_id' => $sales->id, 'status' => LeadStatus::New, 'name' => 'Priya Deshmukh']);
 
     Livewire::actingAs($sales)
         ->test(NextActionBanner::class)
+        ->assertSet('action.source_key', 'attendance_check_in')
+        ->call('complete')
+        ->assertSet('action.source_key', 'sales_new_lead_call')
+        ->assertSet('action.subject_id', $lead->id)
         ->assertSee('Call Priya Deshmukh')
         ->assertSee(route('calls.create', ['lead_id' => $lead->id]));
+
+    $attendance = Attendance::where('user_id', $sales->id)->whereDate('date', now())->first();
+    expect($attendance)->not->toBeNull();
+    expect($attendance->status)->toBe(AttendanceStatus::Present);
 });
 
-it('shows nothing when there is no pending action', function () {
+it('shows nothing once both attendance and lead prompts are resolved', function () {
     $sales = User::factory()->role(UserRole::Sales)->create();
+    Attendance::factory()->for($sales)->create();
 
     Livewire::actingAs($sales)
         ->test(NextActionBanner::class)
@@ -27,17 +49,24 @@ it('shows nothing when there is no pending action', function () {
         ->assertSet('action', null);
 });
 
-it('never shows a prompt to a non-Sales user', function () {
+it('shows the attendance prompt to a non-Sales user, but never the Sales lead-call prompt', function () {
     $support = User::factory()->role(UserRole::Support)->create();
     Lead::factory()->create(['owner_id' => $support->id, 'status' => LeadStatus::New]);
+
+    Livewire::actingAs($support)
+        ->test(NextActionBanner::class)
+        ->assertSet('action.source_key', 'attendance_check_in');
+
+    Attendance::factory()->for($support)->create();
 
     Livewire::actingAs($support)
         ->test(NextActionBanner::class)
         ->assertSet('action', null);
 });
 
-it('snoozes the current prompt, creating a NextActionSnooze row and clearing it from the next poll', function () {
+it('snoozes the current lead prompt, creating a NextActionSnooze row and clearing it from the next poll', function () {
     $sales = User::factory()->role(UserRole::Sales)->create();
+    Attendance::factory()->for($sales)->create();
     $lead = Lead::factory()->create(['owner_id' => $sales->id, 'status' => LeadStatus::New]);
 
     Livewire::actingAs($sales)
@@ -55,6 +84,7 @@ it('snoozes the current prompt, creating a NextActionSnooze row and clearing it 
 
 it('poll re-evaluates and picks up a newly-created lead', function () {
     $sales = User::factory()->role(UserRole::Sales)->create();
+    Attendance::factory()->for($sales)->create();
 
     $component = Livewire::actingAs($sales)
         ->test(NextActionBanner::class)

@@ -59,4 +59,15 @@ class SalesNewLeadCallSource implements NextActionSource
             actionLabel: 'Log the call',
         );
     }
+
+    /**
+     * This source's prompt always sets actionUrl (a link to the Log a Call
+     * form), so the banner never renders a button for it and this should
+     * never be reachable — throwing surfaces a wiring bug loudly instead of
+     * silently no-op'ing.
+     */
+    public function complete(User $user, int $subjectId): void
+    {
+        throw new \RuntimeException(self::class.' has no inline completion — its prompt always links out.');
+    }
 }
