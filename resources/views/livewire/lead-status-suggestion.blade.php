@@ -1,6 +1,10 @@
 <div class="mt-3 rounded-md border border-purple-200 bg-purple-50 p-3">
     <p class="text-xs font-medium text-purple-700">
-        ✏️ Status may need updating — this lead already has notes/calls but is still marked New.
+        @if ($lead->hasStaleNewStatus())
+            ✏️ Status may need updating — this lead already has notes/calls but is still marked New.
+        @else
+            ✏️ Status may need updating — 3+ real attempts (calls/WhatsApp) with zero response, but this lead is still marked {{ $lead->status->label() }}.
+        @endif
     </p>
 
     @if (! $requested)

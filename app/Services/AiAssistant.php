@@ -170,14 +170,20 @@ class AiAssistant
     }
 
     /**
-     * Suggests which status a lead stuck at New should actually be, once it
-     * already has real notes/calls against it — see Lead::hasStaleNewStatus(),
-     * the flag this powers. Root cause (2026-09-02): a rep types a note
-     * describing a real outreach attempt without ticking "This was a call",
-     * so the lead never auto-promotes and just sits flagged; this gives the
-     * rep something concrete to act on instead of only a flag. Mirrors
-     * suggestDealLostReason()'s shape exactly (bounded enum, JSON out,
-     * rationale, null when there's nothing to go on) — deliberately a
+     * Suggests what a lead's status should actually be, for either of the
+     * two cases Lead flags as needing review:
+     * - hasStaleNewStatus(): stuck at New despite already having real notes/
+     *   calls against it (root cause 2026-09-02: a rep types a note
+     *   describing a real outreach attempt without ticking "This was a
+     *   call", so the lead never auto-promotes).
+     * - isUnresponsive(): stuck at Contacted (or later) after 3+ real
+     *   attempts on calls/WhatsApp with zero response on either channel —
+     *   owner's own framing (2026-09-03): "if it is not responding to
+     *   either the call or the messages... it is sure it is not NEW,
+     *   correct?" — right, but it also shouldn't sit at Contacted forever
+     *   with no path forward once every channel's genuinely been tried.
+     * Mirrors suggestDealLostReason()'s shape exactly (bounded enum, JSON
+     * out, rationale, null when there's nothing to go on) — deliberately a
      * suggestion the rep applies via LeadStatusSuggestion, never applied
      * automatically, confirmed with the owner via AskUserQuestion (the
      * alternative — auto-backfilling every already-flagged lead straight to
@@ -192,7 +198,14 @@ class AiAssistant
      */
     public function suggestLeadStatusUpdate(Lead $lead): ?array
     {
-        if (! Ai::enabled() || ! $lead->hasStaleNewStatus()) {
+        if (! Ai::enabled()) {
+            return null;
+        }
+
+        $staleNew = $lead->hasStaleNewStatus();
+        $unresponsive = ! $staleNew && $lead->isUnresponsive();
+
+        if (! $staleNew && ! $unresponsive) {
             return null;
         }
 
@@ -202,7 +215,9 @@ class AiAssistant
             'Lead: '.$lead->name.($lead->company ? ' ('.$lead->company.')' : ''),
             'Interested in: '.($lead->service?->name ?? 'unspecified'),
             'Source: '.$lead->source->label(),
-            'Current status: New (but has activity below — that\'s the problem being fixed)',
+            $staleNew
+                ? 'Current status: New (but has activity below — that\'s the problem being fixed)'
+                : 'Current status: '.$lead->status->label().' (but 3+ real attempts below have gotten zero response — that\'s the problem being fixed)',
             '',
             'History:',
         ];
@@ -216,28 +231,36 @@ class AiAssistant
         }
 
         $system = <<<'PROMPT'
-        A lead at a digital-solutions agency in India is still marked "New"
-        despite already having real notes or call history recorded against it
-        — the status was never updated when the outreach happened. Read the
-        history and suggest which ONE of these three statuses it should
-        actually be:
+        A lead at a digital-solutions agency in India has a status that no
+        longer matches its real history — either it's still marked "New"
+        despite already having real notes or call history recorded against
+        it, or it's been genuinely unresponsive (3+ real attempts across
+        calls and WhatsApp, zero response on either channel) and may have
+        been sitting that way with no update. Read the history and suggest
+        which ONE of these three statuses it should actually be:
 
         contacted  - default: some real outreach was attempted (a call made,
                      a message sent), regardless of whether it succeeded —
                      "Contacted" means an attempt was made, not that they
-                     answered or replied
+                     answered or replied. Still the right answer for an
+                     unresponsive lead if there's a channel or approach not
+                     yet tried (e.g. only ever called, never messaged).
         qualified  - the history shows genuine interest or a real need
                      confirmed (they engaged back, asked questions, requested
                      pricing or a quote) — a step further than a bare attempt
         lost       - the history clearly shows they said no, asked to stop
                      being contacted, or the contact info is permanently
                      unusable (e.g. explicitly wrong number, out of business)
-                     — not just one unanswered call
+                     — OR there's a genuinely sustained pattern of silence
+                     across MULTIPLE real attempts on BOTH calls and
+                     WhatsApp, with no channel left untried and no realistic
+                     reason left to keep trying
 
         Default to "contacted" unless the notes clearly support qualified or
         lost — never suggest a status stronger than what the history actually
-        shows. A string of unanswered call attempts alone is still just
-        "contacted", not "lost".
+        shows. One or two unanswered calls alone, or attempts on only one
+        channel, is still just "contacted", not "lost" — there's still
+        something left to try.
 
         Respond with ONLY a JSON object, no markdown, no prose:
         {"status": "<contacted|qualified|lost>",

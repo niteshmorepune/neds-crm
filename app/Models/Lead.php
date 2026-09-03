@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\CallOutcome;
 use App\Enums\DealStage;
 use App\Enums\LeadBudgetBand;
 use App\Enums\LeadSource;
@@ -9,6 +10,7 @@ use App\Enums\LeadStatus;
 use App\Enums\LeadUrgency;
 use App\Models\Concerns\LogsActivity;
 use App\Observers\LeadObserver;
+use App\Services\CallTimingMetrics;
 use App\Support\Phone;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder;
@@ -331,6 +333,97 @@ class Lead extends Model
             // window" rather than silently comparing as if it were recent.
             fn (Note $note) => $note->created_at->diffInSeconds($this->created_at, absolute: true) > self::INTAKE_NOTE_WINDOW_SECONDS
         );
+    }
+
+    /** How many combined real outreach attempts, per channel, and whether either one ever got a real response. */
+    private const UNRESPONSIVE_ATTEMPT_THRESHOLD = 3;
+
+    private const WHATSAPP_OUTBOUND_PREFIX = '[Sent via WhatsApp by';
+
+    /**
+     * Extracted from LeadController::unresponsiveLeadIds() (2026-09-02) so
+     * both the bulk list/strip-tile check and a single lead's own page (the
+     * "next best action" advisor, AiAssistant::suggestLeadStatusUpdate())
+     * share one source of truth instead of two copies drifting apart.
+     * Prefers already-loaded notes()/callLogs() (same fallback convention as
+     * hasStaleNewStatus()) so this stays cheap when eager-loaded.
+     *
+     * Known nuance, not fixed here (out of scope, pre-existing, and the
+     * error direction is safe): `whatsapp_inbound_reply` can't currently
+     * distinguish a genuine inbound WhatsApp reply from a Meta/website
+     * intake note that happens to have no outbound-prefix either (both are
+     * user_id=null, no prefix) — this only makes a lead look LESS
+     * unresponsive than it is (a false negative), never more, so it doesn't
+     * risk a wrongly-flagged lead the way hasStaleNewStatus()'s bug did.
+     *
+     * @return array{calls: int, whatsapp_outbound: int, connected_call: bool, whatsapp_inbound_reply: bool}
+     */
+    public function outreachAttemptSummary(): array
+    {
+        $callLogs = $this->relationLoaded('callLogs') ? $this->callLogs : $this->callLogs()->get(['id', 'callable_id', 'callable_type', 'outcome']);
+        $notes = $this->relationLoaded('notes') ? $this->notes : $this->notes()->get(['id', 'notable_id', 'notable_type', 'user_id', 'body']);
+
+        return [
+            'calls' => $callLogs->count(),
+            'whatsapp_outbound' => $notes->filter(fn (Note $n) => $n->user_id === null && str_starts_with($n->body, self::WHATSAPP_OUTBOUND_PREFIX))->count(),
+            'connected_call' => $callLogs->contains(fn (CallLog $c) => $c->outcome === CallOutcome::Connected),
+            'whatsapp_inbound_reply' => $notes->contains(fn (Note $n) => $n->user_id === null && ! str_starts_with($n->body, self::WHATSAPP_OUTBOUND_PREFIX)),
+        ];
+    }
+
+    /**
+     * UNRESPONSIVE_ATTEMPT_THRESHOLD+ combined outreach attempts (calls of
+     * any outcome, plus outbound WhatsApp sends), with no successful
+     * response on either channel, and still open. See
+     * LeadController::unresponsiveLeadIds()'s own docblock (where this
+     * logic originated, 2026-09-02) for the full reasoning.
+     */
+    public function isUnresponsive(): bool
+    {
+        if (! $this->status->isOpen()) {
+            return false;
+        }
+
+        $summary = $this->outreachAttemptSummary();
+
+        if ($summary['connected_call'] || $summary['whatsapp_inbound_reply']) {
+            return false;
+        }
+
+        return ($summary['calls'] + $summary['whatsapp_outbound']) >= self::UNRESPONSIVE_ATTEMPT_THRESHOLD;
+    }
+
+    /**
+     * The concrete next move for an unresponsive lead — owner's own framing
+     * (2026-09-03): "what can be the next best action... to follow up the
+     * lead." Deterministic, not AI (this is a cheap, always-available tier;
+     * AI-drafted follow-up via the existing Draft Follow-up button is the
+     * next tier once a channel switch alone isn't enough). Null when the
+     * lead isn't actually unresponsive — callers don't need to check both.
+     */
+    public function suggestedNextAction(CallTimingMetrics $callTiming): ?string
+    {
+        if (! $this->isUnresponsive()) {
+            return null;
+        }
+
+        $summary = $this->outreachAttemptSummary();
+        $triedCalls = $summary['calls'] > 0;
+        $triedWhatsapp = $summary['whatsapp_outbound'] > 0;
+        $timingHint = $callTiming->summaryLine();
+
+        if ($triedCalls && ! $triedWhatsapp) {
+            return "You've called {$summary['calls']} time(s) with no answer, but never messaged on WhatsApp — try that channel next.";
+        }
+
+        if ($triedWhatsapp && ! $triedCalls) {
+            return "You've messaged on WhatsApp {$summary['whatsapp_outbound']} time(s) with no reply, but never called — try calling instead"
+                .($timingHint ? " ({$timingHint})" : '').'.';
+        }
+
+        return "Both calls ({$summary['calls']}) and WhatsApp ({$summary['whatsapp_outbound']}) have been tried with no response."
+            .($timingHint ? " If you try calling again, {$timingHint}." : '')
+            .' Otherwise, consider updating the status below or sending one more message via ✨ Draft follow-up.';
     }
 
     /**

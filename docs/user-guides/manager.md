@@ -242,8 +242,10 @@ reply, still open) and a **status may need updating** count (a lead
 still marked New that already has a note or a logged call — the "This
 was a call" checkbox in the note box, see the Sales guide, is what
 prevents this going forward) — same as what Sales/Telecaller see, just
-showing the whole team's picture for you rather than one person's. The
-status summary
+showing the whole team's picture for you rather than one person's. Open
+an unresponsive lead and you'll see a next-best-action recommendation
+(switch channels, or a status suggestion once both have genuinely been
+tried) — same as the Sales guide describes. The status summary
 cards at the top (Lead Generation and Clients both) are clickable — click
 a number to filter the list to it — and the **Converted** card shows a
 small "X Won" line so you can see the real close rate without opening

@@ -3,6 +3,7 @@
 use App\Enums\CallDirection;
 use App\Enums\CallOutcome;
 use App\Enums\LeadStatus;
+use App\Models\CallLog;
 use App\Models\Lead;
 use App\Models\User;
 use App\Services\AiAssistant;
@@ -139,4 +140,22 @@ it('returns null when the API call fails', function () {
     $lead->notes()->create(['user_id' => null, 'body' => 'Called, no answer.']);
 
     expect(app(AiAssistant::class)->suggestLeadStatusUpdate($lead))->toBeNull();
+});
+
+it('frames the prompt around zero-response attempts, not "still marked New", for an unresponsive Contacted lead', function () {
+    enableAiForLeadStatus();
+    fakeLeadStatusClaude(status: 'lost', rationale: 'No response after real attempts on both channels.');
+    $lead = Lead::factory()->create(['status' => LeadStatus::Contacted]);
+    CallLog::factory()->count(3)->create([
+        'callable_type' => Lead::class, 'callable_id' => $lead->id, 'outcome' => CallOutcome::NoAnswer,
+    ]);
+
+    app(AiAssistant::class)->suggestLeadStatusUpdate($lead);
+
+    Http::assertSent(function ($request) {
+        $prompt = json_decode($request->body(), true)['messages'][0]['content'];
+
+        return str_contains($prompt, 'Current status: Contacted (but 3+ real attempts below have gotten zero response')
+            && ! str_contains($prompt, 'still marked "New"');
+    });
 });

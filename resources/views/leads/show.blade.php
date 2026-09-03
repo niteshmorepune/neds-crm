@@ -50,7 +50,14 @@
                             {{ $lead->next_follow_up_at?->timezone(config('app.display_timezone'))->format('d M Y, g:i A') ?? '—' }}</div>
                     </dl>
 
-                    @if ($canManage && $lead->hasStaleNewStatus())
+                    @if ($nextAction)
+                        <div class="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+                            <p class="font-medium">📵 Not responding — next best action</p>
+                            <p class="mt-1">{{ $nextAction }}</p>
+                        </div>
+                    @endif
+
+                    @if ($canManage && ($lead->hasStaleNewStatus() || $lead->isUnresponsive()))
                         <livewire:lead-status-suggestion :lead="$lead" :key="'lead-status-suggestion-'.$lead->id" />
                     @endif
 

@@ -1,8 +1,10 @@
 <?php
 
+use App\Enums\CallOutcome;
 use App\Enums\LeadStatus;
 use App\Enums\UserRole;
 use App\Livewire\LeadStatusSuggestion;
+use App\Models\CallLog;
 use App\Models\Lead;
 use App\Models\User;
 use Illuminate\Support\Facades\Http;
@@ -134,4 +136,24 @@ it('forbids applying for a lead the viewer cannot update', function () {
         ->assertForbidden();
 
     expect($lead->fresh()->status)->toBe(LeadStatus::New);
+});
+
+it('also suggests a status for an unresponsive Contacted lead (not just a stale New one), with the unresponsive-specific header', function () {
+    $admin = User::factory()->role(UserRole::Admin)->create();
+    $lead = Lead::factory()->create(['status' => LeadStatus::Contacted]);
+    CallLog::factory()->count(3)->create([
+        'callable_type' => Lead::class, 'callable_id' => $lead->id, 'outcome' => CallOutcome::NoAnswer,
+    ]);
+    config(['services.anthropic.enabled' => true, 'services.anthropic.key' => 'sk-test']);
+    Http::fake(['api.anthropic.com/*' => Http::response([
+        'content' => [['type' => 'text', 'text' => json_encode(['status' => 'lost', 'rationale' => 'No response after several real attempts.'])]],
+        'usage' => ['input_tokens' => 30, 'output_tokens' => 10],
+    ])]);
+
+    Livewire::actingAs($admin)
+        ->test(LeadStatusSuggestion::class, ['lead' => $lead])
+        ->assertSee('zero response') // the isUnresponsive()-specific header, not the stale-New one
+        ->assertDontSee('is still marked New')
+        ->call('suggest')
+        ->assertSet('suggestedStatus', 'lost');
 });

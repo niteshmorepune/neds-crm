@@ -60,9 +60,12 @@ badge shows right on a lead's row when relevant. Above the list, the
 overdue, due today, Hot-but-untouched, **unresponsive** (3 or more
 call/WhatsApp attempts with no answer and no reply, on a lead that's
 still open), and **status may need updating** (see below) — scoped to
-your own leads. Unresponsive is worth a second look before you keep
-dialling the same number the same way — try a different time of day, or
-switch channels if you've only tried calls (or only WhatsApp) so far.
+your own leads. Open an unresponsive lead itself and you'll see a
+**"📵 Not responding — next best action"** box telling you exactly what to
+try: switch channels if you've only tried calls (or only WhatsApp) so far,
+including the historically best time to call when there's enough data;
+once both channels have genuinely been tried with nothing back, it points
+you to the status suggestion below instead of leaving you guessing.
 
 **Keep "New" honest — the "This was a call" shortcut:** a lead only
 counts as genuinely untouched while it's **New**. The moment you log any
@@ -76,13 +79,16 @@ the strip above), so it doesn't silently look untouched to you or anyone
 scanning the New tile.
 
 **Fixing an already-flagged lead:** open the lead itself — a flagged lead
-shows a **✨ Suggest a status** button. Click it and, if AI is enabled,
-Claude reads the lead's own notes and calls and suggests Contacted,
-Qualified, or Lost with a one-line reason (e.g. "they asked for a formal
-quote" → Qualified). Nothing changes automatically — pick the status from
-the dropdown (the AI's pick is pre-selected but you can choose a different
-one) and click **Apply**. If AI can't suggest anything, or is off, you
-still get the same dropdown to pick from yourself.
+(New with real activity, OR unresponsive after 3+ real attempts on both
+channels) shows a **✨ Suggest a status** button. Click it and, if AI is
+enabled, Claude reads the lead's own notes and calls and suggests
+Contacted, Qualified, or Lost with a one-line reason — e.g. "they asked
+for a formal quote" → Qualified, or "no response on either channel after
+several real attempts" → Lost for a genuinely dead unresponsive lead.
+Nothing changes automatically — pick the status from the dropdown (the
+AI's pick is pre-selected but you can choose a different one) and click
+**Apply**. If AI can't suggest anything, or is off, you still get the
+same dropdown to pick from yourself.
 
 **A Converted lead that isn't Won yet:** once a lead converts, its Status
 column shows **Converted** plus a small caption underneath describing
