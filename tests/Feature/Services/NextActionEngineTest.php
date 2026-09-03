@@ -1,11 +1,19 @@
 <?php
 
+use App\Enums\DealStage;
+use App\Enums\InvoiceStatus;
 use App\Enums\LeadStatus;
+use App\Enums\QuotationStatus;
 use App\Enums\UserRole;
 use App\Models\Attendance;
+use App\Models\Customer;
 use App\Models\DailyReport;
+use App\Models\Deal;
+use App\Models\Invoice;
 use App\Models\Lead;
 use App\Models\Meeting;
+use App\Models\NextActionSnooze;
+use App\Models\Quotation;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Services\NextActionEngine;
@@ -120,6 +128,52 @@ it('falls through to the next source once the earlier one has nothing pending', 
 
     expect($action->sourceKey)->toBe('sales_new_lead_call');
     expect($action->subjectId)->toBe($lead->id);
+
+    Carbon::setTestNow();
+});
+
+it('shows a fresh lead-call prompt ahead of the rest of the Sales journey, once checked in', function () {
+    Carbon::setTestNow(Carbon::parse(ENGINE_TEST_DAYTIME, config('app.display_timezone')));
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    Attendance::factory()->for($sales)->create();
+    $lead = Lead::factory()->create(['owner_id' => $sales->id, 'status' => LeadStatus::New]);
+    Deal::factory()->create(['owner_id' => $sales->id, 'stage' => DealStage::Won, 'won_at' => now()]);
+
+    $action = nextActionEngine()->nextFor($sales);
+
+    expect($action->sourceKey)->toBe('sales_new_lead_call');
+    expect($action->subjectId)->toBe($lead->id);
+
+    Carbon::setTestNow();
+});
+
+it('walks the rest of the Sales journey in order once there is no fresh lead to call: won-deal, then quotation, then overdue invoice', function () {
+    Carbon::setTestNow(Carbon::parse(ENGINE_TEST_DAYTIME, config('app.display_timezone')));
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    Attendance::factory()->for($sales)->create();
+    $deal = Deal::factory()->create(['owner_id' => $sales->id, 'stage' => DealStage::Won, 'won_at' => now()]);
+    $customer = Customer::factory()->create(['owner_id' => $sales->id]);
+    $quotation = Quotation::factory()->create(['customer_id' => $customer->id, 'status' => QuotationStatus::Sent]);
+    $quotation->forceFill(['updated_at' => now()->subDays(4)])->saveQuietly();
+    $invoice = Invoice::factory()->create(['customer_id' => $customer->id, 'status' => InvoiceStatus::Overdue]);
+
+    expect(nextActionEngine()->nextFor($sales)->sourceKey)->toBe('deal_won_no_project');
+
+    // deal_won_no_project resolves via a real one-click complete(); the
+    // other two only ever resolve by visiting their linked page, so the
+    // test moves them along the same way the popup's own Snooze does.
+    nextActionEngine()->completeFor($sales, 'deal_won_no_project', $deal->id);
+    expect(nextActionEngine()->nextFor($sales)->sourceKey)->toBe('quotation_follow_up');
+
+    NextActionSnooze::create([
+        'user_id' => $sales->id,
+        'source_key' => 'quotation_follow_up',
+        'subject_type' => Quotation::class,
+        'subject_id' => $quotation->id,
+        'snoozed_until' => now()->addMinutes(30),
+    ]);
+    expect(nextActionEngine()->nextFor($sales)->sourceKey)->toBe('overdue_invoice_follow_up');
+    expect(nextActionEngine()->nextFor($sales)->subjectId)->toBe($invoice->id);
 
     Carbon::setTestNow();
 });
