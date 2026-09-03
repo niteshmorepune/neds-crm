@@ -373,7 +373,10 @@ on **Sales Dashboard** — see 2a below.
   Its **Value** can still be corrected afterwards, though (e.g. if the final
   amount was entered wrong) — every report, dashboard, and revenue figure
   picks up the corrected number automatically.
-- A **won** deal can become a **Project** for the delivery team.
+- A **won** deal can become a **Project** for the delivery team. If you
+  haven't created one yet, the same "what to do next" popup (see Section
+  1 above) will prompt you with a one-click **Create project now** button
+  right there — no need to open the deal first.
 - On a **Client's** page, the **Deals** tab has Edit/Delete links for every
   deal, including Won ones — handy for fixing a value or removing a
   duplicate without leaving the client's profile.
@@ -514,6 +517,10 @@ form to set the company's monthly/FY target and each rep's monthly target.
    a quotation can't quietly fall through the cracks — if the client was
    referred by a partner agency, the reminder names the partner too (e.g.
    "Follow up with Prajakta Dahake (referring partner)...").
+   Separately, the "what to do next" popup (Section 1) also picks up any
+   quotation still sitting at Sent with no client decision after 3 days —
+   unlike the Dashboard reminder, it clears itself automatically the
+   moment the quotation is Accepted or Rejected, no need to mark it done.
    - **Reseller partners:** if the client you picked was referred by a
      partner set up as a reseller (see Manager guide → Content
      collaboration → Reseller billing), you'll see an amber notice near
@@ -552,6 +559,12 @@ Renewal**, **Total Revenue**, and **Outstanding** (clickable, jumps to the
 Invoices tab) — plus a **Health Score** badge (0–100) next to their status,
 worst clients scoring lowest. If a client's score has dropped, that's your
 cue to check what's changed before it becomes a bigger problem.
+
+If one of your clients has a genuinely **overdue** invoice, the "what to
+do next" popup (Section 1) will also prompt you with a personal
+follow-up nudge — separate from Accounts' own collections reminders to
+the client, this one is just for you to consider reaching out yourself,
+since a relationship nudge sometimes lands better than an automated one.
 
 **Services tab — who's working on what:** the **Services** tab on a client's
 page shows a **Team** column on the Recurring Services table (retainer

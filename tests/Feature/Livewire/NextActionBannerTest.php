@@ -1,14 +1,17 @@
 <?php
 
 use App\Enums\AttendanceStatus;
+use App\Enums\DealStage;
 use App\Enums\LeadStatus;
 use App\Enums\UserRole;
 use App\Livewire\NextActionBanner;
 use App\Models\Attendance;
 use App\Models\DailyReport;
+use App\Models\Deal;
 use App\Models\Lead;
 use App\Models\Meeting;
 use App\Models\NextActionSnooze;
+use App\Models\Project;
 use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Support\Carbon;
@@ -221,6 +224,25 @@ it('checking out via the button clears the check-out reminder', function () {
 
     $attendance = Attendance::where('user_id', $support->id)->whereDate('date', now())->first();
     expect($attendance->check_out_at)->not->toBeNull();
+
+    Carbon::setTestNow();
+});
+
+it('creating the project via the button clears the deal-won-no-project prompt', function () {
+    Carbon::setTestNow(Carbon::parse(BANNER_TEST_DAYTIME, config('app.display_timezone')));
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    Attendance::factory()->for($sales)->create();
+    $deal = Deal::factory()->create(['owner_id' => $sales->id, 'stage' => DealStage::Won, 'won_at' => now(), 'title' => 'ADTA Group Website']);
+
+    Livewire::actingAs($sales)
+        ->test(NextActionBanner::class)
+        ->assertSet('action.source_key', 'deal_won_no_project')
+        ->assertSee('Start the project for ADTA Group Website')
+        ->assertSee('Create project now')
+        ->call('complete')
+        ->assertSet('action', null);
+
+    expect(Project::where('deal_id', $deal->id)->exists())->toBeTrue();
 
     Carbon::setTestNow();
 });

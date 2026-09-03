@@ -7,8 +7,11 @@ use App\Models\User;
 use App\Services\NextAction\AttendanceCheckInSource;
 use App\Services\NextAction\CheckOutReminderSource;
 use App\Services\NextAction\DailyReportReminderSource;
+use App\Services\NextAction\DealWonNoProjectSource;
 use App\Services\NextAction\LunchHourWadeskAiSource;
 use App\Services\NextAction\MeetingStartingSoonSource;
+use App\Services\NextAction\OverdueInvoiceFollowUpSource;
+use App\Services\NextAction\QuotationFollowUpSource;
 use App\Services\NextAction\SalesNewLeadCallSource;
 use App\Services\NextAction\SupportNewTicketReplySource;
 use App\Services\NextAction\TelecallerNewLeadCallSource;
@@ -33,11 +36,13 @@ use App\Support\NextAction;
  * before check-out, matching the owner's own "submit report, then check
  * out" framing of the day's last two steps. Then LunchHourWadeskAi (a
  * narrow ~15-minute window, still worth surfacing ahead of a lead call
- * that can wait), then the three "call/respond now" role-specific
- * sources (Sales/Telecaller lead calls, Support ticket replies) —
- * important, but never as time-boxed as anything ahead of them. These
- * three are mutually exclusive for almost everyone (gated on different
- * roles), so their relative order rarely matters in practice.
+ * that can wait), then the role-specific "call/respond/follow-up now"
+ * sources, grouped by role since they're mutually exclusive for almost
+ * everyone. Within Sales: a fresh uncalled lead first (first impression,
+ * most time-sensitive), then DealWonNoProject (a real pipeline blocker —
+ * nothing downstream starts until this happens), then quotation/invoice
+ * follow-ups (relationship maintenance, important but never blocking).
+ * Then Telecaller, then Support.
  *
  * @see NextActionSource
  */
@@ -51,6 +56,9 @@ class NextActionEngine
         CheckOutReminderSource::class,
         LunchHourWadeskAiSource::class,
         SalesNewLeadCallSource::class,
+        DealWonNoProjectSource::class,
+        QuotationFollowUpSource::class,
+        OverdueInvoiceFollowUpSource::class,
         TelecallerNewLeadCallSource::class,
         SupportNewTicketReplySource::class,
     ];
