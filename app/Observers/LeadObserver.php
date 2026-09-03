@@ -37,6 +37,7 @@ class LeadObserver
     public function created(Lead $lead): void
     {
         $this->autoAssign($lead);
+        $this->autoAssignTelecaller($lead);
         $this->queueScore($lead);
         $this->notifyNewLead($lead);
         $this->sendVisibilityAuditInviteIfEligible($lead);
@@ -161,6 +162,48 @@ class LeadObserver
         return User::where('is_active', true)
             ->where('role', UserRole::Sales->value)
             ->withCount(['leads as open_leads_count' => fn ($query) => $query->whereIn('status', LeadStatus::openValues())])
+            ->orderBy('open_leads_count')
+            ->orderBy('id')
+            ->first();
+    }
+
+    /**
+     * Mirrors autoAssign()/resolveLeastLoadedSales() exactly, but for
+     * telecaller_id instead of owner_id — a separate assignment, checked
+     * independently (a lead gets both a Sales owner AND a Telecaller,
+     * assigned by two unrelated round-robins). Added 2026-09-03 alongside
+     * the Sales-visibility fix, reversing the 2026-07-26 "shared calling
+     * queue, no ownership" decision: without this, a brand-new lead would
+     * have telecaller_id=null and be invisible to every Telecaller (per the
+     * new Lead::scopeVisibleTo restriction) until someone manually assigned
+     * it — this keeps every new lead landing in some telecaller's queue
+     * immediately, same as it already does for Sales. No rule-based
+     * routing (LeadAssignmentRule is Sales-only, campaign/service-driven) —
+     * telecaller assignment is plain least-loaded round-robin only.
+     */
+    private function autoAssignTelecaller(Lead $lead): void
+    {
+        if ($lead->telecaller_id !== null) {
+            return;
+        }
+
+        $telecaller = $this->resolveLeastLoadedTelecaller();
+
+        if ($telecaller === null) {
+            return;
+        }
+
+        $lead->telecaller_id = $telecaller->id;
+        $lead->save();
+
+        $telecaller->notify(new NewLeadNotification($lead));
+    }
+
+    private function resolveLeastLoadedTelecaller(): ?User
+    {
+        return User::where('is_active', true)
+            ->where('role', UserRole::Telecaller->value)
+            ->withCount(['telecallerLeads as open_leads_count' => fn ($query) => $query->whereIn('status', LeadStatus::openValues())])
             ->orderBy('open_leads_count')
             ->orderBy('id')
             ->first();

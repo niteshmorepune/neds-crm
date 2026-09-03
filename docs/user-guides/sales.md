@@ -36,13 +36,16 @@ this — that client's website, Google Business Profile, socials, Drive
 folder, and similar. Anyone who can open the client's page can see these.
 
 ## 1. Leads (Lead Generation)
+You only see leads you own (or that are unowned) here — not another Sales
+rep's leads (fixed 2026-09-03; this used to show everyone's).
+
 The top of the page shows **summary cards** — Total, New, Contacted,
-Qualified, Converted, Lost — a quick read on the pipeline before you scroll
-the list. They reflect everyone's leads regardless of any filter you've
+Qualified, Converted, Lost — a quick read on your pipeline before you
+scroll the list. They reflect your leads regardless of any filter you've
 applied to the list below, so they stay a stable overview. **Each card is
 clickable** — click any number to jump straight to the list filtered to
-that status (click **Total** to clear the status filter and see
-everyone). The **Converted** card also shows a small **"X Won"** line
+that status (click **Total** to clear the status filter and see all of
+yours). The **Converted** card also shows a small **"X Won"** line
 underneath — Converted only ever means the lead became a real Deal, not
 that it's a closed sale, so this tells you at a glance how many of those
 Converted leads have actually been won without opening each one. The list

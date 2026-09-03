@@ -139,6 +139,12 @@
                             <option value="{{ $owner->id }}" @selected((string) ($filters['owner_id'] ?? '') === (string) $owner->id)>{{ $owner->name }}</option>
                         @endforeach
                     </select>
+                    <select name="telecaller_id" class="rounded-md border-gray-300 text-sm shadow-sm">
+                        <option value="">All telecallers</option>
+                        @foreach ($telecallers as $telecaller)
+                            <option value="{{ $telecaller->id }}" @selected((string) ($filters['telecaller_id'] ?? '') === (string) $telecaller->id)>{{ $telecaller->name }}</option>
+                        @endforeach
+                    </select>
                     {{-- Only ever matches a Converted lead (only they have a
                          linked Deal), so this filter is independent of the
                          Status filter above — pick it alone to see every

@@ -159,6 +159,43 @@ it('filters leads to those with a due follow-up via the follow_up_due flag', fun
         ->assertDontSee('Already converted');
 });
 
+it('filters the leads list to a specific telecaller via the telecaller_id param', function () {
+    // Created BEFORE any Telecaller exists, so the round-robin auto-assign
+    // has nobody to claim it for yet.
+    Lead::factory()->create(['name' => 'Unassigned lead', 'telecaller_id' => null]);
+
+    $telecaller = User::factory()->role(UserRole::Telecaller)->create();
+    $otherTelecaller = User::factory()->role(UserRole::Telecaller)->create();
+    Lead::factory()->create(['name' => 'Assigned to telecaller', 'telecaller_id' => $telecaller->id]);
+    Lead::factory()->create(['name' => 'Assigned to other telecaller', 'telecaller_id' => $otherTelecaller->id]);
+
+    $this->actingAs($this->admin)->get(route('leads.index', ['telecaller_id' => $telecaller->id]))
+        ->assertOk()
+        ->assertSee('Assigned to telecaller')
+        ->assertDontSee('Assigned to other telecaller')
+        ->assertDontSee('Unassigned lead');
+});
+
+it('lets an admin edit a lead\'s Telecaller assignment via the Edit form', function () {
+    // $lead created BEFORE $telecaller exists, so the round-robin
+    // auto-assign can't have already set telecaller_id — proving the PUT
+    // below is what actually sets it, not a pre-existing auto-assignment.
+    $lead = Lead::factory()->create(['telecaller_id' => null]);
+    $telecaller = User::factory()->role(UserRole::Telecaller)->create();
+
+    $this->actingAs($this->admin)
+        ->from(route('leads.edit', $lead))
+        ->put(route('leads.update', $lead), [
+            'name' => $lead->name,
+            'source' => $lead->source->value,
+            'status' => $lead->status->value,
+            'telecaller_id' => $telecaller->id,
+        ])
+        ->assertRedirect(route('leads.show', $lead));
+
+    expect($lead->fresh()->telecaller_id)->toBe($telecaller->id);
+});
+
 it('requires a name and a valid source', function () {
     $this->actingAs($this->admin)
         ->post(route('leads.store'), ['source' => 'invalid', 'status' => LeadStatus::New->value])

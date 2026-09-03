@@ -44,12 +44,25 @@ it('does not search sections the user cannot access', function () {
         ->assertDontSee('INV-QUASAR-1');
 });
 
-it('shows all leads to sales users (no owner-based filter)', function () {
+it('shows a sales user only their own or unowned leads, not another rep\'s', function () {
+    // Real incident 2026-09-03: Kiran and Mohit (both Sales) could see each
+    // other's leads under the old "everyone sees everything" rule — this
+    // now applies to Search results too, since SearchService reuses
+    // Lead::visibleTo().
+    //
+    // Created BEFORE any Sales user exists, so LeadObserver's round-robin
+    // auto-assign has nobody to claim it for yet — it would otherwise
+    // immediately assign this to whichever Sales user is created next,
+    // defeating the point of testing the "or unowned" branch.
+    Lead::factory()->create(['name' => 'Nebula unowned', 'owner_id' => null]);
+
     $sales = User::factory()->role(UserRole::Sales)->create();
     $other = User::factory()->role(UserRole::Sales)->create();
-    Lead::factory()->ownedBy($other->id)->create(['name' => 'Nebula visible']); // owned by someone else
+    Lead::factory()->ownedBy($sales->id)->create(['name' => 'Nebula own']);
+    Lead::factory()->ownedBy($other->id)->create(['name' => 'Nebula foreign']);
 
-    // Sales now sees all leads — no owner restriction.
     $this->actingAs($sales)->get(route('search', ['q' => 'Nebula']))->assertOk()
-        ->assertSee('Nebula visible');
+        ->assertSee('Nebula own')
+        ->assertSee('Nebula unowned')
+        ->assertDontSee('Nebula foreign');
 });

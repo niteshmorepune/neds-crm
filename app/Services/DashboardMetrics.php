@@ -223,16 +223,19 @@ class DashboardMetrics
     }
 
     /**
-     * Stat cards for the telecaller dashboard: the shared calling queue
-     * (new leads, not owned by this person specifically — Telecaller works
-     * whichever lead needs calling, see LeadPolicy) plus their own call
-     * activity. No pipeline/value figures here — Telecaller has no Deal
-     * access.
+     * Stat cards for the telecaller dashboard: New leads assigned to THIS
+     * telecaller (telecaller_id — see Lead::scopeVisibleTo) plus their own
+     * call activity. Was the whole shared queue's New count until
+     * 2026-09-03, when Telecaller moved from a no-ownership shared queue to
+     * real per-telecaller assignment — kept in sync with the Lead
+     * Generation list's own scoping so this tile never disagrees with what
+     * clicking through actually shows. No pipeline/value figures here —
+     * Telecaller has no Deal access.
      */
     public function telecallerStats(User $user): array
     {
         return [
-            'new_leads' => Lead::where('status', LeadStatus::New->value)->count(),
+            'new_leads' => Lead::query()->visibleTo($user)->where('status', LeadStatus::New->value)->count(),
             'calls_today' => CallLog::where('user_id', $user->id)
                 ->whereDate('called_at', today())
                 ->count(),

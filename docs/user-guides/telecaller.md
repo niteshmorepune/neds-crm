@@ -7,9 +7,12 @@ daily reports).
 
 ## 1. Your dashboard
 When you log in, you'll see:
-- **New leads to call** — how many leads are currently marked New across the
-  whole shared queue. This isn't "leads assigned to you" — every telecaller
-  works from the same list, so call whichever lead needs calling next.
+- **New leads to call** — how many leads currently marked New are assigned
+  to **you specifically**. Every new lead is automatically routed to a
+  telecaller (round-robin, same idea as how a lead routes to a Sales rep)
+  the moment it's created, and Admin/Manager can also assign or reassign
+  one to you by hand from the lead's own page. This used to be a shared,
+  unowned queue — as of 2026-09-03 each telecaller has their own list.
 - **Calls made today** — your own call count for today.
 - **Follow-ups due** — how many of your own logged calls have a follow-up
   date that's arrived.
@@ -31,9 +34,11 @@ or delete entries — that's Admin/Manager only. Some items are restricted to
 specific roles, so you may not see everything others do.
 
 ## 3. Lead Generation
-Under **Lead Generation** in the sidebar you can see every lead in the
-system — there's no "my leads only" filter, because leads aren't assigned to
-telecallers the way they're assigned to Sales reps. Open any lead to:
+Under **Lead Generation** in the sidebar you see only the leads assigned to
+**you** (via the lead's own "Telecaller" field — separate from its Sales
+"Owner"). Every new lead is auto-routed to a telecaller the moment it's
+created; Admin/Manager can also assign or move one to a different telecaller
+by hand from the lead's Edit page. Open a lead assigned to you to:
 - Read its details, source, and notes.
 - **Update it** — change its status (New → Contacted → Qualified, etc.), add
   a note on what was discussed, set a next follow-up date.
@@ -47,8 +52,8 @@ the toggle above the list if you want plain chronological order. A red
 for all five — overdue, due today, Hot-but-untouched, **unresponsive**
 (3+ call/WhatsApp attempts with no answer or reply, still open), and
 **status may need updating** (a New lead that already has a note or call
-logged against it) — since your queue is shared, not owned, these cover
-every lead in the system, not just some subset. Tip: if you type a note
+logged against it) — these cover only the leads assigned to you, same as
+the rest of this page. Tip: if you type a note
 describing a call, tick **📞 This was a call** and pick an outcome in the
 note box — it logs a real call AND moves the lead off New automatically,
 so it never shows up in that last count. Open an unresponsive lead and

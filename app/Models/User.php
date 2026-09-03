@@ -98,6 +98,11 @@ class User extends Authenticatable
         return $this->hasMany(Lead::class, 'owner_id');
     }
 
+    public function telecallerLeads(): HasMany
+    {
+        return $this->hasMany(Lead::class, 'telecaller_id');
+    }
+
     /**
      * Dashboard Customization (show/hide only, no reorder): which of this
      * user's own dashboard widgets they've hidden. Every widget defaults

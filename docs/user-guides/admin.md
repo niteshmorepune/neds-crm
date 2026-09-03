@@ -359,11 +359,11 @@ checkboxes further down the same Add/Edit form. Additional roles:
 |---|---|
 | Admin | Everything, including users, menu controller, audit log, backups |
 | Manager | All modules except user/menu/audit/backup admin |
-| Sales | Leads, deals, their own clients, quotations, projects, tasks, tickets, calls |
+| Sales | Their own (or unowned) leads and clients, deals, quotations, projects, tasks, tickets, calls |
 | Support | Tickets, projects, clients (read-only), calls, tasks — see below, this is also who a project's auto-created tasks route to |
 | Accounts | Invoices, payments, clients, recurring invoices |
 | Intern | Clients (read-only), Projects (assigned), Tasks (assigned), Attendance, Daily Reports |
-| **Telecaller** | Lead Generation (view/update any lead — a shared calling queue, not an owned pipeline), Calling. No Deals, Quotations, Invoices, Incentives, Tickets, or Clients |
+| **Telecaller** | Lead Generation (view/update only leads assigned to THEM, via a separate Telecaller field on the lead), Calling. No Deals, Quotations, Invoices, Incentives, Tickets, or Clients |
 
 **Giving a real job title the right CRM role:** the CRM only has the seven
 roles above — there's no field for "Graphic Designer." Map the actual job to
@@ -373,7 +373,7 @@ whichever role gives the closest real access, then use Menu Controller
 | Real job title | Set as | Why |
 |---|---|---|
 | Developer, Graphic Designer, UI/UX Designer, Website Designer, Social Media Executive, Digital Marketing Executive, Performance Marketing Executive | **Support** | These are all ongoing project/delivery work — exactly what Support is scoped for. A project's onboarding checklist and its recurring monthly maintenance tasks (Section 14) route to whichever of that project's assignees holds the Support role first, so add them as an **assignee** on the project, not just give them the role |
-| Telecaller | **Telecaller** | A dedicated role (added 2026-07-26) — Lead Generation + Calling only. They see every lead (it's a shared queue, not "my leads") and can update status/notes on any of them, but cannot create, convert, or delete a lead, and have no access at all to Deals/Quotations/Invoices/Incentives/Tickets/Clients. New leads still auto-assign to Sales as before; Telecallers work the queue regardless of which Sales rep a lead is nominally assigned to |
+| Telecaller | **Telecaller** | A dedicated role (added 2026-07-26) — Lead Generation + Calling only. Since 2026-09-03 they see only leads assigned to THEM (a separate "Telecaller" field on the lead, independent of the Sales "Owner" field) and can update status/notes on those, but cannot create, convert, or delete a lead, and have no access at all to Deals/Quotations/Invoices/Incentives/Tickets/Clients. New leads auto-assign to both a Sales owner AND a Telecaller independently (two separate round-robins); you can also assign or reassign a lead's Telecaller by hand from its Edit page (Section 6) |
 | Team Lead / Studio Manager | **Manager** | For anyone overseeing other people's work, regardless of department |
 | Trainee / Temp, any function | **Intern** | Deliberately narrower than Support (no Tickets, no Calling) — a safer default than Support for someone new or unproven, whatever their eventual title will be |
 
@@ -818,9 +818,26 @@ silence no longer looks identical to one reached on the first try), and
 note or a logged call against it, from before the "This was a call" note-
 box checkbox existed or from a rep typing a plain note without ticking
 it — see the Sales guide, Section 1). For a Sales viewer this is scoped
-to their own leads (their personal worklist); for Telecaller, Admin, and
-Manager it shows the whole shared picture, matching how those roles
-already see leads. Each count links straight to the filtered list.
+to their own (or unowned) leads; for a Telecaller viewer it's scoped to
+just the leads assigned to them (their own separate Telecaller field, see
+below) — both are personal worklists. Admin and Manager see the whole
+picture, unscoped. Each count links straight to the filtered list.
+
+**Telecaller assignment (2026-09-03):** a lead has two independent
+assignments — the Sales **Owner** and a separate **Telecaller** — each
+routes to a different person and each auto-assigns on lead creation via
+its own least-loaded round-robin (Telecaller has no campaign/service
+routing rules the way Sales does — plain round-robin only). A Telecaller
+only ever sees/updates leads where they're the assigned Telecaller,
+regardless of who owns it. Change either field from the lead's own Edit
+page; there's no bulk "Reassign All" for Telecaller the way there is for
+Sales owners (Section 16a above covers the Sales-only campaign/service
+routing rules — Telecaller isn't part of those). Before this date, every
+telecaller worked from one shared, unowned queue — if a lead you're used
+to seeing looks missing, check who it's assigned to as Telecaller now.
+A new **Telecaller** filter dropdown on the list (next to the existing
+Owner filter) lets Admin/Manager see any one telecaller's whole queue at
+a glance.
 
 **Unresponsive lead guidance (2026-09-03):** an unresponsive lead is
 already correctly at Contacted, not New — Contacted only ever means an
