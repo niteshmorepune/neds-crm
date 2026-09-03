@@ -38,7 +38,16 @@ Under **Lead Generation** in the sidebar you see only the leads assigned to
 **you** (via the lead's own "Telecaller" field — separate from its Sales
 "Owner"). Every new lead is auto-routed to a telecaller the moment it's
 created; Admin/Manager can also assign or move one to a different telecaller
-by hand from the lead's Edit page. Open a lead assigned to you to:
+by hand from the lead's Edit page.
+
+**A lead that was already Converted or Lost before 2026-09-03 won't show up
+here for you** — when this feature launched, only still-open leads were
+backfilled with a telecaller, since a closed lead isn't part of anyone's
+active calling queue. If you need to look up an old converted/lost lead
+from before that date, ask Admin/Manager (they always see every lead,
+regardless of Telecaller assignment).
+
+Open a lead assigned to you to:
 - Read its details, source, and notes.
 - **Update it** — change its status (New → Contacted → Qualified, etc.), add
   a note on what was discussed, set a next follow-up date.

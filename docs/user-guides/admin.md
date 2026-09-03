@@ -837,7 +837,23 @@ telecaller worked from one shared, unowned queue — if a lead you're used
 to seeing looks missing, check who it's assigned to as Telecaller now.
 A new **Telecaller** filter dropdown on the list (next to the existing
 Owner filter) lets Admin/Manager see any one telecaller's whole queue at
-a glance.
+a glance. Unlike the Sales round-robin (which only ever considers someone
+whose PRIMARY role is Sales), the Telecaller round-robin also picks
+someone who holds Telecaller as an **additional** role — on this system
+nobody's primary role is actually Telecaller; it's granted as an add-on to
+an existing Accounts/Intern/etc. staff member who also does calling duty.
+
+**One-time backfill only covered open leads, not old history:** when this
+launched, a one-off script assigned every then-**open** lead (New/
+Contacted/Qualified) to a telecaller round-robin, so nobody started with
+an empty queue — but a lead that was already **Converted or Lost before
+2026-09-03** was deliberately left with no Telecaller assigned (a closed
+lead isn't part of anyone's active calling queue). That means those older
+closed leads are invisible to every Telecaller specifically, though
+Admin/Manager still see them as always. Owner confirmed (2026-09-03) this
+is fine as-is — not backfilled, since closed leads aren't worth assigning
+retroactively. If a telecaller asks where an old converted/lost lead
+went, this is why — check it yourself or point them to Admin/Manager.
 
 **Unresponsive lead guidance (2026-09-03):** an unresponsive lead is
 already correctly at Contacted, not New — Contacted only ever means an

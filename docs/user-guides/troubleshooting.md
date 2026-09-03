@@ -742,6 +742,39 @@ status field needs correcting back to Converted.
 
 ---
 
+## 21. A Sales rep or Telecaller sees fewer leads than expected on Lead Generation
+
+**Symptom:** a Sales rep or Telecaller reports Lead Generation shows far
+fewer leads than before, or a specific lead they used to see is missing.
+
+**Not a bug — this is the intended behavior since 2026-09-03.** Before
+this date, every role saw every lead in the system. A real incident (Kiran
+and Mohit, both Sales, could see each other's leads) led to scoping
+visibility:
+- **Sales** now sees only leads they own, plus any still-unowned lead.
+  They will never see another Sales rep's owned leads.
+- **Telecaller** now sees only leads assigned to them via the lead's own
+  **Telecaller** field (separate from the Sales **Owner** field) — not
+  every lead in the shared queue like before.
+- **Admin/Manager are unaffected** — they still see everything, so use
+  either role to look up a lead someone else can't find.
+
+**If a Telecaller specifically can't find an old lead**: check whether it
+was already **Converted or Lost before 2026-09-03** — the one-off backfill
+that assigned a Telecaller to every existing lead deliberately only
+covered still-open leads at the time, not old closed ones (owner-confirmed,
+not backfilled since). An old converted/lost lead genuinely has no
+Telecaller assigned and only Admin/Manager can see it — this is expected,
+not something to fix.
+
+**If a Sales rep can't find a lead that should be theirs**: check the
+lead's actual `owner_id` (Admin/Manager can see it on the lead's own page,
+or filter Lead Generation by Owner) — if it's owned by a different Sales
+rep, that's also expected; use the Reassign action to hand it to the right
+person rather than treating this as a bug.
+
+---
+
 ## General: when in doubt, run these four commands
 
 After any deployment, `.env` edit, or unexpected behaviour:
