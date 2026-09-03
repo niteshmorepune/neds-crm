@@ -52,6 +52,14 @@ Open a lead assigned to you to:
 - **Update it** — change its status (New → Contacted → Qualified, etc.), add
   a note on what was discussed, set a next follow-up date.
 
+**"Call this lead now" popup:** the moment a new lead lands in your queue
+with no call logged yet, a small card appears in the bottom-right corner of
+every page, oldest uncalled lead first. Click **Log the call** to jump
+straight to the Log a Call form with that lead pre-selected, or **Snooze
+30 min** if you can't call right now. If you haven't checked in for
+attendance yet today, that comes first (see Section 2 above) — once
+you're checked in, this is what the same popup guides you through next.
+
 **What to call first:** the list sorts by **Priority** by default (an
 overdue follow-up first, then due today, then a Hot lead nobody's followed
 up on yet, then everything else) — not newest. Switch to **Newest** via

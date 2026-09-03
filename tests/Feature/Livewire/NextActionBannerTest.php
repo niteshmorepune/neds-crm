@@ -8,6 +8,7 @@ use App\Models\Attendance;
 use App\Models\Lead;
 use App\Models\Meeting;
 use App\Models\NextActionSnooze;
+use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Livewire\Livewire;
@@ -130,6 +131,30 @@ it('snoozing the lunch-hour AI reminder clears it for the rest of the window', f
         ->assertSet('action', null);
 
     Carbon::setTestNow();
+});
+
+it('shows the Support ticket-reply prompt, linking to the ticket page', function () {
+    $support = User::factory()->role(UserRole::Support)->create();
+    Attendance::factory()->for($support)->create();
+    $ticket = Ticket::factory()->create(['assignee_id' => $support->id, 'subject' => 'Cannot log into portal']);
+
+    Livewire::actingAs($support)
+        ->test(NextActionBanner::class)
+        ->assertSet('action.source_key', 'support_new_ticket_reply')
+        ->assertSee('Respond to: Cannot log into portal')
+        ->assertSee(route('tickets.show', $ticket));
+});
+
+it('shows the Telecaller lead-call prompt for someone holding it as an additional role', function () {
+    $telecaller = User::factory()->role(UserRole::Accounts)->create();
+    $telecaller->additionalRoles()->create(['role' => UserRole::Telecaller]);
+    Attendance::factory()->for($telecaller)->create();
+    $lead = Lead::factory()->create(['telecaller_id' => $telecaller->id, 'status' => LeadStatus::New, 'name' => 'Ramesh Kulkarni']);
+
+    Livewire::actingAs($telecaller)
+        ->test(NextActionBanner::class)
+        ->assertSet('action.source_key', 'telecaller_new_lead_call')
+        ->assertSee('Call Ramesh Kulkarni');
 });
 
 it('poll re-evaluates and picks up a newly-created lead', function () {
