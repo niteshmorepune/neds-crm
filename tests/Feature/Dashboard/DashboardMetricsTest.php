@@ -155,13 +155,20 @@ it('returns pending tasks, completed today and active project count for an inter
         ->and($stats['projects'])->toBe(1);
 });
 
-it('computes telecaller stats as shared-queue counts, not owned-lead counts', function () {
-    $telecaller = User::factory()->role(UserRole::Telecaller)->create();
+it('computes telecaller stats as their own assigned-lead counts, not the whole shared queue', function () {
+    // Reversed 2026-09-03: Telecaller moved from a no-ownership shared queue
+    // to real per-telecaller assignment (telecaller_id) — this tile must
+    // never disagree with what the Lead Generation list actually shows them.
     $otherLeadOwner = User::factory()->role(UserRole::Sales)->create();
 
+    // Created BEFORE $telecaller exists, so the round-robin auto-assign has
+    // no active Telecaller to hand these to yet.
     Lead::factory()->create(['status' => 'new', 'owner_id' => $otherLeadOwner->id]);
     Lead::factory()->create(['status' => 'new', 'owner_id' => null]);
-    Lead::factory()->create(['status' => 'converted', 'owner_id' => $otherLeadOwner->id]);
+
+    $telecaller = User::factory()->role(UserRole::Telecaller)->create();
+    Lead::factory()->create(['status' => 'new', 'owner_id' => $otherLeadOwner->id, 'telecaller_id' => $telecaller->id]);
+    Lead::factory()->create(['status' => 'converted', 'owner_id' => $otherLeadOwner->id, 'telecaller_id' => $telecaller->id]);
 
     CallLog::factory()->create([
         'user_id' => $telecaller->id,
@@ -179,7 +186,10 @@ it('computes telecaller stats as shared-queue counts, not owned-lead counts', fu
 
     $stats = $this->metrics->telecallerStats($telecaller);
 
-    expect($stats['new_leads'])->toBe(2)
+    // Only the one New lead actually assigned to this telecaller — not the
+    // other rep's New lead, not the unowned/unassigned New lead, and not
+    // the Converted one (right status, but no longer open).
+    expect($stats['new_leads'])->toBe(1)
         ->and($stats['calls_today'])->toBe(2)
         ->and($stats['followups_due'])->toBe(1);
 });

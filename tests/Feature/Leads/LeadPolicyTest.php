@@ -9,20 +9,31 @@ beforeEach(function () {
     $this->seed(MenuItemsSeeder::class);
 });
 
-it('lets sales see all leads, not just their own', function () {
+it('lets sales see only their own or unowned leads, not another Sales rep\'s', function () {
+    // Real incident 2026-09-03: Kiran and Mohit (both Sales) could see each
+    // other's leads under the old "everyone sees everything" rule.
+    //
+    // $unassigned created BEFORE any Sales user exists, so LeadObserver's
+    // round-robin auto-assign has nobody to claim it for yet — otherwise it
+    // would immediately assign this to $sales, defeating the point of
+    // testing the "or unowned" branch of scopeVisibleTo.
+    $unassigned = Lead::factory()->create(['owner_id' => null]);
+
     $sales = User::factory()->role(UserRole::Sales)->create();
     $own = Lead::factory()->ownedBy($sales->id)->create();
-    $unassigned = Lead::factory()->create(['owner_id' => null]);
     $foreign = Lead::factory()->ownedBy(User::factory()->role(UserRole::Sales)->create()->id)->create();
 
-    // All roles now see all leads — no owner-based restriction.
-    expect(Lead::visibleTo($sales)->pluck('id'))
-        ->toContain($own->id)
+    $visibleIds = Lead::visibleTo($sales)->pluck('id');
+    expect($visibleIds)->toContain($own->id)
         ->toContain($unassigned->id)
-        ->toContain($foreign->id);
+        ->not->toContain($foreign->id);
 
-    expect($sales->can('view', $foreign))->toBeTrue();
-    $this->actingAs($sales)->get(route('leads.show', $foreign))->assertOk();
+    expect($sales->can('view', $own))->toBeTrue()
+        ->and($sales->can('view', $unassigned))->toBeTrue()
+        ->and($sales->can('view', $foreign))->toBeFalse();
+
+    $this->actingAs($sales)->get(route('leads.show', $own))->assertOk();
+    $this->actingAs($sales)->get(route('leads.show', $foreign))->assertForbidden();
 });
 
 it('denies support and accounts access when menu is not granted', function (UserRole $role) {
@@ -35,17 +46,47 @@ it('denies support and accounts access when menu is not granted', function (User
     'accounts' => UserRole::Accounts,
 ]);
 
-it('lets telecaller view and update any lead (a shared calling queue, not an owned pipeline)', function () {
-    $telecaller = User::factory()->role(UserRole::Telecaller)->create();
-    $ownedBySales = Lead::factory()->ownedBy(User::factory()->role(UserRole::Sales)->create()->id)->create();
+it('lets telecaller view and update only leads assigned to them via telecaller_id, not every lead', function () {
+    // Reverses the old "shared calling queue, no ownership" 2026-07-26
+    // decision — real per-telecaller assignment shipped 2026-09-03, same
+    // day as the Sales-visibility fix above.
+    //
+    // Created BEFORE $telecaller exists, so LeadObserver's round-robin
+    // auto-assign has no active Telecaller to hand these to yet — otherwise
+    // it would assign them to $telecaller itself, defeating the test.
+    $notMine = Lead::factory()->ownedBy(User::factory()->role(UserRole::Sales)->create()->id)->create();
     $unassigned = Lead::factory()->create(['owner_id' => null]);
+
+    $telecaller = User::factory()->role(UserRole::Telecaller)->create();
+    $mine = Lead::factory()->create(['telecaller_id' => $telecaller->id]);
 
     $this->actingAs($telecaller)->get(route('leads.index'))->assertOk();
 
-    expect($telecaller->can('view', $ownedBySales))->toBeTrue()
-        ->and($telecaller->can('view', $unassigned))->toBeTrue()
-        ->and($telecaller->can('update', $ownedBySales))->toBeTrue()
-        ->and($telecaller->can('update', $unassigned))->toBeTrue();
+    expect($telecaller->can('view', $mine))->toBeTrue()
+        ->and($telecaller->can('view', $notMine))->toBeFalse()
+        ->and($telecaller->can('view', $unassigned))->toBeFalse()
+        ->and($telecaller->can('update', $mine))->toBeTrue()
+        ->and($telecaller->can('update', $notMine))->toBeFalse();
+
+    expect(Lead::visibleTo($telecaller)->pluck('id'))
+        ->toContain($mine->id)
+        ->not->toContain($notMine->id)
+        ->not->toContain($unassigned->id);
+});
+
+it('widens a multi-role Sales+Telecaller user to the union of both scopes, never narrows', function () {
+    // $neither created BEFORE $user exists as an active Telecaller, so the
+    // round-robin auto-assign has nobody to hand it to yet.
+    $neither = Lead::factory()->ownedBy(User::factory()->role(UserRole::Sales)->create()->id)->create();
+
+    $user = User::factory()->role(UserRole::Sales)->withAdditionalRoles(UserRole::Telecaller)->create();
+    $ownedBySelf = Lead::factory()->ownedBy($user->id)->create();
+    $telecalledBySelf = Lead::factory()->create(['telecaller_id' => $user->id]);
+
+    $visibleIds = Lead::visibleTo($user)->pluck('id');
+    expect($visibleIds)->toContain($ownedBySelf->id)
+        ->toContain($telecalledBySelf->id)
+        ->not->toContain($neither->id);
 });
 
 it('does not let telecaller create, convert, or delete leads', function () {

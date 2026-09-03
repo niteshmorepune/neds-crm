@@ -73,7 +73,7 @@ class LeadController extends Controller
 
         return view('leads.index', $this->formData() + [
             'leads' => $leads,
-            'filters' => $request->only(['search', 'source', 'status', 'service_id', 'owner_id', 'deal_stage', 'follow_up_due', 'attention', 'sort']) + ['month' => $month],
+            'filters' => $request->only(['search', 'source', 'status', 'service_id', 'owner_id', 'telecaller_id', 'deal_stage', 'follow_up_due', 'attention', 'sort']) + ['month' => $month],
             'dealStages' => DealStage::cases(),
             'sort' => $sort,
             'statusCounts' => $this->statusCounts($request),
@@ -94,11 +94,15 @@ class LeadController extends Controller
      * "Needs attention today" strip counts — deliberately ignores the ad-hoc
      * search/source/service filters, same philosophy as statusCounts(), so
      * the strip stays a stable prompt rather than echoing whatever the list
-     * happens to be filtered to. Scoped to the viewer's own leads when their
-     * PRIMARY role is Sales (this is "my queue, what do I work today"); left
-     * unscoped for Telecaller (shared calling queue, not an owned pipeline —
-     * same distinction LeadPolicy already draws) and for Admin/Manager
-     * (oversight, not personal worklist).
+     * happens to be filtered to. `visibleTo()` already scopes the base query
+     * per role (Sales: own-or-unowned; Telecaller: own telecaller_id only,
+     * since 2026-09-03 — see Lead::scopeVisibleTo); `$scopedToOwn` adds one
+     * further Sales-only narrowing on top (strictly owned, excluding the
+     * unowned leftover case) for their PRIMARY role only (this is "my queue,
+     * what do I work today"). Telecaller doesn't need that extra narrowing —
+     * visibleTo() is already exactly their own assigned leads, no broader
+     * "or unowned" branch to exclude. Admin/Manager stay unscoped (oversight,
+     * not a personal worklist).
      *
      * @return array{overdue: int, due_today: int, hot_untouched: int, unresponsive: int, scoped_to_own: bool}
      */
@@ -284,7 +288,7 @@ class LeadController extends Controller
 
         // 'notes' added 2026-09-03 — Lead::isUnresponsive()/hasStaleNewStatus()
         // both need it loaded to avoid a second query on this same page.
-        $lead->load(['owner', 'service', 'convertedCustomer', 'convertedDeal', 'callLogs.user', 'notes']);
+        $lead->load(['owner', 'telecaller', 'service', 'convertedCustomer', 'convertedDeal', 'callLogs.user', 'notes']);
 
         $canReassign = $this->user()->can('reassign', $lead);
 
@@ -419,6 +423,7 @@ class LeadController extends Controller
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->input('status')))
             ->when($request->filled('service_id'), fn ($q) => $q->where('service_id', $request->integer('service_id')))
             ->when($request->filled('owner_id'), fn ($q) => $q->where('owner_id', $request->integer('owner_id')))
+            ->when($request->filled('telecaller_id'), fn ($q) => $q->where('telecaller_id', $request->integer('telecaller_id')))
             // Lets Sales find exactly which of their Converted leads have a
             // Deal stuck at a given pipeline stage (e.g. "show me every
             // Negotiation") — only a Converted lead ever has a
@@ -612,6 +617,9 @@ class LeadController extends Controller
             'services' => Service::active()->orderBy('sort_order')->get(),
             'owners' => User::query()
                 ->withAnyRole(UserRole::Sales, UserRole::Manager, UserRole::Admin)
+                ->orderBy('name')->get(['id', 'name']),
+            'telecallers' => User::query()
+                ->withAnyRole(UserRole::Telecaller)
                 ->orderBy('name')->get(['id', 'name']),
         ];
     }

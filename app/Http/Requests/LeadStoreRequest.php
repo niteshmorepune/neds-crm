@@ -27,6 +27,7 @@ class LeadStoreRequest extends FormRequest
             // Entered in rupees; the controller converts to integer paise.
             'estimated_value' => ['nullable', 'numeric', 'min:0', 'max:999999999'],
             'owner_id' => ['nullable', Rule::exists('users', 'id')],
+            'telecaller_id' => ['nullable', Rule::exists('users', 'id')],
             // Manual statuses only — "converted" is reached via the convert action.
             'status' => ['required', Rule::in([
                 LeadStatus::New->value,

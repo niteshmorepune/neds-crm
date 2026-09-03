@@ -46,6 +46,7 @@
                         <div><span class="text-gray-400">Service:</span> {{ $lead->service?->name ?? '—' }}</div>
                         <div><span class="text-gray-400">Est. value:</span> {{ \App\Support\Money::format($lead->estimated_value) }}</div>
                         <div><span class="text-gray-400">Owner:</span> {{ $lead->owner?->name ?? 'Unassigned' }}</div>
+                        <div><span class="text-gray-400">Telecaller:</span> {{ $lead->telecaller?->name ?? 'Unassigned' }}</div>
                         <div><span class="text-gray-400">Next follow-up:</span>
                             {{ $lead->next_follow_up_at?->timezone(config('app.display_timezone'))->format('d M Y, g:i A') ?? '—' }}</div>
                     </dl>

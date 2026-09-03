@@ -8,6 +8,7 @@ use App\Enums\LeadBudgetBand;
 use App\Enums\LeadSource;
 use App\Enums\LeadStatus;
 use App\Enums\LeadUrgency;
+use App\Enums\UserRole;
 use App\Models\Concerns\LogsActivity;
 use App\Observers\LeadObserver;
 use App\Services\CallTimingMetrics;
@@ -38,6 +39,7 @@ class Lead extends Model
         'service_id',
         'estimated_value',
         'owner_id',
+        'telecaller_id',
         'status',
         'next_follow_up_at',
         'converted_customer_id',
@@ -239,6 +241,11 @@ class Lead extends Model
     public function owner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'owner_id');
+    }
+
+    public function telecaller(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'telecaller_id');
     }
 
     public function convertedCustomer(): BelongsTo
@@ -593,13 +600,37 @@ class Lead extends Model
     }
 
     /**
-     * All roles see all leads. Access to the leads page is controlled by
-     * the menu.access:lead-generation middleware; visibility within is unrestricted.
-     * Keep in sync with LeadPolicy::view.
+     * Admin/Manager see every lead. Sales sees their own (or unowned) leads
+     * only — real incident 2026-09-03: Kiran and Mohit (both Sales) could
+     * see each other's leads under the old "everyone sees everything" rule.
+     * Telecaller sees only leads assigned to them via telecaller_id (their
+     * own separate assignment, independent of owner_id) — this reverses the
+     * 2026-07-26 "shared calling queue, no ownership" decision, per the
+     * owner's follow-up request the same day as the Sales fix above. A
+     * multi-role user's access only ever widens (matches
+     * Customer::scopeVisibleTo's own precedent) — any other role reaching
+     * this page (e.g. via a per-user Menu Controller override) keeps full
+     * access, unaffected by this change. Keep in sync with LeadPolicy::view.
      */
     public function scopeVisibleTo(Builder $query, User $user): Builder
     {
-        return $query;
+        if ($user->hasRole(UserRole::Admin, UserRole::Manager)) {
+            return $query;
+        }
+
+        if (! $user->hasRole(UserRole::Sales, UserRole::Telecaller)) {
+            return $query;
+        }
+
+        return $query->where(function (Builder $q) use ($user) {
+            if ($user->hasRole(UserRole::Sales)) {
+                $q->orWhere(fn (Builder $q2) => $q2->where('owner_id', $user->id)->orWhereNull('owner_id'));
+            }
+
+            if ($user->hasRole(UserRole::Telecaller)) {
+                $q->orWhere('telecaller_id', $user->id);
+            }
+        });
     }
 
     /**

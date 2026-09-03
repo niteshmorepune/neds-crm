@@ -7,15 +7,16 @@ use App\Models\Lead;
 use App\Models\User;
 
 /**
- * All authenticated users with lead-generation menu access can view any lead.
+ * Admin/Manager see and can update any lead. Sales sees/updates their own
+ * (or unowned) leads only. Telecaller sees/updates only leads assigned to
+ * them via telecaller_id, their own separate assignment field independent
+ * of owner_id (real incident 2026-09-03: Sales reps could see each other's
+ * leads; the same day, Telecaller's shared-no-ownership calling queue from
+ * the 2026-07-26 decision was also reversed to per-telecaller assignment —
+ * see LeadObserver::autoAssignTelecaller()). Any other role reaching this
+ * page (e.g. via a per-user Menu Controller override) keeps full access,
+ * unaffected by this change — a multi-role user's access only ever widens.
  * Create is limited to admin, manager, and sales. Delete to admin/manager.
- * Update: admin/manager any lead, Sales their own, Telecaller any lead —
- * Telecaller works a shared calling queue (no ownership/auto-assignment of
- * their own, per the 2026-07-26 decision), so they need to log outcomes and
- * move status on whichever lead needs calling, not just ones with no owner
- * (in practice nearly every lead has a Sales owner within moments of
- * creation via LeadObserver::autoAssign(), so an "unowned only" restriction
- * would leave them almost nothing to update).
  * Keep in sync with Lead::scopeVisibleTo.
  */
 class LeadPolicy
@@ -27,7 +28,16 @@ class LeadPolicy
 
     public function view(User $user, Lead $lead): bool
     {
-        return true;
+        if ($user->hasRole(UserRole::Admin, UserRole::Manager)) {
+            return true;
+        }
+
+        if (! $user->hasRole(UserRole::Sales, UserRole::Telecaller)) {
+            return true;
+        }
+
+        return ($user->hasRole(UserRole::Sales) && ($lead->owner_id === $user->id || $lead->owner_id === null))
+            || ($user->hasRole(UserRole::Telecaller) && $lead->telecaller_id === $user->id);
     }
 
     public function create(User $user): bool
@@ -37,8 +47,9 @@ class LeadPolicy
 
     public function update(User $user, Lead $lead): bool
     {
-        return $user->hasRole(UserRole::Admin, UserRole::Manager, UserRole::Telecaller)
-            || ($user->hasRole(UserRole::Sales) && $lead->owner_id === $user->id);
+        return $user->hasRole(UserRole::Admin, UserRole::Manager)
+            || ($user->hasRole(UserRole::Sales) && $lead->owner_id === $user->id)
+            || ($user->hasRole(UserRole::Telecaller) && $lead->telecaller_id === $user->id);
     }
 
     /**

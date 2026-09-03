@@ -1611,3 +1611,67 @@ Record every "we chose X because Y" here — this is the project's memory.
   `md:sticky`/`md:h-screen` utilities), `php artisan db:seed
   --class=MenuItemsSeeder --force` re-run locally to apply the group
   split.
+- **2026-09-03 — Lead visibility fix: Sales now sees only their own (or
+  unowned) leads; Telecaller reversed from a shared no-ownership calling
+  queue to real per-telecaller assignment.** Reported by the Sales team:
+  Kiran and Mohit (both Sales) could see each other's leads. Checked the
+  code, not assumed a leak: `Lead::scopeVisibleTo()`/`LeadPolicy::view()`
+  deliberately let every role see every lead (documented "Keep in sync"
+  comment, confirmed intentional once already on 2026-08-13 when the
+  owner first noticed this for Kiran specifically). Owner this time chose
+  to actually restrict it: `scopeVisibleTo()`/`view()`/`update()` now scope
+  Sales to `owner_id = self OR owner_id IS NULL` (mirrors
+  `Customer::scopeVisibleTo()`'s own established "additional roles only
+  WIDEN access, never narrow" pattern — Admin/Manager always bypass).
+  In the same conversation the owner also asked for Telecaller to see only
+  leads "assigned to them specifically" — investigated first: Lead had NO
+  per-telecaller field at all, only `owner_id` (always a Sales rep,
+  per `LeadObserver::autoAssign()`), so this reverses the 2026-07-26
+  "shared calling queue, no ownership" decision, not just a policy tweak.
+  Confirmed 3 follow-on design decisions via AskUserQuestion before
+  building, since scoping Telecaller with no transition plan would have
+  silently zeroed out every telecaller's queue: (1) new leads auto-assign
+  to a Telecaller too, via the same least-loaded round-robin pattern as
+  Sales (`LeadObserver::autoAssignTelecaller()`/`resolveLeastLoadedTelecaller()`,
+  new `User::telecallerLeads()` relation) — deliberately primary-role-only,
+  matching the 2026-08-08 multi-role decision's own "auto-assignment stays
+  single-assignee" precedent, so a Sales+Telecaller multi-role user is
+  never an eligible round-robin target; (2) a one-off backfill script
+  distributes every currently-open lead across active Telecallers at
+  deploy time, so no one's queue goes empty on day one; (3) the VA
+  Recovery queue's whole-team top tables stay unscoped (a distinct,
+  already-documented funnel-health oversight view, not "my lead list") —
+  only the main Lead Generation list (and the dashboard tile/attention
+  strip that reuse its query) becomes per-telecaller scoped.
+  New `leads.telecaller_id` column (nullable FK → users, mirrors
+  `owner_id`'s shape exactly), `Lead::telecaller()` relation, a Telecaller
+  dropdown on the Lead form (alongside Owner) and a matching list-filter
+  dropdown next to the existing Owner filter. `DashboardMetrics::
+  telecallerStats()`'s `new_leads` tile changed from a whole-system count
+  to `visibleTo($user)`-scoped, so it can never disagree with what
+  clicking through to Lead Generation actually shows. The newly-assigned
+  telecaller gets the same `NewLeadNotification` an owner does.
+  **Real self-inflicted test bug caught while writing tests, not shipped**:
+  several new tests initially created a "genuinely unowned" or
+  "unassigned-to-any-telecaller" lead fixture *after* an eligible Sales/
+  Telecaller user already existed in the test — since `LeadObserver`'s
+  round-robin claims literally every new lead with a null owner/telecaller
+  the moment one exists, this silently gave the fixture a real owner/
+  telecaller instead of leaving it null, making the assertion pass for the
+  wrong reason (or, in one case — `GlobalSearchTest` — fail outright).
+  Fixed by creating that fixture *before* any eligible user exists in each
+  affected test, not by changing app behavior — worth remembering as a
+  general gotcha for any future test needing a genuinely-unassigned Lead
+  fixture in this codebase.
+  Full suite 2897 passed (up from 2885), same 2 pre-existing unrelated
+  flakes (`MeetingRequestTest` IST-window, `ManagementReportsTest`
+  attendance-%). Pint clean. Verified against real local MySQL (not just
+  SQLite) via a transaction-wrapped smoke script — created throwaway
+  Sales/Telecaller users and leads, confirmed the exact Kiran/Mohit
+  scenario is fixed and the telecaller round-robin assigns correctly,
+  then rolled back, leaving no trace. Docs updated: `admin.md` (role
+  table, role-mapping table, Section 16b's Needs-Attention-strip
+  description + a new "Telecaller assignment" paragraph), `sales.md`
+  (Section 1's summary-cards description), `telecaller.md` (the dashboard
+  tile and Lead Generation section, both previously describing the old
+  shared-queue premise).

@@ -62,14 +62,22 @@ it('scopes the Needs Attention strip to the Sales viewer\'s own leads only', fun
         ->assertSee('1 overdue follow-up'); // only their own, not the other rep's
 });
 
-it('does not scope the Needs Attention strip for a Telecaller (shared queue)', function () {
-    $telecaller = User::factory()->role(UserRole::Telecaller)->create();
+it('scopes the Needs Attention strip to the Telecaller viewer\'s own assigned leads only', function () {
+    // Reversed 2026-09-03 — Telecaller moved from a shared, unscoped queue
+    // to real per-telecaller assignment (telecaller_id).
     $sales = User::factory()->role(UserRole::Sales)->create();
-    Lead::factory()->ownedBy($sales->id)->create(['status' => LeadStatus::New, 'next_follow_up_at' => now()->subHour()]);
+    $telecaller = User::factory()->role(UserRole::Telecaller)->create();
+    $otherTelecaller = User::factory()->role(UserRole::Telecaller)->create();
+    Lead::factory()->ownedBy($sales->id)->create([
+        'telecaller_id' => $telecaller->id, 'status' => LeadStatus::New, 'next_follow_up_at' => now()->subHour(),
+    ]);
+    Lead::factory()->ownedBy($sales->id)->create([
+        'telecaller_id' => $otherTelecaller->id, 'status' => LeadStatus::New, 'next_follow_up_at' => now()->subHour(),
+    ]);
 
     $this->actingAs($telecaller)->get(route('leads.index'))
         ->assertOk()
-        ->assertSee('1 overdue follow-up'); // sees the shared queue's count, not zero
+        ->assertSee('1 overdue follow-up'); // only their own assigned lead, not the other telecaller's
 });
 
 it('filters the list to due-today leads via the attention=due_today link', function () {

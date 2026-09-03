@@ -69,6 +69,17 @@
     </div>
 
     <div>
+        <x-input-label for="telecaller_id" value="Telecaller" />
+        <select id="telecaller_id" name="telecaller_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+            <option value="">Unassigned</option>
+            @foreach ($telecallers as $telecaller)
+                <option value="{{ $telecaller->id }}" @selected((string) old('telecaller_id', $lead->telecaller_id) === (string) $telecaller->id)>{{ $telecaller->name }}</option>
+            @endforeach
+        </select>
+        <p class="mt-1 text-xs text-gray-400">Who calls this lead — separate from Owner. A telecaller only sees leads assigned to them here.</p>
+    </div>
+
+    <div>
         <x-input-label for="status" value="Status *" />
         @if ($lead->status === \App\Enums\LeadStatus::Converted)
             {{-- No <select> at all, on purpose — this lead already became a
