@@ -30,6 +30,29 @@ it('suggests a reason when the deal-stage-set-to-lost event fires', function () 
     expect($deal->fresh()->ai_suggested_lost_reason)->toBe(DealLostReason::NotAFit);
 });
 
+it('never pre-selects the AI-suggested reason as the field value, only labels it', function () {
+    // Real incident, Pipeline Playbook gap idea #2: a pre-filled dropdown
+    // let required_if:stage,lost pass without the rep ever actually
+    // engaging with this field.
+    $admin = User::factory()->role(UserRole::Admin)->create();
+    config(['services.anthropic.enabled' => true, 'services.anthropic.key' => 'sk-test']);
+    Http::fake(['api.anthropic.com/*' => Http::response([
+        'content' => [['type' => 'text', 'text' => json_encode(['reason' => 'not_a_fit', 'rationale' => 'Notes say the scope never matched.'])]],
+        'usage' => ['input_tokens' => 30, 'output_tokens' => 10],
+    ])]);
+    $deal = Deal::factory()->stage(DealStage::Negotiation)->create();
+    $deal->notes()->create(['user_id' => null, 'body' => 'This was never really the right fit for them.']);
+
+    $html = Livewire::actingAs($admin)
+        ->test(DealLostReasonField::class, ['deal' => $deal])
+        ->dispatch('deal-stage-set-to-lost')
+        ->assertSee('(suggested)')
+        ->html();
+
+    expect($html)->not->toContain('value="not_a_fit" selected');
+    expect($html)->toContain('<option value="">—</option>');
+});
+
 it('does not call Claude a second time if the event fires twice', function () {
     $admin = User::factory()->role(UserRole::Admin)->create();
     config(['services.anthropic.enabled' => true, 'services.anthropic.key' => 'sk-test']);
