@@ -436,6 +436,25 @@ it('dispatches the first-invite EMAIL job alongside the WhatsApp job for a newly
     Queue::assertPushed(SendVisibilityAuditFirstInviteEmailJob::class, fn ($job) => $job->leadId === $lead->id);
 });
 
+it('still dispatches the first-invite job when the GMB service has been renamed to "GMB Services"', function () {
+    // Real incident, 2026-09-04: the live Service Management UI let an
+    // admin rename 'GMB' to 'GMB Services' in production, silently
+    // breaking every exact `where('name', 'GMB')` lookup (this observer's
+    // own gate AND VisibilityAuditFunnelMetrics's whole eligibility
+    // engine) — 13 real leads never got invited. gmbServiceId() now
+    // matches both names; this asserts the observer's dispatch gate
+    // (which reuses that same method) survives the rename too.
+    Queue::fake();
+    $this->gmb->update(['name' => 'GMB Services']);
+
+    $lead = Lead::factory()->create([
+        'meta_leadgen_id' => 'lg_'.uniqid(),
+        'service_id' => $this->gmb->id,
+    ]);
+
+    Queue::assertPushed(SendVisibilityAuditFirstInviteJob::class, fn ($job) => $job->leadId === $lead->id);
+});
+
 it('does not dispatch the first-invite job for a meta_leadgen_id lead tagged a different service', function () {
     Queue::fake();
     $seo = Service::factory()->create(['name' => 'SEO', 'is_active' => true]);

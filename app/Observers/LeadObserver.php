@@ -11,9 +11,9 @@ use App\Jobs\SendVisibilityAuditFirstInviteJob;
 use App\Jobs\SyncLeadToWadeskJob;
 use App\Models\Lead;
 use App\Models\LeadAssignmentRule;
-use App\Models\Service;
 use App\Models\User;
 use App\Notifications\NewLeadNotification;
+use App\Services\VisibilityAuditFunnelMetrics;
 use App\Support\Ai;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -33,6 +33,8 @@ class LeadObserver
 {
     /** Fields that materially affect the score; an update touching none is ignored. */
     private const SCORING_FIELDS = ['name', 'company', 'email', 'phone', 'source', 'service_id', 'estimated_value'];
+
+    public function __construct(private readonly VisibilityAuditFunnelMetrics $visibilityAuditFunnelMetrics) {}
 
     public function created(Lead $lead): void
     {
@@ -255,9 +257,7 @@ class LeadObserver
             return;
         }
 
-        $gmbServiceId = Service::where('name', 'GMB')->value('id');
-
-        if ($lead->service_id === $gmbServiceId) {
+        if ($lead->service_id === $this->visibilityAuditFunnelMetrics->gmbServiceId()) {
             SendVisibilityAuditFirstInviteJob::dispatch($lead->id);
             SendVisibilityAuditFirstInviteEmailJob::dispatch($lead->id);
         }

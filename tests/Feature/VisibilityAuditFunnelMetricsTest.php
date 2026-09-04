@@ -188,6 +188,13 @@ it('counts eligible leads with no invite sent yet', function () {
     expect($this->metrics->notYetInvitedCount())->toBe(2);
 });
 
+it('gmbServiceId() still resolves after the service is renamed to "GMB Services"', function () {
+    // Real incident, 2026-09-04 — see the docblock on gmbServiceId() itself.
+    $this->gmb->update(['name' => 'GMB Services']);
+
+    expect($this->metrics->gmbServiceId())->toBe($this->gmb->id);
+});
+
 it('counts failed AI-WhatsApp send attempts, excluding staff-call and successful rows', function () {
     $lead = Lead::factory()->create();
 

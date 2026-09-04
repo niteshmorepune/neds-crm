@@ -742,9 +742,27 @@ class VisibilityAuditFunnelMetrics
             ->when($to, fn ($q) => $q->where('created_at', '<=', $to));
     }
 
-    private function gmbServiceId(): ?int
+    /**
+     * The GMB service's id — single source of truth for every eligibility
+     * check in this class AND LeadObserver::sendVisibilityAuditInviteIfEligible()
+     * (injected, reuses this method rather than duplicating the lookup).
+     * Matches both the seeder's canonical name ('GMB', per ServicesSeeder/
+     * CLAUDE.md) and 'GMB Services' — real incident, 2026-09-04: the live
+     * Service Management UI lets any admin rename a service in place (same
+     * mechanism as the documented Google Ads→Performance Marketing and
+     * Website Development→"Website Design & Development" renames), and at
+     * some point 'GMB' was renamed to 'GMB Services' in production. Every
+     * exact `where('name', 'GMB')` lookup silently returned null from then
+     * on — confirmed live: 13 real GMB Meta leads (including one created
+     * the same day this was found) never received their auto-invite,
+     * and the whole VA Funnel dashboard's "last N days" tiles read as a
+     * flat 0 regardless of real activity, since eligibleLeadsQuery() (every
+     * other metric in this class) depends on this same id. Widen this
+     * whereIn list again if the service is ever renamed a third time.
+     */
+    public function gmbServiceId(): ?int
     {
-        return Service::where('name', 'GMB')->value('id');
+        return Service::whereIn('name', ['GMB', 'GMB Services'])->value('id');
     }
 
     private function pct(int $numerator, int $denominator): ?float
