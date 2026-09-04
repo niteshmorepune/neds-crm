@@ -180,6 +180,30 @@ it('shows the Support ticket-reply prompt, linking to the ticket page', function
     Carbon::setTestNow();
 });
 
+it('shows the SLA-at-risk prompt, linking to the ticket page', function () {
+    // .utc() here is deliberate, not redundant with the other frozen tests
+    // in this file — this is the only one that reads a date-cast model
+    // attribute back and calls a Carbon comparison (isSlaBreached()) on
+    // it. Carbon::parse() with no explicit timezone silently defaults to
+    // the *mocked* testNow's own timezone while frozen — freezing via a
+    // bare Asia/Kolkata-parsed instant would leak that timezone into
+    // Eloquent's own naive parse of the raw DB datetime string, shifting
+    // sla_due_at by the IST offset and misreporting it as breached. See
+    // [[feedback-gotchas]].
+    Carbon::setTestNow(Carbon::parse(BANNER_TEST_DAYTIME, config('app.display_timezone'))->utc());
+    $support = User::factory()->role(UserRole::Support)->create();
+    Attendance::factory()->for($support)->create();
+    $ticket = Ticket::factory()->create(['assignee_id' => $support->id, 'subject' => 'Payment gateway failing', 'sla_due_at' => now()->addHour()]);
+
+    Livewire::actingAs($support)
+        ->test(NextActionBanner::class)
+        ->assertSet('action.source_key', 'ticket_sla_at_risk')
+        ->assertSee('SLA due soon: Payment gateway failing')
+        ->assertSee(route('tickets.show', $ticket));
+
+    Carbon::setTestNow();
+});
+
 it('shows the Telecaller lead-call prompt for someone holding it as an additional role', function () {
     Carbon::setTestNow(Carbon::parse(BANNER_TEST_DAYTIME, config('app.display_timezone')));
     $telecaller = User::factory()->role(UserRole::Accounts)->create();

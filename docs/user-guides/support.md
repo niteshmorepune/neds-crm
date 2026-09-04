@@ -55,6 +55,10 @@ lead. It only fills the fields above; nothing submits until you click
 
 **Open a ticket** to see the conversation. Each ticket has a **priority** and an
 **SLA due time** (when it should be resolved by) — urgent ones are due soonest.
+If one of your open tickets is due within 4 hours (or already overdue), the
+same "what to do next" popup will prompt you about it too — ahead of any
+brand-new unreplied ticket, since a client-facing deadline about to be
+broken matters more than one that isn't yet time-boxed.
 
 **Replying:**
 - Type in the reply box and send. A normal reply is **emailed to the client**.
