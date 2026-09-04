@@ -48,6 +48,14 @@
                     <div><span class="text-gray-400">Value:</span> {{ \App\Support\Money::format($deal->value) }}</div>
                     <div><span class="text-gray-400">Service:</span> {{ $deal->service?->name ?? '—' }}</div>
                     <div><span class="text-gray-400">Owner:</span> {{ $deal->owner?->name ?? 'Unassigned' }}</div>
+                    <div>
+                        <span class="text-gray-400">Confidence:</span>
+                        @if ($deal->confidence !== null)
+                            🎯 {{ $deal->confidence }}/10
+                        @else
+                            <span class="text-gray-400">Not set</span>
+                        @endif
+                    </div>
                     <div class="col-span-2">
                         <span class="text-gray-400">Referred by:</span>
                         @if ($deal->partner)
@@ -169,6 +177,17 @@
                             <x-text-input id="value" name="value" type="number" step="0.01" min="0" class="mt-1 block w-full" :value="$valueRupees" />
                             <p class="mt-1 text-xs text-gray-400">Amount before GST — not the quotation/invoice total. This feeds Sales Incentive and target reports directly.</p>
                             <x-input-error :messages="$errors->get('value')" class="mt-1" />
+                        </div>
+                        <div>
+                            <x-input-label for="confidence" value="Your confidence (1-10)" />
+                            <select id="confidence" name="confidence" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                <option value="">Not set</option>
+                                @for ($i = \App\Models\Deal::CONFIDENCE_MIN; $i <= \App\Models\Deal::CONFIDENCE_MAX; $i++)
+                                    <option value="{{ $i }}" @selected((string) old('confidence', $deal->confidence) === (string) $i)>{{ $i }}</option>
+                                @endfor
+                            </select>
+                            <p class="mt-1 text-xs text-gray-400">Your own gut read on this deal closing — sits alongside the stage-based forecast, doesn't replace it. Update it as things change.</p>
+                            <x-input-error :messages="$errors->get('confidence')" class="mt-1" />
                         </div>
                         <div>
                             <x-input-label for="service_id" value="Service" />

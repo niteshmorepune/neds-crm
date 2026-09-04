@@ -24,11 +24,17 @@ class Deal extends Model
 {
     use HasFactory, LogsActivity, SoftDeletes;
 
+    /** Bounds for the rep-set gut-confidence field — see the migration's own docblock. */
+    public const CONFIDENCE_MIN = 1;
+
+    public const CONFIDENCE_MAX = 10;
+
     protected $fillable = [
         'title',
         'customer_id',
         'service_id',
         'value',
+        'confidence',
         'stage',
         'lost_reason',
         'ai_suggested_lost_reason',
@@ -56,6 +62,7 @@ class Deal extends Model
             'lost_reason' => DealLostReason::class,
             'ai_suggested_lost_reason' => DealLostReason::class,
             'value' => 'integer',
+            'confidence' => 'integer',
             'next_follow_up_at' => 'datetime',
             'won_at' => 'datetime',
             'stage_changed_at' => 'datetime',

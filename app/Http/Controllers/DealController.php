@@ -54,6 +54,7 @@ class DealController extends Controller
             'owner_id' => $data['owner_id'] ?? null,
             'partner_id' => $data['partner_id'] ?? null,
             'value' => Money::toPaise($data['value']),
+            'confidence' => $data['confidence'] ?? null,
             'next_follow_up_at' => filled($data['next_follow_up_at'] ?? null)
                 ? Carbon::createFromFormat('Y-m-d\TH:i', $data['next_follow_up_at'], config('app.display_timezone', 'Asia/Kolkata'))->utc()
                 : null,
