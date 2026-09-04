@@ -7,6 +7,7 @@ use App\Enums\LeadStatus;
 use App\Enums\UserRole;
 use App\Livewire\NextActionBanner;
 use App\Models\Attendance;
+use App\Models\CallLog;
 use App\Models\Customer;
 use App\Models\DailyReport;
 use App\Models\Deal;
@@ -135,6 +136,29 @@ it('shows the meeting join link, opening in a new tab, ahead of a pending lead',
         ->assertSee('Join: NEDS <> ADTA Group')
         ->assertSee('https://meet.google.com/abc-defg-hij')
         ->assertSee('target="_blank"', false);
+
+    Carbon::setTestNow();
+});
+
+it('shows a due call follow-up, linking to the Log a Call form pre-filled for that lead', function () {
+    Carbon::setTestNow(Carbon::parse(BANNER_TEST_DAYTIME, config('app.display_timezone')));
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    Attendance::factory()->for($sales)->create();
+    $lead = Lead::factory()->create(['name' => 'Rohan Mehta']);
+    CallLog::factory()->create([
+        'user_id' => $sales->id,
+        'callable_type' => Lead::class,
+        'callable_id' => $lead->id,
+        'follow_up_at' => now()->subMinutes(5),
+        'next_action' => 'Confirm the budget with finance',
+    ]);
+
+    Livewire::actingAs($sales)
+        ->test(NextActionBanner::class)
+        ->assertSet('action.source_key', 'call_follow_up_due')
+        ->assertSee('Follow-up call due: Rohan Mehta')
+        ->assertSee('Confirm the budget with finance')
+        ->assertSee(route('calls.create', ['lead_id' => $lead->id]));
 
     Carbon::setTestNow();
 });

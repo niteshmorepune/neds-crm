@@ -123,6 +123,11 @@ under **Calling** in the sidebar. Logging a call against a brand-new
 Logged one by mistake? A **Delete** link appears next to it — you can
 remove your own, or a manager/admin can remove anyone's.
 
+The moment a follow-up you set becomes due, the "what to do next" popup
+(see Section 2 above) prompts you with it — whatever you typed in as the
+next action, and a **Log the call** button that jumps straight to the form
+pre-filled for that lead. Snooze it 30 minutes if you're not ready yet.
+
 ## 5. Daily report
 At the end of each working day, open **Daily Reports** and fill in a brief
 summary of your day. Some numbers (calls made) are filled in automatically.

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Contracts\NextActionSource;
 use App\Models\User;
 use App\Services\NextAction\AttendanceCheckInSource;
+use App\Services\NextAction\CallFollowUpDueSource;
 use App\Services\NextAction\CheckOutReminderSource;
 use App\Services\NextAction\DailyReportReminderSource;
 use App\Services\NextAction\DealWonNoProjectSource;
@@ -30,7 +31,10 @@ use App\Support\NextAction;
  * universal, so it should never be shadowed by anything role-specific),
  * then MeetingStartingSoon (genuinely time-critical — missing a meeting
  * start is worse than a few seconds' delay on anything else), then
- * DailyReportReminder and CheckOutReminder — both gated to only ever
+ * CallFollowUpDue — no role gate (CallLog.follow_up_at has none either),
+ * since it's the same kind of self-committed, specific-time promise as a
+ * meeting, just one you set for yourself rather than one someone else
+ * scheduled. Then DailyReportReminder and CheckOutReminder — both gated to only ever
  * apply after 6pm (office hours end, confirmed with the owner), so they
  * never affect daytime behavior at all, but once evening genuinely
  * arrives they deliberately outrank everything below them (confirmed
@@ -63,6 +67,7 @@ class NextActionEngine
     private const SOURCES = [
         AttendanceCheckInSource::class,
         MeetingStartingSoonSource::class,
+        CallFollowUpDueSource::class,
         DailyReportReminderSource::class,
         CheckOutReminderSource::class,
         LunchHourWadeskAiSource::class,

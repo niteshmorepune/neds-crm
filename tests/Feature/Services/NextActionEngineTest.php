@@ -8,6 +8,7 @@ use App\Enums\TargetMetric;
 use App\Enums\TargetPeriodType;
 use App\Enums\UserRole;
 use App\Models\Attendance;
+use App\Models\CallLog;
 use App\Models\Customer;
 use App\Models\DailyReport;
 use App\Models\Deal;
@@ -63,6 +64,27 @@ it('shows the meeting-starting-soon prompt before the Sales lead-call prompt, on
 
     expect($action->sourceKey)->toBe('meeting_starting_soon');
     expect($action->subjectId)->toBe($meeting->id);
+
+    Carbon::setTestNow();
+});
+
+it('shows a due call follow-up ahead of the sales lead-call prompt, once checked in', function () {
+    Carbon::setTestNow(Carbon::parse(ENGINE_TEST_DAYTIME, config('app.display_timezone')));
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    Attendance::factory()->for($sales)->create();
+    Lead::factory()->create(['owner_id' => $sales->id, 'status' => LeadStatus::New]);
+    $followUpLead = Lead::factory()->create();
+    $callLog = CallLog::factory()->create([
+        'user_id' => $sales->id,
+        'callable_type' => Lead::class,
+        'callable_id' => $followUpLead->id,
+        'follow_up_at' => now()->subMinutes(5),
+    ]);
+
+    $action = nextActionEngine()->nextFor($sales);
+
+    expect($action->sourceKey)->toBe('call_follow_up_due');
+    expect($action->subjectId)->toBe($callLog->id);
 
     Carbon::setTestNow();
 });
