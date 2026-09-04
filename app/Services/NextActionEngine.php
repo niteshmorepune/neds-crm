@@ -17,6 +17,7 @@ use App\Services\NextAction\OverdueInvoiceFollowUpSource;
 use App\Services\NextAction\QuotationAcceptedNotConvertedSource;
 use App\Services\NextAction\QuotationFollowUpSource;
 use App\Services\NextAction\SalesNewLeadCallSource;
+use App\Services\NextAction\SalesRepBehindTargetSource;
 use App\Services\NextAction\SupportNewTicketReplySource;
 use App\Services\NextAction\TeamMemberBehindTargetSource;
 use App\Services\NextAction\TelecallerNewLeadCallSource;
@@ -62,12 +63,18 @@ use App\Support\NextAction;
  * Then Telecaller. Within Support: TicketSlaAtRisk first (a ticking
  * clock — a client-facing SLA commitment about to be or already broken
  * outranks a brand-new ticket that isn't yet time-boxed), then
- * SupportNewTicketReply. ManagerActionCenterAttention and
- * TeamMemberBehindTarget sit right after LunchHourWadeskAi (same
+ * SupportNewTicketReply. ManagerActionCenterAttention, SalesRepBehindTarget,
+ * and TeamMemberBehindTarget sit right after LunchHourWadeskAi (same
  * Admin/Manager audience) — the Action Center aggregate (which can
  * include genuinely urgent items like SLA breaches and overdue
- * invoices) before the softer, non-urgent "check in with someone
- * falling behind" coaching nudge.
+ * invoices) before either "check in with someone falling behind"
+ * coaching nudge. SalesRepBehindTarget outranks TeamMemberBehindTarget
+ * (confirmed with the owner via AskUserQuestion, Pipeline Playbook gap
+ * idea #1) — a rep missing their revenue number is treated as the bigger
+ * business signal than a Support/Accounts/Intern/Telecaller task-target
+ * gap when both are true the same day. Same mechanism, two separate
+ * target systems (SalesTarget vs. RoleTargetMetrics), so two separate
+ * sources rather than one merged query.
  *
  * @see NextActionSource
  */
@@ -82,6 +89,7 @@ class NextActionEngine
         CheckOutReminderSource::class,
         LunchHourWadeskAiSource::class,
         ManagerActionCenterAttentionSource::class,
+        SalesRepBehindTargetSource::class,
         TeamMemberBehindTargetSource::class,
         SalesNewLeadCallSource::class,
         DealWonNoProjectSource::class,

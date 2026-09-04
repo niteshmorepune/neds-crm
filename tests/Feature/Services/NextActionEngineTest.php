@@ -18,6 +18,7 @@ use App\Models\Meeting;
 use App\Models\NextActionSnooze;
 use App\Models\Quotation;
 use App\Models\RoleTarget;
+use App\Models\SalesTarget;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Services\NextActionEngine;
@@ -111,6 +112,43 @@ it('shows the Manager Action Center nudge ahead of the team-target nudge, outsid
     $action = nextActionEngine()->nextFor($admin);
 
     expect($action->sourceKey)->toBe('manager_action_center_attention');
+
+    Carbon::setTestNow();
+});
+
+it('shows the sales-rep-behind-target nudge ahead of the generic team-target nudge, when both are true the same day', function () {
+    Carbon::setTestNow(Carbon::parse('2026-09-20 11:00', config('app.display_timezone'))->utc());
+    $admin = User::factory()->role(UserRole::Admin)->create();
+    Attendance::factory()->for($admin)->create();
+
+    // Isolate the ordering under test (sales-rep-behind vs. team-target
+    // nudge) from whatever the Action Center's own signals pick up off the
+    // fixtures below — same snooze-past-an-earlier-source pattern already
+    // used elsewhere in this file.
+    NextActionSnooze::create([
+        'user_id' => $admin->id,
+        'source_key' => 'manager_action_center_attention',
+        'subject_type' => 'manager_action_center',
+        'subject_id' => 1,
+        'snoozed_until' => now()->addMinutes(30),
+    ]);
+
+    // A Sales rep well behind their revenue target...
+    $rep = User::factory()->role(UserRole::Sales)->create();
+    SalesTarget::factory()->create(['user_id' => $rep->id, 'target_value' => 10000000]); // 1,00,000 rupees
+    Deal::factory()->create(['owner_id' => $rep->id, 'stage' => DealStage::Won, 'value' => 500000, 'won_at' => now()]); // 5% actual
+
+    // ...AND an Intern also well behind their task target, same day.
+    $intern = User::factory()->role(UserRole::Intern)->create();
+    RoleTarget::factory()->forUser($intern->id, TargetMetric::TasksCompleted)->create([
+        'period_start' => TargetPeriodType::Month->currentPeriodStart(),
+        'target_value' => 100,
+    ]);
+
+    $action = nextActionEngine()->nextFor($admin);
+
+    expect($action->sourceKey)->toBe('sales_rep_behind_target');
+    expect($action->subjectId)->toBe($rep->id);
 
     Carbon::setTestNow();
 });
