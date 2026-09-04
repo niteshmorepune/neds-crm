@@ -7,6 +7,7 @@ use App\Enums\TaskStatus;
 use App\Models\Project;
 use App\Models\Task;
 use App\Notifications\TaskAssigned;
+use App\Support\ServiceTaskMatcher;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 
@@ -268,7 +269,7 @@ class DispatchScheduledTasks extends Command
             }
 
             foreach (self::TEMPLATES as $template) {
-                if (! in_array($serviceName, $template['services'], true)) {
+                if (! ServiceTaskMatcher::matches($serviceName, $template['services'])) {
                     continue;
                 }
 

@@ -6,6 +6,7 @@ use App\Enums\TaskStatus;
 use App\Models\Project;
 use App\Models\Task;
 use App\Notifications\TaskAssigned;
+use App\Support\ServiceTaskMatcher;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -176,7 +177,7 @@ class CreateOnboardingTasks implements ShouldQueue
         }
 
         foreach (self::TEMPLATES as $template) {
-            if (! in_array($serviceName, $template['services'], true)) {
+            if (! ServiceTaskMatcher::matches($serviceName, $template['services'])) {
                 continue;
             }
 

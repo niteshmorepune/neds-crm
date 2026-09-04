@@ -123,3 +123,40 @@ it('creates the AMC Service onboarding audit for a new AMC Service project', fun
 
     expect(Task::where('project_id', $project->id)->where('title', 'AMC onboarding audit')->exists())->toBeTrue();
 });
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Real incident, 2026-09-04: 'GMB'/'Social Media'/'AMC Service' were each
+// renamed live in production ('GMB Services'/'Social Media Management'/
+// 'Annual Maintenance Services'), silently breaking the exact-name match —
+// see ServiceTaskMatcher's own docblock.
+// ──────────────────────────────────────────────────────────────────────────────
+
+it('still creates the GMB onboarding checklist when the service is named "GMB Services"', function () {
+    $owner = User::factory()->role(UserRole::Manager)->create();
+    $service = Service::factory()->create(['name' => 'GMB Services']);
+    $project = Project::factory()->create(['service_id' => $service->id, 'owner_id' => $owner->id, 'status' => ProjectStatus::Active]);
+
+    (new CreateOnboardingTasks($project->id))->handle();
+
+    expect(Task::where('project_id', $project->id)->where('title', 'GMB profile setup')->exists())->toBeTrue();
+});
+
+it('still creates the Social Media onboarding checklist when the service is named "Social Media Management"', function () {
+    $owner = User::factory()->role(UserRole::Manager)->create();
+    $service = Service::factory()->create(['name' => 'Social Media Management']);
+    $project = Project::factory()->create(['service_id' => $service->id, 'owner_id' => $owner->id, 'status' => ProjectStatus::Active]);
+
+    (new CreateOnboardingTasks($project->id))->handle();
+
+    expect(Task::where('project_id', $project->id)->where('title', 'Social media strategy setup')->exists())->toBeTrue();
+});
+
+it('still creates the AMC onboarding audit when the service is named "Annual Maintenance Services"', function () {
+    $owner = User::factory()->role(UserRole::Manager)->create();
+    $service = Service::factory()->create(['name' => 'Annual Maintenance Services']);
+    $project = Project::factory()->create(['service_id' => $service->id, 'owner_id' => $owner->id, 'status' => ProjectStatus::Active]);
+
+    (new CreateOnboardingTasks($project->id))->handle();
+
+    expect(Task::where('project_id', $project->id)->where('title', 'AMC onboarding audit')->exists())->toBeTrue();
+});
