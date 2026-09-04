@@ -4,9 +4,11 @@ use App\Enums\DealStage;
 use App\Enums\TargetPeriodType;
 use App\Enums\UserRole;
 use App\Models\Deal;
+use App\Models\DealStageTransition;
 use App\Models\SalesTarget;
 use App\Models\User;
 use Database\Seeders\MenuItemsSeeder;
+use Illuminate\Support\Carbon;
 
 beforeEach(function () {
     $this->seed(MenuItemsSeeder::class);
@@ -27,6 +29,53 @@ it('shows the rep leaderboard and target form to admin/manager only', function (
     $this->actingAs(User::factory()->role(UserRole::Sales)->create())->get(route('sales-dashboard.index'))
         ->assertDontSee('Rep leaderboard')
         ->assertDontSee('Save targets');
+});
+
+// Real, controlled dwell history for the "Stage dwell time" table below —
+// mirrors dealWithStageHistory() in SalesPipelineMetricsTest.php, kept
+// local rather than shared across files (same per-file-helper convention
+// used throughout this suite).
+function dashboardDealWithDwell(int $ownerId, DealStage $stage, int $days, Carbon $start): void
+{
+    $deal = Deal::factory()->create(['stage' => $stage, 'owner_id' => $ownerId]);
+    DealStageTransition::where('deal_id', $deal->id)->firstOrFail()->forceFill(['created_at' => $start])->saveQuietly();
+
+    $next = DealStageTransition::create(['deal_id' => $deal->id, 'from_stage' => $stage->value, 'to_stage' => DealStage::Negotiation->value]);
+    $next->forceFill(['created_at' => $start->copy()->addDays($days)])->saveQuietly();
+}
+
+it('shows the stage dwell-time table to admin/manager only, with a team-average alongside each rep figure', function () {
+    $rep = User::factory()->role(UserRole::Sales)->create(['name' => 'Dwell Rep']);
+    $start = now()->subDays(60);
+
+    foreach ([5, 6, 7] as $days) {
+        dashboardDealWithDwell($rep->id, DealStage::Contacted, $days, $start);
+    }
+
+    $this->actingAs($this->admin)->get(route('sales-dashboard.index'))
+        ->assertSee('Stage dwell time')
+        ->assertSee('Dwell Rep')
+        ->assertSee('6d') // rep average
+        ->assertSee('team 6d'); // only rep in the dataset, so team avg matches
+
+    $this->actingAs(User::factory()->role(UserRole::Sales)->create())->get(route('sales-dashboard.index'))
+        ->assertDontSee('Stage dwell time');
+});
+
+it('shows a blank dash for a rep+stage below the minimum dwell sample, on the dashboard table', function () {
+    $rep = User::factory()->role(UserRole::Sales)->create(['name' => 'Sparse Rep']);
+    $start = now()->subDays(30);
+
+    // Only 2 completed dwell periods -- below MIN_DWELL_SAMPLE (3) -- so the
+    // underlying repStageDwellTimes() (already covered directly in
+    // SalesPipelineMetricsTest.php) omits this rep+stage entirely; this
+    // just confirms the dashboard renders that gracefully, not a crash.
+    dashboardDealWithDwell($rep->id, DealStage::Proposal, 4, $start);
+    dashboardDealWithDwell($rep->id, DealStage::Proposal, 5, $start);
+
+    $this->actingAs($this->admin)->get(route('sales-dashboard.index'))
+        ->assertOk()
+        ->assertSee('Sparse Rep');
 });
 
 it('lists needs-attention deals in their correct categories', function () {

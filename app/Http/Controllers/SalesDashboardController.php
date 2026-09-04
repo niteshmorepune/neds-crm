@@ -28,6 +28,7 @@ class SalesDashboardController extends Controller
             'needsAttention' => $this->metrics->needsAttention($user),
             'leaderboard' => $isManager ? $this->metrics->repLeaderboard() : null,
             'suggestedTargets' => $isManager ? $this->metrics->suggestedTargets() : null,
+            'dwellTimes' => $isManager ? $this->metrics->repStageDwellTimes() : null,
             'isManager' => $isManager,
         ]);
     }
