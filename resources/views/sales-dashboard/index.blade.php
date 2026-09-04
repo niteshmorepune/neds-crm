@@ -179,6 +179,51 @@
                     </tbody>
                 </table>
             </form>
+
+            {{-- Stage dwell time -- Pipeline Playbook gap idea #4 (2026-09-04): this
+                 data already existed via SalesPipelineMetrics::repStageDwellTimes(),
+                 but only ever reached a Manager narrated inside the AI Team
+                 Performance Summary's prose. A real table makes it something you
+                 can just look at, rather than waiting for the AI to mention it. --}}
+            @php
+                $dwellStages = collect(\App\Enums\DealStage::cases())->reject(fn ($s) => $s->isTerminal());
+            @endphp
+            <div class="overflow-hidden overflow-x-auto rounded-lg bg-white p-4 shadow-sm">
+                <p class="mb-1 text-xs font-medium text-gray-500">Stage dwell time</p>
+                <p class="mb-2 text-xs text-gray-400">Average days a rep's deals spend in each stage before moving on, vs. the team average for that stage. A cell stays blank until both the rep and the team have at least 3 completed dwell periods to go on.</p>
+                <table class="min-w-full divide-y divide-gray-200 text-sm">
+                    <thead>
+                        <tr class="text-left text-xs text-gray-500">
+                            <th class="px-4 py-2">Rep</th>
+                            @foreach ($dwellStages as $stage)
+                                <th class="px-4 py-2">{{ $stage->label() }}</th>
+                            @endforeach
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        @forelse ($leaderboard as $row)
+                            <tr>
+                                <td class="px-4 py-2 font-medium text-gray-900">{{ $row['user']->name }}</td>
+                                @foreach ($dwellStages as $stage)
+                                    @php $stat = $dwellTimes[$row['user']->id][$stage->value] ?? null; @endphp
+                                    <td class="px-4 py-2 text-gray-700">
+                                        @if ($stat)
+                                            <span @class(['font-medium text-amber-600' => $stat['rep_avg_days'] > $stat['team_avg_days'] * 1.5])>
+                                                {{ $stat['rep_avg_days'] }}d
+                                            </span>
+                                            <span class="text-xs text-gray-400">(team {{ $stat['team_avg_days'] }}d)</span>
+                                        @else
+                                            <span class="text-gray-300">—</span>
+                                        @endif
+                                    </td>
+                                @endforeach
+                            </tr>
+                        @empty
+                            <tr><td class="px-4 py-6 text-center text-gray-300" colspan="{{ $dwellStages->count() + 1 }}">No active sales reps yet</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
         @endif
     </div>
 
