@@ -430,7 +430,11 @@ this page. It also separately checks in on the team: if someone on
 Support/Accounts/Intern/Telecaller is falling meaningfully behind their
 monthly KRA target (see Team Targets below) partway through the month,
 the same popup prompts you to check in with them, linking to their
-Employee 360° profile.
+Employee 360° profile. It also carries two Accounts-journey prompts your
+way (in case Accounts hasn't gotten to them yet): a Draft invoice still
+unpriced/unsent 3+ days after creation, and a quotation marked Accepted
+with no invoice raised 3+ days later — see Accounts guide → Section 1 for
+detail.
 
 ## Central Approval Center
 Sidebar → **Approval Center** — every pending approval decision across the

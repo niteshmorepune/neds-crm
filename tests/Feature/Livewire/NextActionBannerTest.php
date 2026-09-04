@@ -4,6 +4,7 @@ use App\Enums\AttendanceStatus;
 use App\Enums\DealStage;
 use App\Enums\InvoiceStatus;
 use App\Enums\LeadStatus;
+use App\Enums\QuotationStatus;
 use App\Enums\UserRole;
 use App\Livewire\NextActionBanner;
 use App\Models\Attendance;
@@ -16,6 +17,7 @@ use App\Models\Lead;
 use App\Models\Meeting;
 use App\Models\NextActionSnooze;
 use App\Models\Project;
+use App\Models\Quotation;
 use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Support\Carbon;
@@ -272,6 +274,42 @@ it('shows the Manager Action Center nudge, linking to the Action Center', functi
         ->assertSet('action.source_key', 'manager_action_center_attention')
         ->assertSee('your attention')
         ->assertSee(route('manager-action-center.index'));
+
+    Carbon::setTestNow();
+});
+
+it('shows the draft-invoice-unsent prompt to Accounts, linking to the invoice', function () {
+    Carbon::setTestNow(Carbon::parse(BANNER_TEST_DAYTIME, config('app.display_timezone')));
+    $accounts = User::factory()->role(UserRole::Accounts)->create();
+    Attendance::factory()->for($accounts)->create();
+    $customer = Customer::factory()->create(['company_name' => 'Curamind']);
+    $invoice = Invoice::factory()->create(['customer_id' => $customer->id, 'status' => InvoiceStatus::Draft]);
+    $invoice->forceFill(['created_at' => now()->subDays(4)])->saveQuietly();
+
+    Livewire::actingAs($accounts)
+        ->test(NextActionBanner::class)
+        ->assertSet('action.source_key', 'draft_invoice_unsent')
+        ->assertSee('Price & send draft invoice: Curamind')
+        ->assertSee(route('invoices.show', $invoice));
+
+    Carbon::setTestNow();
+});
+
+it('shows the quotation-accepted-not-converted prompt to Accounts ahead of a stale draft invoice', function () {
+    Carbon::setTestNow(Carbon::parse(BANNER_TEST_DAYTIME, config('app.display_timezone')));
+    $accounts = User::factory()->role(UserRole::Accounts)->create();
+    Attendance::factory()->for($accounts)->create();
+    $customer = Customer::factory()->create(['company_name' => 'Curamind']);
+    $quotation = Quotation::factory()->create(['customer_id' => $customer->id, 'status' => QuotationStatus::Accepted]);
+    $quotation->forceFill(['updated_at' => now()->subDays(4)])->saveQuietly();
+    $invoice = Invoice::factory()->create(['customer_id' => $customer->id, 'status' => InvoiceStatus::Draft]);
+    $invoice->forceFill(['created_at' => now()->subDays(4)])->saveQuietly();
+
+    Livewire::actingAs($accounts)
+        ->test(NextActionBanner::class)
+        ->assertSet('action.source_key', 'quotation_accepted_not_converted')
+        ->assertSee('Convert accepted quotation: Curamind')
+        ->assertSee(route('quotations.show', $quotation));
 
     Carbon::setTestNow();
 });

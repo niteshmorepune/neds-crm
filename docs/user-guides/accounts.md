@@ -109,6 +109,17 @@ you can send or download the invoice PDF.
 on signing, balance on delivery) — each milestone becomes its own invoice. These
 also start with a pending number; assign it when you're ready to issue the invoice.
 
+**A Draft invoice can also arrive automatically** — SMDost creates a ₹0
+placeholder invoice the moment a content brief is approved, for you to price
+and send. You'll get a notification the moment it lands; if it's still sitting
+as Draft 3 days later, the "what to do next" popup (bottom-right corner of
+every page) will also prompt you to price and send it — same idea as the
+Sales "call this lead now" popup, just for Accounts. Similarly, a quotation
+marked **Accepted** with no invoice raised after 3 days triggers the same
+popup, prompting you to open it and **Convert to invoice**. Both clear
+themselves automatically the moment you act — Admin/Manager see the same
+prompts, in case Accounts hasn't gotten to it yet.
+
 **A milestone invoice can also appear on its own, with a payment already
 recorded, without anyone on the team creating it.** The public quotation link
 sent to the client has a "Pay ₹X now" button for whichever milestone is next
