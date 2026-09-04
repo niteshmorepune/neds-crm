@@ -9,11 +9,13 @@ use App\Services\NextAction\CheckOutReminderSource;
 use App\Services\NextAction\DailyReportReminderSource;
 use App\Services\NextAction\DealWonNoProjectSource;
 use App\Services\NextAction\LunchHourWadeskAiSource;
+use App\Services\NextAction\ManagerActionCenterAttentionSource;
 use App\Services\NextAction\MeetingStartingSoonSource;
 use App\Services\NextAction\OverdueInvoiceFollowUpSource;
 use App\Services\NextAction\QuotationFollowUpSource;
 use App\Services\NextAction\SalesNewLeadCallSource;
 use App\Services\NextAction\SupportNewTicketReplySource;
+use App\Services\NextAction\TeamMemberBehindTargetSource;
 use App\Services\NextAction\TelecallerNewLeadCallSource;
 use App\Services\NextAction\TicketSlaAtRiskSource;
 use App\Support\NextAction;
@@ -46,7 +48,12 @@ use App\Support\NextAction;
  * Then Telecaller. Within Support: TicketSlaAtRisk first (a ticking
  * clock — a client-facing SLA commitment about to be or already broken
  * outranks a brand-new ticket that isn't yet time-boxed), then
- * SupportNewTicketReply.
+ * SupportNewTicketReply. ManagerActionCenterAttention and
+ * TeamMemberBehindTarget sit right after LunchHourWadeskAi (same
+ * Admin/Manager audience) — the Action Center aggregate (which can
+ * include genuinely urgent items like SLA breaches and overdue
+ * invoices) before the softer, non-urgent "check in with someone
+ * falling behind" coaching nudge.
  *
  * @see NextActionSource
  */
@@ -59,6 +66,8 @@ class NextActionEngine
         DailyReportReminderSource::class,
         CheckOutReminderSource::class,
         LunchHourWadeskAiSource::class,
+        ManagerActionCenterAttentionSource::class,
+        TeamMemberBehindTargetSource::class,
         SalesNewLeadCallSource::class,
         DealWonNoProjectSource::class,
         QuotationFollowUpSource::class,

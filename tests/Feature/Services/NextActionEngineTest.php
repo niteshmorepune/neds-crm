@@ -4,6 +4,8 @@ use App\Enums\DealStage;
 use App\Enums\InvoiceStatus;
 use App\Enums\LeadStatus;
 use App\Enums\QuotationStatus;
+use App\Enums\TargetMetric;
+use App\Enums\TargetPeriodType;
 use App\Enums\UserRole;
 use App\Models\Attendance;
 use App\Models\Customer;
@@ -14,6 +16,7 @@ use App\Models\Lead;
 use App\Models\Meeting;
 use App\Models\NextActionSnooze;
 use App\Models\Quotation;
+use App\Models\RoleTarget;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Services\NextActionEngine;
@@ -72,6 +75,38 @@ it('shows the lunch-hour AI reminder to an Admin during the window, ahead of not
     $action = nextActionEngine()->nextFor($admin);
 
     expect($action->sourceKey)->toBe('lunch_hour_wadesk_ai');
+
+    Carbon::setTestNow();
+});
+
+it('shows the Manager Action Center nudge ahead of the team-target nudge, outside the lunch window', function () {
+    Carbon::setTestNow(Carbon::parse(ENGINE_TEST_DAYTIME, config('app.display_timezone')));
+    $admin = User::factory()->role(UserRole::Admin)->create();
+    Attendance::factory()->for($admin)->create();
+    $customer = Customer::factory()->create();
+    Invoice::factory()->create(['customer_id' => $customer->id, 'status' => InvoiceStatus::Overdue]);
+
+    $action = nextActionEngine()->nextFor($admin);
+
+    expect($action->sourceKey)->toBe('manager_action_center_attention');
+
+    Carbon::setTestNow();
+});
+
+it('falls through to the team-target nudge once the Action Center is clear', function () {
+    Carbon::setTestNow(Carbon::parse('2026-09-20 11:00', config('app.display_timezone'))->utc());
+    $admin = User::factory()->role(UserRole::Admin)->create();
+    Attendance::factory()->for($admin)->create();
+    $intern = User::factory()->role(UserRole::Intern)->create();
+    RoleTarget::factory()->forUser($intern->id, TargetMetric::TasksCompleted)->create([
+        'period_start' => TargetPeriodType::Month->currentPeriodStart(),
+        'target_value' => 100,
+    ]);
+
+    $action = nextActionEngine()->nextFor($admin);
+
+    expect($action->sourceKey)->toBe('team_member_behind_target');
+    expect($action->subjectId)->toBe($intern->id);
 
     Carbon::setTestNow();
 });

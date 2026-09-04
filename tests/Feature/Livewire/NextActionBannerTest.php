@@ -2,12 +2,15 @@
 
 use App\Enums\AttendanceStatus;
 use App\Enums\DealStage;
+use App\Enums\InvoiceStatus;
 use App\Enums\LeadStatus;
 use App\Enums\UserRole;
 use App\Livewire\NextActionBanner;
 use App\Models\Attendance;
+use App\Models\Customer;
 use App\Models\DailyReport;
 use App\Models\Deal;
+use App\Models\Invoice;
 use App\Models\Lead;
 use App\Models\Meeting;
 use App\Models\NextActionSnooze;
@@ -229,6 +232,22 @@ it('shows the daily-report reminder in the evening, linking to the Daily Report 
         ->assertSet('action.source_key', 'daily_report_reminder')
         ->assertSee('Submit your daily report')
         ->assertSee(route('daily-reports.index'));
+
+    Carbon::setTestNow();
+});
+
+it('shows the Manager Action Center nudge, linking to the Action Center', function () {
+    Carbon::setTestNow(Carbon::parse(BANNER_TEST_DAYTIME, config('app.display_timezone')));
+    $admin = User::factory()->role(UserRole::Admin)->create();
+    Attendance::factory()->for($admin)->create();
+    $customer = Customer::factory()->create();
+    Invoice::factory()->create(['customer_id' => $customer->id, 'status' => InvoiceStatus::Overdue]);
+
+    Livewire::actingAs($admin)
+        ->test(NextActionBanner::class)
+        ->assertSet('action.source_key', 'manager_action_center_attention')
+        ->assertSee('your attention')
+        ->assertSee(route('manager-action-center.index'));
 
     Carbon::setTestNow();
 });
