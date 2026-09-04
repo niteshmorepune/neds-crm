@@ -207,6 +207,21 @@ it('shows the Support ticket-reply prompt once checked in', function () {
     Carbon::setTestNow();
 });
 
+it('shows the SLA-at-risk prompt ahead of the new-ticket-reply prompt, once checked in', function () {
+    Carbon::setTestNow(Carbon::parse(ENGINE_TEST_DAYTIME, config('app.display_timezone')));
+    $support = User::factory()->role(UserRole::Support)->create();
+    Attendance::factory()->for($support)->create();
+    Ticket::factory()->create(['assignee_id' => $support->id]); // default SLA far out, would win support_new_ticket_reply on its own
+    $atRisk = Ticket::factory()->create(['assignee_id' => $support->id, 'sla_due_at' => now()->addHour()]);
+
+    $action = nextActionEngine()->nextFor($support);
+
+    expect($action->sourceKey)->toBe('ticket_sla_at_risk');
+    expect($action->subjectId)->toBe($atRisk->id);
+
+    Carbon::setTestNow();
+});
+
 it('returns null once every source has nothing pending', function () {
     Carbon::setTestNow(Carbon::parse(ENGINE_TEST_DAYTIME, config('app.display_timezone')));
     $sales = User::factory()->role(UserRole::Sales)->create();

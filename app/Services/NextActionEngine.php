@@ -15,6 +15,7 @@ use App\Services\NextAction\QuotationFollowUpSource;
 use App\Services\NextAction\SalesNewLeadCallSource;
 use App\Services\NextAction\SupportNewTicketReplySource;
 use App\Services\NextAction\TelecallerNewLeadCallSource;
+use App\Services\NextAction\TicketSlaAtRiskSource;
 use App\Support\NextAction;
 
 /**
@@ -42,7 +43,10 @@ use App\Support\NextAction;
  * most time-sensitive), then DealWonNoProject (a real pipeline blocker —
  * nothing downstream starts until this happens), then quotation/invoice
  * follow-ups (relationship maintenance, important but never blocking).
- * Then Telecaller, then Support.
+ * Then Telecaller. Within Support: TicketSlaAtRisk first (a ticking
+ * clock — a client-facing SLA commitment about to be or already broken
+ * outranks a brand-new ticket that isn't yet time-boxed), then
+ * SupportNewTicketReply.
  *
  * @see NextActionSource
  */
@@ -60,6 +64,7 @@ class NextActionEngine
         QuotationFollowUpSource::class,
         OverdueInvoiceFollowUpSource::class,
         TelecallerNewLeadCallSource::class,
+        TicketSlaAtRiskSource::class,
         SupportNewTicketReplySource::class,
     ];
 
