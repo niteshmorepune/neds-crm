@@ -16,6 +16,15 @@ use Livewire\Component;
  * suggestion and pre-select it; it never submits anything itself. Mirrors
  * DealsBoard::suggestLostReason() for the board's own drag-and-drop picker.
  *
+ * The suggested reason is deliberately never pre-selected as the field's
+ * actual value (only labeled "(suggested)" next to the right option) --
+ * Pipeline Playbook gap idea #2 (2026-09-04): a pre-filled dropdown let a
+ * rep save the whole edit form without ever engaging with this field at
+ * all, since DealUpdateRequest's `required_if:stage,lost` was already
+ * satisfied by the untouched AI guess. Picking a reason now always takes a
+ * real click, same as DealsBoard's own Lost-column button picker already
+ * required from day one.
+ *
  * suggest() is triggered via a dispatched browser event (deal-stage-set-to-lost,
  * fired by the Stage <select>'s own x-on:change) rather than a direct $wire call
  * from the parent markup -- this component sits outside the Stage select's own
