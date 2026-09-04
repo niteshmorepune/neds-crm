@@ -11,8 +11,8 @@
                         {{ $action['action_label'] }}
                     </a>
                 @else
-                    <button type="button" wire:click="complete"
-                            class="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-500">
+                    <button type="button" wire:click="complete" wire:loading.attr="disabled" wire:target="complete"
+                            class="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-500 disabled:opacity-50">
                         {{ $action['action_label'] }}
                     </button>
                 @endif
@@ -31,8 +31,8 @@
                     <div x-show="open" x-transition style="display: none;" @click="open = false"
                          class="absolute bottom-full right-0 z-10 mb-2 w-44 rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5">
                         @foreach (\App\Livewire\NextActionBanner::SNOOZE_TIERS as $tier => $label)
-                            <button type="button" wire:click="snooze('{{ $tier }}')"
-                                    class="block w-full px-4 py-2 text-start text-sm leading-5 text-gray-700 hover:bg-gray-100">
+                            <button type="button" wire:click="snooze('{{ $tier }}')" wire:loading.attr="disabled" wire:target="snooze"
+                                    class="block w-full px-4 py-2 text-start text-sm leading-5 text-gray-700 hover:bg-gray-100 disabled:opacity-50">
                                 {{ $label }}
                             </button>
                         @endforeach

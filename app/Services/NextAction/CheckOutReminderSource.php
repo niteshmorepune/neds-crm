@@ -55,13 +55,26 @@ class CheckOutReminderSource implements NextActionSource
         );
     }
 
+    /**
+     * A double-click (or a request that lands after the banner's own poll
+     * already cleared this prompt) hits this with checkout already
+     * recorded — silently no-ops rather than aborting, since the desired
+     * end state (checked out) is already true. Mirrors
+     * AttendanceCheckInSource::complete()'s own idempotent style, which
+     * gets this for free via updateOrCreate(); this one needs an explicit
+     * guard since it only ever updates an existing row. Real incident
+     * 2026-09-04: a fast second click surfaced Laravel's raw 422 error
+     * page instead of just doing nothing.
+     */
     public function complete(User $user, int $subjectId): void
     {
         abort_unless($subjectId === $user->id, 403);
 
         $today = $this->todayAttendance($user);
 
-        abort_unless($today !== null && $today->check_in_at !== null && $today->check_out_at === null, 422);
+        if ($today === null || $today->check_in_at === null || $today->check_out_at !== null) {
+            return;
+        }
 
         $today->update(['check_out_at' => now()]);
     }

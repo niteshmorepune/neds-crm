@@ -82,6 +82,23 @@ it('complete() checks the user out, recording the current time', function () {
     Carbon::setTestNow();
 });
 
+it('complete() silently no-ops on a second call once already checked out, instead of erroring', function () {
+    Carbon::setTestNow(Carbon::parse(CHECKOUT_TEST_MONDAY.' 18:05', config('app.display_timezone')));
+    $user = User::factory()->role(UserRole::Support)->create();
+    Attendance::factory()->for($user)->create(['check_in_at' => Carbon::parse(CHECKOUT_TEST_MONDAY.' 09:30'), 'check_out_at' => null]);
+
+    checkOutReminderSource()->complete($user, $user->id);
+    $firstCheckOutAt = Attendance::where('user_id', $user->id)->whereDate('date', Carbon::today())->first()->check_out_at;
+
+    // A fast double-click (or a stale request) must not throw.
+    checkOutReminderSource()->complete($user, $user->id);
+
+    $attendance = Attendance::where('user_id', $user->id)->whereDate('date', Carbon::today())->first();
+    expect($attendance->check_out_at->eq($firstCheckOutAt))->toBeTrue();
+
+    Carbon::setTestNow();
+});
+
 it('refuses to check out on behalf of a different user', function () {
     Carbon::setTestNow(Carbon::parse(CHECKOUT_TEST_MONDAY.' 18:05', config('app.display_timezone')));
     $user = User::factory()->role(UserRole::Support)->create();
