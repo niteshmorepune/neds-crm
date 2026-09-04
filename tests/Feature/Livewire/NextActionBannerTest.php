@@ -120,6 +120,72 @@ it('snoozes the current lead prompt, creating a NextActionSnooze row and clearin
     Carbon::setTestNow();
 });
 
+it('snoozes for 2 hours when that tier is picked', function () {
+    // ->utc() is deliberate here, not redundant with the other frozen tests
+    // in this file -- this test reads a date-cast attribute back
+    // (snoozed_until) and compares it via equalTo(). See [[feedback-gotchas]]:
+    // a testNow frozen via a display-timezone-parsed instant (no ->utc())
+    // leaks that timezone into Eloquent's own naive re-parse of the raw DB
+    // string on read, misreporting the instant by the IST/UTC offset.
+    Carbon::setTestNow(Carbon::parse(BANNER_TEST_DAYTIME, config('app.display_timezone'))->utc());
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    Attendance::factory()->for($sales)->create();
+    $lead = Lead::factory()->create(['owner_id' => $sales->id, 'status' => LeadStatus::New]);
+
+    Livewire::actingAs($sales)
+        ->test(NextActionBanner::class)
+        ->assertSet('action.subject_id', $lead->id)
+        ->call('snooze', '2h')
+        ->assertSet('action', null);
+
+    $snooze = NextActionSnooze::where('user_id', $sales->id)
+        ->where('subject_type', Lead::class)
+        ->where('subject_id', $lead->id)
+        ->first();
+
+    expect($snooze->snoozed_until->equalTo(now()->addHours(2)))->toBeTrue();
+
+    Carbon::setTestNow();
+});
+
+it('snoozes until 9am tomorrow (IST) when the "tomorrow" tier is picked', function () {
+    // ->utc() is deliberate -- see the note in the "2 hours" test above.
+    Carbon::setTestNow(Carbon::parse(BANNER_TEST_DAYTIME, config('app.display_timezone'))->utc());
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    Attendance::factory()->for($sales)->create();
+    $lead = Lead::factory()->create(['owner_id' => $sales->id, 'status' => LeadStatus::New]);
+
+    Livewire::actingAs($sales)
+        ->test(NextActionBanner::class)
+        ->assertSet('action.subject_id', $lead->id)
+        ->call('snooze', 'tomorrow')
+        ->assertSet('action', null);
+
+    $snooze = NextActionSnooze::where('user_id', $sales->id)
+        ->where('subject_type', Lead::class)
+        ->where('subject_id', $lead->id)
+        ->first();
+
+    $expected = Carbon::parse(BANNER_TEST_DAYTIME, config('app.display_timezone'))->addDay()->setTime(9, 0)->utc();
+    expect($snooze->snoozed_until->equalTo($expected))->toBeTrue();
+
+    Carbon::setTestNow();
+});
+
+it('rejects an unknown snooze tier', function () {
+    Carbon::setTestNow(Carbon::parse(BANNER_TEST_DAYTIME, config('app.display_timezone')));
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    Attendance::factory()->for($sales)->create();
+    Lead::factory()->create(['owner_id' => $sales->id, 'status' => LeadStatus::New]);
+
+    Livewire::actingAs($sales)
+        ->test(NextActionBanner::class)
+        ->call('snooze', 'next_week')
+        ->assertStatus(422);
+
+    Carbon::setTestNow();
+});
+
 it('shows the meeting join link, opening in a new tab, ahead of a pending lead', function () {
     Carbon::setTestNow(Carbon::parse(BANNER_TEST_DAYTIME, config('app.display_timezone')));
     $sales = User::factory()->role(UserRole::Sales)->create();
