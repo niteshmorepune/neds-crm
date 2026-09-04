@@ -420,6 +420,18 @@ aren't in this list yet — there's no reusable "hasn't moved" definition
 built for that in the CRM today, only the stagnation *alert emails*
 (see below), which are a different thing.
 
+Unlike the Approval Center below (which already emails/notifies you the
+moment something new lands there), nothing on this page pushes a
+notification on its own — so the "what to do next" popup (see Getting
+Started → Attendance) now nudges you with a running total whenever any of
+these counts is above zero, e.g. "12 items need your attention — 5
+overdue tasks, 3 clients needing attention, ...", linking straight to
+this page. It also separately checks in on the team: if someone on
+Support/Accounts/Intern/Telecaller is falling meaningfully behind their
+monthly KRA target (see Team Targets below) partway through the month,
+the same popup prompts you to check in with them, linking to their
+Employee 360° profile.
+
 ## Central Approval Center
 Sidebar → **Approval Center** — every pending approval decision across the
 CRM in one place, so you don't have to check Leave Requests, Quotations,

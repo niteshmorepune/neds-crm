@@ -278,6 +278,11 @@ your "follow-ups due" list — same list, no separate place to look.
   flip that field. Logged a call by mistake (wrong lead, duplicate entry)?
   A **Delete** link appears next to it (Calls tab, lead page, or the
   Calling list) — only you or a manager/admin can delete it.
+  If you set a **follow-up date** on the call itself (separate from a
+  lead's own "follow-up due" field above), the "what to do next" popup
+  (Section 1) prompts you with it the moment it's due — whatever you
+  typed as the next action, with a **Log the call** button pre-filled for
+  that lead. This applies to any client call too, not just leads.
 - On the Notes field, click **Dictate** and speak instead of typing — your
   browser transcribes it live into the box, and you can still edit before
   saving. (Chrome/Edge only; the button doesn't appear in browsers that

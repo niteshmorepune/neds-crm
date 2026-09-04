@@ -5,15 +5,18 @@ namespace App\Services;
 use App\Contracts\NextActionSource;
 use App\Models\User;
 use App\Services\NextAction\AttendanceCheckInSource;
+use App\Services\NextAction\CallFollowUpDueSource;
 use App\Services\NextAction\CheckOutReminderSource;
 use App\Services\NextAction\DailyReportReminderSource;
 use App\Services\NextAction\DealWonNoProjectSource;
 use App\Services\NextAction\LunchHourWadeskAiSource;
+use App\Services\NextAction\ManagerActionCenterAttentionSource;
 use App\Services\NextAction\MeetingStartingSoonSource;
 use App\Services\NextAction\OverdueInvoiceFollowUpSource;
 use App\Services\NextAction\QuotationFollowUpSource;
 use App\Services\NextAction\SalesNewLeadCallSource;
 use App\Services\NextAction\SupportNewTicketReplySource;
+use App\Services\NextAction\TeamMemberBehindTargetSource;
 use App\Services\NextAction\TelecallerNewLeadCallSource;
 use App\Services\NextAction\TicketSlaAtRiskSource;
 use App\Support\NextAction;
@@ -28,7 +31,10 @@ use App\Support\NextAction;
  * universal, so it should never be shadowed by anything role-specific),
  * then MeetingStartingSoon (genuinely time-critical — missing a meeting
  * start is worse than a few seconds' delay on anything else), then
- * DailyReportReminder and CheckOutReminder — both gated to only ever
+ * CallFollowUpDue — no role gate (CallLog.follow_up_at has none either),
+ * since it's the same kind of self-committed, specific-time promise as a
+ * meeting, just one you set for yourself rather than one someone else
+ * scheduled. Then DailyReportReminder and CheckOutReminder — both gated to only ever
  * apply after 6pm (office hours end, confirmed with the owner), so they
  * never affect daytime behavior at all, but once evening genuinely
  * arrives they deliberately outrank everything below them (confirmed
@@ -46,7 +52,12 @@ use App\Support\NextAction;
  * Then Telecaller. Within Support: TicketSlaAtRisk first (a ticking
  * clock — a client-facing SLA commitment about to be or already broken
  * outranks a brand-new ticket that isn't yet time-boxed), then
- * SupportNewTicketReply.
+ * SupportNewTicketReply. ManagerActionCenterAttention and
+ * TeamMemberBehindTarget sit right after LunchHourWadeskAi (same
+ * Admin/Manager audience) — the Action Center aggregate (which can
+ * include genuinely urgent items like SLA breaches and overdue
+ * invoices) before the softer, non-urgent "check in with someone
+ * falling behind" coaching nudge.
  *
  * @see NextActionSource
  */
@@ -56,9 +67,12 @@ class NextActionEngine
     private const SOURCES = [
         AttendanceCheckInSource::class,
         MeetingStartingSoonSource::class,
+        CallFollowUpDueSource::class,
         DailyReportReminderSource::class,
         CheckOutReminderSource::class,
         LunchHourWadeskAiSource::class,
+        ManagerActionCenterAttentionSource::class,
+        TeamMemberBehindTargetSource::class,
         SalesNewLeadCallSource::class,
         DealWonNoProjectSource::class,
         QuotationFollowUpSource::class,

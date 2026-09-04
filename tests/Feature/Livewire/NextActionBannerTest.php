@@ -2,12 +2,16 @@
 
 use App\Enums\AttendanceStatus;
 use App\Enums\DealStage;
+use App\Enums\InvoiceStatus;
 use App\Enums\LeadStatus;
 use App\Enums\UserRole;
 use App\Livewire\NextActionBanner;
 use App\Models\Attendance;
+use App\Models\CallLog;
+use App\Models\Customer;
 use App\Models\DailyReport;
 use App\Models\Deal;
+use App\Models\Invoice;
 use App\Models\Lead;
 use App\Models\Meeting;
 use App\Models\NextActionSnooze;
@@ -136,6 +140,29 @@ it('shows the meeting join link, opening in a new tab, ahead of a pending lead',
     Carbon::setTestNow();
 });
 
+it('shows a due call follow-up, linking to the Log a Call form pre-filled for that lead', function () {
+    Carbon::setTestNow(Carbon::parse(BANNER_TEST_DAYTIME, config('app.display_timezone')));
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    Attendance::factory()->for($sales)->create();
+    $lead = Lead::factory()->create(['name' => 'Rohan Mehta']);
+    CallLog::factory()->create([
+        'user_id' => $sales->id,
+        'callable_type' => Lead::class,
+        'callable_id' => $lead->id,
+        'follow_up_at' => now()->subMinutes(5),
+        'next_action' => 'Confirm the budget with finance',
+    ]);
+
+    Livewire::actingAs($sales)
+        ->test(NextActionBanner::class)
+        ->assertSet('action.source_key', 'call_follow_up_due')
+        ->assertSee('Follow-up call due: Rohan Mehta')
+        ->assertSee('Confirm the budget with finance')
+        ->assertSee(route('calls.create', ['lead_id' => $lead->id]));
+
+    Carbon::setTestNow();
+});
+
 it('shows the lunch-hour wadesk AI reminder to an Admin during the window, linking out to wadesk.in', function () {
     Carbon::setTestNow(Carbon::parse('2026-09-07 13:00', config('app.display_timezone')));
     $admin = User::factory()->role(UserRole::Admin)->create();
@@ -229,6 +256,22 @@ it('shows the daily-report reminder in the evening, linking to the Daily Report 
         ->assertSet('action.source_key', 'daily_report_reminder')
         ->assertSee('Submit your daily report')
         ->assertSee(route('daily-reports.index'));
+
+    Carbon::setTestNow();
+});
+
+it('shows the Manager Action Center nudge, linking to the Action Center', function () {
+    Carbon::setTestNow(Carbon::parse(BANNER_TEST_DAYTIME, config('app.display_timezone')));
+    $admin = User::factory()->role(UserRole::Admin)->create();
+    Attendance::factory()->for($admin)->create();
+    $customer = Customer::factory()->create();
+    Invoice::factory()->create(['customer_id' => $customer->id, 'status' => InvoiceStatus::Overdue]);
+
+    Livewire::actingAs($admin)
+        ->test(NextActionBanner::class)
+        ->assertSet('action.source_key', 'manager_action_center_attention')
+        ->assertSee('your attention')
+        ->assertSee(route('manager-action-center.index'));
 
     Carbon::setTestNow();
 });

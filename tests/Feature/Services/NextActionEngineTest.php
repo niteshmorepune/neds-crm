@@ -4,8 +4,11 @@ use App\Enums\DealStage;
 use App\Enums\InvoiceStatus;
 use App\Enums\LeadStatus;
 use App\Enums\QuotationStatus;
+use App\Enums\TargetMetric;
+use App\Enums\TargetPeriodType;
 use App\Enums\UserRole;
 use App\Models\Attendance;
+use App\Models\CallLog;
 use App\Models\Customer;
 use App\Models\DailyReport;
 use App\Models\Deal;
@@ -14,6 +17,7 @@ use App\Models\Lead;
 use App\Models\Meeting;
 use App\Models\NextActionSnooze;
 use App\Models\Quotation;
+use App\Models\RoleTarget;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Services\NextActionEngine;
@@ -64,6 +68,27 @@ it('shows the meeting-starting-soon prompt before the Sales lead-call prompt, on
     Carbon::setTestNow();
 });
 
+it('shows a due call follow-up ahead of the sales lead-call prompt, once checked in', function () {
+    Carbon::setTestNow(Carbon::parse(ENGINE_TEST_DAYTIME, config('app.display_timezone')));
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    Attendance::factory()->for($sales)->create();
+    Lead::factory()->create(['owner_id' => $sales->id, 'status' => LeadStatus::New]);
+    $followUpLead = Lead::factory()->create();
+    $callLog = CallLog::factory()->create([
+        'user_id' => $sales->id,
+        'callable_type' => Lead::class,
+        'callable_id' => $followUpLead->id,
+        'follow_up_at' => now()->subMinutes(5),
+    ]);
+
+    $action = nextActionEngine()->nextFor($sales);
+
+    expect($action->sourceKey)->toBe('call_follow_up_due');
+    expect($action->subjectId)->toBe($callLog->id);
+
+    Carbon::setTestNow();
+});
+
 it('shows the lunch-hour AI reminder to an Admin during the window, ahead of nothing else applicable', function () {
     Carbon::setTestNow(Carbon::parse('2026-09-07 13:00', config('app.display_timezone')));
     $admin = User::factory()->role(UserRole::Admin)->create();
@@ -72,6 +97,38 @@ it('shows the lunch-hour AI reminder to an Admin during the window, ahead of not
     $action = nextActionEngine()->nextFor($admin);
 
     expect($action->sourceKey)->toBe('lunch_hour_wadesk_ai');
+
+    Carbon::setTestNow();
+});
+
+it('shows the Manager Action Center nudge ahead of the team-target nudge, outside the lunch window', function () {
+    Carbon::setTestNow(Carbon::parse(ENGINE_TEST_DAYTIME, config('app.display_timezone')));
+    $admin = User::factory()->role(UserRole::Admin)->create();
+    Attendance::factory()->for($admin)->create();
+    $customer = Customer::factory()->create();
+    Invoice::factory()->create(['customer_id' => $customer->id, 'status' => InvoiceStatus::Overdue]);
+
+    $action = nextActionEngine()->nextFor($admin);
+
+    expect($action->sourceKey)->toBe('manager_action_center_attention');
+
+    Carbon::setTestNow();
+});
+
+it('falls through to the team-target nudge once the Action Center is clear', function () {
+    Carbon::setTestNow(Carbon::parse('2026-09-20 11:00', config('app.display_timezone'))->utc());
+    $admin = User::factory()->role(UserRole::Admin)->create();
+    Attendance::factory()->for($admin)->create();
+    $intern = User::factory()->role(UserRole::Intern)->create();
+    RoleTarget::factory()->forUser($intern->id, TargetMetric::TasksCompleted)->create([
+        'period_start' => TargetPeriodType::Month->currentPeriodStart(),
+        'target_value' => 100,
+    ]);
+
+    $action = nextActionEngine()->nextFor($admin);
+
+    expect($action->sourceKey)->toBe('team_member_behind_target');
+    expect($action->subjectId)->toBe($intern->id);
 
     Carbon::setTestNow();
 });
