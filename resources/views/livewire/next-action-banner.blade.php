@@ -16,24 +16,28 @@
                         {{ $action['action_label'] }}
                     </button>
                 @endif
-                <x-dropdown align="left" width="44">
-                    <x-slot name="trigger">
-                        <button type="button" class="flex items-center text-xs text-gray-400 hover:text-gray-600">
-                            Snooze
-                            <svg class="ms-1 h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </button>
-                    </x-slot>
-                    <x-slot name="content">
+                {{-- Custom (not <x-dropdown>) and deliberately opens UPWARD: this banner
+                     is pinned to the bottom-right of the viewport, so a normally-downward
+                     dropdown menu renders past the bottom edge of the screen with no way
+                     to scroll it into view (this fixed-position banner never scrolls). --}}
+                <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+                    <button type="button" @click="open = ! open"
+                            class="flex items-center text-xs text-gray-400 hover:text-gray-600">
+                        Snooze
+                        <svg class="ms-1 h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div x-show="open" x-transition style="display: none;" @click="open = false"
+                         class="absolute bottom-full right-0 z-10 mb-2 w-44 rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5">
                         @foreach (\App\Livewire\NextActionBanner::SNOOZE_TIERS as $tier => $label)
                             <button type="button" wire:click="snooze('{{ $tier }}')"
                                     class="block w-full px-4 py-2 text-start text-sm leading-5 text-gray-700 hover:bg-gray-100">
                                 {{ $label }}
                             </button>
                         @endforeach
-                    </x-slot>
-                </x-dropdown>
+                    </div>
+                </div>
             </div>
         </div>
     @endif
