@@ -9,10 +9,12 @@ use App\Services\NextAction\CallFollowUpDueSource;
 use App\Services\NextAction\CheckOutReminderSource;
 use App\Services\NextAction\DailyReportReminderSource;
 use App\Services\NextAction\DealWonNoProjectSource;
+use App\Services\NextAction\DraftInvoiceUnsentSource;
 use App\Services\NextAction\LunchHourWadeskAiSource;
 use App\Services\NextAction\ManagerActionCenterAttentionSource;
 use App\Services\NextAction\MeetingStartingSoonSource;
 use App\Services\NextAction\OverdueInvoiceFollowUpSource;
+use App\Services\NextAction\QuotationAcceptedNotConvertedSource;
 use App\Services\NextAction\QuotationFollowUpSource;
 use App\Services\NextAction\SalesNewLeadCallSource;
 use App\Services\NextAction\SupportNewTicketReplySource;
@@ -49,6 +51,14 @@ use App\Support\NextAction;
  * most time-sensitive), then DealWonNoProject (a real pipeline blocker —
  * nothing downstream starts until this happens), then quotation/invoice
  * follow-ups (relationship maintenance, important but never blocking).
+ * QuotationAcceptedNotConverted and DraftInvoiceUnsent (Phase 11, Accounts
+ * journey installment 1) are interleaved into that same quotation/invoice
+ * cluster in actual pipeline order -- Accepted-but-unconverted, then
+ * Draft-but-unsent, then (existing) Sent-but-overdue -- even though their
+ * audience (Accounts + Admin/Manager) differs from the Sales-owner
+ * gating on either side of them; each source no-ops for a role it doesn't
+ * apply to, so interleaving by pipeline stage rather than by audience
+ * keeps the ordering readable as "where in the money pipeline is this."
  * Then Telecaller. Within Support: TicketSlaAtRisk first (a ticking
  * clock — a client-facing SLA commitment about to be or already broken
  * outranks a brand-new ticket that isn't yet time-boxed), then
@@ -76,6 +86,8 @@ class NextActionEngine
         SalesNewLeadCallSource::class,
         DealWonNoProjectSource::class,
         QuotationFollowUpSource::class,
+        QuotationAcceptedNotConvertedSource::class,
+        DraftInvoiceUnsentSource::class,
         OverdueInvoiceFollowUpSource::class,
         TelecallerNewLeadCallSource::class,
         TicketSlaAtRiskSource::class,

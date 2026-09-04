@@ -235,6 +235,44 @@ it('walks the rest of the Sales journey in order once there is no fresh lead to 
     Carbon::setTestNow();
 });
 
+it('walks an Accounts user through the Accepted-then-Draft invoice pipeline in order', function () {
+    Carbon::setTestNow(Carbon::parse(ENGINE_TEST_DAYTIME, config('app.display_timezone')));
+    $accounts = User::factory()->role(UserRole::Accounts)->create();
+    Attendance::factory()->for($accounts)->create();
+    $customer = Customer::factory()->create();
+    $quotation = Quotation::factory()->create(['customer_id' => $customer->id, 'status' => QuotationStatus::Accepted]);
+    $quotation->forceFill(['updated_at' => now()->subDays(4)])->saveQuietly();
+    $invoice = Invoice::factory()->create(['customer_id' => $customer->id, 'status' => InvoiceStatus::Draft]);
+    $invoice->forceFill(['created_at' => now()->subDays(4)])->saveQuietly();
+
+    expect(nextActionEngine()->nextFor($accounts)->sourceKey)->toBe('quotation_accepted_not_converted');
+
+    NextActionSnooze::create([
+        'user_id' => $accounts->id,
+        'source_key' => 'quotation_accepted_not_converted',
+        'subject_type' => Quotation::class,
+        'subject_id' => $quotation->id,
+        'snoozed_until' => now()->addMinutes(30),
+    ]);
+    $action = nextActionEngine()->nextFor($accounts);
+    expect($action->sourceKey)->toBe('draft_invoice_unsent');
+    expect($action->subjectId)->toBe($invoice->id);
+
+    // Sales-only overdue-invoice source below it never fires for Accounts,
+    // and neither Accepted-quotation nor Draft-invoice source applies to a
+    // plain Sales rep who isn't Accounts/Admin/Manager.
+    NextActionSnooze::create([
+        'user_id' => $accounts->id,
+        'source_key' => 'draft_invoice_unsent',
+        'subject_type' => Invoice::class,
+        'subject_id' => $invoice->id,
+        'snoozed_until' => now()->addMinutes(30),
+    ]);
+    expect(nextActionEngine()->nextFor($accounts))->toBeNull();
+
+    Carbon::setTestNow();
+});
+
 it('shows the telecaller lead-call prompt for a user holding Telecaller as an additional role', function () {
     Carbon::setTestNow(Carbon::parse(ENGINE_TEST_DAYTIME, config('app.display_timezone')));
     $telecaller = User::factory()->role(UserRole::Accounts)->create();
