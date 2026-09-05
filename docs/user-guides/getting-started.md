@@ -156,9 +156,10 @@ On the **Dashboard**, use the attendance widget:
 
 If you haven't checked in yet, a small card also pops up in the
 bottom-right corner of every page reminding you — click **Check in now**
-right there (no need to go to the Dashboard first), or **Snooze 30 min**
-if you're not ready yet. This is the first step of a wider "what should I
-do next" guide the CRM walks you through — once you're checked in, it'll
+right there (no need to go to the Dashboard first), or **Snooze** it —
+30 min, 2 hours, or Remind me tomorrow — if you're not ready yet. This is
+the first step of a wider "what should I do next" guide the CRM walks you
+through — once you're checked in, it'll
 prompt you for anything else that needs your attention (e.g. Sales reps
 get prompted to call a fresh lead the moment one lands in their queue),
 and at the end of the day (past 6pm office-hours close), the same popup

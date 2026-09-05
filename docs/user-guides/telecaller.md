@@ -55,9 +55,10 @@ Open a lead assigned to you to:
 **"Call this lead now" popup:** the moment a new lead lands in your queue
 with no call logged yet, a small card appears in the bottom-right corner of
 every page, oldest uncalled lead first. Click **Log the call** to jump
-straight to the Log a Call form with that lead pre-selected, or **Snooze
-30 min** if you can't call right now. If you haven't checked in for
-attendance yet today, that comes first (see Section 2 above) — once
+straight to the Log a Call form with that lead pre-selected, or **Snooze**
+if you can't call right now — pick 30 min, 2 hours, or tomorrow. If you
+haven't checked in for attendance yet today, that comes first (see
+Section 2 above) — once
 you're checked in, this is what the same popup guides you through next.
 
 **What to call first:** the list sorts by **Priority** by default (an
@@ -126,7 +127,8 @@ remove your own, or a manager/admin can remove anyone's.
 The moment a follow-up you set becomes due, the "what to do next" popup
 (see Section 2 above) prompts you with it — whatever you typed in as the
 next action, and a **Log the call** button that jumps straight to the form
-pre-filled for that lead. Snooze it 30 minutes if you're not ready yet.
+pre-filled for that lead. Snooze it — 30 min, 2 hours, or tomorrow — if
+you're not ready yet.
 
 ## 5. Daily report
 At the end of each working day, open **Daily Reports** and fill in a brief

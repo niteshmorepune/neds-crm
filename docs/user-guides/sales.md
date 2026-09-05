@@ -43,10 +43,11 @@ rep's leads (fixed 2026-09-03; this used to show everyone's).
 with no call logged yet, a small card appears in the bottom-right corner of
 every page (checks every ~45 seconds) telling you who to call, oldest
 uncalled lead first. Click **Log the call** to jump straight to the Log a
-Call form with that lead pre-selected, or **Snooze 30 min** if you can't
-call right now — it'll come back after that, and move on to your next
-oldest uncalled lead once you've logged one. If you haven't checked in
-for attendance yet today, that comes first (see [Section 5](#5-attendance-check-in-and-out))
+Call form with that lead pre-selected, or **Snooze** if you can't call
+right now — pick 30 min, 2 hours, or tomorrow, and it'll come back then,
+moving on to your next oldest uncalled lead once you've logged one. If
+you haven't checked in for attendance yet today, that comes first (see
+[Section 5](#5-attendance-check-in-and-out))
 — once you're checked in, this is what the same popup guides you through
 next. It's the first piece of a larger "what should I do next" guide the
 CRM will keep building out.
@@ -398,6 +399,13 @@ on **Sales Dashboard** — see 2a below.
   the bottom. Your Incentive slabs (see Section 5) are calculated directly
   off this number, so a GST-inclusive Value overstates your own sales for
   the month by the GST rate.
+- **Your confidence (1-10)** — an optional field on any open deal, right
+  next to Value. It's your own honest gut read on whether this actually
+  closes, separate from the stage the deal happens to be sitting in — a
+  deal can be deep in Negotiation and still be a shaky 3, or early in
+  Proposal and a solid 8. Update it as things change; it's for your manager
+  to see where a deal's stage and your real read on it disagree, not a
+  one-time guess to set and forget.
 - **Deals like this one** — on a deal's page, a panel shows up to 3 other
   closed deals (Won or Lost) for the same service, ranked by how close their
   value is to this one — useful context on how deals with this profile tend

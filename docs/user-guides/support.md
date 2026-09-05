@@ -40,10 +40,11 @@ Tickets come from clients (via their portal) or are raised by staff.
 **"Respond to this ticket" popup:** the moment an Open ticket lands in your
 queue with no staff reply yet, a small card appears in the bottom-right
 corner of every page, oldest unreplied ticket first. Click **Open ticket**
-to jump straight to it, or **Snooze 30 min** if you can't get to it right
-now. It'll come back after that, and move on to your next oldest ticket
-once you've replied. If you haven't checked in for attendance yet today,
-that comes first (see the Getting Started guide's Attendance section) —
+to jump straight to it, or **Snooze** if you can't get to it right now —
+pick 30 min, 2 hours, or tomorrow, and it'll come back then, moving on to
+your next oldest ticket once you've replied. If you haven't checked in
+for attendance yet today, that comes first (see the Getting Started
+guide's Attendance section) —
 once you're checked in, this is what the same popup guides you through.
 
 **Raising a ticket yourself:** after filling in the client, subject, and

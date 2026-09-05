@@ -352,6 +352,13 @@ Admin/Manager only:
 
 - **Rep leaderboard** — per Sales rep: pipeline value, won this month, target
   this month, % to target, win rate, avg deal size.
+- **Stage dwell time** — below the leaderboard, one row per rep and one
+  column per open stage (New/Contacted/Proposal/Negotiation), showing how
+  many days their deals typically sit there before moving on, alongside the
+  team's own average for that stage. A rep running noticeably longer than
+  the team average is highlighted amber — worth a question in your next
+  1:1. A cell stays blank until both the rep and the team have enough
+  completed history to make the average meaningful.
 - **Save targets** — set the company's monthly and financial-year revenue
   target, and each rep's individual monthly target, right from the
   leaderboard row. Leave a field blank to leave that target unchanged — it
@@ -426,11 +433,15 @@ notification on its own — so the "what to do next" popup (see Getting
 Started → Attendance) now nudges you with a running total whenever any of
 these counts is above zero, e.g. "12 items need your attention — 5
 overdue tasks, 3 clients needing attention, ...", linking straight to
-this page. It also separately checks in on the team: if someone on
-Support/Accounts/Intern/Telecaller is falling meaningfully behind their
-monthly KRA target (see Team Targets below) partway through the month,
-the same popup prompts you to check in with them, linking to their
-Employee 360° profile. It also carries two Accounts-journey prompts your
+this page. It also separately checks in on the team: if a **Sales** rep is
+falling meaningfully behind their monthly revenue target (see Sales
+Dashboard → Rep leaderboard below) partway through the month, the same
+popup prompts you to check in with them first — a missed revenue number
+outranks the check below for everyone else, if both are true the same day.
+If someone on Support/Accounts/Intern/Telecaller is falling meaningfully
+behind their monthly KRA target (see Team Targets below) partway through
+the month, the same popup prompts you to check in with them, linking to
+their Employee 360° profile. It also carries two Accounts-journey prompts your
 way (in case Accounts hasn't gotten to them yet): a Draft invoice still
 unpriced/unsent 3+ days after creation, and a quotation marked Accepted
 with no invoice raised 3+ days later — see Accounts guide → Section 1 for
