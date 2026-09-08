@@ -95,8 +95,7 @@ class MyDayService
 
         CallLog::query()
             ->where('user_id', $user->id)
-            ->whereNotNull('follow_up_at')
-            ->where('follow_up_at', '<=', $now)
+            ->followUpDue($now)
             ->with('callable')
             ->get()
             ->each(function (CallLog $call) use ($items, $bestHours) {

@@ -77,6 +77,18 @@ it('includes a due call follow-up logged by the user', function () {
     expect($this->service->worklist($this->user)->where('type', 'call'))->toHaveCount(1);
 });
 
+it('excludes a due call follow-up against a lead that has since been marked Lost', function () {
+    $lead = Lead::factory()->create(['status' => LeadStatus::Lost]);
+    CallLog::factory()->create([
+        'user_id' => $this->user->id,
+        'callable_type' => Lead::class,
+        'callable_id' => $lead->id,
+        'follow_up_at' => now(),
+    ]);
+
+    expect($this->service->worklist($this->user)->where('type', 'call'))->toBeEmpty();
+});
+
 it('includes an SLA-breached ticket assigned to the user but excludes a resolved one', function () {
     Ticket::factory()->create([
         'assignee_id' => $this->user->id,

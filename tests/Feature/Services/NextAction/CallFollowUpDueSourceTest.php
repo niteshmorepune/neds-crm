@@ -131,6 +131,32 @@ it('skips a follow-up whose lead has since been soft-deleted', function () {
     expect(callFollowUpDueSource()->next($sales))->toBeNull();
 });
 
+it('skips a follow-up whose lead has since been marked Lost', function () {
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    $lead = Lead::factory()->create(['status' => LeadStatus::Lost]);
+    CallLog::factory()->create([
+        'user_id' => $sales->id,
+        'callable_type' => Lead::class,
+        'callable_id' => $lead->id,
+        'follow_up_at' => now()->subMinutes(5),
+    ]);
+
+    expect(callFollowUpDueSource()->next($sales))->toBeNull();
+});
+
+it('still prompts a follow-up against a Customer, which has no equivalent terminal status', function () {
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    $customer = Customer::factory()->create();
+    CallLog::factory()->create([
+        'user_id' => $sales->id,
+        'callable_type' => Customer::class,
+        'callable_id' => $customer->id,
+        'follow_up_at' => now()->subMinutes(5),
+    ]);
+
+    expect(callFollowUpDueSource()->next($sales))->not->toBeNull();
+});
+
 it('picks the earliest-due follow-up when more than one qualifies', function () {
     $sales = User::factory()->role(UserRole::Sales)->create();
     $leadA = Lead::factory()->create();

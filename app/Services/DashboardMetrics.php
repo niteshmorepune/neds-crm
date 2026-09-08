@@ -240,8 +240,7 @@ class DashboardMetrics
                 ->whereDate('called_at', today())
                 ->count(),
             'followups_due' => CallLog::where('user_id', $user->id)
-                ->whereNotNull('follow_up_at')
-                ->where('follow_up_at', '<=', now())
+                ->followUpDue()
                 ->count(),
         ];
     }
