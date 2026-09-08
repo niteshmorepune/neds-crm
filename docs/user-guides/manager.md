@@ -141,6 +141,11 @@ panel) — a near-term cash view, blending:
   through to **Lead Generation**, pre-filtered to that exact source and the
   same month you're looking at — so "how many of these actual leads came
   in" is one click away instead of a manual filter.
+- Two **daily trend** tables answer "how many leads came in on which
+  day" — one broken down **by Sales Rep (owner)**, one **by Telecaller** —
+  each a day-by-day row for the selected month with a column per person
+  (plus **Unassigned** where relevant) and a totals row at the bottom.
+  Both are included in the same Export CSV.
 
 **Score Calibration** — for a chosen month, is the 0-100 AI lead score
 actually predictive of outcome? Every closed lead (Converted or Lost,

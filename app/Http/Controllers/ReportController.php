@@ -12,6 +12,7 @@ use App\Models\WeeklyDigest;
 use App\Services\AiUsageMetrics;
 use App\Services\BusinessOverviewMetrics;
 use App\Services\CollectionsMetrics;
+use App\Services\LeadVolumeMetrics;
 use App\Services\LossReasonMetrics;
 use App\Services\ReassignmentMetrics;
 use App\Services\ReportMetrics;
@@ -39,6 +40,7 @@ class ReportController extends Controller
         private readonly LossReasonMetrics $lossReasonMetrics,
         private readonly ReassignmentMetrics $reassignmentMetrics,
         private readonly RepWinRateMetrics $repWinRateMetrics,
+        private readonly LeadVolumeMetrics $leadVolumeMetrics,
     ) {}
 
     public function employeePerformance(Request $request): View
@@ -194,6 +196,7 @@ class ReportController extends Controller
 
         return view('reports.lead-sources', [
             'data' => $this->metrics->leadSourcePerformance($from, $to),
+            'volume' => $this->leadVolumeMetrics->dailyTrend($from, $to),
             'from' => $from,
             'to' => $to,
         ]);
@@ -204,8 +207,9 @@ class ReportController extends Controller
         $this->authorizePerformance($request);
         [$from, $to] = $this->monthRange($request);
         $data = $this->metrics->leadSourcePerformance($from, $to);
+        $volume = $this->leadVolumeMetrics->dailyTrend($from, $to);
 
-        return $this->csv("lead-sources-{$from->format('Y-m-d')}_to_{$to->format('Y-m-d')}.csv", function ($out) use ($data) {
+        return $this->csv("lead-sources-{$from->format('Y-m-d')}_to_{$to->format('Y-m-d')}.csv", function ($out) use ($data, $volume) {
             fputcsv($out, ['Source', 'Leads', 'Converted', 'Conversion %', 'Won value (₹)', 'Avg AI score']);
             foreach ($data['by_source'] as $r) {
                 fputcsv($out, [$r['label'], $r['total'], $r['converted'], $r['conversion_rate'], Money::toRupees($r['won_value']), $r['avg_score'] ?? '—']);
@@ -214,6 +218,26 @@ class ReportController extends Controller
             fputcsv($out, ['Campaign (source / medium / campaign)', 'Leads', 'Converted', 'Conversion %', 'Won value (₹)', 'Avg AI score']);
             foreach ($data['by_campaign'] as $r) {
                 fputcsv($out, [$r['label'], $r['total'], $r['converted'], $r['conversion_rate'], Money::toRupees($r['won_value']), $r['avg_score'] ?? '—']);
+            }
+
+            fputcsv($out, []);
+            fputcsv($out, ['Day', 'Total', ...array_column($volume['owner_columns'], 'label')]);
+            foreach ($volume['days'] as $day) {
+                $row = [$day, $volume['totals'][$day]];
+                foreach ($volume['owner_columns'] as $col) {
+                    $row[] = $volume['by_owner'][$day][$col['key']];
+                }
+                fputcsv($out, $row);
+            }
+
+            fputcsv($out, []);
+            fputcsv($out, ['Day', 'Total', ...array_column($volume['telecaller_columns'], 'label')]);
+            foreach ($volume['days'] as $day) {
+                $row = [$day, $volume['totals'][$day]];
+                foreach ($volume['telecaller_columns'] as $col) {
+                    $row[] = $volume['by_telecaller'][$day][$col['key']];
+                }
+                fputcsv($out, $row);
             }
         });
     }
