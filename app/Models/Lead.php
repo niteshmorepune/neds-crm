@@ -58,13 +58,20 @@ class Lead extends Model
     /**
      * AI score columns are written by the ScoreLead job, not user forms, and are
      * noise in the activity log — exclude them so an automated re-score isn't
-     * recorded as a user "update".
+     * recorded as a user "update". stall_reason is excluded for a different
+     * reason: it IS a real, deliberate user action, but lastTouchedAt() (used
+     * by ObjectionFollowUpDueSource/StallReasonMetrics to decide when a
+     * stalling lead is stale enough to nudge about) reads this same
+     * activities table — if tagging a lead as stalling counted as "just
+     * touched," it would immediately reset its own staleness clock and the
+     * nudge would never fire. Real bug caught by tests before shipping.
      *
      * @var list<string>
      */
     protected array $activityExcept = [
         'ai_score', 'ai_score_reason', 'ai_scored_at',
         'ai_budget_band', 'ai_urgency', 'ai_service_fit',
+        'stall_reason',
     ];
 
     protected function casts(): array
@@ -580,6 +587,28 @@ class Lead extends Model
     public function callLogs(): MorphMany
     {
         return $this->morphMany(CallLog::class, 'callable')->latest('called_at');
+    }
+
+    /**
+     * Most recent real activity on this lead — a call, a note, or any
+     * logged edit (status change, reassignment, etc.) — or its own
+     * creation time if genuinely never touched since. Mirrors
+     * Deal::lastTouchedAt() exactly, plus callLogs (Deals have no direct
+     * call log of their own; a Lead's calls are its primary working
+     * mechanism, so leaving them out here would understate real activity).
+     * Single source of truth for "when did anyone last work this lead" —
+     * used by ObjectionFollowUpDueSource/StallReasonMetrics and the
+     * stall-follow-up drafting job so they can never silently disagree on
+     * what counts as stale.
+     */
+    public function lastTouchedAt(): Carbon
+    {
+        return collect([
+            $this->notes()->max('created_at'),
+            $this->activities()->max('created_at'),
+            $this->callLogs()->max('called_at'),
+            $this->created_at,
+        ])->filter()->map(fn ($value) => Carbon::parse($value))->max();
     }
 
     public function meetings(): MorphMany

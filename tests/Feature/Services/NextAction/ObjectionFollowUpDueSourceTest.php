@@ -6,6 +6,7 @@ use App\Enums\DealStage;
 use App\Enums\LeadStatus;
 use App\Enums\StallReason;
 use App\Enums\UserRole;
+use App\Models\Activity;
 use App\Models\CallLog;
 use App\Models\Customer;
 use App\Models\Deal;
@@ -13,19 +14,40 @@ use App\Models\Lead;
 use App\Models\NextActionSnooze;
 use App\Models\User;
 use App\Services\NextAction\ObjectionFollowUpDueSource;
+use Illuminate\Support\Carbon;
 
 function objectionFollowUpDueSource(): ObjectionFollowUpDueSource
 {
     return app(ObjectionFollowUpDueSource::class);
 }
 
-/** A stale-tagged lead: created, tagged, and its only touch pushed 4 days back. */
+/**
+ * lastTouchedAt() floors at both created_at AND the subject's own
+ * 'created' Activity row — and that row's created_at is always the real
+ * moment it was inserted, ignoring any backdated created_at passed to the
+ * model itself (a fixture that creates a Lead "now" but tells it its
+ * created_at was 5 days ago still logs a 'created' Activity at the real,
+ * current instant). Backdating both the model's own created_at AND its
+ * 'created' Activity row is what a genuinely-old, quiet record looks
+ * like in production, where both are naturally set at the same real
+ * moment in the past — this just simulates that honestly in a test.
+ */
+function backdateCreation(string $subjectType, int $subjectId, Carbon $when): void
+{
+    Activity::where('subject_type', $subjectType)->where('subject_id', $subjectId)->where('event', 'created')->update(['created_at' => $when]);
+}
+
+/** A stale-tagged lead: created 5 days back, its only touch 4 days back. */
 function staleStalledLead(array $overrides = []): Lead
 {
+    $createdAt = now()->subDays(5);
+
     $lead = Lead::factory()->create(array_merge([
         'status' => LeadStatus::Contacted,
         'stall_reason' => StallReason::Budget,
+        'created_at' => $createdAt,
     ], $overrides));
+    backdateCreation(Lead::class, $lead->id, $createdAt);
 
     CallLog::factory()->create([
         'callable_type' => Lead::class,
@@ -91,7 +113,9 @@ it('prompts about a stalling Deal untouched for 3+ days', function () {
         'customer_id' => $customer->id,
         'stage' => DealStage::Negotiation,
         'stall_reason' => StallReason::Competitor,
+        'created_at' => now()->subDays(6),
     ]);
+    backdateCreation(Deal::class, $deal->id, now()->subDays(6));
     $deal->notes()->create(['user_id' => $sales->id, 'body' => 'x']);
     $deal->notes()->first()->forceFill(['created_at' => now()->subDays(5)])->saveQuietly();
 
@@ -117,7 +141,9 @@ it('picks the most stale candidate across both leads and deals', function () {
     $staler = Deal::factory()->create([
         'owner_id' => $sales->id, 'customer_id' => $customer->id,
         'stage' => DealStage::Proposal, 'stall_reason' => StallReason::Confused,
+        'created_at' => now()->subDays(11),
     ]);
+    backdateCreation(Deal::class, $staler->id, now()->subDays(11));
     $staler->notes()->create(['user_id' => $sales->id, 'body' => 'x']);
     $staler->notes()->first()->forceFill(['created_at' => now()->subDays(10)])->saveQuietly();
 

@@ -30,6 +30,18 @@ class Deal extends Model
 
     public const CONFIDENCE_MAX = 10;
 
+    /**
+     * stall_reason is excluded from the activity log for the same reason as
+     * Lead's own $activityExcept: lastTouchedAt() reads this same table to
+     * decide staleness (used by DraftDealStallFollowUps and
+     * ObjectionFollowUpDueSource/StallReasonMetrics) — if tagging a deal as
+     * stalling counted as "just touched," it would reset its own staleness
+     * clock and never actually surface as stale.
+     *
+     * @var list<string>
+     */
+    protected array $activityExcept = ['stall_reason'];
+
     protected $fillable = [
         'title',
         'customer_id',

@@ -433,6 +433,17 @@ class AiAssistant
      * own "first touch" case, which drafts from source/service alone) --
      * a deal that's sat untouched since creation still gets a reasonable
      * check-in built from its title/service/stage.
+     *
+     * Phase 4 of the closure-guidance plan (2026-09-08): when the deal
+     * carries a stall_reason tag, the prompt names it directly and asks
+     * for a message that actually addresses that objection (an offer for
+     * Budget, reassurance/proof for Trust, etc.) instead of a generic
+     * "just checking in" note — the same objection-aware upgrade applies
+     * to draftLeadStallFollowUp() below. This is deliberately an
+     * enhancement of the existing, already-scheduled job rather than a
+     * new on-demand button — a message the owner has to remember to
+     * click for isn't "on the move" guidance, a message that's already
+     * drafted and waiting in their notes when they open the deal is.
      */
     public function draftDealStallFollowUp(Deal $deal, int $daysSinceLastTouch): ?string
     {
@@ -447,15 +458,32 @@ class AiAssistant
             'Interested in: '.($deal->service?->name ?? 'unspecified'),
             'Stage: '.$deal->stage->label(),
             'Days since any activity: '.$daysSinceLastTouch,
-            '',
-            'Notes:',
         ];
+
+        if ($deal->stall_reason !== null) {
+            $lines[] = 'Known reason this has stalled: '.$deal->stall_reason->label();
+        }
+
+        $lines[] = '';
+        $lines[] = 'Notes:';
 
         foreach ($deal->notes->take(self::MAX_ITEMS) as $note) {
             $lines[] = '- '.$note->body;
         }
 
-        $system = <<<'PROMPT'
+        $system = $deal->stall_reason !== null ? <<<'PROMPT'
+        You draft a short, low-pressure check-in message (under 80 words,
+        suitable for WhatsApp or email) a salesperson at a digital-solutions
+        agency in India can send about a deal that has gone quiet mid-pipeline.
+        A specific reason it stalled is given -- address that reason directly
+        rather than writing a generic "just checking in" message (e.g. for a
+        budget concern, offer to discuss a staged/installment plan; for a
+        trust concern, offer a reference or case study; for confusion about
+        the offer, offer a quick call to walk through it simply). Reference
+        what the deal is about and its current stage where natural. Do not
+        invent prices, timelines, discounts, or promises not already in the
+        notes. Output only the message body.
+        PROMPT : <<<'PROMPT'
         You draft a short, low-pressure check-in message (under 80 words,
         suitable for WhatsApp or email) a salesperson at a digital-solutions
         agency in India can send about a deal that has gone quiet mid-pipeline.
@@ -466,6 +494,67 @@ class AiAssistant
 
         return $this->trimmed($this->client->message(
             feature: 'draft_deal_stall_followup',
+            prompt: implode("\n", $lines),
+            system: $system,
+        ));
+    }
+
+    /**
+     * Lead-side counterpart to draftDealStallFollowUp() above — see that
+     * method's own docblock for the full reasoning (Phase 4 of the
+     * 2026-09-08 closure-guidance plan). No pre-existing Lead equivalent
+     * of DraftDealStallFollowUps existed before this; DraftLeadNurtureFollowUp
+     * is a different concept (a fixed 1/3/7-day cadence for brand-new
+     * leads, not general staleness for any open lead).
+     */
+    public function draftLeadStallFollowUp(Lead $lead, int $daysSinceLastTouch): ?string
+    {
+        if (! Ai::enabled()) {
+            return null;
+        }
+
+        $lead->loadMissing(['service', 'notes']);
+
+        $lines = [
+            'Lead: '.$lead->name.($lead->company ? ' ('.$lead->company.')' : ''),
+            'Interested in: '.($lead->service?->name ?? 'unspecified'),
+            'Status: '.$lead->status->label(),
+            'Days since any activity: '.$daysSinceLastTouch,
+        ];
+
+        if ($lead->stall_reason !== null) {
+            $lines[] = 'Known reason this has stalled: '.$lead->stall_reason->label();
+        }
+
+        $lines[] = '';
+        $lines[] = 'Notes:';
+
+        foreach ($lead->notes->take(self::MAX_ITEMS) as $note) {
+            $lines[] = '- '.$note->body;
+        }
+
+        $system = $lead->stall_reason !== null ? <<<'PROMPT'
+        You draft a short, low-pressure check-in message (under 80 words,
+        suitable for WhatsApp or email) a salesperson at a digital-solutions
+        agency in India can send to a lead who has gone quiet. A specific
+        reason it stalled is given -- address that reason directly rather
+        than writing a generic "just checking in" message (e.g. for a budget
+        concern, offer to discuss a staged/installment plan; for a trust
+        concern, offer a reference or case study; for confusion about the
+        offer, offer a quick call to walk through it simply). Reference what
+        they're interested in where natural. Do not invent prices, timelines,
+        discounts, or promises not already in the notes. Output only the
+        message body.
+        PROMPT : <<<'PROMPT'
+        You draft a short, low-pressure check-in message (under 80 words,
+        suitable for WhatsApp or email) a salesperson at a digital-solutions
+        agency in India can send to a lead who has gone quiet. Reference what
+        they're interested in where natural. Do not invent prices, timelines,
+        or promises not already in the notes. Output only the message body.
+        PROMPT;
+
+        return $this->trimmed($this->client->message(
+            feature: 'draft_lead_stall_followup',
             prompt: implode("\n", $lines),
             system: $system,
         ));

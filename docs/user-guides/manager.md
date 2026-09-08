@@ -376,6 +376,25 @@ Admin/Manager only:
   on, so it may not show yet for a newer pipeline; there's no suggestion for
   the financial-year target.
 
+## Stalling
+Sidebar → **Stalling** (under Sales Pipeline) — every lead and deal anyone has
+tagged with a **"Stalling on:"** reason (Budget, Went with a competitor,
+Trust/credibility, Didn't understand the offer, Awaiting their decision),
+across the whole team, sorted most-quiet-first with a badge once one has
+gone 3+ days untouched. A **counts-by-reason** tile row above the table
+gives a one-glance read on what's actually blocking deals company-wide —
+e.g. if Budget dominates, that's worth raising with the team directly
+rather than case-by-case. Each row links straight to the lead or deal.
+Sales/Telecaller each see only their own tagged list on this same page
+(see their guides); you see everyone's.
+
+Tagging feeds two other places automatically: the "what to do next" popup
+brings a stalled, untouched-3+-day lead/deal back up by name for whoever
+owns it, and a tagged lead or deal that then goes 7 days with no note,
+call, or edit gets an AI-drafted, objection-aware check-in (e.g. a Budget
+tag gets an offer to discuss a staged plan) — a bell notification tells
+the owner it's ready to review and send.
+
 ## Team Targets
 Sidebar → **Team Targets** — the same target-vs-actual mechanism as the Sales
 Dashboard's rep leaderboard, generalized to the 4 other roles. Each role has
