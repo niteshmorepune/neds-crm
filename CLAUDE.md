@@ -1741,3 +1741,27 @@ Record every "we chose X because Y" here — this is the project's memory.
   the list badge, all rendered correctly → cleaned up the SMOKETEST
   data), not just Pest — local dev had zero pre-existing lead call
   history to exercise this against otherwise.
+- **2026-09-08 (same day) — Best Time to Call gained a third signal: the
+  lead's own capture time, for sources where that timestamp reflects the
+  prospect's own action.** After the milestone above shipped, the owner
+  asked whether the moment a lead was captured in the CRM had been
+  considered as a timing signal — it hadn't. Real signal, but not a
+  universal one: for `Website`/`Whatsapp`/`MetaAds`/`PhoneEnquiry`, the
+  creation timestamp is the prospect's own action (filled a form,
+  messaged, called in); for `ColdCall` (and `Referral`/`Other`), it just
+  reflects when a staffer entered the record, which would be a misleading
+  signal to trust. New `LeadSource::isProspectInitiated()` draws that
+  line. For a lead with zero call attempts of its own — today's weakest
+  case, previously just the generic team-wide band — the capture hour now
+  takes over as the *sole* recommendation rather than being diluted into
+  a wide multi-hour band, since it's a far more specific personal signal.
+  Once the lead has real call history, it folds in as one more candidate
+  hour alongside the global band, subject to the same already-failed-
+  twice exclusion as every other hour. Existing tests all built leads via
+  `Lead::factory()` with a random `LeadSource` (the factory's own
+  default) — updated every pre-existing `LeadCallTimingAdvisorTest`/
+  `MyDayTest` case that asserts exact recommended-hour text to pin
+  `source: ColdCall`, so the new signal can't intermittently change an
+  assertion depending on which source faker happened to roll; 5 new tests
+  cover the capture-hour behavior itself. Full suite 3147 green (same one
+  pre-existing `MeetingRequestTest` flake), Pint clean.
