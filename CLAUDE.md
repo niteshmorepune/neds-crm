@@ -1874,3 +1874,63 @@ Record every "we chose X because Y" here — this is the project's memory.
   after deploy instead. `docs/user-guides/manager.md` updated (only
   `manager.pdf` regenerated — this report is Admin/Manager-only, no other
   guide references its content).
+- **2026-09-08 (same day) — Closure-guidance Phase 1+2: a rep-set
+  `stall_reason` tag on Lead/Deal, plus a Next Action banner source that
+  brings a stalling one back up by name.** Owner asked how the CRM could
+  guide Sales/Telecaller toward closure "on the move," not just report on
+  it. Proposed a 4-phase plan grounded directly in the same-day VA Funnel
+  diagnosis (every one of that report's 9 leads had real call history —
+  the gap wasn't follow-up volume, it was six nameable objections that
+  took an hour of manual reading to surface) and confirmed scope via
+  AskUserQuestion before writing code: tag applies to both Lead and Deal
+  (not Lead-only — the VA data showed real stalling on both sides of
+  conversion), the missing-follow-up-date nudge is a soft prompt (not a
+  hard block — sometimes there genuinely isn't a next step yet), and
+  Phase 1+2 ship together (Phase 2's banner source is worthless without
+  Phase 1's data).
+  New `App\Enums\StallReason` (Budget/Competitor/Trust/Confused/
+  AwaitingDecision — a bounded registry, not free text, so it stays
+  aggregatable later) plus `leads.stall_reason`/`deals.stall_reason`
+  columns. Tagged via a one-click dropdown (`x-stall-reason-picker`,
+  plain onchange-submit, no Alpine needed) on the Lead/Deal's own page
+  (Deal: hidden once Won/Lost — nothing to stall on once closed), and
+  optionally from the Log a Call form itself when a Lead is preselected
+  (mirrors the existing `<livewire:call-brief>` gating condition) —
+  deliberately **never** clears an existing tag when left blank there,
+  only when the dedicated picker's own "— Not stalling —" option is
+  explicitly chosen, so an incidental field on a different form can't
+  silently erase deliberate state. The same call form also gained a soft,
+  non-blocking amber nudge when a Connected outcome has no follow-up date
+  — the #1 pattern the VA report found ("I'll check it and let you
+  know" → 3 unanswered calls).
+  New `App\Services\NextAction\ObjectionFollowUpDueSource` (Phase 2),
+  registered in `NextActionEngine::SOURCES` right after
+  `CallFollowUpDueSource` — same no-role-gate reasoning (a Lead's
+  owner_id OR telecaller_id both count; a Deal's owner_id only, Deals
+  being Sales/Manager territory) and deliberately outranking every
+  role's own "call a fresh lead" source below it: a real conversation
+  that's stalling is a hotter use of the next few minutes than cold
+  volume nobody's spoken to yet, which is the whole thesis the VA
+  diagnosis was built on. Picks the single most-stale candidate across
+  both Leads and Deals (3+ days since the last CallLog/Note touch),
+  names the objection directly in the banner title instead of a generic
+  "follow up" nudge.
+  **Real bug caught by the new tests themselves before shipping**:
+  `Lead::query()->get()->map()` into plain arrays is still an
+  `Eloquent\Collection`, whose own
+  `merge()`/`sortBy()` assume model items (`$item->getKey()`) — calling
+  `->merge()` on the Lead and Deal candidate arrays threw
+  "Call to a member function getKey() on array" until each candidate
+  method explicitly downgraded to a base `Support\Collection` via
+  `->pipe(fn ($mapped) => collect($mapped->all()))`.
+  22 new Pest tests (`ObjectionFollowUpDueSourceTest` + `StallReasonTest`
+  covering both controllers, both pickers, the call-form wiring, and the
+  soft nudge), full suite 3183 green (same one pre-existing
+  `MeetingRequestTest` flake), Pint clean, migrated + smoke-tested
+  end-to-end against real local MySQL (tagged a real lead, backdated a
+  real call, confirmed `NextActionEngine::nextFor()` actually surfaced
+  the new prompt with the right title/body/link, not just that pages
+  rendered without erroring). Docs updated: `sales.md`, `telecaller.md`.
+  Phases 3 (a generalized "stalling" recovery view + reporting rollup)
+  and 4 (an on-demand AI "suggest how to move this forward" button) are
+  deliberately not built yet — see [[backlog]].

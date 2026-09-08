@@ -299,6 +299,20 @@ your "follow-ups due" list — same list, no separate place to look.
   (Section 1) prompts you with it the moment it's due — whatever you
   typed as the next action, with a **Log the call** button pre-filled for
   that lead. This applies to any client call too, not just leads.
+  If you logged a Connected call with no follow-up date, a small amber
+  note reminds you before you save (not a hard stop — you can still save
+  without one if there genuinely isn't a next step yet).
+- **Stalling on something?** Both the lead's own page and the Log a Call
+  form (when logging against a lead) have a **"Stalling on:"** dropdown —
+  Budget, Went with a competitor, Trust/credibility, Didn't understand the
+  offer, or Awaiting their decision. Tag it the moment you notice a real
+  conversation has stopped moving forward. Once tagged, if you don't touch
+  that lead again for 3 days, the "what to do next" popup brings it back
+  up by name — "Budget / financial constraint: [name]" — instead of a
+  generic reminder. Leaving the dropdown on the call form blank never
+  clears a tag you've already set from the lead's own page — you have to
+  pick "— Not stalling —" there explicitly to clear it. The same tagging
+  is available on an open **Deal** page too (not once it's Won or Lost).
 - On the Notes field, click **Dictate** and speak instead of typing — your
   browser transcribes it live into the box, and you can still edit before
   saving. (Chrome/Edge only; the button doesn't appear in browsers that

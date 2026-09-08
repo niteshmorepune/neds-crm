@@ -66,6 +66,12 @@
                     </div>
                 </dl>
 
+                @if ($canManage && ! $deal->stage->isTerminal())
+                    <div class="mt-3">
+                        <x-stall-reason-picker :record="$deal" update-route="deals.stall-reason.update" :reasons="$stallReasons" />
+                    </div>
+                @endif
+
                 <div class="mt-6 border-t border-gray-100 pt-6">
                     <div class="flex items-center justify-between mb-4">
                         <h2 class="text-base font-semibold text-gray-900">Quotations</h2>

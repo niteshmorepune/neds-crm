@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Enums\CallDirection;
 use App\Enums\CallOutcome;
+use App\Enums\StallReason;
 use App\Services\MenuResolver;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -31,6 +32,9 @@ class CallLogStoreRequest extends FormRequest
             'called_at' => ['required', 'date'],
             'next_action' => ['nullable', 'string', 'max:255'],
             'follow_up_at' => ['nullable', 'date'],
+            // Only meaningful (and only shown) alongside lead_id -- see
+            // CallLogController::store()'s own handling.
+            'stall_reason' => ['nullable', Rule::enum(StallReason::class)],
             'voice_note' => ['nullable', 'file', 'max:10240', 'mimetypes:audio/webm,audio/ogg,audio/wav,audio/mp4,audio/mpeg'],
         ];
     }

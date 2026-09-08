@@ -120,6 +120,19 @@
             @if ($selectedLead || $selectedCustomer)
                 <livewire:call-brief :lead-id="$selectedLead" :customer-id="$selectedCustomer" />
             @endif
+
+            @if ($selectedLead)
+                <div class="md:col-span-2 rounded-md border border-gray-200 p-3">
+                    <x-input-label for="stall_reason" value="Stalling on? (only if this lead has real history but isn't moving forward)" />
+                    <select id="stall_reason" name="stall_reason" class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm">
+                        <option value="">— Leave as-is —</option>
+                        @foreach ($stallReasons as $reason)
+                            <option value="{{ $reason->value }}" @selected(old('stall_reason') === $reason->value)>{{ $reason->label() }}</option>
+                        @endforeach
+                    </select>
+                    <p class="mt-1 text-xs text-gray-400">Only updates the lead if you pick one — leaving this blank never clears an existing tag.</p>
+                </div>
+            @endif
             <div>
                 <x-input-label for="customer_id" value="Client" />
                 <select id="customer_id" name="customer_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
@@ -234,6 +247,11 @@
                         <x-input-error :messages="$errors->get('next_action')" class="mt-1" />
                     </div>
                 </div>
+            </div>
+
+            <div x-show="outcome === 'connected' && !followUpAt" x-cloak
+                 class="md:col-span-2 rounded-md bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-700">
+                No follow-up date set — if you agreed on a next step with the client, consider adding one above so it doesn't quietly slip. You can still save without it.
             </div>
 
             <div class="md:col-span-2 flex items-center justify-end gap-3">

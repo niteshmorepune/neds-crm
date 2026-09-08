@@ -13,6 +13,7 @@ use App\Services\NextAction\DraftInvoiceUnsentSource;
 use App\Services\NextAction\LunchHourWadeskAiSource;
 use App\Services\NextAction\ManagerActionCenterAttentionSource;
 use App\Services\NextAction\MeetingStartingSoonSource;
+use App\Services\NextAction\ObjectionFollowUpDueSource;
 use App\Services\NextAction\OverdueInvoiceFollowUpSource;
 use App\Services\NextAction\QuotationAcceptedNotConvertedSource;
 use App\Services\NextAction\QuotationFollowUpSource;
@@ -37,7 +38,14 @@ use App\Support\NextAction;
  * CallFollowUpDue — no role gate (CallLog.follow_up_at has none either),
  * since it's the same kind of self-committed, specific-time promise as a
  * meeting, just one you set for yourself rather than one someone else
- * scheduled. Then DailyReportReminder and CheckOutReminder — both gated to only ever
+ * scheduled. Then ObjectionFollowUpDue (Phase 2 of the 2026-09-08
+ * closure-guidance plan) — also no role gate, matching CallFollowUpDue's
+ * own reasoning: a Lead/Deal someone tagged with a stall reason and hasn't
+ * touched in 3 days ranks above every role-specific "call a fresh lead"
+ * source below, since a real conversation that's stalling is a hotter use
+ * of the next few minutes than cold volume nobody's spoken to yet — the
+ * whole point of the VA Funnel diagnosis that motivated this phase. Then
+ * DailyReportReminder and CheckOutReminder — both gated to only ever
  * apply after 6pm (office hours end, confirmed with the owner), so they
  * never affect daytime behavior at all, but once evening genuinely
  * arrives they deliberately outrank everything below them (confirmed
@@ -85,6 +93,7 @@ class NextActionEngine
         AttendanceCheckInSource::class,
         MeetingStartingSoonSource::class,
         CallFollowUpDueSource::class,
+        ObjectionFollowUpDueSource::class,
         DailyReportReminderSource::class,
         CheckOutReminderSource::class,
         LunchHourWadeskAiSource::class,

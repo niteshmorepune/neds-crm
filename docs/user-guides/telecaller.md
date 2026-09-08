@@ -154,7 +154,18 @@ The moment a follow-up you set becomes due, the "what to do next" popup
 (see Section 2 above) prompts you with it — whatever you typed in as the
 next action, and a **Log the call** button that jumps straight to the form
 pre-filled for that lead. Snooze it — 30 min, 2 hours, or tomorrow — if
-you're not ready yet.
+you're not ready yet. Logging a Connected call with no follow-up date
+shows a small amber reminder before you save — not a hard stop, just a
+nudge in case you meant to set one.
+
+**Stalling on something?** A lead's own page, and the Log a Call form
+when a lead is selected, both have a **"Stalling on:"** dropdown — Budget,
+Went with a competitor, Trust/credibility, Didn't understand the offer, or
+Awaiting their decision. Tag it the moment a real conversation stops
+moving forward. If nobody touches that lead again for 3 days, the "what
+to do next" popup brings it back up by name instead of a generic
+reminder. Leaving the dropdown blank on the call form never clears a tag
+already set on the lead's own page.
 
 ## 5. Daily report
 At the end of each working day, open **Daily Reports** and fill in a brief
