@@ -130,9 +130,14 @@ lead (when, and what happened), plus a recommended hour band for your next
 try. Any hour already tried twice with no answer is left out of the
 recommendation; if every usually-good hour has already failed for this
 particular lead, it says so rather than repeating a suggestion that hasn't
-worked. The same recommendation shows as a short **"Try: …"** badge right
-on the Lead Generation list and in My Day, so you know before you even
-open the lead.
+worked. A brand-new lead with no calls yet, from Website/WhatsApp/Meta
+Ads/Phone Enquiry, instead gets a suggestion built around **the actual
+time they reached out** — more specific than the general team pattern,
+since that's a real signal about when this particular person is around
+(a Cold Call lead doesn't get this — that timestamp is just data entry,
+not the prospect's own timing). The same recommendation shows as a short
+**"Try: …"** badge right on the Lead Generation list and in My Day, so
+you know before you even open the lead.
 
 The moment a follow-up you set becomes due, the "what to do next" popup
 (see Section 2 above) prompts you with it — whatever you typed in as the

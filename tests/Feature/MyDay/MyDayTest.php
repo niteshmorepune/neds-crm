@@ -3,6 +3,7 @@
 use App\Enums\CallDirection;
 use App\Enums\CallOutcome;
 use App\Enums\DealStage;
+use App\Enums\LeadSource;
 use App\Enums\LeadStatus;
 use App\Enums\TaskStatus;
 use App\Enums\TicketPriority;
@@ -122,11 +123,14 @@ it('renders the My Day page for the logged-in user showing only their own items'
 
 it('appends a call-timing badge to an overdue lead follow-up', function () {
     myDaySeedBestHour(9);
+    // Cold Call: source is not prospect-initiated, so this doesn't also
+    // trigger the separate capture-hour signal and shift the badge text.
     $lead = Lead::factory()->create([
         'owner_id' => $this->user->id,
         'next_follow_up_at' => now()->subDay(),
         'status' => LeadStatus::New,
         'company' => 'Acme Co',
+        'source' => LeadSource::ColdCall,
     ]);
 
     $item = $this->service->worklist($this->user)->firstWhere('type', 'lead');
@@ -136,7 +140,7 @@ it('appends a call-timing badge to an overdue lead follow-up', function () {
 
 it('appends a call-timing badge to a due call follow-up against a lead', function () {
     myDaySeedBestHour(9);
-    $lead = Lead::factory()->create(['owner_id' => $this->user->id]);
+    $lead = Lead::factory()->create(['owner_id' => $this->user->id, 'source' => LeadSource::ColdCall]);
     CallLog::factory()->create([
         'user_id' => $this->user->id,
         'callable_type' => Lead::class,

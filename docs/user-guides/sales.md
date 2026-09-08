@@ -285,9 +285,15 @@ your "follow-ups due" list — same list, no separate place to look.
   An hour already tried twice against this lead with no answer is dropped
   from the recommendation (a real connect there just isn't shown yet — if
   every good hour has already failed, it tells you that honestly instead
-  of pretending there's a better option). A compact **"Try: …"** badge
-  shows the same thing on the Lead Generation list and in My Day, so you
-  see it before you even open the lead.
+  of pretending there's a better option). For a lead that hasn't had any
+  calls logged yet, and came in via Website, WhatsApp, Meta Ads, or Phone
+  Enquiry, the recommendation is instead built around **when they
+  themselves reached out** — a much more specific hint than the team's
+  general pattern for a lead nobody's called yet (Cold Call leads don't
+  get this, since that timestamp is just when someone entered the record,
+  not when the prospect was actually available). A compact **"Try: …"**
+  badge shows the same thing on the Lead Generation list and in My Day,
+  so you see it before you even open the lead.
   If you set a **follow-up date** on the call itself (separate from a
   lead's own "follow-up due" field above), the "what to do next" popup
   (Section 1) prompts you with it the moment it's due — whatever you
