@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Enums\CallDirection;
 use App\Enums\CallOutcome;
+use App\Enums\LeadGoal;
 use App\Enums\StallReason;
 use App\Services\MenuResolver;
 use Illuminate\Foundation\Http\FormRequest;
@@ -35,6 +36,9 @@ class CallLogStoreRequest extends FormRequest
             // Only meaningful (and only shown) alongside lead_id -- see
             // CallLogController::store()'s own handling.
             'stall_reason' => ['nullable', Rule::enum(StallReason::class)],
+            'goal' => ['nullable', Rule::enum(LeadGoal::class)],
+            'website_url' => ['nullable', 'url', 'max:2048'],
+            'gbp_url' => ['nullable', 'url', 'max:2048'],
             'voice_note' => ['nullable', 'file', 'max:10240', 'mimetypes:audio/webm,audio/ogg,audio/wav,audio/mp4,audio/mpeg'],
         ];
     }

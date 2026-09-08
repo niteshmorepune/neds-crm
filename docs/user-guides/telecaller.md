@@ -172,6 +172,19 @@ call, or edit from you, AI drafts a check-in addressing that specific
 reason (e.g. Budget gets an offer to discuss a staged plan) and notifies
 you — review and send it yourself, same as any other AI draft.
 
+**Their goal, and their Website/GBP link:** a lead's own page and the Log a
+Call form both have a **"What's their biggest goal?"** picker — Generate
+More Leads, Rank Higher on Google, Grow My Business Online, or Not Sure –
+Need Expert Advice. Ask this on the call and set it — a Meta Ads lead may
+already have it pre-filled from their form answer. If they pick one of the
+first three, ask for their **Website URL** or **Google Business Profile
+link** on the same or next call and save it right there (a blue note on
+the lead reminds you until one's captured). If they pick **Not Sure**, a
+purple note tells you to hand them off for a call with a **Sales Expert**
+— use **Create Meeting** on the lead's page to schedule it. Leaving the
+goal/link fields blank on the Log a Call form never clears what's already
+saved — same rule as Stalling on.
+
 ## 5. Daily report
 At the end of each working day, open **Daily Reports** and fill in a brief
 summary of your day. Some numbers (calls made) are filled in automatically.

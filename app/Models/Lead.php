@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\CallOutcome;
 use App\Enums\DealStage;
 use App\Enums\LeadBudgetBand;
+use App\Enums\LeadGoal;
 use App\Enums\LeadSource;
 use App\Enums\LeadStatus;
 use App\Enums\LeadUrgency;
@@ -38,6 +39,9 @@ class Lead extends Model
         'email',
         'source',
         'service_id',
+        'goal',
+        'website_url',
+        'gbp_url',
         'estimated_value',
         'owner_id',
         'telecaller_id',
@@ -80,6 +84,7 @@ class Lead extends Model
             'source' => LeadSource::class,
             'status' => LeadStatus::class,
             'stall_reason' => StallReason::class,
+            'goal' => LeadGoal::class,
             'service_id' => 'integer',
             'estimated_value' => 'integer',
             'next_follow_up_at' => 'datetime',
