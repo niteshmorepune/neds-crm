@@ -38,6 +38,7 @@ class MenuItemsSeeder extends Seeder
             ['key' => 'lead-generation',  'label' => 'Lead Generation',  'group' => MenuGroup::SalesPipeline,   'route' => 'leads.index',      'icon' => 'funnel',     'roles' => [UserRole::Manager, UserRole::Sales, UserRole::Telecaller]],
             ['key' => 'sales-department', 'label' => 'Sales Pipeline',  'group' => MenuGroup::SalesPipeline,  'route' => 'deals.index',      'icon' => 'trending',   'roles' => [UserRole::Manager, UserRole::Sales]],
             ['key' => 'sales-dashboard',  'label' => 'Sales Dashboard',  'group' => MenuGroup::SalesPipeline,   'route' => 'sales-dashboard.index', 'icon' => 'chart-bar', 'roles' => [UserRole::Manager, UserRole::Sales]],
+            ['key' => 'stalling',         'label' => 'Stalling',         'group' => MenuGroup::SalesPipeline,   'route' => 'stalling.index',   'icon' => 'exclamation-triangle', 'roles' => [UserRole::Manager, UserRole::Sales, UserRole::Telecaller]],
             ['key' => 'quotations',       'label' => 'Quotations',       'group' => MenuGroup::SalesPipeline,   'route' => 'quotations.index', 'icon' => 'document',   'roles' => [UserRole::Manager, UserRole::Sales, UserRole::Accounts]],
             ['key' => 'customer',         'label' => 'Clients',          'group' => MenuGroup::SalesPipeline,   'route' => 'clients.index',    'icon' => 'users',      'roles' => [UserRole::Manager, UserRole::Sales, UserRole::Support, UserRole::Accounts, UserRole::Intern]],
             // "important-links" is a daily reference tool used by everyone,

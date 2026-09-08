@@ -313,6 +313,22 @@ your "follow-ups due" list — same list, no separate place to look.
   clears a tag you've already set from the lead's own page — you have to
   pick "— Not stalling —" there explicitly to clear it. The same tagging
   is available on an open **Deal** page too (not once it's Won or Lost).
+  **Sidebar → Stalling** lists every lead and deal you've tagged, sorted
+  most-quiet-first, with a badge if it's gone 3+ days untouched — one
+  place to see your whole "stuck" list instead of hunting through Lead
+  Generation and the Pipeline board separately. Admin/Manager also see the
+  whole team's tagged leads/deals here, plus a count-by-reason breakdown
+  (e.g. how many are stuck on Budget vs. Trust across everyone).
+  **If a tagged lead goes quiet, AI drafts a check-in for you** — a lead
+  tagged Stalling that then gets no note, call, or edit for 7 days gets an
+  AI-drafted check-in addressing that specific objection (e.g. a Budget tag
+  gets a message offering a staged/installment plan, Trust gets an offer to
+  share a reference or case study) — a bell notification tells you it's
+  ready, same review-and-send-yourself pattern as everywhere else AI drafts
+  something. This is separate from the plain 1/3/7-day nurture sequence for
+  an untagged New lead (described above) — tagging a lead Stalling doesn't
+  stop that sequence, it adds this objection-aware one on top once the tag
+  is set.
 - On the Notes field, click **Dictate** and speak instead of typing — your
   browser transcribes it live into the box, and you can still edit before
   saving. (Chrome/Edge only; the button doesn't appear in browsers that
@@ -451,7 +467,11 @@ on **Sales Dashboard** — see 2a below.
   — a bell notification tells you it's ready. It's a staff-only draft, same
   as everywhere else: you review and send it yourself, nothing goes out on
   its own. This can happen more than once on the same deal — work it, go
-  quiet again for a week, get another draft.
+  quiet again for a week, get another draft. **If the deal is tagged
+  "Stalling on:"** (see Section 1 above — the same dropdown is on a deal's
+  own page), the draft directly addresses that objection instead of a
+  generic check-in — a Trust tag gets an offer to share a reference, a
+  Budget tag gets an offer to discuss a staged plan, and so on.
 
 **Stale-deal badge** — each card shows how many days it's been sitting in its
 current stage, turning red past 10 days. A red badge is a nudge to follow up

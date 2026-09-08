@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\StallReason;
 use App\Enums\UserRole;
 use App\Jobs\DraftDealStallFollowUp;
 use App\Models\Activity;
@@ -113,6 +114,21 @@ it('grounds the draft in the deal\'s own notes, with no call-history section', f
         return str_contains($prompt, 'Deal: GMB retainer')
             && str_contains($prompt, 'Sent pricing on the 3rd.')
             && ! str_contains($prompt, 'Call (');
+    });
+});
+
+it('names the tagged stall reason in the prompt when one is set (Phase 4 of closure-guidance)', function () {
+    $owner = User::factory()->role(UserRole::Sales)->create();
+    $deal = Deal::factory()->ownedBy($owner->id)->create(['title' => 'GMB retainer', 'stall_reason' => StallReason::Trust]);
+    aiOnForDealStall();
+    fakeDealStallText('Happy to share a reference from a similar client.');
+
+    DraftDealStallFollowUp::dispatchSync($deal->id);
+
+    Http::assertSent(function ($request) {
+        $prompt = json_decode($request->body(), true)['messages'][0]['content'];
+
+        return str_contains($prompt, 'Known reason this has stalled: Trust / credibility concern');
     });
 });
 

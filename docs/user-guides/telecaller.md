@@ -165,7 +165,12 @@ Awaiting their decision. Tag it the moment a real conversation stops
 moving forward. If nobody touches that lead again for 3 days, the "what
 to do next" popup brings it back up by name instead of a generic
 reminder. Leaving the dropdown blank on the call form never clears a tag
-already set on the lead's own page.
+already set on the lead's own page. **Sidebar → Stalling** lists every
+lead you've tagged this way, most-quiet-first — a single place to see
+your whole "stuck" list. If a tagged lead then goes 7 days with no note,
+call, or edit from you, AI drafts a check-in addressing that specific
+reason (e.g. Budget gets an offer to discuss a staged plan) and notifies
+you — review and send it yourself, same as any other AI draft.
 
 ## 5. Daily report
 At the end of each working day, open **Daily Reports** and fill in a brief

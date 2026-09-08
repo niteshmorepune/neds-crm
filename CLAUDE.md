@@ -1934,3 +1934,95 @@ Record every "we chose X because Y" here — this is the project's memory.
   Phases 3 (a generalized "stalling" recovery view + reporting rollup)
   and 4 (an on-demand AI "suggest how to move this forward" button) are
   deliberately not built yet — see [[backlog]].
+- **2026-09-08 (same day) — Closure-guidance Phase 3+4: a team-wide
+  Stalling page, plus proactive AI check-ins that name the objection.**
+  Owner confirmed "Now Phase 3 and Phase 4" right after Phase 1+2 shipped.
+  New `App\Services\StallReasonMetrics` (`stallingLeads()`/
+  `stallingDeals()`/`all()`/`countsByReason()`, each scoped by owner_id OR
+  telecaller_id for a Lead, owner_id for a Deal, or unscoped for the whole
+  team) hit the exact same `Eloquent\Collection::map()`-into-plain-arrays
+  bug as `ObjectionFollowUpDueSource` did in Phase 2 — the same
+  `->pipe(fn ($mapped) => collect($mapped->all()))` fix applied again,
+  worth noting as a real recurring gotcha in this codebase, not a
+  one-off. New **Stalling** page (`stalling.index`, `App\Http\Controllers\
+  StallingController`, no dedicated Policy class — same
+  menu.access-middleware-only convention as Client Radar/Festivals) shows
+  a rep's own tagged leads/deals, most-stale-first; Admin/Manager
+  additionally see the whole team's plus a count-by-reason breakdown. New
+  sidebar item under the existing Sales Pipeline group, visible to
+  Manager/Sales/Telecaller.
+  **Real bug found mid-build, not shipped in Phase 1+2**: tagging a
+  Lead/Deal with `stall_reason` fires a normal `updated` Activity log
+  entry via the `LogsActivity` trait, and since `lastTouchedAt()` (which
+  both `ObjectionFollowUpDueSource` and the new proactive-drafting job
+  below read to decide staleness) includes `activities()->max
+  ('created_at')`, the act of tagging something as stalling was itself
+  read as "just touched" — silently resetting its own staleness clock and
+  making the whole closure-guidance mechanism inert the moment a rep used
+  it. Fixed with a new `$activityExcept = ['stall_reason']` on `Deal`
+  (didn't have this property before — created fresh) and added to
+  `Lead`'s existing one — `LogsActivity`'s `updated` handler already skips
+  logging entirely once all changed fields are excluded, so a
+  stall_reason-only edit now logs nothing, matching how `ai_score`/etc.
+  were already excluded on Lead for the same reason.
+  **Test-writing rediscovered an existing, already-documented gotcha
+  rather than a new bug**: `LogsActivity`'s `created` hook always inserts
+  its Activity row at real wall-clock "now," ignoring any backdated
+  `created_at` passed to the parent model — a test fixture needs both
+  backdated to simulate a genuinely old, quiet record. This exact
+  behavior was already captured in `DraftDealStallFollowUpsCommandTest`'s
+  own `backdatedDeal()` helper (with its own comment pointing at
+  [[feedback-gotchas]]), found only after independently hitting and
+  re-diagnosing the identical symptom while writing this phase's own
+  tests — a reminder to grep for prior art in sibling test files before
+  re-solving a fixture problem from scratch.
+  **Phase 4 reframed after discovering existing infrastructure**: rather
+  than building a new on-demand "suggest next move" button (the original
+  plan), found `App\Jobs\DraftDealStallFollowUp` /
+  `App\Console\Commands\DraftDealStallFollowUps` /
+  `App\Notifications\DealStallFollowUpDrafted` already shipped in an
+  earlier milestone — a scheduled command that finds quiet open deals and
+  has AI draft a staff-only check-in note automatically. This is a
+  strictly better match for the owner's "on the move" framing (a draft
+  waiting for you beats a button you have to remember to click), so Phase
+  4 became: (1) make the existing Deal job objection-aware — when
+  `stall_reason` is tagged, `AiAssistant::draftDealStallFollowUp()`'s
+  prompt names it directly and the system prompt switches to
+  objection-specific guidance (Budget → offer a staged/installment plan,
+  Trust → offer a reference or case study, Confused → offer a call) — and
+  (2) build the missing Lead-side counterpart from scratch: new
+  `App\Jobs\DraftLeadStallFollowUp` / `App\Console\Commands\
+  DraftLeadStallFollowUps` (`app:draft-lead-stall-followups`, scheduled
+  daily 10:40 IST, right after the existing deal job) /
+  `App\Notifications\LeadStallFollowUpDrafted` / `AiAssistant::
+  draftLeadStallFollowUp()`, mirroring the Deal versions field-for-field.
+  **Deliberate divergence from the Deal command, documented in the new
+  command's own docblock**: `DraftDealStallFollowUps` fires for *any*
+  quiet open deal, tagged or not; `DraftLeadStallFollowUps` only fires for
+  a Lead already tagged with `stall_reason` — justified by Leads being far
+  higher volume than Deals (an untagged-quiet-lead-drafting job at Lead
+  scale would be much noisier) and by keeping the mechanism's promise
+  consistent app-wide ("tag it, and the system helps you — don't tag it,
+  nothing fires automatically"). The pre-existing Deal command's
+  unconditional trigger was deliberately left as-is rather than
+  retrofitted to be tag-gated too, since that would be a behavior change
+  to already-shipped automation outside this milestone's scope.
+  32 new/updated Pest tests (`StallReasonMetricsTest`,
+  `StallingControllerTest`, `DraftLeadStallFollowUpJobTest`,
+  `DraftLeadStallFollowUpsCommandTest`, plus one new assertion on the
+  existing `DraftDealStallFollowUpJobTest` confirming the tagged reason
+  actually reaches the AI prompt), full suite green, Pint clean. Migrated
+  against local MySQL (no new schema — Phase 1+2's two migrations already
+  covered `stall_reason` on both tables), `MenuItemsSeeder` re-seeded
+  locally for the new sidebar item, smoke-tested end-to-end via curl
+  (throwaway SMOKETEST Sales + Manager users, a tagged-and-backdated
+  lead — confirmed the Sales view shows the lead with no team section,
+  the Manager view shows both the lead and the team/reason-breakdown
+  sections, then deleted all three), and `schedule:list` confirmed the
+  new `app:draft-lead-stall-followups` entry registered correctly.
+  Docs: `sales.md`/`telecaller.md` extended (the existing "Stalling on:"
+  bullet now also covers the new Stalling page and the objection-aware
+  AI check-in), `manager.md` got a new "Stalling" section for the
+  team-wide view; `sales.pdf`/`telecaller.pdf`/`manager.pdf` regenerated,
+  the other unaffected handouts discarded per the established
+  PDF-isn't-byte-stable gotcha.

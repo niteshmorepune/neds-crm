@@ -59,6 +59,7 @@ use App\Http\Controllers\SalesTargetController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\ServiceAssignmentController;
 use App\Http\Controllers\ServiceController;
+use App\Http\Controllers\StallingController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TeamNudgeController;
@@ -630,6 +631,16 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
      */
     Route::middleware('menu.access:client-radar')->group(function () {
         Route::get('client-radar', [ClientRadarController::class, 'index'])->name('client-radar.index');
+    });
+
+    /*
+     * Stalling — Phase 3 of the closure-guidance plan. Own book for anyone
+     * with menu.access:stalling; Admin/Manager additionally see the whole
+     * team + the reason breakdown (gated inline in the controller, no
+     * dedicated Policy class, same convention as Client Radar/Festivals).
+     */
+    Route::middleware('menu.access:stalling')->group(function () {
+        Route::get('stalling', [StallingController::class, 'index'])->name('stalling.index');
     });
 
     /*

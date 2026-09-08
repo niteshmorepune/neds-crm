@@ -53,6 +53,13 @@ Schedule::command('app:draft-deal-stall-followups')
     ->dailyAt('10:35')
     ->timezone('Asia/Kolkata');
 
+// Lead-side counterpart, Phase 4 of the 2026-09-08 closure-guidance plan --
+// unlike the deal job above, only fires for a lead explicitly tagged with a
+// stall_reason (see the command's own docblock for why).
+Schedule::command('app:draft-lead-stall-followups')
+    ->dailyAt('10:40')
+    ->timezone('Asia/Kolkata');
+
 // Billing schedule (India time): generate recurring invoices, flag overdue,
 // then send payment reminders. Recurring invoice reminders go out at 09:00 IST
 // on days 7, 5, 3, and 1 before the next billing date (alternate days in that window).
