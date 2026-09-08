@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\LeadGoal;
 use App\Enums\LeadSource;
 use App\Enums\LeadStatus;
 use App\Enums\UserRole;
@@ -174,15 +175,23 @@ it('does not flag a fresh Meta lead as "status may need updating" just for its o
     // by Lead::hasStaleNewStatus() identically to a rep's own outreach note
     // — fixed by timing (a note created in the SAME request as the lead is
     // intake data, not later activity), see Lead::INTAKE_NOTE_WINDOW_SECONDS.
+    // "what_is_your_biggest_goal" is now matched into the structured `goal`
+    // column (see matchGoal() tests below), so an unrelated custom question
+    // is included here too, to keep this test's own intake-note-timing
+    // scenario meaningful.
     fakeMetaGraphResponse([
         ['name' => 'full_name', 'values' => ['Raj Kadam']],
         ['name' => 'what_is_your_biggest_goal', 'values' => ['grow_my_business']],
+        ['name' => 'how_did_you_hear_about_us', 'values' => ['Instagram']],
     ]);
 
     ImportMetaLead::dispatchSync('lg-1');
 
     $lead = Lead::where('meta_leadgen_id', 'lg-1')->first();
-    expect($lead->notes()->count())->toBe(1)
+    expect($lead->goal)->toBe(LeadGoal::GrowBusiness)
+        ->and($lead->notes()->count())->toBe(1)
+        ->and($lead->notes()->first()->body)->toContain('how_did_you_hear_about_us: Instagram')
+        ->and($lead->notes()->first()->body)->not->toContain('what_is_your_biggest_goal')
         ->and($lead->hasStaleNewStatus())->toBeFalse();
 });
 
@@ -280,6 +289,79 @@ it('does not mistake an unrelated numeric answer for a budget', function () {
     $lead = Lead::where('meta_leadgen_id', 'lg-1')->first();
     expect($lead->estimated_value)->toBeNull()
         ->and($lead->notes()->first()->body)->toContain('how_many_years_in_business: 5');
+});
+
+it('maps a custom question answer to goal from the option\'s display text', function () {
+    fakeMetaGraphResponse([
+        ['name' => 'what_is_your_biggest_goal', 'values' => ['Rank Higher on Google']],
+    ]);
+
+    ImportMetaLead::dispatchSync('lg-1');
+
+    $lead = Lead::where('meta_leadgen_id', 'lg-1')->first();
+    expect($lead->goal)->toBe(LeadGoal::RankHigher)
+        ->and($lead->notes()->count())->toBe(0);
+});
+
+it('maps a custom question answer to goal from a slugified value', function () {
+    fakeMetaGraphResponse([
+        ['name' => 'what_is_your_biggest_goal', 'values' => ['generate_leads']],
+    ]);
+
+    ImportMetaLead::dispatchSync('lg-1');
+
+    expect(Lead::where('meta_leadgen_id', 'lg-1')->first()->goal)->toBe(LeadGoal::GenerateLeads);
+});
+
+it('maps every goal option correctly', function (string $answer, LeadGoal $expected) {
+    fakeMetaGraphResponse([
+        ['name' => 'what_is_your_biggest_goal', 'values' => [$answer]],
+    ]);
+
+    ImportMetaLead::dispatchSync('lg-1');
+
+    expect(Lead::where('meta_leadgen_id', 'lg-1')->first()->goal)->toBe($expected);
+})->with([
+    'generate more leads' => ['Generate More Leads', LeadGoal::GenerateLeads],
+    'rank higher' => ['Rank Higher on Google', LeadGoal::RankHigher],
+    'grow my business' => ['Grow My Business Online', LeadGoal::GrowBusiness],
+    'not sure' => ['Not Sure – Need Expert Advice', LeadGoal::NotSure],
+]);
+
+it('does not set goal when no custom answer matches a known goal option', function () {
+    fakeMetaGraphResponse([
+        ['name' => 'what_is_your_biggest_goal', 'values' => ['Something else entirely']],
+    ]);
+
+    ImportMetaLead::dispatchSync('lg-1');
+
+    $lead = Lead::where('meta_leadgen_id', 'lg-1')->first();
+    expect($lead->goal)->toBeNull()
+        ->and($lead->notes()->first()->body)->toContain('what_is_your_biggest_goal: Something else entirely');
+});
+
+it('backfills goal on the matched lead only when it does not already have one', function () {
+    $withoutGoal = Lead::factory()->create(['phone' => '9876543210', 'source' => LeadSource::Whatsapp, 'goal' => null]);
+    fakeMetaGraphResponse([
+        ['name' => 'phone_number', 'values' => ['9876543210']],
+        ['name' => 'what_is_your_biggest_goal', 'values' => ['Rank Higher on Google']],
+    ]);
+
+    ImportMetaLead::dispatchSync('lg-1');
+
+    expect($withoutGoal->fresh()->goal)->toBe(LeadGoal::RankHigher);
+});
+
+it('does not overwrite an existing lead\'s goal when matched by phone', function () {
+    $alreadyTagged = Lead::factory()->create(['phone' => '9876543210', 'source' => LeadSource::Whatsapp, 'goal' => LeadGoal::NotSure]);
+    fakeMetaGraphResponse([
+        ['name' => 'phone_number', 'values' => ['9876543210']],
+        ['name' => 'what_is_your_biggest_goal', 'values' => ['Rank Higher on Google']],
+    ]);
+
+    ImportMetaLead::dispatchSync('lg-1');
+
+    expect($alreadyTagged->fresh()->goal)->toBe(LeadGoal::NotSure);
 });
 
 it('does not create a note when there are no unmapped fields', function () {

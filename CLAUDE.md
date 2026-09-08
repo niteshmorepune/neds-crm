@@ -2026,3 +2026,68 @@ Record every "we chose X because Y" here — this is the project's memory.
   team-wide view; `sales.pdf`/`telecaller.pdf`/`manager.pdf` regenerated,
   the other unaffected handouts discarded per the established
   PDF-isn't-byte-stable gotcha.
+- **2026-09-08 (same day) — Lead goal capture + Website/GBP link fields,
+  driven by the real Meta Ads "What is your biggest goal?" form question.**
+  Owner described training telecallers to ask a lead's goal (from the Meta
+  form's 4 options) and, depending on the answer, either capture their
+  Website/GBP link or hand them to a Sales Expert — and wanted the same
+  thing to happen on wadesk. Investigated first, not assumed: this exact
+  question already exists on the real ad form (`what_is_your_biggest_goal`,
+  confirmed via a pre-existing test fixture using the real slugified answer
+  `grow_my_business`) but had zero structured handling — it fell into
+  `ImportMetaLead`'s generic "Additional form answers" note dump like any
+  other unmapped custom question, and there was no Website/GBP field on a
+  Lead at all (that only exists on a Customer, post-conversion, via
+  `client_service_links`). Confirmed 4 scope decisions via AskUserQuestion
+  before building: **goal** is a field any telecaller/sales rep can set on
+  any lead regardless of source (not Meta-only), auto-prefilled when a Meta
+  form answer matches; **budget** reuses the existing `estimated_value`
+  field rather than a new one, since that's already the canonical number
+  driving pipeline/incentive reporting; the "Not Sure" branch reuses the
+  existing **Create Meeting** button already on a lead's page rather than a
+  new "book with Sales Expert" mechanism; and **wadesk is deliberately
+  deferred** — that's a separate repo/app whose AI assistant currently only
+  answers FAQs and asks one generic after-hours discovery question, so
+  teaching it this same goal-question/branching logic is its own follow-up
+  build once the CRM-side workflow is proven, not bundled into this one.
+  New `App\Enums\LeadGoal` (GenerateLeads/RankHigher/GrowBusiness/NotSure,
+  `needsWebsiteOrGbp()` true for the first three) plus nullable
+  `leads.goal`/`website_url`/`gbp_url` columns. `ImportMetaLead::
+  matchGoal()` mirrors `matchServiceId()`/`matchBudget()`'s existing
+  best-effort-parsing shape, normalizing the answer (lowercase, punctuation
+  to spaces) to match either the option's display text ("Grow My Business
+  Online") or a slugified value ("grow_my_business") — both variants are
+  real, since Meta's actual behavior here depends on how the advertiser
+  built the form. **Real bug caught by the new tests, not shipped**: the
+  first version matched on the answer's VALUE alone across every custom
+  question (matchServiceId()'s approach), which false-positived — an
+  unrelated "Not sure yet" answer to a completely different question (which
+  service they want) was being read as the NotSure goal, since "not sure"
+  is common free text, unlike a specific service name. Fixed by requiring
+  the field's KEY to mention "goal" first (matchBudget()'s own restriction,
+  applied here for the same reason).
+  Capture happens in two places, mirroring `stall_reason`'s own established
+  UI pattern exactly: an inline "🎯 What are they looking for?" panel on
+  the lead's own page (new `LeadController::updateGoalCapture()`, a real
+  edit form — blank explicitly clears, unlike the incidental-field case
+  below) and the same fields folded into the Log a Call form when a lead is
+  selected (`CallLogController::store()`, same "only writes what the rep
+  actually filled in, never clears on a blank incidental field" guard
+  `stall_reason` already uses there). Two next-step banners on the lead's
+  own page, driven purely by `goal` + whether a link is already captured:
+  an indigo "🌐 Ask for their Website or GBP link" note once the goal needs
+  one and neither is set yet, or a purple "🎓 They want expert advice" note
+  linking to the page's own Create Meeting section (`leads/show.blade.php`
+  gained `id="meetings"` for the anchor) when NotSure. Deliberately NOT
+  added to `Lead::$activityExcept` (unlike `stall_reason`) — capturing a
+  real goal/link is genuine evidence of contact, so it should refresh
+  `lastTouchedAt()`, not be excluded from it.
+  30 new/updated Pest tests (`LeadGoalCaptureTest` + `ImportMetaLeadJobTest`
+  extended, including a rewrite of the one pre-existing test that used the
+  real `what_is_your_biggest_goal`/`grow_my_business` fixture, since that
+  answer is now correctly extracted instead of landing in a note), full
+  suite green, Pint clean, migrated against local MySQL (no seeder/menu
+  changes — this reuses existing Lead/Call routes and pages, no new
+  sidebar item). Docs: `sales.md`/`telecaller.md` extended (new "Their
+  goal, and their Website/GBP link" bullet in both, plus a one-line update
+  to the existing Meta Ads leads paragraph in `sales.md`).

@@ -132,6 +132,20 @@
                     </select>
                     <p class="mt-1 text-xs text-gray-400">Only updates the lead if you pick one — leaving this blank never clears an existing tag.</p>
                 </div>
+                <div class="md:col-span-2 rounded-md border border-gray-200 p-3">
+                    <x-input-label for="goal" value="What's their biggest goal?" />
+                    <select id="goal" name="goal" class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm">
+                        <option value="">— Leave as-is —</option>
+                        @foreach ($leadGoals as $goal)
+                            <option value="{{ $goal->value }}" @selected(old('goal') === $goal->value)>{{ $goal->label() }}</option>
+                        @endforeach
+                    </select>
+                    <div class="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        <input type="url" name="website_url" value="{{ old('website_url') }}" placeholder="Website URL (if they gave one)" class="block w-full rounded-md border-gray-300 text-sm shadow-sm" />
+                        <input type="url" name="gbp_url" value="{{ old('gbp_url') }}" placeholder="Google Business Profile link (if they gave one)" class="block w-full rounded-md border-gray-300 text-sm shadow-sm" />
+                    </div>
+                    <p class="mt-1 text-xs text-gray-400">Only saved if you fill it in — leaving any of these blank never clears what's already on the lead.</p>
+                </div>
             @endif
             <div>
                 <x-input-label for="customer_id" value="Client" />

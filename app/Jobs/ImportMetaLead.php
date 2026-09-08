@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Enums\LeadGoal;
 use App\Enums\LeadSource;
 use App\Enums\LeadStatus;
 use App\Models\Lead;
@@ -35,9 +36,12 @@ use Illuminate\Support\Facades\Log;
  * Custom form questions beyond the standard fields are opportunistically
  * mapped too, so Meta leads score as well as manually-entered ones: an
  * answer matching an active Service name (exact, case-insensitive) sets
- * service_id, and a "budget"-keyed answer with a parseable number sets
- * estimated_value. Anything that doesn't match either is preserved as a
- * note, same as before. See matchServiceId()/matchBudget().
+ * service_id, a "budget"-keyed answer with a parseable number sets
+ * estimated_value, and an answer matching one of the "What is your biggest
+ * goal?" options (keyword-matched, since Meta may send either the option's
+ * display text or a slugified value like "grow_my_business") sets goal.
+ * Anything that doesn't match any of these is preserved as a note, same as
+ * before. See matchServiceId()/matchBudget()/matchGoal().
  *
  * Also cross-checked against Lead::findOpenByPhone() before creating a new
  * row — Meta's Lead Ad flow auto-sends a WhatsApp message on the
@@ -108,6 +112,7 @@ class ImportMetaLead implements ShouldQueue
         [$fields, $extra] = $this->parseFieldData($response->json('field_data', []));
         [$serviceId, $extra] = $this->matchServiceId($extra);
         [$estimatedValue, $extra] = $this->matchBudget($extra);
+        [$goal, $extra] = $this->matchGoal($extra);
 
         $adId = $response->json('ad_id');
         $formId = $response->json('form_id');
@@ -116,7 +121,7 @@ class ImportMetaLead implements ShouldQueue
         $existingLead = filled($fields['phone']) ? Lead::findOpenByPhone($fields['phone']) : null;
 
         if ($existingLead !== null) {
-            $this->attachToExistingLead($existingLead, $campaignLabel, $serviceId, $estimatedValue, $extra);
+            $this->attachToExistingLead($existingLead, $campaignLabel, $serviceId, $estimatedValue, $goal, $extra);
 
             return;
         }
@@ -129,6 +134,7 @@ class ImportMetaLead implements ShouldQueue
             'source' => LeadSource::MetaAds->value,
             'service_id' => $serviceId,
             'estimated_value' => $estimatedValue,
+            'goal' => $goal?->value,
             'status' => LeadStatus::New->value,
             'owner_id' => null,
             'meta_leadgen_id' => $this->leadgenId,
@@ -159,12 +165,13 @@ class ImportMetaLead implements ShouldQueue
      * alone to avoid Lead Source Performance flip-flopping — that produced
      * a real lead, id 235, genuinely Meta-sourced but permanently mislabeled
      * "WhatsApp" on its own page, with no way to fix it short of a
-     * root-cause correction here.) service_id/estimated_value/utm_campaign
-     * are only backfilled when the existing lead doesn't already have them.
+     * root-cause correction here.) service_id/estimated_value/goal/
+     * utm_campaign are only backfilled when the existing lead doesn't
+     * already have them.
      *
      * @param  array<string, string>  $extra
      */
-    private function attachToExistingLead(Lead $lead, ?string $campaignLabel, ?int $serviceId, ?int $estimatedValue, array $extra): void
+    private function attachToExistingLead(Lead $lead, ?string $campaignLabel, ?int $serviceId, ?int $estimatedValue, ?LeadGoal $goal, array $extra): void
     {
         if ($lead->meta_leadgen_id === null) {
             $lead->update(['meta_leadgen_id' => $this->leadgenId]);
@@ -177,6 +184,7 @@ class ImportMetaLead implements ShouldQueue
             'utm_campaign' => $lead->utm_campaign === null ? $campaignLabel : null,
             'service_id' => $lead->service_id === null ? $serviceId : null,
             'estimated_value' => $lead->estimated_value === null ? $estimatedValue : null,
+            'goal' => $lead->goal === null ? $goal?->value : null,
         ], fn ($v) => $v !== null);
 
         if ($fill !== []) {
@@ -333,5 +341,61 @@ class ImportMetaLead implements ShouldQueue
         }
 
         return [null, $extra];
+    }
+
+    /**
+     * Matches a custom question's answer against the "What is your biggest
+     * goal?" options — only for a field whose KEY mentions "goal" (same
+     * restriction matchBudget() applies to "budget"). Unlike a service name,
+     * a goal option's phrasing ("Not Sure", "Rank Higher") is generic enough
+     * to show up as a plausible-looking free-text answer to a completely
+     * unrelated question, so matching on value alone across every field
+     * (matchServiceId()'s approach) risks a false positive — real bug caught
+     * by this method's own tests before shipping (an unrelated "Not sure
+     * yet" answer to a service question was being misread as the NotSure
+     * goal). The matched value itself may come through as either the
+     * option's display text ("Grow My Business Online") or a slugified
+     * value ("grow_my_business") depending on how the advertiser built the
+     * form — both normalize to the same space-separated lowercase string
+     * this checks a keyword phrase against.
+     *
+     * @param  array<string, string>  $extra
+     * @return array{0: ?LeadGoal, 1: array<string, string>}
+     */
+    private function matchGoal(array $extra): array
+    {
+        // Array keys can't be enum instances, so this is a plain list of
+        // [enum, phrases] pairs rather than an enum-keyed map.
+        $needles = [
+            [LeadGoal::GenerateLeads, ['generate more leads', 'generate leads']],
+            [LeadGoal::RankHigher, ['rank higher']],
+            [LeadGoal::GrowBusiness, ['grow my business', 'grow business']],
+            [LeadGoal::NotSure, ['not sure', 'expert advice']],
+        ];
+
+        foreach ($extra as $key => $value) {
+            if (! str_contains(mb_strtolower($key), 'goal')) {
+                continue;
+            }
+
+            $normalized = $this->normalizeGoalText($value);
+
+            foreach ($needles as [$goal, $phrases]) {
+                foreach ($phrases as $phrase) {
+                    if (str_contains($normalized, $phrase)) {
+                        unset($extra[$key]);
+
+                        return [$goal, $extra];
+                    }
+                }
+            }
+        }
+
+        return [null, $extra];
+    }
+
+    private function normalizeGoalText(string $value): string
+    {
+        return trim(preg_replace('/[^a-z0-9]+/', ' ', mb_strtolower($value)));
     }
 }

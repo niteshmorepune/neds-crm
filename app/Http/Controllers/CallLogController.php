@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\CallDirection;
 use App\Enums\CallOutcome;
+use App\Enums\LeadGoal;
 use App\Enums\StallReason;
 use App\Enums\UserRole;
 use App\Enums\VisibilityAuditTouchChannel;
@@ -83,6 +84,7 @@ class CallLogController extends Controller
             'timingSummary' => $callTiming->summaryLine(),
             'suggestedFollowUp' => $suggestedFollowUp?->format('Y-m-d\TH:i'),
             'stallReasons' => StallReason::cases(),
+            'leadGoals' => LeadGoal::cases(),
         ]);
     }
 
@@ -129,6 +131,23 @@ class CallLogController extends Controller
         // directly on the deal's own page instead.
         if ($type === Lead::class && filled($data['stall_reason'] ?? null)) {
             Lead::where('id', $id)->update(['stall_reason' => $data['stall_reason']]);
+        }
+
+        // Same "only writes what the rep actually filled in" guard as
+        // stall_reason above -- captured here because this is exactly when
+        // a telecaller/sales rep would have just asked the lead directly.
+        // Deliberately NOT excluded from activity logging (unlike
+        // stall_reason) -- this is a real contact signal.
+        if ($type === Lead::class) {
+            $goalFill = array_filter([
+                'goal' => $data['goal'] ?? null,
+                'website_url' => $data['website_url'] ?? null,
+                'gbp_url' => $data['gbp_url'] ?? null,
+            ], fn ($value) => filled($value));
+
+            if ($goalFill !== []) {
+                Lead::where('id', $id)->update($goalFill);
+            }
         }
 
         // A call is real post-intake signal ScoreLead's prompt now reads —

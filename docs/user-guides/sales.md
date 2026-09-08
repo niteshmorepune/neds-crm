@@ -195,7 +195,9 @@ You don't need to open wadesk.in yourself to reply.
 **Meta Ads leads:** a submission on a Facebook or Instagram lead ad creates a
 lead automatically (source = Meta Ads). Any question on the ad form beyond
 name/email/phone/company (e.g. a custom budget question) appears as a note
-on the lead.
+on the lead — except the **"What is your biggest goal?"** question, which
+fills in the lead's **Goal** field directly (see "Their goal, and their
+Website/GBP link" below) when the answer matches one of its four options.
 
 **Visibility Audit Funnel:** **Lead Generation → VA Recovery** shows the
 whole journey for Meta Ads leads tagged the GMB service — how many came in,
@@ -329,6 +331,21 @@ your "follow-ups due" list — same list, no separate place to look.
   an untagged New lead (described above) — tagging a lead Stalling doesn't
   stop that sequence, it adds this objection-aware one on top once the tag
   is set.
+- **Their goal, and their Website/GBP link:** both the lead's own page and
+  the Log a Call form (when logging against a lead) have a **"What's their
+  biggest goal?"** picker — Generate More Leads, Rank Higher on Google,
+  Grow My Business Online, or Not Sure – Need Expert Advice. Ask this
+  during the call and set it — for a Meta Ads lead it may already be
+  pre-filled from their form answer. Once it's set to one of the first
+  three, a blue **"🌐 Ask for their Website or GBP link"** note appears on
+  the lead until you've captured one — ask for it on the same or next call
+  and save it in the Website URL / GBP link fields right below the goal
+  picker (or on the Log a Call form itself). If they pick **Not Sure**
+  instead, a purple note tells you to **schedule a call with a Sales
+  Expert** — use **Create Meeting** further down the same page. Leaving
+  the goal/link fields blank on the Log a Call form never clears what's
+  already on the lead — same "only saves what you actually filled in"
+  rule as Stalling on.
 - On the Notes field, click **Dictate** and speak instead of typing — your
   browser transcribes it live into the box, and you can still edit before
   saving. (Chrome/Edge only; the button doesn't appear in browsers that

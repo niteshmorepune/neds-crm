@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Actions\ConvertLead;
 use App\Actions\ReassignLead;
 use App\Enums\DealStage;
+use App\Enums\LeadGoal;
 use App\Enums\LeadReassignmentReason;
 use App\Enums\LeadSource;
 use App\Enums\LeadStatus;
@@ -319,7 +320,37 @@ class LeadController extends Controller
             'nextAction' => $lead->suggestedNextAction($callTiming),
             'callAdvice' => $timingAdvisor->recommendationFor($lead),
             'stallReasons' => StallReason::cases(),
+            'leadGoals' => LeadGoal::cases(),
         ]);
+    }
+
+    /**
+     * A telecaller/sales rep captures what the lead is actually looking for
+     * (and, once that points at a concrete next step, the Website/GBP link
+     * they asked for) right from the lead's own page or the Log a Call form
+     * — see LeadGoal::needsWebsiteOrGbp() and the "next step" banner on
+     * leads/show.blade.php. Unlike updateStallReason() this is a genuine
+     * real-contact signal, so it's deliberately NOT excluded from activity
+     * logging (Lead::$activityExcept) — capturing it should refresh
+     * lastTouchedAt(), not be treated as incidental metadata.
+     */
+    public function updateGoalCapture(Request $request, Lead $lead): RedirectResponse
+    {
+        $this->authorize('update', $lead);
+
+        $data = $request->validate([
+            'goal' => ['nullable', Rule::enum(LeadGoal::class)],
+            'website_url' => ['nullable', 'url', 'max:2048'],
+            'gbp_url' => ['nullable', 'url', 'max:2048'],
+        ]);
+
+        $lead->update([
+            'goal' => $data['goal'] ?? null,
+            'website_url' => $data['website_url'] ?? null,
+            'gbp_url' => $data['gbp_url'] ?? null,
+        ]);
+
+        return back()->with('status', 'Goal and links saved.');
     }
 
     /**

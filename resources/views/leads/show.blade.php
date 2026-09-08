@@ -44,7 +44,18 @@
                             </div>
                         @endif
                         <div><span class="text-gray-400">Service:</span> {{ $lead->service?->name ?? '—' }}</div>
+                        <div><span class="text-gray-400">Goal:</span> {{ $lead->goal?->label() ?? '—' }}</div>
                         <div><span class="text-gray-400">Est. value:</span> {{ \App\Support\Money::format($lead->estimated_value) }}</div>
+                        <div><span class="text-gray-400">Website:</span>
+                            @if ($lead->website_url)
+                                <a href="{{ $lead->website_url }}" target="_blank" rel="noopener" class="text-indigo-600 underline">{{ $lead->website_url }}</a>
+                            @else — @endif
+                        </div>
+                        <div><span class="text-gray-400">GBP link:</span>
+                            @if ($lead->gbp_url)
+                                <a href="{{ $lead->gbp_url }}" target="_blank" rel="noopener" class="text-indigo-600 underline">{{ $lead->gbp_url }}</a>
+                            @else — @endif
+                        </div>
                         <div><span class="text-gray-400">Owner:</span> {{ $lead->owner?->name ?? 'Unassigned' }}</div>
                         <div><span class="text-gray-400">Telecaller:</span> {{ $lead->telecaller?->name ?? 'Unassigned' }}</div>
                         <div><span class="text-gray-400">Next follow-up:</span>
@@ -55,7 +66,35 @@
                         <div class="mt-3">
                             <x-stall-reason-picker :record="$lead" update-route="leads.stall-reason.update" :reasons="$stallReasons" />
                         </div>
+
+                        <div class="mt-3 rounded-md border border-gray-200 p-3">
+                            <p class="mb-2 text-xs font-medium text-gray-500">🎯 What are they looking for?</p>
+                            <form method="POST" action="{{ route('leads.goal-capture.update', $lead) }}" class="space-y-2">
+                                @csrf
+                                <select name="goal" class="block w-full rounded-md border-gray-300 text-sm shadow-sm">
+                                    <option value="">— Not asked yet —</option>
+                                    @foreach ($leadGoals as $goal)
+                                        <option value="{{ $goal->value }}" @selected($lead->goal === $goal)>{{ $goal->label() }}</option>
+                                    @endforeach
+                                </select>
+                                <input type="url" name="website_url" value="{{ old('website_url', $lead->website_url) }}" placeholder="Website URL" class="block w-full rounded-md border-gray-300 text-sm shadow-sm" />
+                                <input type="url" name="gbp_url" value="{{ old('gbp_url', $lead->gbp_url) }}" placeholder="Google Business Profile link" class="block w-full rounded-md border-gray-300 text-sm shadow-sm" />
+                                <button type="submit" class="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-500">Save</button>
+                            </form>
+                        </div>
                     @endcan
+
+                    @if ($lead->goal?->needsWebsiteOrGbp() && ! $lead->website_url && ! $lead->gbp_url)
+                        <div class="mt-3 rounded-md border border-indigo-200 bg-indigo-50 p-3 text-xs text-indigo-800">
+                            <p class="font-medium">🌐 Ask for their Website or GBP link</p>
+                            <p class="mt-1">They're looking to {{ \Illuminate\Support\Str::lower($lead->goal->label()) }} — grab their Website URL or Google Business Profile link on the next call so the team can review it.</p>
+                        </div>
+                    @elseif ($lead->goal === \App\Enums\LeadGoal::NotSure)
+                        <div class="mt-3 rounded-md border border-purple-200 bg-purple-50 p-3 text-xs text-purple-800">
+                            <p class="font-medium">🎓 They want expert advice</p>
+                            <p class="mt-1">Schedule a call with a Sales Expert — see <a href="#meetings" class="font-medium underline">Create Meeting</a> below.</p>
+                        </div>
+                    @endif
 
                     @if ($nextAction)
                         <div class="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
@@ -255,7 +294,7 @@
             </ul>
         </div>
 
-        <div class="rounded-lg bg-white p-6 shadow-sm">
+        <div id="meetings" class="rounded-lg bg-white p-6 shadow-sm">
             <h2 class="mb-4 text-base font-semibold text-gray-900">Meet notes</h2>
             <livewire:meeting-import :record="$lead" :can-manage="$canManageMeetings" />
         </div>
