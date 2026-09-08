@@ -418,6 +418,26 @@ it('creating the project via the button clears the deal-won-no-project prompt', 
     Carbon::setTestNow();
 });
 
+it('renders a minimize toggle and keeps the card off both screen edges on mobile', function () {
+    // Regression test for a real report: a bare `right-4` + `w-full` (no left
+    // bound) stretched this fixed-position banner almost edge-to-edge on
+    // mobile, burying whatever page content sat at the bottom underneath it
+    // (e.g. a form's Save button). `inset-x-4` plus a minimize toggle is the
+    // fix — see the comment in next-action-banner.blade.php.
+    Carbon::setTestNow(Carbon::parse(BANNER_TEST_DAYTIME, config('app.display_timezone')));
+    $sales = User::factory()->role(UserRole::Sales)->create();
+
+    Livewire::actingAs($sales)
+        ->test(NextActionBanner::class)
+        ->assertSet('action.source_key', 'attendance_check_in')
+        ->assertSee('inset-x-4', false)
+        ->assertDontSee('w-full max-w-sm', false)
+        ->assertSee('minimized', false)
+        ->assertSee('aria-label="Minimize"', false);
+
+    Carbon::setTestNow();
+});
+
 it('poll re-evaluates and picks up a newly-created lead', function () {
     Carbon::setTestNow(Carbon::parse(BANNER_TEST_DAYTIME, config('app.display_timezone')));
     $sales = User::factory()->role(UserRole::Sales)->create();
