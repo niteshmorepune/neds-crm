@@ -21,6 +21,7 @@ use App\Models\User;
 use App\Models\VisibilityAuditPurchase;
 use App\Notifications\VisibilityAuditReadyForGmeet;
 use App\Services\CallTimingMetrics;
+use App\Services\LeadCallTimingAdvisor;
 use App\Services\VisibilityAuditFunnelMetrics;
 use App\Support\Money;
 use Illuminate\Database\Eloquent\Builder;
@@ -34,7 +35,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class LeadController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request, CallTimingMetrics $callTiming, LeadCallTimingAdvisor $timingAdvisor): View
     {
         $this->authorize('viewAny', Lead::class);
 
@@ -48,9 +49,13 @@ class LeadController extends Controller
         // the same request as the lead itself, whatever the capture
         // channel) — a bare count can't distinguish those. Cheap at this
         // scale (15/page), same "eager-load, filter in PHP" precedent as
-        // unresponsiveLeadIds() below.
+        // unresponsiveLeadIds() below. callLogs (columns only) feeds the
+        // "best time to call" badge via LeadCallTimingAdvisor below.
         $query = $this->filteredLeads($request, $month)
-            ->with(['owner', 'service', 'latestNote', 'notes:id,notable_id,notable_type,created_at'])
+            ->with([
+                'owner', 'service', 'latestNote', 'notes:id,notable_id,notable_type,created_at',
+                'callLogs:id,callable_id,callable_type,direction,outcome,called_at',
+            ])
             ->withCount('callLogs');
 
         $sort = $request->input('sort') === 'newest' ? 'newest' : 'priority';
@@ -71,8 +76,16 @@ class LeadController extends Controller
         $canBulkReassign = $request->user()->can('bulkReassign', Lead::class);
         $filterOwnerId = $request->filled('owner_id') ? $request->integer('owner_id') : null;
 
+        // Computed once per page (not per row) so the underlying CallLog
+        // query behind bestHours() only runs a single time.
+        $bestHours = $callTiming->bestHours();
+        $callBadges = $leads->getCollection()->mapWithKeys(
+            fn (Lead $lead) => [$lead->id => $timingAdvisor->badgeLabel($timingAdvisor->recommendationFor($lead, $bestHours))]
+        );
+
         return view('leads.index', $this->formData() + [
             'leads' => $leads,
+            'callBadges' => $callBadges,
             'filters' => $request->only(['search', 'source', 'status', 'service_id', 'owner_id', 'telecaller_id', 'deal_stage', 'follow_up_due', 'attention', 'sort']) + ['month' => $month],
             'dealStages' => DealStage::cases(),
             'sort' => $sort,
@@ -282,7 +295,7 @@ class LeadController extends Controller
         return redirect()->route('leads.show', $lead)->with('status', 'Lead created.');
     }
 
-    public function show(Lead $lead, VisibilityAuditFunnelMetrics $vaMetrics, CallTimingMetrics $callTiming): View
+    public function show(Lead $lead, VisibilityAuditFunnelMetrics $vaMetrics, CallTimingMetrics $callTiming, LeadCallTimingAdvisor $timingAdvisor): View
     {
         $this->authorize('view', $lead);
 
@@ -302,6 +315,7 @@ class LeadController extends Controller
             'reassignReasons' => LeadReassignmentReason::cases(),
             'vaFunnelStatus' => $vaMetrics->funnelStatusFor($lead),
             'nextAction' => $lead->suggestedNextAction($callTiming),
+            'callAdvice' => $timingAdvisor->recommendationFor($lead),
         ]);
     }
 

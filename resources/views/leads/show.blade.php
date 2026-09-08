@@ -201,6 +201,31 @@
                 <h2 class="text-base font-semibold text-gray-900">Calls</h2>
                 <a href="{{ route('calls.create', ['lead_id' => $lead->id]) }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">+ Log a call</a>
             </div>
+
+            @if ($callAdvice['recommended_label'] || $callAdvice['own_attempt_count'] > 0)
+                <div class="mb-4 rounded-md bg-indigo-50 p-3 text-sm">
+                    @if ($callAdvice['recommended_label'])
+                        <p class="font-medium text-indigo-800">
+                            📞 Best time to call: {{ $callAdvice['recommended_label'] }}
+                        </p>
+                    @endif
+                    <p class="mt-0.5 text-xs text-indigo-600">{{ $callAdvice['basis_note'] }}</p>
+                    @if ($callAdvice['own_attempt_count'] > 0)
+                        <ul class="mt-2 space-y-0.5 text-xs text-indigo-700">
+                            @foreach ($callAdvice['own_attempts'] as $attempt)
+                                <li>
+                                    {{ $attempt['called_at']->timezone(config('app.display_timezone'))->format('d M, g:i A') }}
+                                    — {{ $attempt['outcome']->label() }}
+                                    @if (in_array($attempt['hour'], $callAdvice['failed_hours'], true))
+                                        <span class="text-indigo-400">(this hour hasn't worked — excluded above)</span>
+                                    @endif
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
+                </div>
+            @endif
+
             <ul class="divide-y divide-gray-100 text-sm">
                 @forelse ($lead->callLogs as $call)
                     <li class="py-2">

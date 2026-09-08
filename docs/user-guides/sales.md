@@ -279,6 +279,15 @@ your "follow-ups due" list — same list, no separate place to look.
   flip that field. Logged a call by mistake (wrong lead, duplicate entry)?
   A **Delete** link appears next to it (Calls tab, lead page, or the
   Calling list) — only you or a manager/admin can delete it.
+- **Best time to call:** a lead's own page shows a **📞 Best time to call**
+  box above its call history — every past attempt made to that specific
+  lead (time and outcome), plus a recommended hour band for your next try.
+  An hour already tried twice against this lead with no answer is dropped
+  from the recommendation (a real connect there just isn't shown yet — if
+  every good hour has already failed, it tells you that honestly instead
+  of pretending there's a better option). A compact **"Try: …"** badge
+  shows the same thing on the Lead Generation list and in My Day, so you
+  see it before you even open the lead.
   If you set a **follow-up date** on the call itself (separate from a
   lead's own "follow-up due" field above), the "what to do next" popup
   (Section 1) prompts you with it the moment it's due — whatever you

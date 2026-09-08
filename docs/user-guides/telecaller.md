@@ -124,6 +124,16 @@ under **Calling** in the sidebar. Logging a call against a brand-new
 Logged one by mistake? A **Delete** link appears next to it — you can
 remove your own, or a manager/admin can remove anyone's.
 
+**Best time to call:** open any lead and you'll see a **📞 Best time to
+call** box above its call history — every attempt already made to that
+lead (when, and what happened), plus a recommended hour band for your next
+try. Any hour already tried twice with no answer is left out of the
+recommendation; if every usually-good hour has already failed for this
+particular lead, it says so rather than repeating a suggestion that hasn't
+worked. The same recommendation shows as a short **"Try: …"** badge right
+on the Lead Generation list and in My Day, so you know before you even
+open the lead.
+
 The moment a follow-up you set becomes due, the "what to do next" popup
 (see Section 2 above) prompts you with it — whatever you typed in as the
 next action, and a **Log the call** button that jumps straight to the form

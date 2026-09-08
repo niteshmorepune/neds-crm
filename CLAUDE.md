@@ -1699,3 +1699,45 @@ Record every "we chose X because Y" here — this is the project's memory.
   2898 green (same 2 pre-existing flakes), Pint clean, pushed directly to
   master post-deploy (no new PR — a same-session correction to code that
   had only just merged, not yet acted on by anyone).
+- **2026-09-08 — Best Time to Call: per-lead recommendation is facts +
+  global band, deliberately not a per-lead statistical model.** Owner
+  reported leads not picking up and asked for the CRM to recommend when to
+  call, "based on the history of the call made to that lead." Checked the
+  codebase first, not assumed greenfield: `CallTimingMetrics` (built
+  earlier) already computes a real, trustworthy team-wide connect-rate-by-
+  hour band (90-day window, min 15 calls/hour) and already powers a "best
+  time to call" hint on the Log a Call form and a retry-time suggestion —
+  the global half of this ask was already live. What was missing was
+  personalization to one specific lead. Confirmed via AskUserQuestion that
+  true per-lead statistics weren't worth building: a single lead typically
+  gets only 1-5 logged attempts total — far short of even
+  `CallTimingMetrics`' own documented reasoning for why it won't trust
+  per-weekday buckets built from 27-104 team-wide calls. A from-scratch
+  per-lead rate would almost always be noise dressed up as a finding.
+  Instead, new `App\Services\LeadCallTimingAdvisor::recommendationFor()`
+  combines two honest, always-valid signals: the lead's own raw attempt
+  history shown verbatim (exact time + outcome, no invented confidence),
+  and the global best-hour band for the next attempt — with any hour
+  already tried twice against *this* lead with no Connected outcome
+  excluded from the recommendation. If every globally-good hour has
+  already failed for this lead, it says so explicitly (`hours_exhausted`)
+  rather than silently repeating a suggestion that hasn't worked. Confirmed
+  via AskUserQuestion to surface this in all three places a
+  telecaller/sales rep would want it: the Lead show page (full panel above
+  the Calls list — LeadController::show()), a compact "Try: …" badge on
+  the Lead Generation list (LeadController::index(), one `bestHours()`
+  query per page load, not per row), and the same badge appended to My
+  Day's lead follow-up and call-follow-up items
+  (MyDayService::worklist()) — all three share one `bestHours()` /
+  `LeadCallTimingAdvisor` computation per request rather than re-querying
+  per lead. Zero schema changes (pure aggregation over existing `CallLog`
+  rows), so deployment is `view:clear`+`view:cache` only, same
+  low-friction precedent as the Employee Activity Timeline. 12 new Pest
+  tests (advisor logic + both render surfaces + two My Day badge cases);
+  full suite 3143 green (only the one already-documented, unrelated
+  `MeetingRequestTest` IST-window flake — see [[feedback-gotchas]]), Pint
+  clean. Smoke-tested end-to-end against real local MySQL via curl
+  (login → seed real CallLog rows for a real lead → confirmed the panel,
+  the list badge, all rendered correctly → cleaned up the SMOKETEST
+  data), not just Pest — local dev had zero pre-existing lead call
+  history to exercise this against otherwise.

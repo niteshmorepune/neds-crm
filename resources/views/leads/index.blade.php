@@ -247,6 +247,9 @@
                                     @endif
                                 </div>
                                 <div class="text-xs text-gray-400">{{ $lead->company ?: '—' }}</div>
+                                @if ($callBadges[$lead->id] ?? null)
+                                    <div class="mt-0.5 text-xs text-indigo-600" title="Best time to call this lead">📞 {{ $callBadges[$lead->id] }}</div>
+                                @endif
                             </td>
                             <td class="px-4 py-3 text-gray-600">{{ $lead->source->label() }}</td>
                             <td class="px-4 py-3 text-gray-600">{{ $lead->service?->name ?? '—' }}</td>
