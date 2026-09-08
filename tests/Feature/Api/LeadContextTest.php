@@ -1,11 +1,16 @@
 <?php
 
+use App\Enums\LeadGoal;
 use App\Enums\LeadSource;
 use App\Enums\LeadStatus;
+use App\Enums\UserRole;
 use App\Enums\VisibilityAuditFunnelEventType;
 use App\Models\Lead;
 use App\Models\Service;
+use App\Models\User;
 use App\Models\VisibilityAuditFunnelEvent;
+use App\Notifications\LeadWantsExpertAdviceNotification;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
 
 beforeEach(function () {
@@ -120,4 +125,118 @@ it('returns null additional_answers and null budget when the lead has no matchin
 
     expect($response['budget_question_raw_answer'])->toBeNull()
         ->and($response['additional_answers'])->toBeNull();
+});
+
+it('includes goal/needs_link/website_url/gbp_url in the context response', function () {
+    Lead::factory()->create([
+        'phone' => '919876543217',
+        'goal' => LeadGoal::GrowBusiness,
+        'website_url' => 'https://example.com',
+        'gbp_url' => null,
+    ]);
+
+    $response = $this->getJson('/api/leads/context?phone=919876543217', ['Authorization' => 'Bearer test-wa-token'])->json();
+
+    expect($response['goal'])->toBe('grow_business')
+        ->and($response['needs_link'])->toBeTrue()
+        ->and($response['website_url'])->toBe('https://example.com')
+        ->and($response['gbp_url'])->toBeNull();
+});
+
+it('reports needs_link=false for a NotSure goal', function () {
+    Lead::factory()->create(['phone' => '919876543218', 'goal' => LeadGoal::NotSure]);
+
+    $response = $this->getJson('/api/leads/context?phone=919876543218', ['Authorization' => 'Bearer test-wa-token'])->json();
+
+    expect($response['needs_link'])->toBeFalse();
+});
+
+it('reports needs_link=false and goal=null for a lead with no goal set yet', function () {
+    Lead::factory()->create(['phone' => '919876543219', 'goal' => null]);
+
+    $response = $this->getJson('/api/leads/context?phone=919876543219', ['Authorization' => 'Bearer test-wa-token'])->json();
+
+    expect($response['goal'])->toBeNull()
+        ->and($response['needs_link'])->toBeFalse();
+});
+
+it('rejects an unauthenticated goal-capture request', function () {
+    $this->postJson('/api/leads/goal-capture', ['phone' => '919876543220'])->assertUnauthorized();
+});
+
+it('writes a goal-only update to the matched lead and returns updated=true', function () {
+    $lead = Lead::factory()->create(['phone' => '919876543221', 'goal' => null]);
+
+    $this->postJson('/api/leads/goal-capture', [
+        'phone' => '919876543221',
+        'goal' => LeadGoal::RankHigher->value,
+    ], ['Authorization' => 'Bearer test-wa-token'])
+        ->assertOk()
+        ->assertJson(['updated' => true]);
+
+    expect($lead->fresh()->goal)->toBe(LeadGoal::RankHigher)
+        ->and($lead->fresh()->website_url)->toBeNull();
+});
+
+it('only writes the fields provided, never clearing the others', function () {
+    $lead = Lead::factory()->create([
+        'phone' => '919876543222',
+        'goal' => LeadGoal::GrowBusiness,
+        'website_url' => 'https://already-there.example.com',
+    ]);
+
+    $this->postJson('/api/leads/goal-capture', [
+        'phone' => '919876543222',
+        'gbp_url' => 'https://maps.app.goo.gl/xyz',
+    ], ['Authorization' => 'Bearer test-wa-token'])->assertOk();
+
+    $lead->refresh();
+    expect($lead->goal)->toBe(LeadGoal::GrowBusiness)
+        ->and($lead->website_url)->toBe('https://already-there.example.com')
+        ->and($lead->gbp_url)->toBe('https://maps.app.goo.gl/xyz');
+});
+
+it('returns updated=false when no lead matches the phone on goal-capture', function () {
+    $this->postJson('/api/leads/goal-capture', [
+        'phone' => '919999999999',
+        'goal' => LeadGoal::RankHigher->value,
+    ], ['Authorization' => 'Bearer test-wa-token'])
+        ->assertOk()
+        ->assertJson(['updated' => false]);
+});
+
+it('rejects an invalid goal value on goal-capture', function () {
+    Lead::factory()->create(['phone' => '919876543223']);
+
+    $this->postJson('/api/leads/goal-capture', [
+        'phone' => '919876543223',
+        'goal' => 'not-a-real-goal',
+    ], ['Authorization' => 'Bearer test-wa-token'])
+        ->assertJsonValidationErrors('goal');
+});
+
+it('notifies the lead owner when goal-capture sets goal to NotSure', function () {
+    Notification::fake();
+    $owner = User::factory()->role(UserRole::Sales)->create();
+    $lead = Lead::factory()->create(['phone' => '919876543224', 'owner_id' => $owner->id, 'goal' => null]);
+
+    $this->postJson('/api/leads/goal-capture', [
+        'phone' => '919876543224',
+        'goal' => LeadGoal::NotSure->value,
+    ], ['Authorization' => 'Bearer test-wa-token'])->assertOk();
+
+    Notification::assertSentTo($owner, LeadWantsExpertAdviceNotification::class, fn ($n) => $n->lead->is($lead));
+});
+
+it('does not re-notify when goal-capture resends the same NotSure value', function () {
+    Notification::fake();
+    $owner = User::factory()->role(UserRole::Sales)->create();
+    Lead::factory()->create(['phone' => '919876543225', 'owner_id' => $owner->id, 'goal' => LeadGoal::NotSure]);
+
+    $this->postJson('/api/leads/goal-capture', [
+        'phone' => '919876543225',
+        'goal' => LeadGoal::NotSure->value,
+    ], ['Authorization' => 'Bearer test-wa-token'])->assertOk();
+
+    Notification::assertNotSentTo($owner, LeadWantsExpertAdviceNotification::class);
 });

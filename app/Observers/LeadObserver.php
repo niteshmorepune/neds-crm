@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use App\Enums\LeadGoal;
 use App\Enums\LeadStatus;
 use App\Enums\UserRole;
 use App\Jobs\ScoreLead;
@@ -12,6 +13,7 @@ use App\Jobs\SyncLeadToWadeskJob;
 use App\Models\Lead;
 use App\Models\LeadAssignmentRule;
 use App\Models\User;
+use App\Notifications\LeadWantsExpertAdviceNotification;
 use App\Notifications\NewLeadNotification;
 use App\Services\VisibilityAuditFunnelMetrics;
 use App\Support\Ai;
@@ -95,6 +97,15 @@ class LeadObserver
         // submitted the Meta form.
         if ($lead->wasChanged(['meta_leadgen_id', 'service_id'])) {
             $this->sendVisibilityAuditInviteIfEligible($lead);
+        }
+
+        // Fires from either goal-capture path (the telecaller UI or
+        // wadesk.in's after-hours WhatsApp assistant, see
+        // LeadContextController::updateGoal()) -- wasChanged() alone already
+        // guards against re-notifying on every unrelated save to an
+        // already-NotSure lead.
+        if ($lead->wasChanged('goal') && $lead->goal === LeadGoal::NotSure) {
+            $this->notifyWantsExpertAdvice($lead);
         }
     }
 
@@ -261,6 +272,23 @@ class LeadObserver
             SendVisibilityAuditFirstInviteJob::dispatch($lead->id);
             SendVisibilityAuditFirstInviteEmailJob::dispatch($lead->id);
         }
+    }
+
+    /**
+     * Notifies whoever's actually working the lead (owner, and the
+     * telecaller too if one's assigned and different) -- either of them is
+     * positioned to actually schedule the call, unlike a fixed "notify all
+     * Sales" broadcast.
+     */
+    private function notifyWantsExpertAdvice(Lead $lead): void
+    {
+        $notification = new LeadWantsExpertAdviceNotification($lead);
+
+        $recipients = collect([$lead->owner_id, $lead->telecaller_id])
+            ->filter()
+            ->unique();
+
+        User::whereIn('id', $recipients)->get()->each->notify($notification);
     }
 
     private function notifyNewLead(Lead $lead): void

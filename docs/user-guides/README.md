@@ -20,7 +20,7 @@ Start with **Getting Started**, then read the guide for your role.
 | [Client FAQ](faq-client.md) | Clients — sanitized "how do I..." FAQ, live inside the portal itself (**FAQ** in the portal sidebar) — not a staff-shared doc |
 | [Partner Portal](partner-portal.md) | Partners — the referral/content-collaborator portal |
 | [Partner FAQ](faq-partner.md) | Partners — sanitized "how do I..." FAQ, live inside the portal itself (**FAQ** in the header) — not a staff-shared doc |
-| [Integrations](integrations.md) | Managers & Admins — Drishti, SMDost, and the 10 automated workflows |
+| [Integrations](integrations.md) | Managers & Admins — Drishti, SMDost, wadesk.in, and the 14 automated workflows |
 | [Troubleshooting](troubleshooting.md) | Admins & Managers — fixing common issues (biometric, SSO, integrations, email) |
 
 In the app, the Help page only lists guides relevant to your role: everyone
