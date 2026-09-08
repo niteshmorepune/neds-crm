@@ -16,8 +16,7 @@ class SendCallFollowUpReminders extends Command
     {
         $due = CallLog::query()
             ->with(['user', 'callable'])
-            ->whereNotNull('follow_up_at')
-            ->where('follow_up_at', '<=', now())
+            ->followUpDue()
             ->whereNull('follow_up_notified_at')
             ->get();
 

@@ -4,12 +4,15 @@ namespace App\Models;
 
 use App\Enums\CallDirection;
 use App\Enums\CallOutcome;
+use App\Enums\LeadStatus;
 use App\Enums\VoiceTranscriptStatus;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Support\Carbon;
 
 class CallLog extends Model
 {
@@ -64,5 +67,29 @@ class CallLog extends Model
     public function hasVoiceNote(): bool
     {
         return $this->voice_transcript_status !== null;
+    }
+
+    /**
+     * A follow-up is due only while it's still actionable — real incident
+     * (2026-09-08): the Next Action banner, My Day, the Telecaller
+     * dashboard tile, and the reminder notification command all kept
+     * prompting a callback on a lead that had since been marked Lost,
+     * since none of them checked the lead's current status, only the
+     * timestamp. Excludes a Lead callable whose status is Lost; a
+     * Customer callable (which has no equivalent terminal "dead" status)
+     * passes through unfiltered.
+     */
+    public function scopeFollowUpDue(Builder $query, ?Carbon $asOf = null): Builder
+    {
+        return $query->whereNotNull('follow_up_at')
+            ->where('follow_up_at', '<=', $asOf ?? now())
+            ->where(fn (Builder $q) => $q
+                // SQL's != is never true against a NULL column, so a
+                // callable-less CallLog needs its own explicit branch here —
+                // whereNot('callable_type', Lead::class) alone silently
+                // excluded every row with callable_type IS NULL.
+                ->whereNull('callable_type')
+                ->orWhereNot('callable_type', Lead::class)
+                ->orWhereHas('callable', fn (Builder $lead) => $lead->where('status', '!=', LeadStatus::Lost->value)));
     }
 }

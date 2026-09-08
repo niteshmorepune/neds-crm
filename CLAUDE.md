@@ -1811,3 +1811,34 @@ Record every "we chose X because Y" here — this is the project's memory.
   `MeetingRequestTest` flake), Pint clean, 2 new Pest tests (backfill-when-
   unset, don't-overwrite-an-existing-value — including the unique-
   constraint collision case).
+- **2026-09-08 (same day) — Real incident: a Next Action popup kept
+  prompting "log the call" for a lead everyone had already marked Lost.**
+  Owner reported it via screenshot. Root cause: `CallLog.follow_up_at`
+  going past due is the only condition any of four separate call sites
+  ever checked — none of them looked at whether the underlying Lead had
+  since moved to a terminal status. Same gap, four places:
+  `CallFollowUpDueSource` (the reported Next Action banner),
+  `SendCallFollowUpReminders` (the one-time notification command — meaning
+  the underlying notification itself was already firing for a dead lead,
+  not just the recurring banner), `MyDayService::worklist()`'s call-
+  follow-up item, and `DashboardMetrics::telecallerStats()`'s
+  `followups_due` tile. Fixed once, centrally: new
+  `CallLog::scopeFollowUpDue()` bundles the existing null/date check with
+  excluding a Lead callable whose `status` is Lost (a Customer callable —
+  no equivalent terminal status — passes through unfiltered); all four
+  call sites now use the scope instead of repeating the query inline, so
+  this can't drift back out of sync across them again. **Real bug caught
+  by the existing pre-change test for `DashboardMetrics::telecallerStats()`,
+  not shipped**: the first version excluded via
+  `whereNot('callable_type', Lead::class)`, which SQL evaluates to NULL —
+  never true — for a CallLog with no callable at all
+  (`callable_type IS NULL`), silently dropping every callable-less
+  follow-up from every one of the four call sites. Fixed by adding an
+  explicit `whereNull('callable_type')` branch alongside it. Deliberately
+  scoped to Lost only, not also Converted — a converted lead's follow-up
+  loop has moved to the Deal, which is a real, separate potential gap, but
+  wasn't what was reported and wasn't touched here. 6 new/updated Pest
+  tests across `CallFollowUpDueSourceTest`, `DashboardMetricsTest`,
+  `MyDayTest`, and a new `SendCallFollowUpRemindersTest` (this command had
+  zero prior test coverage). Full suite 3155 green (same one pre-existing
+  `MeetingRequestTest` flake), Pint clean.

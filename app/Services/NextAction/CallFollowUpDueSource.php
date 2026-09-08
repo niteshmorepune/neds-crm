@@ -27,7 +27,10 @@ use App\Support\NextAction;
  * No role gate, matching the underlying mechanism's own lack of one.
  * whereHasMorph (rather than a plain whereNotNull/with) excludes a
  * CallLog whose Lead/Customer has since been soft-deleted, so this never
- * tries to build a broken link.
+ * tries to build a broken link. CallLog::scopeFollowUpDue() additionally
+ * excludes a Lead callable that's since been marked Lost — real incident
+ * (2026-09-08): this banner kept prompting "log the call" for a lead
+ * everyone had already given up on.
  */
 class CallFollowUpDueSource implements NextActionSource
 {
@@ -45,8 +48,7 @@ class CallFollowUpDueSource implements NextActionSource
             ->pluck('subject_id');
 
         $callLog = CallLog::where('user_id', $user->id)
-            ->whereNotNull('follow_up_at')
-            ->where('follow_up_at', '<=', now())
+            ->followUpDue()
             ->whereNotIn('id', $snoozedIds)
             ->whereHasMorph('callable', [Lead::class, Customer::class])
             ->with('callable')

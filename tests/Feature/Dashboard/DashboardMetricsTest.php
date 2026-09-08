@@ -194,6 +194,20 @@ it('computes telecaller stats as their own assigned-lead counts, not the whole s
         ->and($stats['followups_due'])->toBe(1);
 });
 
+it('excludes a follow-up due against a lead that has since been marked Lost', function () {
+    $telecaller = User::factory()->role(UserRole::Telecaller)->create();
+    $lostLead = Lead::factory()->create(['status' => 'lost']);
+    CallLog::factory()->create([
+        'user_id' => $telecaller->id,
+        'callable_type' => Lead::class,
+        'callable_id' => $lostLead->id,
+        'called_at' => now(),
+        'follow_up_at' => now()->subHour(),
+    ]);
+
+    expect($this->metrics->telecallerStats($telecaller)['followups_due'])->toBe(0);
+});
+
 it('summarizes support open tickets by priority and SLA risk', function () {
     $support = User::factory()->role(UserRole::Support)->create();
     Ticket::factory()->create(['status' => TicketStatus::Open, 'priority' => TicketPriority::Urgent, 'sla_due_at' => now()->addHour()]);
