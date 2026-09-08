@@ -15,13 +15,19 @@ use Illuminate\Support\Collection;
  * (see CallTimingMetrics' own doc comment: even the whole team's per-weekday
  * samples, 27-104 calls, were judged too thin to trust), so computing a
  * from-scratch connect-rate for one lead would almost always be noise
- * dressed up as a finding. Instead this combines two honest, always-valid
+ * dressed up as a finding. Instead this combines three honest, always-valid
  * signals: the lead's own raw attempt history (what was actually tried, and
- * what happened) plus CallTimingMetrics' team-wide best-hour band (the one
- * pattern with a real sample size) for the next attempt — excluding any hour
- * already tried twice+ against THIS lead with no answer. Confirmed with the
- * owner via AskUserQuestion (2026-09-08) over building true per-lead
- * statistics or a lead-source/service-level tier.
+ * what happened); when the lead itself was captured — for a source where
+ * that timestamp reflects the prospect's own action (LeadSource::
+ * isProspectInitiated()), not a rep entering data whenever suited them —
+ * as a real personal availability signal, most valuable for a lead with no
+ * call attempts of its own yet; and CallTimingMetrics' team-wide best-hour
+ * band (the one pattern with a real sample size) for the next attempt.
+ * Any hour already tried twice+ against THIS lead with no answer is
+ * excluded from the recommendation regardless of which signal produced it.
+ * Confirmed with the owner via AskUserQuestion (2026-09-08) over building
+ * true per-lead statistics or a lead-source/service-level tier; the capture-
+ * time signal was added the same day at the owner's suggestion.
  */
 class LeadCallTimingAdvisor
 {
@@ -38,6 +44,7 @@ class LeadCallTimingAdvisor
      *     failed_hours: list<int>,
      *     ever_connected: bool,
      *     connected_hours: list<int>,
+     *     capture_hour: ?array{hour: int, label: string, source_label: string},
      *     recommended_hours: list<int>,
      *     recommended_label: ?string,
      *     hours_exhausted: bool,
@@ -75,14 +82,30 @@ class LeadCallTimingAdvisor
             ->values()
             ->all();
 
+        $captureHour = $this->captureHour($lead);
+
         // bestHours() is ordered by connect rate, not hour — sort numerically
         // here so the recommendation (and its rendered label) is always in a
         // predictable, chronological order regardless of tie-breaking there.
         $globalHours = $bestHours->pluck('hour')->sort()->values()->all();
-        $remainingHours = collect($globalHours)->diff($failedHours)->values()->all();
 
-        $hoursExhausted = $globalHours !== [] && $remainingHours === [];
-        $recommendedHours = $hoursExhausted ? $globalHours : $remainingHours;
+        if ($ownCalls->isEmpty() && $captureHour !== null) {
+            // Zero real signal for this lead otherwise — when they reached
+            // out is a far more specific, personal signal than the team's
+            // generic multi-hour band, so don't dilute it into that band.
+            $candidatePool = [$captureHour['hour']];
+        } else {
+            $candidatePool = collect($globalHours)
+                ->when($captureHour !== null, fn (Collection $c) => $c->push($captureHour['hour']))
+                ->unique()
+                ->sort()
+                ->values()
+                ->all();
+        }
+
+        $remainingHours = collect($candidatePool)->diff($failedHours)->values()->all();
+        $hoursExhausted = $candidatePool !== [] && $remainingHours === [];
+        $recommendedHours = $hoursExhausted ? $candidatePool : $remainingHours;
 
         $fmt = fn (int $hour) => Carbon::createFromTime($hour, 0)->format('g A');
         $recommendedLabel = $recommendedHours === []
@@ -95,19 +118,40 @@ class LeadCallTimingAdvisor
             'failed_hours' => $failedHours,
             'ever_connected' => $connectedHours !== [],
             'connected_hours' => $connectedHours,
+            'capture_hour' => $captureHour,
             'recommended_hours' => $recommendedHours,
             'recommended_label' => $recommendedLabel,
             'hours_exhausted' => $hoursExhausted,
-            'basis_note' => $this->basisNote($ownCalls->count(), $globalHours, $hoursExhausted),
+            'basis_note' => $this->basisNote($ownCalls->count(), $candidatePool, $hoursExhausted, $captureHour),
         ];
     }
 
-    private function basisNote(int $ownAttemptCount, array $globalHours, bool $hoursExhausted): string
+    /**
+     * @return ?array{hour: int, label: string, source_label: string}
+     */
+    private function captureHour(Lead $lead): ?array
+    {
+        if (! $lead->source->isProspectInitiated()) {
+            return null;
+        }
+
+        $hour = (int) $lead->created_at->clone()->timezone(config('app.display_timezone'))->format('H');
+
+        return [
+            'hour' => $hour,
+            'label' => Carbon::createFromTime($hour, 0)->format('g A'),
+            'source_label' => $lead->source->label(),
+        ];
+    }
+
+    private function basisNote(int $ownAttemptCount, array $candidatePool, bool $hoursExhausted, ?array $captureHour): string
     {
         return match (true) {
-            $globalHours === [] => 'Not enough team-wide call data yet to suggest a time.',
+            $candidatePool === [] => 'Not enough team-wide call data yet to suggest a time.',
+            $ownAttemptCount === 0 && $captureHour !== null => "No calls logged to this lead yet — it came in via {$captureHour['source_label']} around {$captureHour['label']}, worth trying near then.",
             $ownAttemptCount === 0 => 'No calls logged to this lead yet — based on team-wide calling patterns.',
             $hoursExhausted => 'Every usually-good hour has already been tried with this lead — worth trying again, or a different day.',
+            $captureHour !== null => "Based on {$ownAttemptCount} past attempt(s) to this lead (came in via {$captureHour['source_label']} around {$captureHour['label']}), plus team-wide calling patterns.",
             default => "Based on {$ownAttemptCount} past attempt(s) to this lead, plus team-wide calling patterns.",
         };
     }
