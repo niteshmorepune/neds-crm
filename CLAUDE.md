@@ -1765,3 +1765,49 @@ Record every "we chose X because Y" here — this is the project's memory.
   assertion depending on which source faker happened to roll; 5 new tests
   cover the capture-hour behavior itself. Full suite 3147 green (same one
   pre-existing `MeetingRequestTest` flake), Pint clean.
+- **2026-09-08 (same day) — Real incident: `App\Actions\MergeLeads` never
+  carried `whatsapp_conversation_id` from the merged-away duplicate onto
+  the surviving lead, silently orphaning the real conversation link on
+  every lead merge involving a WhatsApp-sourced record.** Owner reported
+  (two screenshots) that a lead's WhatsApp conversation, clearly visible
+  and active in wadesk.in, showed nothing on the matching CRM lead page.
+  Root-caused via real production data, not guessed: this lead (#171) was
+  the surviving primary of a 29 Aug merge; the duplicate (#157) held the
+  real `whatsapp_conversation_id`, but `MergeLeads::handle()` only ever
+  reassigned Notes/CallLogs/Meetings/VA-funnel data/Activity — never this
+  column, since it's an internal webhook-matching key, not one of the
+  caller-resolved `$fields` the merge UI exposes. After the merge, #157
+  (soft-deleted) still held the real conversation id, invisible to the
+  webhook's `Lead::where('whatsapp_conversation_id', ...)` lookup (default
+  scope excludes trashed); #171 was left with none at all. Separately
+  root-caused why the pre-merge history (Aug 11-16 messages) was never
+  captured in the first place, even before the merge: it predates the
+  2026-08-14 wadesk.in-side fix that made wadesk notify the CRM on every
+  message instead of just a conversation's first one — a wadesk-side gap,
+  already fixed for new conversations, not retroactively recoverable.
+  Fixed `MergeLeads::handle()` to carry the duplicate's
+  `whatsapp_conversation_id` onto the primary whenever the primary doesn't
+  already have one of its own — same "backfill only if unset" rule
+  `WhatsappWebhookController::handleUnmatchedNumber()` already uses for
+  this exact column. **Real gotcha caught before shipping, not in
+  production**: `leads.whatsapp_conversation_id` is UNIQUE, and soft
+  deleting the duplicate does NOT free that value (the column is still
+  physically present on the trashed row) — writing the same value onto the
+  primary first would throw a unique-constraint violation. Fixed by
+  explicitly nulling the duplicate's own column before assigning it to the
+  primary, both inside the same transaction.
+  **Audited every merge this action has ever performed** (30 total,
+  found via its own breadcrumb-note text) for the same orphaning pattern —
+  found **9 currently-affected leads** (#113, #169, #171, #178, #180,
+  #182, #195, #95, #285), not just the one reported. One of them (#285)
+  had been the target of 3 separate merges over time, 2 of which had a
+  real `whatsapp_conversation_id` to offer — resolved by checking which
+  duplicate's Activity `created` event and note history actually showed
+  real WhatsApp traffic (#280, the first/earlier merge) versus which had
+  none at all (#281, a later, quieter merge), rather than picking either
+  arbitrarily. Backfilled all 9 directly against production (same
+  null-the-duplicate-first transaction as the code fix), verified after
+  writing. Full suite 3149 green (same one pre-existing
+  `MeetingRequestTest` flake), Pint clean, 2 new Pest tests (backfill-when-
+  unset, don't-overwrite-an-existing-value — including the unique-
+  constraint collision case).

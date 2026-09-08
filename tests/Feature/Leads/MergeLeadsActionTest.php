@@ -93,6 +93,28 @@ it('reassigns the duplicate\'s activity history onto the primary lead', function
         ->and(Activity::where('subject_type', Lead::class)->where('subject_id', $primary->id)->where('event', 'created')->exists())->toBeTrue();
 });
 
+it('carries the duplicate\'s whatsapp_conversation_id onto the primary lead when the primary has none', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+    $primary = Lead::factory()->create(['whatsapp_conversation_id' => null]);
+    $duplicate = Lead::factory()->create(['whatsapp_conversation_id' => 'wa_conv_123']);
+
+    $merged = (new MergeLeads)->handle($primary, $duplicate, []);
+
+    expect($merged->whatsapp_conversation_id)->toBe('wa_conv_123');
+});
+
+it('does not overwrite the primary lead\'s own whatsapp_conversation_id with the duplicate\'s', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+    $primary = Lead::factory()->create(['whatsapp_conversation_id' => 'primary_conv']);
+    $duplicate = Lead::factory()->create(['whatsapp_conversation_id' => 'duplicate_conv']);
+
+    $merged = (new MergeLeads)->handle($primary, $duplicate, []);
+
+    expect($merged->whatsapp_conversation_id)->toBe('primary_conv');
+});
+
 it('leaves a breadcrumb note on the primary lead naming the merged-in duplicate', function () {
     $user = User::factory()->create();
     $this->actingAs($user);
