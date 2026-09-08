@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\DealStage;
+use App\Enums\StallReason;
 use App\Http\Requests\DealUpdateRequest;
 use App\Models\Deal;
 use App\Models\Partner;
@@ -12,7 +13,9 @@ use App\Models\User;
 use App\Services\SimilarDealFinder;
 use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class DealController extends Controller
@@ -32,7 +35,27 @@ class DealController extends Controller
             'owners' => User::query()->orderBy('name')->get(['id', 'name']),
             'partners' => Partner::orderBy('name')->get(['id', 'name']),
             'similarDeals' => $similarDeals->find($deal),
+            'stallReasons' => StallReason::cases(),
         ]);
+    }
+
+    /**
+     * Quick inline tag from the deal's own page — why a deal with real
+     * conversation history isn't moving forward. Phase 1 of the
+     * closure-guidance plan (2026-09-08, see CLAUDE.md); mirrors
+     * LeadController::updateStallReason() exactly.
+     */
+    public function updateStallReason(Request $request, Deal $deal): RedirectResponse
+    {
+        $this->authorize('update', $deal);
+
+        $data = $request->validate([
+            'stall_reason' => ['nullable', Rule::enum(StallReason::class)],
+        ]);
+
+        $deal->update(['stall_reason' => $data['stall_reason'] ?? null]);
+
+        return back()->with('status', $data['stall_reason'] ? 'Stall reason saved.' : 'Stall reason cleared.');
     }
 
     public function update(DealUpdateRequest $request, Deal $deal): RedirectResponse

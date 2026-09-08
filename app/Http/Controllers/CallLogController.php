@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\CallDirection;
 use App\Enums\CallOutcome;
+use App\Enums\StallReason;
 use App\Enums\UserRole;
 use App\Enums\VisibilityAuditTouchChannel;
 use App\Enums\VisibilityAuditTouchType;
@@ -81,6 +82,7 @@ class CallLogController extends Controller
             'selectedLead' => $request->integer('lead_id') ?: null,
             'timingSummary' => $callTiming->summaryLine(),
             'suggestedFollowUp' => $suggestedFollowUp?->format('Y-m-d\TH:i'),
+            'stallReasons' => StallReason::cases(),
         ]);
     }
 
@@ -117,6 +119,16 @@ class CallLogController extends Controller
         // (or its deliberate absence) they set themselves.
         if ($call->follow_up_at === null && filled($call->notes) && Ai::enabled()) {
             DetectCallFollowUpCommitment::dispatch($call->id);
+        }
+
+        // Only writes when the rep actually picked something -- leaving this
+        // blank must never silently clear a tag already set from the lead's
+        // own page (this field is incidental to the form, not its primary
+        // purpose). Lead only, matching the form's own gating (see
+        // calls/create.blade.php) -- a Deal's stall reason is tagged
+        // directly on the deal's own page instead.
+        if ($type === Lead::class && filled($data['stall_reason'] ?? null)) {
+            Lead::where('id', $id)->update(['stall_reason' => $data['stall_reason']]);
         }
 
         // A call is real post-intake signal ScoreLead's prompt now reads —

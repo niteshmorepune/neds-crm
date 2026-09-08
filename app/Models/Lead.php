@@ -8,6 +8,7 @@ use App\Enums\LeadBudgetBand;
 use App\Enums\LeadSource;
 use App\Enums\LeadStatus;
 use App\Enums\LeadUrgency;
+use App\Enums\StallReason;
 use App\Enums\UserRole;
 use App\Models\Concerns\LogsActivity;
 use App\Observers\LeadObserver;
@@ -41,6 +42,7 @@ class Lead extends Model
         'owner_id',
         'telecaller_id',
         'status',
+        'stall_reason',
         'next_follow_up_at',
         'converted_customer_id',
         'converted_deal_id',
@@ -70,6 +72,7 @@ class Lead extends Model
         return [
             'source' => LeadSource::class,
             'status' => LeadStatus::class,
+            'stall_reason' => StallReason::class,
             'service_id' => 'integer',
             'estimated_value' => 'integer',
             'next_follow_up_at' => 'datetime',

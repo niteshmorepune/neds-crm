@@ -51,6 +51,12 @@
                             {{ $lead->next_follow_up_at?->timezone(config('app.display_timezone'))->format('d M Y, g:i A') ?? '—' }}</div>
                     </dl>
 
+                    @can('update', $lead)
+                        <div class="mt-3">
+                            <x-stall-reason-picker :record="$lead" update-route="leads.stall-reason.update" :reasons="$stallReasons" />
+                        </div>
+                    @endcan
+
                     @if ($nextAction)
                         <div class="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
                             <p class="font-medium">📵 Not responding — next best action</p>

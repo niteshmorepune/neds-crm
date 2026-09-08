@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\CustomerStatus;
 use App\Enums\DealLostReason;
 use App\Enums\DealStage;
+use App\Enums\StallReason;
 use App\Enums\UserRole;
 use App\Jobs\ProvisionClientExternallyJob;
 use App\Jobs\SendWhatsappHandoffMessageJob;
@@ -36,6 +37,7 @@ class Deal extends Model
         'value',
         'confidence',
         'stage',
+        'stall_reason',
         'lost_reason',
         'ai_suggested_lost_reason',
         'owner_id',
@@ -59,6 +61,7 @@ class Deal extends Model
     {
         return [
             'stage' => DealStage::class,
+            'stall_reason' => StallReason::class,
             'lost_reason' => DealLostReason::class,
             'ai_suggested_lost_reason' => DealLostReason::class,
             'value' => 'integer',

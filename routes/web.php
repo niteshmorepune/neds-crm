@@ -227,6 +227,7 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
         Route::post('leads/{lead}/convert', [LeadController::class, 'convert'])->name('leads.convert');
         Route::post('leads/{lead}/quotation', [LeadController::class, 'quotation'])->name('leads.quotation');
         Route::post('leads/{lead}/reassign', [LeadController::class, 'reassign'])->name('leads.reassign');
+        Route::post('leads/{lead}/stall-reason', [LeadController::class, 'updateStallReason'])->name('leads.stall-reason.update');
         Route::post('leads/{lead}/visibility-audit/{purchase}/ready', [LeadController::class, 'markVisibilityAuditReady'])->name('leads.visibility-audit.ready');
         Route::post('leads/{lead}/visibility-audit/{purchase}/report/upload', [LeadController::class, 'uploadVisibilityAuditReport'])->name('leads.visibility-audit.report.upload');
         Route::post('leads/{lead}/visibility-audit/{purchase}/report/send', [LeadController::class, 'sendVisibilityAuditReport'])->name('leads.visibility-audit.report.send');
@@ -242,6 +243,7 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
         Route::get('deals', DealsBoard::class)->name('deals.index');
         Route::get('deals/{deal}', [DealController::class, 'show'])->name('deals.show');
         Route::put('deals/{deal}', [DealController::class, 'update'])->name('deals.update');
+        Route::post('deals/{deal}/stall-reason', [DealController::class, 'updateStallReason'])->name('deals.stall-reason.update');
         Route::delete('deals/{deal}', [DealController::class, 'destroy'])->name('deals.destroy');
     });
 

@@ -8,6 +8,7 @@ use App\Enums\DealStage;
 use App\Enums\LeadReassignmentReason;
 use App\Enums\LeadSource;
 use App\Enums\LeadStatus;
+use App\Enums\StallReason;
 use App\Enums\UserRole;
 use App\Http\Requests\LeadBulkReassignRequest;
 use App\Http\Requests\LeadReassignRequest;
@@ -30,6 +31,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -316,7 +318,30 @@ class LeadController extends Controller
             'vaFunnelStatus' => $vaMetrics->funnelStatusFor($lead),
             'nextAction' => $lead->suggestedNextAction($callTiming),
             'callAdvice' => $timingAdvisor->recommendationFor($lead),
+            'stallReasons' => StallReason::cases(),
         ]);
+    }
+
+    /**
+     * Quick inline tag from the lead's own page or the Log a Call form —
+     * why a lead with real conversation history isn't moving forward.
+     * Phase 1 of the closure-guidance plan (2026-09-08, see CLAUDE.md).
+     * Same authorization as editing the lead itself; no FormRequest class
+     * for a single nullable-enum field, matching this app's existing
+     * lightweight-inline-edit precedent (e.g. the Payment date/mode/
+     * reference fix).
+     */
+    public function updateStallReason(Request $request, Lead $lead): RedirectResponse
+    {
+        $this->authorize('update', $lead);
+
+        $data = $request->validate([
+            'stall_reason' => ['nullable', Rule::enum(StallReason::class)],
+        ]);
+
+        $lead->update(['stall_reason' => $data['stall_reason'] ?? null]);
+
+        return back()->with('status', $data['stall_reason'] ? 'Stall reason saved.' : 'Stall reason cleared.');
     }
 
     public function reassign(LeadReassignRequest $request, Lead $lead, ReassignLead $action): RedirectResponse
