@@ -94,6 +94,17 @@ checkbox before saving (it only appears when the lead has an open WhatsApp
 conversation). Leave it unchecked for a normal internal note — that's the
 default, so nothing goes to the client unless you explicitly tick it.
 
+**If a lead asks to pay while chatting on WhatsApp (e.g. "send me the QR
+code"), don't try to paste a payment link or image into the chat** — if
+WhatsApp's 24-hour reply window has closed since their last message, it
+will silently fail to deliver, and there's no way around that from here
+(a WhatsApp platform rule, not a CRM limit — you also won't see an error,
+it just never arrives). Since Quotations aren't available to Telecaller,
+flag it to the lead's owner (Sales) — they can create a real Quotation and
+click **Send to Client**, which goes out as an approved WhatsApp template
+that reaches the client even with the window closed, with a working **Pay
+Now** button.
+
 **Visibility Audit Funnel:** **Lead Generation → VA Recovery** shows the
 whole Meta Ads → offer page → checkout → paid journey for GMB-tagged
 leads, plus a queue of who's stuck at which stage — worth a follow-up

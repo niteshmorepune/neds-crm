@@ -107,6 +107,16 @@ once one exists.
 Yes, via Razorpay — clients see a **Pay Now** option on their portal
 invoice page for unpaid/partially-paid invoices.
 
+**Q: A client asked to pay while chatting on WhatsApp, but the message
+won't send — what happened?**
+WhatsApp blocks any free-form message (a pasted link, a QR code image)
+once the 24-hour reply window since their last message has closed — a
+WhatsApp platform rule, not a CRM issue, and it fails silently with no
+error shown. Create a real **Quotation** for them (or use an existing
+one) and click **Send to Client** — that goes out as a pre-approved
+WhatsApp template, which reaches the client even with the window closed,
+and links to a page with a working **Pay Now** button.
+
 ## 6. Tickets, Calls & Meetings
 
 **Q: A call follow-up reminder I set just disappeared — did something go wrong?**

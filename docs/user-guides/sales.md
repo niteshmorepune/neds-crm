@@ -540,7 +540,19 @@ form to set the company's monthly/FY target and each rep's monthly target.
    the client's billing address and marks it **Sent**. If the client has a
    phone number on file, it also sends a WhatsApp message with a link to
    view the quotation online — no extra step, both go out from the same
-   click. It also drops a 3-day **follow-up reminder** onto your own
+   click.
+   - **If a client asks to pay while chatting on WhatsApp (e.g. "send me the
+     QR code"), don't try to paste a payment link or image straight into
+     the chat** — if WhatsApp's 24-hour reply window has closed since their
+     last message, that message will silently fail to deliver and there's
+     no way around it (a WhatsApp platform rule, not a CRM limit). Create a
+     real **Quotation** for them instead (or use an existing one) and click
+     **Send to Client** here — this goes out as an approved WhatsApp
+     template, which reaches them **even with the window closed**, and the
+     link it sends has a working **Pay Now** button (see point 4 above)
+     powered by Razorpay. **Send to Client** can be clicked again any time
+     the quotation needs re-sending, not just once.
+   It also drops a 3-day **follow-up reminder** onto your own
    Dashboard automatically (see Getting Started → Follow-up Reminders), so
    a quotation can't quietly fall through the cracks — if the client was
    referred by a partner agency, the reminder names the partner too (e.g.
