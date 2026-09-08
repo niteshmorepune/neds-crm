@@ -213,6 +213,18 @@ it('links each By source row on the Lead Source Performance page to Lead Generat
     );
 });
 
+it('shows the daily lead-volume trend, split by Sales Rep and by Telecaller, on the Lead Source Performance page', function () {
+    $manager = User::factory()->role(UserRole::Manager)->create();
+    $kiran = User::factory()->role(UserRole::Sales)->create(['name' => 'Kiran Katte']);
+    Lead::factory()->create(['source' => LeadSource::Website, 'created_at' => now(), 'owner_id' => $kiran->id]);
+
+    $this->actingAs($manager)->get(route('reports.lead-sources', ['month' => now()->format('Y-m')]))
+        ->assertOk()
+        ->assertSee('Daily trend — by Sales Rep (owner)')
+        ->assertSee('Daily trend — by Telecaller')
+        ->assertSee('Kiran Katte');
+});
+
 it('lets a manager view the reports but forbids a sales rep', function () {
     $manager = User::factory()->role(UserRole::Manager)->create();
     $sales = User::factory()->role(UserRole::Sales)->create();
@@ -245,5 +257,6 @@ it('exports the reports as CSV', function () {
 
     $leadSources = $this->actingAs($manager)->get(route('reports.lead-sources.export'));
     $leadSources->assertOk();
-    expect($leadSources->headers->get('content-type'))->toContain('text/csv');
+    expect($leadSources->headers->get('content-type'))->toContain('text/csv')
+        ->and($leadSources->streamedContent())->toContain('Day')->toContain('Total');
 });

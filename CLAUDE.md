@@ -1842,3 +1842,35 @@ Record every "we chose X because Y" here — this is the project's memory.
   `MyDayTest`, and a new `SendCallFollowUpRemindersTest` (this command had
   zero prior test coverage). Full suite 3155 green (same one pre-existing
   `MeetingRequestTest` flake), Pint clean.
+- **2026-09-08 (same day) — Daily lead-volume trend, by Sales Rep and by
+  Telecaller, added to the Lead Source Performance report.** Owner asked
+  how to see how many leads came in on which day; no such view existed —
+  the Lead Generation list has no day-level tally, and the existing report
+  only ever grouped by source/campaign for a whole month at a time. New
+  `App\Services\LeadVolumeMetrics` (its own service class, not stacked
+  onto `ReportMetrics`, per that file's own note that new reports
+  shouldn't keep landing there) computes two day-by-day tables for the
+  report's existing month range: one broken down by owner (Sales rep),
+  one by telecaller, each with a per-person column built from whoever
+  actually owns/is telecaller-assigned to a lead in that range — not a
+  fixed active-roster snapshot, so a rep who left mid-range still shows
+  their real historical numbers instead of silently folding into
+  "Unassigned." An "Unassigned" column is appended last, only when at
+  least one lead in range genuinely has none. Both tables + a totals row
+  ship in the existing Export CSV too.
+  **Real bug caught while writing tests, not shipped**: this feature's
+  own first cut built per-person test fixtures with `owner_id => null`
+  *after* Sales/Telecaller users already existed in the test, which
+  `LeadObserver`'s round-robin auto-assign silently claimed — the exact
+  `[[feedback-gotchas]]` gotcha (create a genuinely-unassigned fixture
+  before any eligible user exists). Fixed by reordering the test
+  fixtures, not the app.
+  10 new Pest tests (`LeadVolumeMetricsTest` + 2 in
+  `ManagementReportsTest`), full suite 3161 green (same one pre-existing
+  `MeetingRequestTest` flake), Pint clean. Local dev MySQL has no Lead
+  rows in any recent month, so the render smoke-test only confirmed a
+  correct empty state (200, right headers, zero rows) — the real
+  non-empty numbers were verified read-only against production data
+  after deploy instead. `docs/user-guides/manager.md` updated (only
+  `manager.pdf` regenerated — this report is Admin/Manager-only, no other
+  guide references its content).
