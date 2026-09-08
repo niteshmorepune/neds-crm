@@ -1,5 +1,7 @@
 <?php
 
+use App\Enums\CallDirection;
+use App\Enums\CallOutcome;
 use App\Enums\DealStage;
 use App\Enums\LeadStatus;
 use App\Enums\TaskStatus;
@@ -10,12 +12,25 @@ use App\Models\CallLog;
 use App\Models\Customer;
 use App\Models\Deal;
 use App\Models\Lead;
-use App\Models\Project;
 use App\Models\Task;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Services\MyDayService;
 use Database\Seeders\MenuItemsSeeder;
+
+/** Gives CallTimingMetrics::bestHours() a trustworthy 9 AM band (>= MIN_SAMPLE). */
+function myDaySeedBestHour(int $hour = 9): void
+{
+    $rep = User::factory()->create();
+    for ($i = 1; $i <= 15; $i++) {
+        CallLog::factory()->create([
+            'user_id' => $rep->id,
+            'direction' => CallDirection::Outgoing,
+            'outcome' => CallOutcome::Connected,
+            'called_at' => Carbon\Carbon::now('Asia/Kolkata')->subDays($i)->setTime($hour, 0, 0)->utc(),
+        ]);
+    }
+}
 
 beforeEach(function () {
     $this->seed(MenuItemsSeeder::class);
@@ -103,6 +118,36 @@ it('renders the My Day page for the logged-in user showing only their own items'
         ->assertOk()
         ->assertSee('Mine')
         ->assertDontSee('Not mine');
+});
+
+it('appends a call-timing badge to an overdue lead follow-up', function () {
+    myDaySeedBestHour(9);
+    $lead = Lead::factory()->create([
+        'owner_id' => $this->user->id,
+        'next_follow_up_at' => now()->subDay(),
+        'status' => LeadStatus::New,
+        'company' => 'Acme Co',
+    ]);
+
+    $item = $this->service->worklist($this->user)->firstWhere('type', 'lead');
+
+    expect($item['subtitle'])->toBe('Acme Co · Try: 9 AM');
+});
+
+it('appends a call-timing badge to a due call follow-up against a lead', function () {
+    myDaySeedBestHour(9);
+    $lead = Lead::factory()->create(['owner_id' => $this->user->id]);
+    CallLog::factory()->create([
+        'user_id' => $this->user->id,
+        'callable_type' => Lead::class,
+        'callable_id' => $lead->id,
+        'follow_up_at' => now(),
+        'next_action' => 'Ask about budget',
+    ]);
+
+    $item = $this->service->worklist($this->user)->firstWhere('type', 'call');
+
+    expect($item['subtitle'])->toBe('Ask about budget · Try: 9 AM');
 });
 
 it('shows an empty state when nothing is due', function () {

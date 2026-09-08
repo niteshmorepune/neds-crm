@@ -12,6 +12,7 @@ use App\Models\Lead;
 use App\Models\Task;
 use App\Models\Ticket;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
 /**
@@ -25,13 +26,22 @@ use Illuminate\Support\Collection;
  */
 class MyDayService
 {
+    public function __construct(
+        private readonly CallTimingMetrics $callTiming,
+        private readonly LeadCallTimingAdvisor $timingAdvisor,
+    ) {}
+
     /**
-     * @return Collection<int, array{type: string, title: string, subtitle: ?string, when: \Illuminate\Support\Carbon, url: string}>
+     * @return Collection<int, array{type: string, title: string, subtitle: ?string, when: Carbon, url: string}>
      */
     public function worklist(User $user): Collection
     {
         $now = now();
         $items = collect();
+
+        // Computed once for the whole worklist, not per lead — same reason
+        // as LeadController::index()'s own $bestHours precompute.
+        $bestHours = $this->callTiming->bestHours();
 
         Task::query()
             ->assignedTo($user->id)
@@ -56,11 +66,11 @@ class MyDayService
             ->where('next_follow_up_at', '<', $now)
             ->whereIn('status', [LeadStatus::New->value, LeadStatus::Contacted->value, LeadStatus::Qualified->value])
             ->get()
-            ->each(function (Lead $lead) use ($items) {
+            ->each(function (Lead $lead) use ($items, $bestHours) {
                 $items->push([
                     'type' => 'lead',
                     'title' => 'Follow up: '.$lead->name,
-                    'subtitle' => $lead->company,
+                    'subtitle' => $this->withCallBadge($lead->company, $lead, $bestHours),
                     'when' => $lead->next_follow_up_at,
                     'url' => route('leads.show', $lead),
                 ]);
@@ -89,13 +99,17 @@ class MyDayService
             ->where('follow_up_at', '<=', $now)
             ->with('callable')
             ->get()
-            ->each(function (CallLog $call) use ($items) {
+            ->each(function (CallLog $call) use ($items, $bestHours) {
                 $subject = $call->callable instanceof Customer ? $call->callable->company_name : $call->callable?->name;
+
+                $subtitle = $call->callable instanceof Lead
+                    ? $this->withCallBadge($call->next_action, $call->callable, $bestHours)
+                    : $call->next_action;
 
                 $items->push([
                     'type' => 'call',
                     'title' => 'Call: '.($subject ?? 'Unknown'),
-                    'subtitle' => $call->next_action,
+                    'subtitle' => $subtitle,
                     'when' => $call->follow_up_at,
                     'url' => $call->callable instanceof Customer
                         ? route('clients.show', $call->callable->id)
@@ -121,5 +135,25 @@ class MyDayService
             });
 
         return $items->sortBy('when')->values();
+    }
+
+    /**
+     * Appends a "Try: 9 AM, 10 AM" call-timing badge to an existing subtitle
+     * (or returns it unchanged when there's nothing to suggest yet). Lazily
+     * loads this one lead's callLogs — acceptable N+1 at My Day's scale, a
+     * personal worklist of typically a handful of items, not a paginated
+     * table.
+     */
+    private function withCallBadge(?string $subtitle, Lead $lead, Collection $bestHours): ?string
+    {
+        $badge = $this->timingAdvisor->badgeLabel(
+            $this->timingAdvisor->recommendationFor($lead->loadMissing('callLogs'), $bestHours)
+        );
+
+        if ($badge === null) {
+            return $subtitle;
+        }
+
+        return $subtitle ? "{$subtitle} · {$badge}" : $badge;
     }
 }
