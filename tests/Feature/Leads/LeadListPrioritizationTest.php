@@ -291,3 +291,31 @@ it('shows the "status may need updating" count on the Needs Attention strip and 
     $ids = $response->viewData('leads')->pluck('id')->all();
     expect($ids)->toContain($stale->id)->not->toContain($fresh->id);
 });
+
+it('shows the "welcome sent, no reply" count on the Needs Attention strip and filters via attention=welcome_no_reply', function () {
+    $manager = User::factory()->role(UserRole::Manager)->create();
+    $quiet = Lead::factory()->create(['name' => 'Quiet Lead', 'welcome_message_sent_at' => now()->subHours(Lead::WELCOME_FOLLOWUP_WAIT_HOURS + 1)]);
+    $tooRecent = Lead::factory()->create(['welcome_message_sent_at' => now()->subHour()]);
+    $replied = Lead::factory()->create(['welcome_message_sent_at' => now()->subHours(Lead::WELCOME_FOLLOWUP_WAIT_HOURS + 1)]);
+    $replied->notes()->create(['user_id' => null, 'body' => 'Yes please call me']);
+
+    $this->actingAs($manager)->get(route('leads.index'))
+        ->assertOk()
+        ->assertSee('1 welcome sent, no reply');
+
+    $response = $this->actingAs($manager)->get(route('leads.index', ['attention' => 'welcome_no_reply']));
+    $ids = $response->viewData('leads')->pluck('id')->all();
+    expect($ids)->toContain($quiet->id)
+        ->not->toContain($tooRecent->id)
+        ->not->toContain($replied->id);
+});
+
+it('shows the per-row "Welcome sent, no reply" badge only for an overdue-no-reply lead', function () {
+    $manager = User::factory()->role(UserRole::Manager)->create();
+    $quiet = Lead::factory()->create(['name' => 'Quiet Lead', 'welcome_message_sent_at' => now()->subHours(Lead::WELCOME_FOLLOWUP_WAIT_HOURS + 1)]);
+    Lead::factory()->create(['name' => 'Untouched Lead']);
+
+    $this->actingAs($manager)->get(route('leads.index'))
+        ->assertOk()
+        ->assertSeeText('Welcome sent, no reply');
+});
