@@ -6,6 +6,7 @@ use App\Enums\LeadGoal;
 use App\Enums\LeadStatus;
 use App\Enums\UserRole;
 use App\Jobs\ScoreLead;
+use App\Jobs\SendLeadWelcomeMessageJob;
 use App\Jobs\SendTelegramLeadAlertJob;
 use App\Jobs\SendVisibilityAuditFirstInviteEmailJob;
 use App\Jobs\SendVisibilityAuditFirstInviteJob;
@@ -45,6 +46,7 @@ class LeadObserver
         $this->queueScore($lead);
         $this->notifyNewLead($lead);
         $this->sendVisibilityAuditInviteIfEligible($lead);
+        $this->sendWelcomeMessageIfEligible($lead);
 
         // autoAssign()'s own save() above already fires a nested updated()
         // call when it finds an assignee, which handles the wadesk.in sync
@@ -97,6 +99,7 @@ class LeadObserver
         // submitted the Meta form.
         if ($lead->wasChanged(['meta_leadgen_id', 'service_id'])) {
             $this->sendVisibilityAuditInviteIfEligible($lead);
+            $this->sendWelcomeMessageIfEligible($lead);
         }
 
         // Fires from either goal-capture path (the telecaller UI or
@@ -271,6 +274,25 @@ class LeadObserver
         if ($lead->service_id === $this->visibilityAuditFunnelMetrics->gmbServiceId()) {
             SendVisibilityAuditFirstInviteJob::dispatch($lead->id);
             SendVisibilityAuditFirstInviteEmailJob::dispatch($lead->id);
+        }
+    }
+
+    /**
+     * The generic counterpart to sendVisibilityAuditInviteIfEligible()
+     * above — every OTHER Meta Ads lead (any service, or none tagged at
+     * all) gets this instead of the VA-specific first invite, never both.
+     * Same meta_leadgen_id gating and same reasoning (real race condition
+     * where WhatsApp's own auto-message reaches the CRM before the Lead
+     * Ads webhook does — see the docblock above).
+     */
+    private function sendWelcomeMessageIfEligible(Lead $lead): void
+    {
+        if ($lead->meta_leadgen_id === null) {
+            return;
+        }
+
+        if ($lead->service_id !== $this->visibilityAuditFunnelMetrics->gmbServiceId()) {
+            SendLeadWelcomeMessageJob::dispatch($lead->id);
         }
     }
 

@@ -98,6 +98,8 @@ class Lead extends Model
             'manager_escalated_at' => 'datetime',
             'visibility_audit_invited_at' => 'datetime',
             'visibility_audit_invite_emailed_at' => 'datetime',
+            'welcome_message_sent_at' => 'datetime',
+            'last_checkin_sent_at' => 'datetime',
         ];
     }
 

@@ -145,6 +145,43 @@ return [
         // Enterprises Digital Solutions is ready! Tap below to view it
         // any time." — {{1}} = customer's billing contact name.
         'quotation_sent_template_name' => env('WADESK_QUOTATION_SENT_TEMPLATE_NAME'),
+
+        // Lead welcome (App\Jobs\SendLeadWelcomeMessageJob, fired from
+        // LeadObserver::created()/updated() for any Meta Ads lead — same
+        // meta_leadgen_id-not-source gating as the VA first invite above,
+        // for the same race-condition reason). Deliberately skipped for a
+        // GMB-tagged lead, which already gets its own first message from
+        // visibility_audit_first_invite_template_name above — this is the
+        // generic version for every OTHER Meta lead. The goal is opening
+        // WhatsApp's 24-hour session window on a lead who's never
+        // messaged us, by giving them a specific, easy-to-answer reason to
+        // reply (not just "any questions?") — see the 2026-09-09 decisions
+        // log entry for why. Submit as Marketing category (unsolicited
+        // first outreach, not a reply to an open conversation), plus a
+        // required "Stop promotions" Quick Reply opt-out button. Body has
+        // {{1}}=name, {{2}}=service name (or "your enquiry" when no
+        // service is tagged), no button. Suggested body: "Hi {{1}}, thank
+        // you for reaching out about {{2}}! We'd love to help — what's a
+        // good time for a quick call today or tomorrow? Just reply here
+        // and our team will get in touch then."
+        'lead_welcome_template_name' => env('WADESK_LEAD_WELCOME_TEMPLATE_NAME'),
+
+        // Manual re-engagement check-in (App\Jobs\SendLeadCheckInJob),
+        // triggered by a staff member clicking "Send WhatsApp check-in" on
+        // a lead's own page (LeadController::sendCheckIn()) — for a lead
+        // whose WhatsApp session window has already closed and who's gone
+        // quiet, unlike the automatic welcome above which only ever fires
+        // once, right at creation. Re-sendable (no idempotency guard in
+        // the job itself — the controller applies a soft 24h cooldown via
+        // Lead.last_checkin_sent_at instead, so a considerate reminder
+        // stays possible without risking an accidental repeat blast).
+        // Submit as Marketing category, same opt-out button requirement.
+        // Body has {{1}}=name, {{2}}=service name (or "your enquiry"), no
+        // button. Suggested body: "Hi {{1}}, just checking in about {{2}}
+        // — are you still exploring this, or is there anything I can help
+        // clarify? Reply here anytime, or let me know a good time to
+        // call."
+        'lead_checkin_template_name' => env('WADESK_LEAD_CHECKIN_TEMPLATE_NAME'),
     ],
 
     // nedsdrishti.in — agency service delivery platform.

@@ -2141,3 +2141,95 @@ Record every "we chose X because Y" here — this is the project's memory.
   The wadesk.in-side build (interactive list sender, the one new
   `Conversation` state column, and the assistant's own branching logic) is
   a separate follow-up — see the next entry once that's built.
+- **2026-09-09 — wadesk.in-side goal-question flow shipped and deployed
+  (wadesk.in PR #2), plus a real, separate production incident found and
+  fixed during that deploy.** New `src/lib/goal-flow.ts` in the wadesk.in
+  repo: the after-hours assistant now sends a real WhatsApp interactive
+  list (new `sendInteractiveMessage`-style `sendInteractiveListMessage()`
+  in `meta.ts`) asking the CRM's own "biggest goal" question to any lead
+  the CRM recognises as an open, un-asked Lead, matches the tapped
+  option's row `id` (now also extracted in `api/webhook/route.ts`
+  alongside the existing `.title` extraction), and branches to asking for
+  a Website/GBP link or telling them a Sales Expert will follow up —
+  writing both back via new `src/lib/crm-goal-capture.ts`
+  (`POST /api/leads/goal-capture`, this repo's own new endpoint from the
+  entry above). Deliberately **no Anthropic call anywhere in this flow**
+  — deterministic id-matching plus a plain URL regex, kept reliable and
+  free. New `Conversation.aiFlowPending` column (wadesk.in's own schema)
+  is the only new persisted state; the captured values live on the CRM's
+  Lead, re-fetched fresh each turn.
+  **Real incident found while deploying wadesk.in's side**: its
+  `docker-compose.yml` had never listed most of the app's actual required
+  env vars under the `app` service's `environment:` block —
+  `ANTHROPIC_API_KEY`, every `CRM_*` var, `WADESK_SERVICE_KEY`, and all
+  three `VAPID_*` push vars were correctly set in the VPS's `.env` but
+  silently never reached the running container (Docker Compose only
+  injects what's explicitly named in `environment:`, regardless of what
+  `.env` defines). Confirmed via `docker compose exec app env` returning
+  nothing for any of them. Every affected function fails silently by
+  design (same "AI failure never breaks the core workflow" convention
+  this whole ecosystem uses), so this had zero visible symptoms —
+  meaning the after-hours AI assistant had likely never sent a real reply,
+  nothing had reached the CRM's WhatsApp timeline, web push to agents had
+  been silently failing, and the CRM's own server-to-server calls into
+  wadesk.in may have been rejected, for however long that file had been in
+  this shape. Fixed by listing every required var explicitly (pushed
+  directly to wadesk.in's `master`, no PR — matching that repo's own
+  overwhelming direct-to-master convention). Owner ran the full redeploy
+  (has no SSH access from this session) and confirmed together, step by
+  step: migration applied clean, all 10 previously-missing vars now
+  present via `docker compose exec app env`, container healthy with no
+  startup errors. See [[feedback-gotchas]] (CRM-side memory) for the full
+  reusable gotcha. Real on-device WhatsApp test (does the interactive list
+  actually render/tap correctly) is the one thing left unverified — needs
+  a real test message after hours. Docs: `sales.md`/`telecaller.md`
+  extended, `integrations.md`'s Integration 14 gained a troubleshooting
+  note about the docker-compose gotcha.
+- **2026-09-09 (same day) — Automatic + manual WhatsApp engagement for
+  Meta Ads leads (App\Jobs\SendLeadWelcomeMessageJob /
+  App\Jobs\SendLeadCheckInJob).** Owner wanted a way to open WhatsApp's
+  24-hour session window on a Meta Ads lead who's never messaged the
+  business, so staff (or the after-hours assistant) can message freely
+  instead of being limited to approved templates. Corrected a premise
+  before building: an unsolicited "thanks for filling the form" first
+  message can't be a Utility-category template (Meta's own policy reserves
+  Utility for updates on an existing transaction/interaction) — this app
+  already learned that the hard way (`visibility_audit_first_invite_
+  template_name`'s own comment explicitly documents choosing Marketing for
+  exactly this shape of message). Confirmed 2 decisions via
+  AskUserQuestion: build both an automatic welcome (fires once, at
+  creation) and a manual re-engagement button (for a lead who's since gone
+  quiet) rather than just one; and refined the welcome copy per the
+  owner's own framing — not just "thanks," but a specific, easy-to-answer
+  question ("what's a good time to call?") deliberately chosen over a
+  generic "any questions?" close, since a concrete question gets more
+  replies, and a reply is what actually opens the window.
+  `SendLeadWelcomeMessageJob` mirrors `SendVisibilityAuditFirstInviteJob`'s
+  shape closely (same wadesk.in `/api/send-template` contract, same
+  `hasStaffWhatsappReplySince()` guard, same "ships inert until the
+  template is Meta-approved and configured" pattern) but is deliberately
+  scoped to skip a GMB-tagged lead, which already gets the VA-specific
+  first invite instead — `LeadObserver` dispatches exactly one of the two,
+  never both, checked in both `created()` and the same `meta_leadgen_id`/
+  `service_id` backfill branch in `updated()` the VA invite already uses
+  for the same WhatsApp-race reason. `SendLeadCheckInJob` mirrors
+  `SendQuotationWhatsAppJob`'s shape instead (manually triggered, no
+  idempotency guard in the job itself, re-sendable) — the new **📱 Send
+  WhatsApp check-in** button on a lead's own page
+  (`LeadController::sendCheckIn()`) applies a soft 24-hour cooldown via
+  the new `Lead.last_checkin_sent_at` column so a considerate reminder
+  stays possible without risking an accidental repeat blast to the same
+  contact. New `Lead.welcome_message_sent_at` is the automatic job's own
+  idempotency guard. Neither job logs to `VisibilityAuditTouch` (that
+  table is VA-specific) — each instead leaves a plain internal Note on
+  success, for staff visibility in the lead's own timeline.
+  Both new templates are Marketing category with the same required
+  "Stop promotions" opt-out button, two body variables (name, tagged
+  service or "your enquiry" as a fallback) — see `config/services.php`'s
+  `lead_welcome_template_name`/`lead_checkin_template_name` comments for
+  the exact suggested body text handed to the owner to submit to Meta for
+  approval. 36 new Pest tests (`SendLeadWelcomeMessageJobTest`,
+  `SendLeadCheckInJobTest`, `LeadCheckInTest`), full suite green, Pint
+  clean, migrated against local MySQL (two new nullable `leads` columns,
+  no seeder/menu changes). Docs: `sales.md`/`telecaller.md` extended,
+  new `integrations.md` "Integration 15."

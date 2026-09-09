@@ -82,6 +82,19 @@
                                 <button type="submit" class="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-500">Save</button>
                             </form>
                         </div>
+
+                        @if ($lead->phone)
+                            <div class="mt-3 flex items-center gap-2">
+                                <form method="POST" action="{{ route('leads.check-in.send', $lead) }}">
+                                    @csrf
+                                    <button type="submit" class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50">📱 Send WhatsApp check-in</button>
+                                </form>
+                                @if ($lead->last_checkin_sent_at)
+                                    <span class="text-xs text-gray-400">Last sent {{ $lead->last_checkin_sent_at->diffForHumans() }}</span>
+                                @endif
+                            </div>
+                            <x-input-error :messages="$errors->get('check_in')" class="mt-1" />
+                        @endif
                     @endcan
 
                     @if ($lead->goal?->needsWebsiteOrGbp() && ! $lead->website_url && ! $lead->gbp_url)

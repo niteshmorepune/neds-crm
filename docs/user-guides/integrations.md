@@ -557,6 +557,50 @@ anything else is wrong.
 
 ---
 
+## Integration 15 — Automatic + manual WhatsApp engagement for Meta Ads leads
+
+**What it does:** two new outbound sends via the existing wadesk.in `POST
+/api/send-template` contract. First, `App\Jobs\SendLeadWelcomeMessageJob`
+fires automatically the moment any Meta Ads lead is created (except a
+GMB-tagged one, which gets `visibility_audit_first_invite_template_name`
+instead — never both) — a thank-you that also asks what time works for a
+quick call, deliberately specific rather than a generic "any questions?" so
+the lead is likely to actually reply. Second, `App\Jobs\SendLeadCheckInJob`
+is triggered manually by staff via the **📱 Send WhatsApp check-in** button
+on a lead's own page, for re-engaging a lead who's gone quiet later.
+
+**Why it exists:** Meta's native Lead Ads form never opens a real WhatsApp
+conversation with the submitter — until the lead sends a message of their
+own, WhatsApp's 24-hour session window stays closed and staff (or the
+after-hours assistant) can only reach them via further approved templates,
+not free-form messages. Both templates exist specifically to prompt a reply
+and open that window, rather than being informational messages in their
+own right.
+
+**Both are Marketing category** (an unsolicited first/re-outreach, not a
+reply within an open conversation — same reasoning as
+`visibility_audit_first_invite_template_name`), each needs a "Stop
+promotions" opt-out button, and each takes two body variables: the lead's
+name, and their tagged service (or "your enquiry" as a fallback when none
+is tagged). See `config/services.php`'s `lead_welcome_template_name`/
+`lead_checkin_template_name` comments for the suggested body text to submit
+to Meta.
+
+**Idempotency:** the automatic welcome is sent at most once per lead
+(`Lead.welcome_message_sent_at`). The manual check-in has no such limit —
+staff can send it again anytime — but the button applies a soft 24-hour
+cooldown (`Lead.last_checkin_sent_at`) so it stays a considerate nudge, not
+an accidental repeat blast to the same contact.
+
+**If a lead never gets the welcome message, or the check-in button
+no-ops:** confirm `WADESK_LEAD_WELCOME_TEMPLATE_NAME`/
+`WADESK_LEAD_CHECKIN_TEMPLATE_NAME` are set in the CRM's own `.env` (not
+wadesk.in's — these sends originate from the CRM, the reverse direction of
+Integration 14 above) and that the named template is genuinely
+Meta-approved. Both jobs no-op silently (by design) until configured.
+
+---
+
 ## Checking integration health
 
 All integration events leave a trace in the CRM:
