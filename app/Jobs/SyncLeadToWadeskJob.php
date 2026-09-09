@@ -20,8 +20,15 @@ use Illuminate\Support\Facades\Log;
  *
  * Sends no message and makes no Meta API call — this only stages internal
  * wadesk.in state. Safe to call repeatedly (idempotent by phone+line on
- * wadesk.in's side); fired again on every owner_id change so reassignment
- * stays in sync.
+ * wadesk.in's side); fired again on every owner_id OR telecaller_id change
+ * so reassignment stays in sync.
+ *
+ * 2026-09-09: also sends the Telecaller's email (`telecallerEmail`), not
+ * just the Sales owner's — wadesk.in resolves both as CRM-managed
+ * conversation assignees and swaps out whichever one no longer matches on
+ * each call, which is what actually enforces the Marketing line's
+ * agent-sees-only-their-own-leads restriction on wadesk.in's side (see that
+ * repo's WhatsappNumber.restrictToOwnLeads).
  *
  * No-ops (logs, never throws) whenever wadesk config or the lead's phone is
  * absent. Same failure-tolerance discipline as SendWhatsappHandoffMessageJob
@@ -64,6 +71,7 @@ class SyncLeadToWadeskJob implements ShouldQueue
                     'name' => $lead->name,
                     'businessNumber' => $marketingNumber,
                     'agentEmail' => $lead->owner?->email,
+                    'telecallerEmail' => $lead->telecaller?->email,
                 ]);
 
             if (! $response->successful()) {

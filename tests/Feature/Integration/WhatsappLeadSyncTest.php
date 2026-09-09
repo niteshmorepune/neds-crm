@@ -60,6 +60,26 @@ it('does not dispatch SyncLeadToWadeskJob on an update that leaves owner_id unch
     Queue::assertNotPushed(SyncLeadToWadeskJob::class);
 });
 
+it('dispatches SyncLeadToWadeskJob when a lead is manually reassigned to a different telecaller', function () {
+    $lead = Lead::factory()->create(['telecaller_id' => null]);
+    $telecaller = User::factory()->role(UserRole::Intern)->create();
+
+    Queue::fake();
+    $lead->update(['telecaller_id' => $telecaller->id]);
+
+    Queue::assertPushed(SyncLeadToWadeskJob::class, fn ($job) => $job->leadId === $lead->id);
+});
+
+it('does not dispatch SyncLeadToWadeskJob on an update that leaves owner_id and telecaller_id unchanged', function () {
+    $owner = User::factory()->role(UserRole::Sales)->create();
+    $lead = Lead::factory()->ownedBy($owner->id)->create(['telecaller_id' => null]);
+
+    Queue::fake();
+    $lead->update(['name' => 'Renamed Lead']);
+
+    Queue::assertNotPushed(SyncLeadToWadeskJob::class);
+});
+
 // ──────────────────────────────────────────────────────────────────────────────
 // Job execution
 // ──────────────────────────────────────────────────────────────────────────────
@@ -90,6 +110,34 @@ it('omits agentEmail when the lead has no owner yet', function () {
     (new SyncLeadToWadeskJob($lead->id))->handle();
 
     Http::assertSent(fn ($request) => $request['agentEmail'] === null);
+});
+
+it('also POSTs the telecaller email alongside the owner email', function () {
+    Http::fake(['https://wadesk.test/api/leads/sync' => Http::response(['conversationId' => 'conv_new'], 200)]);
+
+    $owner = User::factory()->create(['email' => 'kiran@niranjanenterprises.co.in']);
+    $telecaller = User::factory()->create(['email' => 'neha@niranjanenterprises.co.in']);
+    $lead = Lead::factory()->ownedBy($owner->id)->create([
+        'telecaller_id' => $telecaller->id,
+        'phone' => '919028099919',
+    ]);
+
+    (new SyncLeadToWadeskJob($lead->id))->handle();
+
+    Http::assertSent(function ($request) {
+        return $request['agentEmail'] === 'kiran@niranjanenterprises.co.in'
+            && $request['telecallerEmail'] === 'neha@niranjanenterprises.co.in';
+    });
+});
+
+it('omits telecallerEmail when the lead has no telecaller assigned', function () {
+    Http::fake(['https://wadesk.test/api/leads/sync' => Http::response(['conversationId' => 'conv_new'], 200)]);
+
+    $lead = Lead::factory()->create(['phone' => '919028099919', 'telecaller_id' => null]);
+
+    (new SyncLeadToWadeskJob($lead->id))->handle();
+
+    Http::assertSent(fn ($request) => $request['telecallerEmail'] === null);
 });
 
 it('stores the returned conversationId on the lead when it has none yet', function () {
