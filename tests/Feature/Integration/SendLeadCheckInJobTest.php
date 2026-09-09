@@ -33,7 +33,7 @@ it('sends the check-in template with the lead\'s name and service, and records i
         return $request->url() === 'https://wadesk.test/api/send-template'
             && $request['phone'] === '919876543210'
             && $request['templateName'] === 'lead_checkin'
-            && $request['variables'] === ['Priya Shah', 'SEO'];
+            && $request['variables'] === ['Priya Shah', 'SEO', 'Priya Shah', 'SEO'];
     });
 
     expect($lead->fresh()->last_checkin_sent_at)->not->toBeNull();

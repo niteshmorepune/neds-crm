@@ -61,7 +61,14 @@ class SendLeadCheckInJob implements ShouldQueue
                     'phone' => $digits,
                     'businessNumber' => $marketingNumber,
                     'templateName' => $templateName,
-                    'variables' => [$lead->name ?: 'there', $lead->service?->name ?? 'your enquiry'],
+                    // The approved template body is bilingual (English then Hindi),
+                    // so {{1}}/{{2}} and {{3}}/{{4}} repeat the same name/service.
+                    'variables' => [
+                        $lead->name ?: 'there',
+                        $lead->service?->name ?? 'your enquiry',
+                        $lead->name ?: 'there',
+                        $lead->service?->name ?? 'your enquiry',
+                    ],
                 ]);
 
             if (! $response->successful()) {

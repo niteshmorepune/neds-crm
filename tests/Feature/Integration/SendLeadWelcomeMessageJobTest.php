@@ -44,7 +44,7 @@ it('sends the welcome template with the lead\'s name and service, and marks it s
         return $request->url() === 'https://wadesk.test/api/send-template'
             && $request['phone'] === '919876543210'
             && $request['templateName'] === 'lead_welcome'
-            && $request['variables'] === ['Priya Shah', 'SEO'];
+            && $request['variables'] === ['Priya Shah', 'SEO', 'Priya Shah', 'SEO'];
     });
 
     expect($lead->fresh()->welcome_message_sent_at)->not->toBeNull();
@@ -63,7 +63,7 @@ it('falls back to "your enquiry" when the lead has no service tagged', function 
 
     (new SendLeadWelcomeMessageJob($lead->id))->handle();
 
-    Http::assertSent(fn ($request) => $request['variables'][1] === 'your enquiry');
+    Http::assertSent(fn ($request) => $request['variables'][1] === 'your enquiry' && $request['variables'][3] === 'your enquiry');
 });
 
 it('does not send twice for the same lead', function () {
