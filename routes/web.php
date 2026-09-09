@@ -230,6 +230,7 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
         Route::post('leads/{lead}/reassign', [LeadController::class, 'reassign'])->name('leads.reassign');
         Route::post('leads/{lead}/stall-reason', [LeadController::class, 'updateStallReason'])->name('leads.stall-reason.update');
         Route::post('leads/{lead}/goal-capture', [LeadController::class, 'updateGoalCapture'])->name('leads.goal-capture.update');
+        Route::post('leads/{lead}/check-in', [LeadController::class, 'sendCheckIn'])->name('leads.check-in.send');
         Route::post('leads/{lead}/visibility-audit/{purchase}/ready', [LeadController::class, 'markVisibilityAuditReady'])->name('leads.visibility-audit.ready');
         Route::post('leads/{lead}/visibility-audit/{purchase}/report/upload', [LeadController::class, 'uploadVisibilityAuditReport'])->name('leads.visibility-audit.report.upload');
         Route::post('leads/{lead}/visibility-audit/{purchase}/report/send', [LeadController::class, 'sendVisibilityAuditReport'])->name('leads.visibility-audit.report.send');

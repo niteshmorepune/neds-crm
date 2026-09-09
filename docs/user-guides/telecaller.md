@@ -189,6 +189,15 @@ after hours, the assistant asks this same question (a real tappable
 list) and follows the same branching itself, so you may find it's
 already filled in by the time you open the lead.
 
+**Every fresh Meta Ads lead also gets an automatic WhatsApp welcome**
+(except GMB-tagged ones, who get the Visibility Audit invite instead) —
+a thank-you plus "what time works for a quick call?" the moment the lead
+is created, specifically to get them to reply so WhatsApp's 24-hour
+window opens up. If one of your leads has gone quiet and that window's
+closed, open the lead and click **📱 Send WhatsApp check-in** to send a
+re-engagement template and try again — limited to once every 24 hours
+per lead.
+
 ## 5. Daily report
 At the end of each working day, open **Daily Reports** and fill in a brief
 summary of your day. Some numbers (calls made) are filled in automatically.

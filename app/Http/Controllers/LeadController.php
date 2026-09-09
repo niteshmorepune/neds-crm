@@ -15,6 +15,7 @@ use App\Http\Requests\LeadBulkReassignRequest;
 use App\Http\Requests\LeadReassignRequest;
 use App\Http\Requests\LeadStoreRequest;
 use App\Http\Requests\LeadUpdateRequest;
+use App\Jobs\SendLeadCheckInJob;
 use App\Jobs\SendVisibilityAuditReportEmailJob;
 use App\Jobs\SendVisibilityAuditReportJob;
 use App\Models\Lead;
@@ -351,6 +352,31 @@ class LeadController extends Controller
         ]);
 
         return back()->with('status', 'Goal and links saved.');
+    }
+
+    /**
+     * "Send WhatsApp check-in" button on the lead's own page — for a lead
+     * whose WhatsApp session window has already closed and gone quiet, re-
+     * opening it with a real, Meta-approved template (SendLeadCheckInJob,
+     * see CLAUDE.md's 2026-09-09 decisions log entry). A soft 24h cooldown
+     * on Lead.last_checkin_sent_at avoids an accidental repeat send to the
+     * same lead — a considerate reminder, not a way to spam a real contact.
+     */
+    public function sendCheckIn(Lead $lead): RedirectResponse
+    {
+        $this->authorize('update', $lead);
+
+        if (blank($lead->phone)) {
+            return back()->withErrors(['check_in' => 'This lead has no phone number on file.']);
+        }
+
+        if ($lead->last_checkin_sent_at !== null && $lead->last_checkin_sent_at->gt(now()->subDay())) {
+            return back()->withErrors(['check_in' => 'A check-in was already sent to this lead in the last 24 hours.']);
+        }
+
+        SendLeadCheckInJob::dispatch($lead->id);
+
+        return back()->with('status', 'WhatsApp check-in queued to send.');
     }
 
     /**

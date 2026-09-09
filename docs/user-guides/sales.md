@@ -198,6 +198,21 @@ name/email/phone/company (e.g. a custom budget question) appears as a note
 on the lead — except the **"What is your biggest goal?"** question, which
 fills in the lead's **Goal** field directly (see "Their goal, and their
 Website/GBP link" below) when the answer matches one of its four options.
+**A WhatsApp welcome message goes out automatically, too** — the moment a
+Meta Ads lead is created (except GMB-tagged ones, who get the Visibility
+Audit invite instead), the CRM thanks them for reaching out and asks what
+time works for a quick call. This is deliberately more than a plain "thanks"
+— getting them to actually reply is what opens WhatsApp's 24-hour window,
+so you (or the after-hours assistant) can message them freely from then on
+instead of being limited to approved templates. You'll see a note on the
+lead once it's sent.
+
+**If a lead's WhatsApp window has closed and they've gone quiet:** open the
+lead and click **📱 Send WhatsApp check-in** (next to the goal picker) — a
+different approved template asking if they're still interested and inviting
+a reply, same idea as the automatic welcome but for re-engaging later. Limited
+to once per 24 hours per lead so it stays a considerate nudge, not a repeat
+blast.
 
 **Visibility Audit Funnel:** **Lead Generation → VA Recovery** shows the
 whole journey for Meta Ads leads tagged the GMB service — how many came in,
