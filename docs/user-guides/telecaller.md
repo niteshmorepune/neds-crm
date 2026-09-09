@@ -183,7 +183,11 @@ the lead reminds you until one's captured). If they pick **Not Sure**, a
 purple note tells you to hand them off for a call with a **Sales Expert**
 — use **Create Meeting** on the lead's page to schedule it. Leaving the
 goal/link fields blank on the Log a Call form never clears what's already
-saved — same rule as Stalling on.
+saved — same rule as Stalling on. **This can now also get answered on
+WhatsApp before you ever call** — if a lead messages our Marketing number
+after hours, the assistant asks this same question (a real tappable
+list) and follows the same branching itself, so you may find it's
+already filled in by the time you open the lead.
 
 ## 5. Daily report
 At the end of each working day, open **Daily Reports** and fill in a brief

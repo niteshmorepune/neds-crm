@@ -542,7 +542,18 @@ reuses that same trust boundary, no new secret. The question is only ever
 sent to a phone number the CRM already recognises as an **open** Lead
 (`needs_link`/`goal` come back `false`/`null` for anyone else), and only
 once per Lead — a Lead that already has a `goal` set (from any source) is
-never asked again.
+never asked again. **Real incident (2026-09-09) worth knowing about**:
+having the right values in wadesk.in's `.env` isn't enough by itself —
+its `docker-compose.yml` also has to explicitly list every variable the
+app needs under the `app` service's `environment:` block, or Docker never
+actually passes it into the running container even though `.env` has it.
+This had silently broken several things at once (this integration, the
+after-hours AI's replies, and message forwarding to the CRM timeline) with
+no visible error, since every affected function is designed to fail
+silently when its variable is missing. If a wadesk.in integration seems to
+have stopped working after a config change there, check
+`docker compose exec app env | grep <VAR>` on the VPS before assuming
+anything else is wrong.
 
 ---
 

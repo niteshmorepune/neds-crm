@@ -345,7 +345,13 @@ your "follow-ups due" list — same list, no separate place to look.
   Expert** — use **Create Meeting** further down the same page. Leaving
   the goal/link fields blank on the Log a Call form never clears what's
   already on the lead — same "only saves what you actually filled in"
-  rule as Stalling on.
+  rule as Stalling on. **This can now also get answered on WhatsApp
+  before you ever call** — if a lead messages our Marketing number after
+  hours, the assistant asks this same question (as a real tappable list)
+  and, depending on their answer, asks for the Website/GBP link itself or
+  lets them know a Sales Expert will follow up — either way you'll see it
+  already filled in, or the same bell notification you'd get from tagging
+  it yourself, by the time you open the lead.
 - On the Notes field, click **Dictate** and speak instead of typing — your
   browser transcribes it live into the box, and you can still edit before
   saving. (Chrome/Edge only; the button doesn't appear in browsers that
