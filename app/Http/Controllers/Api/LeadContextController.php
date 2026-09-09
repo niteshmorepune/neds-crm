@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\LeadGoal;
 use App\Http\Controllers\Controller;
 use App\Models\Lead;
 use App\Services\VisibilityAuditFunnelMetrics;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 /**
  * wadesk.in → CRM lookup, the reverse direction of /api/webhook/whatsapp —
@@ -18,6 +20,11 @@ use Illuminate\Http\Request;
  * which ad/campaign or which structured answers the lead actually gave).
  * Same Bearer token as the inbound webhook — same wadesk.in trust boundary,
  * just the other direction, so no new secret was introduced for this.
+ *
+ * goal/needs_link/website_url/gbp_url (2026-09-08) power the assistant's own
+ * goal-question flow (see updateGoal() below) — needs_link is precomputed
+ * here (LeadGoal::needsWebsiteOrGbp()) rather than making wadesk's
+ * TypeScript re-implement that enum's branching logic.
  */
 class LeadContextController extends Controller
 {
@@ -45,7 +52,48 @@ class LeadContextController extends Controller
             'visibility_audit_offer_url' => $vaMetrics->isVisibilityAuditCohort($lead)
                 ? route('offers.visibility-audit.enter', ['lead' => $lead->id])
                 : null,
+            'goal' => $lead->goal?->value,
+            'needs_link' => $lead->goal?->needsWebsiteOrGbp() ?? false,
+            'website_url' => $lead->website_url,
+            'gbp_url' => $lead->gbp_url,
         ]);
+    }
+
+    /**
+     * wadesk.in → CRM write-back once its after-hours assistant's own
+     * goal-question flow gets an answer. Deliberately a partial update —
+     * only the fields actually sent are touched, so a goal-only call (the
+     * first turn) never clears a website_url that was somehow already set,
+     * same "only write what you actually have" discipline as
+     * ImportMetaLead's backfill fields. goal transitioning to NotSure fires
+     * LeadWantsExpertAdviceNotification via LeadObserver -- nothing to
+     * trigger explicitly here.
+     */
+    public function updateGoal(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'phone' => ['required', 'string'],
+            'goal' => ['nullable', Rule::enum(LeadGoal::class)],
+            'website_url' => ['nullable', 'url', 'max:2048'],
+            'gbp_url' => ['nullable', 'url', 'max:2048'],
+        ]);
+
+        $lead = Lead::findOpenByPhone($data['phone']);
+
+        if ($lead === null) {
+            return response()->json(['updated' => false]);
+        }
+
+        $fill = array_filter(
+            array_intersect_key($data, array_flip(['goal', 'website_url', 'gbp_url'])),
+            fn ($value) => $value !== null,
+        );
+
+        if ($fill !== []) {
+            $lead->update($fill);
+        }
+
+        return response()->json(['updated' => $fill !== []]);
     }
 
     /**

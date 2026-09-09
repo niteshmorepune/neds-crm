@@ -43,6 +43,16 @@ Route::get('/leads/context', [LeadContextController::class, 'show'])
     ->middleware(['throttle:120,1', VerifyWhatsappWebhookToken::class])
     ->name('api.leads.context');
 
+// wadesk.in → CRM bridge. Called once the after-hours AI assistant's own
+// goal-question flow (see docs/user-guides/sales.md's "Their goal, and
+// their Website/GBP link") gets an answer from the lead over WhatsApp — the
+// mirror of the CRM-side leads.goal-capture.update route, for when nobody's
+// there to fill it in from the web UI. Same Bearer token, same wadesk.in
+// trust boundary.
+Route::post('/leads/goal-capture', [LeadContextController::class, 'updateGoal'])
+    ->middleware(['throttle:120,1', VerifyWhatsappWebhookToken::class])
+    ->name('api.leads.goal-capture');
+
 // wadesk.in → CRM bridge. Called when a message wadesk.in sent via
 // /api/send-template (a Visibility Audit touch) later flips to FAILED via
 // Meta's own async delivery-status webhook — see

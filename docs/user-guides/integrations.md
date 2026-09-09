@@ -510,6 +510,42 @@ lead won't return context, by design.
 
 ---
 
+## Integration 14 — wadesk.in's goal-question flow writes back to the CRM's Lead
+
+**What it does:** the same `GET /api/leads/context` lookup above now also
+returns the Lead's `goal`, `website_url`, `gbp_url`, and a precomputed
+`needs_link` flag. When a matched Lead has no goal yet, wadesk.in's
+after-hours assistant sends the lead a WhatsApp interactive list asking
+"What's their biggest goal?" (the same 4 options as the CRM's own Goal
+picker — see `sales.md`/`telecaller.md`). Once the lead taps one, wadesk.in
+calls a new `POST /api/leads/goal-capture` (same Bearer token) to write it
+onto the Lead — and if the goal needs a Website/GBP link, the assistant
+asks for that next and writes it back the same way once given.
+
+**Why it exists:** the owner wanted a lead who only ever messages on
+WhatsApp — never gets a call — to still go through the same
+goal-then-link-or-Sales-handoff flow a telecaller would walk them through
+live. Reuses the goal/link fields and `LeadGoal` enum built for the
+telecaller-facing side (see CLAUDE.md's decisions log) rather than
+inventing a parallel set on the wadesk.in side.
+
+**The "Not Sure" branch is a real hand-off, not just a reply:** the moment
+`goal-capture` sets a Lead's goal to Not Sure — from wadesk.in **or** the
+telecaller UI — `LeadObserver` fires `LeadWantsExpertAdviceNotification` to
+the lead's owner (and telecaller, if assigned) with a bell notification
+linking straight to the lead. This is one shared trigger for both paths,
+not two separate "needs Sales" mechanisms.
+
+**If a lead never gets asked, or an answer never saves:** confirm the same
+`CRM_LEAD_CONTEXT_URL`/`CRM_WEBHOOK_TOKEN` env vars above are set — this
+reuses that same trust boundary, no new secret. The question is only ever
+sent to a phone number the CRM already recognises as an **open** Lead
+(`needs_link`/`goal` come back `false`/`null` for anyone else), and only
+once per Lead — a Lead that already has a `goal` set (from any source) is
+never asked again.
+
+---
+
 ## Checking integration health
 
 All integration events leave a trace in the CRM:

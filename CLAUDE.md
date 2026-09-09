@@ -2091,3 +2091,53 @@ Record every "we chose X because Y" here — this is the project's memory.
   sidebar item). Docs: `sales.md`/`telecaller.md` extended (new "Their
   goal, and their Website/GBP link" bullet in both, plus a one-line update
   to the existing Meta Ads leads paragraph in `sales.md`).
+- **2026-09-08 (later same day) — CRM-side half of the wadesk.in goal-question
+  port: extended `/api/leads/context`, new `/api/leads/goal-capture`, and a
+  shared "needs Sales" notification.** Owner asked for the same lead-goal
+  flow (2026-09-08's earlier entry) to also run on WhatsApp via wadesk.in's
+  after-hours AI assistant, so a lead who only ever messages — never gets a
+  call — still goes through goal → Website/GBP-or-Sales-handoff. Researched
+  wadesk.in's actual codebase before designing anything (a separate Next.js/
+  Prisma repo this session has no deploy access to): confirmed it has **no**
+  conversation-state tracking (every AI reply re-infers context from message
+  history, stateless), **no** structured/JSON output from Claude (replies are
+  freeform text only), **no** interactive WhatsApp message sender (only plain
+  text), and **no** "notify Sales" mechanism of any kind — a real port, not
+  a copy-paste. Confirmed 4 scope decisions via AskUserQuestion: after-hours
+  only (reuse the existing AI-live trigger, don't build a new always-on
+  one); real tappable WhatsApp list buttons over plain numbered text (a new
+  `sendInteractiveMessage()` needed on the wadesk.in side); a real "needs
+  Sales" signal, not just a reply; and the owner runs wadesk.in's own
+  deploy commands, since this session has no SSH access to that VPS.
+  This entry is the CRM-side half only, self-contained and inert until
+  wadesk.in actually calls it (same "ship the receiving side first" pattern
+  as the 2026-08-14 WhatsApp-conversation-capture milestone).
+  `LeadContextController::show()` (already called by wadesk.in before every
+  after-hours reply) now also returns `goal`/`website_url`/`gbp_url` plus a
+  precomputed `needs_link` boolean (`LeadGoal::needsWebsiteOrGbp()`) — sent
+  precomputed rather than making wadesk.in's TypeScript re-implement that
+  enum's branching. New `POST /api/leads/goal-capture` (same
+  `VerifyWhatsappWebhookToken` Bearer-token auth as every other wadesk.in↔CRM
+  route) is the write-back: partial update, only the fields actually sent
+  are touched (mirrors `ImportMetaLead`'s existing "only write what you
+  have" discipline), looks the Lead up via the same `findOpenByPhone()`
+  every other wadesk.in-facing endpoint already uses.
+  New `App\Notifications\LeadWantsExpertAdviceNotification`, fired from
+  `LeadObserver::updated()` whenever `goal` transitions to NotSure —
+  deliberately fires from **either** write path (this new API endpoint OR
+  the telecaller UI's existing goal-capture panel/Log-a-Call form) through
+  one shared observer hook, rather than building two divergent "needs
+  Sales" mechanisms for the same field. Notifies the lead's owner and
+  telecaller (whichever are set) — `wasChanged('goal')` alone guards
+  against re-notifying on every later unrelated save to an already-NotSure
+  lead.
+  22 new Pest tests (`LeadContextTest` extended — context response fields,
+  goal-capture write/partial-update/validation/404, and the shared
+  notification firing exactly once per real transition), full suite green,
+  Pint clean. Docs: new `integrations.md` "Integration 14," and fixed a
+  stale drift caught along the way — `README.md`'s guide table still said
+  "10 automated workflows" (a pre-existing, unrelated undercount; the file
+  was already at 13 sections before this entry's own addition).
+  The wadesk.in-side build (interactive list sender, the one new
+  `Conversation` state column, and the assistant's own branching logic) is
+  a separate follow-up — see the next entry once that's built.
