@@ -340,6 +340,40 @@ it('does not set goal when no custom answer matches a known goal option', functi
         ->and($lead->notes()->first()->body)->toContain('what_is_your_biggest_goal: Something else entirely');
 });
 
+it('maps a Hindi-language form\'s goal question/answer, real production text (leads #370/#371)', function (string $key, string $answer, LeadGoal $expected) {
+    fakeMetaGraphResponse([
+        ['name' => $key, 'values' => [$answer]],
+    ]);
+
+    ImportMetaLead::dispatchSync('lg-1');
+
+    $lead = Lead::where('meta_leadgen_id', 'lg-1')->first();
+    expect($lead->goal)->toBe($expected)
+        ->and($lead->notes()->count())->toBe(0);
+})->with([
+    'grow business online (lead #370)' => [
+        'आपका_सबसे_बड़ा_बिज़नेस_लक्ष्य_क्या_है?', 'अपने_बिज़नेस_को_ऑनलाइन_बढ़ाना', LeadGoal::GrowBusiness,
+    ],
+    'generate more leads (lead #371)' => [
+        'आपका_सबसे_बड़ा_बिज़नेस_लक्ष्य_क्या_है?', 'अधिक_लीड्स_प्राप्त_करना', LeadGoal::GenerateLeads,
+    ],
+]);
+
+it('parses a Hindi-language form\'s budget question/answer, real production text (leads #370/#371)', function (string $answer, int $expectedPaise) {
+    fakeMetaGraphResponse([
+        ['name' => 'इस_लक्ष्य_को_पाने_के_लिए_आपका_अनुमानित_मासिक_बजट_कितना_है?', 'values' => [$answer]],
+    ]);
+
+    ImportMetaLead::dispatchSync('lg-1');
+
+    $lead = Lead::where('meta_leadgen_id', 'lg-1')->first();
+    expect($lead->estimated_value)->toBe($expectedPaise)
+        ->and($lead->notes()->count())->toBe(0);
+})->with([
+    'single figure (lead #371)' => ['₹3,000_से_कम', 300000],
+    'range, averaged (lead #370)' => ['₹6,000_–_₹12,000', 900000],
+]);
+
 it('backfills goal on the matched lead only when it does not already have one', function () {
     $withoutGoal = Lead::factory()->create(['phone' => '9876543210', 'source' => LeadSource::Whatsapp, 'goal' => null]);
     fakeMetaGraphResponse([

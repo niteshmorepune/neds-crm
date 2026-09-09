@@ -316,7 +316,15 @@ class ImportMetaLead implements ShouldQueue
     private function matchBudget(array $extra): array
     {
         foreach ($extra as $key => $value) {
-            if (! str_contains(mb_strtolower($key), 'budget')) {
+            $lowerKey = mb_strtolower($key);
+
+            // 2026-09-09: a Hindi-language variant of the ad form slugifies
+            // this question's key in Devanagari (e.g. "...अनुमानित_मासिक_
+            // बजट_कितना_है?"), which never contains the English word
+            // "budget" — बजट is the literal Hindi word for it. Confirmed
+            // against 2 real leads (#370/#371) whose budget answers were
+            // otherwise silently dropped into the generic note dump.
+            if (! str_contains($lowerKey, 'budget') && ! str_contains($lowerKey, 'बजट')) {
                 continue;
             }
 
@@ -367,14 +375,25 @@ class ImportMetaLead implements ShouldQueue
         // Array keys can't be enum instances, so this is a plain list of
         // [enum, phrases] pairs rather than an enum-keyed map.
         $needles = [
-            [LeadGoal::GenerateLeads, ['generate more leads', 'generate leads']],
+            [LeadGoal::GenerateLeads, ['generate more leads', 'generate leads', 'लीड्स प्राप्त करना']],
             [LeadGoal::RankHigher, ['rank higher']],
-            [LeadGoal::GrowBusiness, ['grow my business', 'grow business']],
+            [LeadGoal::GrowBusiness, ['grow my business', 'grow business', 'ऑनलाइन बढ़ाना']],
             [LeadGoal::NotSure, ['not sure', 'expert advice']],
+            // Only the two Hindi phrases above are confirmed against real
+            // leads (#370/#371, 2026-09-09) — RankHigher/NotSure have no
+            // known Hindi phrasing yet since no lead has picked either
+            // option on this ad's Hindi variant. Deliberately left
+            // unmatched rather than guessing a translation (same
+            // never-fabricate discipline as the FAQ Hindi content) — add
+            // the real phrase here the first time one is actually seen.
         ];
 
         foreach ($extra as $key => $value) {
-            if (! str_contains(mb_strtolower($key), 'goal')) {
+            $lowerKey = mb_strtolower($key);
+
+            // 2026-09-09: same Hindi-form-variant gap as matchBudget() above
+            // — लक्ष्य is the literal Hindi word for "goal."
+            if (! str_contains($lowerKey, 'goal') && ! str_contains($lowerKey, 'लक्ष्य')) {
                 continue;
             }
 
@@ -396,6 +415,11 @@ class ImportMetaLead implements ShouldQueue
 
     private function normalizeGoalText(string $value): string
     {
-        return trim(preg_replace('/[^a-z0-9]+/', ' ', mb_strtolower($value)));
+        // \x{0900}-\x{097F} (Devanagari) is preserved alongside a-z0-9, not
+        // just Latin — the original a-z0-9-only version silently stripped
+        // every Hindi-language answer down to an empty string, which would
+        // have made the Hindi needles above never match anything even after
+        // being added. Caught before shipping, not from a live failure.
+        return trim(preg_replace('/[^a-z0-9\x{0900}-\x{097F}]+/u', ' ', mb_strtolower($value)));
     }
 }
