@@ -66,6 +66,7 @@
                         <th class="px-4 py-3">Status</th>
                         <th class="px-4 py-3">Approved/Rejected by</th>
                         <th class="px-4 py-3">Action date</th>
+                        <th class="px-4 py-3">Covering</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -91,9 +92,10 @@
                             <td class="px-4 py-2 text-gray-500 text-xs">
                                 {{ $r->reviewed_at?->timezone(config('app.display_timezone', 'Asia/Kolkata'))->format('d M Y') ?? '—' }}
                             </td>
+                            <td class="px-4 py-2 text-gray-500 text-xs">{{ $r->coveringUser?->name ?? '—' }}</td>
                         </tr>
                     @empty
-                        <tr><td colspan="10" class="px-4 py-6 text-center text-gray-400">No leave records match these filters.</td></tr>
+                        <tr><td colspan="11" class="px-4 py-6 text-center text-gray-400">No leave records match these filters.</td></tr>
                     @endforelse
                 </tbody>
             </table>

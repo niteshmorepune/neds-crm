@@ -100,6 +100,13 @@ Schedule::command('app:send-visibility-audit-recovery-nudges')->everyThirtyMinut
 // is set (already is, live 2026-09-09).
 Schedule::command('app:send-lead-welcome-followups')->everyThirtyMinutes();
 
+// Keeps a currently-active leave's covering teammate synced to wadesk.in as
+// a temporary conversation assignee (App\Services\LeaveCoverage) — re-runs
+// periodically so a lead created/reassigned mid-leave also gets covered,
+// not just what was open at approval time. Ships inert until a leave
+// request is ever approved with a covering_user_id set.
+Schedule::command('app:sync-leave-cover-to-wadesk')->everyThirtyMinutes();
+
 // Visibility Audit first-invite sweep — safety net for a lead whose
 // one-shot eligibility dispatch silently no-op'd (see
 // SendVisibilityAuditFirstInviteSweep's own docblock for the real incident

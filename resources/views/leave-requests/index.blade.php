@@ -70,6 +70,7 @@
                         <th class="px-4 py-3">Reason</th>
                         <th class="px-4 py-3">Status</th>
                         <th class="px-4 py-3">Reviewed by</th>
+                        <th class="px-4 py-3">Covering</th>
                         <th class="px-4 py-3">Reviewer notes</th>
                         <th></th>
                     </tr>
@@ -90,6 +91,7 @@
                                 <span class="inline-block rounded-full border px-2 py-0.5 text-xs font-medium {{ $color }}">{{ $r->status->label() }}</span>
                             </td>
                             <td class="px-4 py-2 text-gray-500 text-xs">{{ $r->reviewer?->name ?? '—' }}</td>
+                            <td class="px-4 py-2 text-gray-500 text-xs">{{ $r->coveringUser?->name ?? '—' }}</td>
                             <td class="px-4 py-2 text-gray-500 text-xs">{{ $r->review_notes }}</td>
                             <td class="px-4 py-2">
                                 @if ($r->status->value === 'pending')
@@ -101,7 +103,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="7" class="px-4 py-6 text-center text-gray-400">No leave requests yet.</td></tr>
+                        <tr><td colspan="8" class="px-4 py-6 text-center text-gray-400">No leave requests yet.</td></tr>
                     @endforelse
                 </tbody>
             </table>

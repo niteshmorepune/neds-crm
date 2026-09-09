@@ -6,12 +6,14 @@ use App\Enums\AttendanceStatus;
 use App\Enums\LeaveRequestStatus;
 use App\Enums\LeaveRequestType;
 use App\Enums\UserRole;
+use App\Http\Requests\ApproveLeaveRequestRequest;
 use App\Http\Requests\StoreLeaveRequestRequest;
 use App\Models\Attendance;
 use App\Models\LeaveRequest;
 use App\Models\User;
 use App\Notifications\LeaveRequestReviewed;
 use App\Notifications\LeaveRequestSubmitted;
+use App\Services\LeaveCoverage;
 use App\Services\LeaveRequestMetrics;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -25,6 +27,7 @@ class LeaveRequestController extends Controller
         $isManager = $user->hasRole(UserRole::Admin, UserRole::Manager);
 
         $requests = LeaveRequest::where('user_id', $user->id)
+            ->with(['reviewer', 'coveringUser'])
             ->orderByDesc('start_date')
             ->get();
 
@@ -71,7 +74,7 @@ class LeaveRequestController extends Controller
         return back()->with('status', 'Leave request cancelled.');
     }
 
-    public function approvals(Request $request, LeaveRequestMetrics $metrics): View
+    public function approvals(Request $request, LeaveRequestMetrics $metrics, LeaveCoverage $coverage): View
     {
         $this->authorize('viewApprovalQueue', LeaveRequest::class);
 
@@ -80,9 +83,19 @@ class LeaveRequestController extends Controller
             ->orderBy('start_date')
             ->get();
 
+        // Keyed by request id — whether a covering teammate is required
+        // before this one can be approved, and who's eligible to pick.
+        $coverageInfo = $requests->mapWithKeys(fn (LeaveRequest $r) => [
+            $r->id => [
+                'required' => $r->user !== null && $coverage->isRequiredFor($r->user),
+                'eligible' => $r->user !== null ? $coverage->eligibleCovers($r->user) : collect(),
+            ],
+        ]);
+
         return view('leave-requests.approvals', [
             'requests' => $requests,
             'summary' => $metrics->summary(),
+            'coverageInfo' => $coverageInfo,
         ]);
     }
 
@@ -98,7 +111,7 @@ class LeaveRequestController extends Controller
         $this->authorize('viewApprovalQueue', LeaveRequest::class);
 
         $requests = LeaveRequest::query()
-            ->with(['user', 'reviewer'])
+            ->with(['user', 'reviewer', 'coveringUser'])
             ->when($request->filled('user_id'), fn ($q) => $q->where('user_id', $request->integer('user_id')))
             ->when($request->filled('type'), fn ($q) => $q->where('type', $request->string('type')->value()))
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->string('status')->value()))
@@ -118,15 +131,15 @@ class LeaveRequestController extends Controller
         ]);
     }
 
-    public function approve(Request $request, LeaveRequest $leaveRequest): RedirectResponse
+    public function approve(ApproveLeaveRequestRequest $request, LeaveRequest $leaveRequest, LeaveCoverage $coverage): RedirectResponse
     {
-        $this->authorize('review', $leaveRequest);
         abort_if($leaveRequest->status !== LeaveRequestStatus::Pending, 409);
 
         $leaveRequest->fill([
             'status' => LeaveRequestStatus::Approved,
             'reviewed_by' => $request->user()->id,
             'reviewed_at' => now(),
+            'covering_user_id' => $request->input('covering_user_id'),
         ])->save();
 
         foreach ($leaveRequest->businessDays() as $date) {
@@ -144,6 +157,11 @@ class LeaveRequestController extends Controller
         }
 
         $leaveRequest->user?->notify(new LeaveRequestReviewed($leaveRequest));
+
+        // Immediate sync so the covering teammate's wadesk.in access starts
+        // right away rather than waiting up to 30 min for the scheduled
+        // command's next run. A no-op when no covering_user_id was set.
+        $coverage->dispatchSync($leaveRequest);
 
         return back()->with('status', 'Leave request approved.');
     }

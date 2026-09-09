@@ -34,14 +34,31 @@
                             <td class="px-4 py-2 text-gray-600">{{ rtrim(rtrim(number_format($r->dayCount(), 1), '0'), '.') }}</td>
                             <td class="px-4 py-2 text-gray-600">{{ $r->reason }}</td>
                             <td class="px-4 py-2">
+                                @php
+                                    $cover = $coverageInfo[$r->id] ?? ['required' => false, 'eligible' => collect()];
+                                @endphp
                                 <div class="flex items-center gap-2">
-                                    <form method="POST" action="{{ route('leave-requests.approve', $r) }}">
+                                    <form method="POST" action="{{ route('leave-requests.approve', $r) }}" class="flex items-center gap-2">
                                         @csrf
+                                        @if ($cover['required'])
+                                            <select name="covering_user_id" required
+                                                    class="rounded-md border-gray-300 text-xs shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                                <option value="">Covering WhatsApp chats…</option>
+                                                @foreach ($cover['eligible'] as $candidate)
+                                                    <option value="{{ $candidate->id }}">{{ $candidate->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        @endif
                                         <button class="rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-500">Approve</button>
                                     </form>
                                     <button type="button" @click="rejecting = rejecting === {{ $r->id }} ? null : {{ $r->id }}"
                                             class="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-500">Reject</button>
                                 </div>
+                                @if ($cover['required'])
+                                    <p class="mt-1 text-[11px] text-amber-700">
+                                        {{ $r->user?->name }} has open leads — pick who covers their WhatsApp chats while they're out.
+                                    </p>
+                                @endif
                                 <form x-cloak x-show="rejecting === {{ $r->id }}" method="POST" action="{{ route('leave-requests.reject', $r) }}" class="mt-2 flex items-center gap-2">
                                     @csrf
                                     <input type="text" name="review_notes" placeholder="Reason (optional)" maxlength="255" class="rounded-md border-gray-300 text-xs shadow-sm" />

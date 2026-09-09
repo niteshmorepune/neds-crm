@@ -17,7 +17,7 @@ class LeaveRequest extends Model
 
     protected $fillable = [
         'user_id', 'type', 'start_date', 'end_date', 'reason',
-        'status', 'reviewed_by', 'reviewed_at', 'review_notes',
+        'status', 'reviewed_by', 'reviewed_at', 'review_notes', 'covering_user_id',
     ];
 
     protected function casts(): array
@@ -41,9 +41,35 @@ class LeaveRequest extends Model
         return $this->belongsTo(User::class, 'reviewed_by');
     }
 
+    public function coveringUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'covering_user_id');
+    }
+
     public function scopePending(Builder $query): Builder
     {
         return $query->where('status', LeaveRequestStatus::Pending);
+    }
+
+    /**
+     * True while this request is Approved and today falls within its date
+     * range (inclusive) — the window a covering teammate's wadesk.in access
+     * should actually be active for. See App\Services\LeaveCoverage.
+     */
+    public function isCurrentlyActive(): bool
+    {
+        if ($this->status !== LeaveRequestStatus::Approved) {
+            return false;
+        }
+
+        // start_date/end_date are plain DATE columns (calendar dates, no
+        // time component) — compared as date strings rather than Carbon
+        // instants, so this never trips the UTC/IST instant-boundary bug
+        // already hit elsewhere in this app (see CLAUDE.md's Create
+        // Meeting entry) when "today" is computed in a non-UTC timezone.
+        $today = today(config('app.display_timezone'))->toDateString();
+
+        return $today >= $this->start_date->toDateString() && $today <= $this->end_date->toDateString();
     }
 
     /**
