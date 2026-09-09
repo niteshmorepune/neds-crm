@@ -701,6 +701,17 @@ summary above:
   range (Sundays are skipped), while a Half Day request only marks that one
   day as **Half Day**, not a full day off. Rejecting lets you add a short
   note explaining why.
+- **Covering teammate (Sales/Telecaller only)** — if the person requesting
+  leave is Sales or Telecaller and currently owns/handles any open leads,
+  Approve shows an extra **"Covering WhatsApp chats…"** dropdown that you
+  must fill in before it lets you approve — pick another active teammate
+  in the same role. That colleague automatically gets temporary access to
+  the leave-taker's WhatsApp chats on wadesk (their own Marketing-line
+  chats stay untouched), starting as soon as you approve and ending on its
+  own once the leave period is over — nothing to remember to undo. If the
+  person has no open leads, or isn't Sales/Telecaller, Approve works as
+  normal with no extra step. Both the employee's own Leave history and
+  **Team Leave Records** show who's covering, if anyone.
 - **Work From Home → Review pending** — same approve/reject flow as Leave
   Requests, one level up in the sidebar, but approving a WFH request never
   touches attendance — the employee is still working, so they check in/out

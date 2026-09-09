@@ -47,6 +47,13 @@ active calling queue. If you need to look up an old converted/lost lead
 from before that date, ask Admin/Manager (they always see every lead,
 regardless of Telecaller assignment).
 
+**Going on leave with open leads?** When your manager approves your Leave
+Request, they'll pick another active Telecaller to cover your leads'
+WhatsApp chats on wadesk while you're out — that access starts the moment
+they approve and ends on its own once your leave is over, with nothing to
+undo when you're back. Your own Telecaller assignment on each lead never
+changes.
+
 Open a lead assigned to you to:
 - Read its details, source, and notes.
 - **Update it** — change its status (New → Contacted → Qualified, etc.), add

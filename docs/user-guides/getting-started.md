@@ -186,6 +186,13 @@ automatically marked **Leave** (or **Half Day** for a half-day request) —
 Sundays are skipped since they're not office days. You can cancel a request
 yourself as long as it's still pending.
 
+If you're Sales or Telecaller and currently own/handle any open leads, the
+admin/manager approving your request will pick a covering teammate before
+they can approve — that colleague gets temporary access to your leads'
+WhatsApp chats on wadesk for the leave period, which reverts on its own
+once you're back (see the Sales/Telecaller guide for detail). Nothing to
+do on your end beyond submitting the request as normal.
+
 ## 5b. Working from home
 Open **Work From Home** in the sidebar to request a remote day: pick a
 **duration** (Full Day or Half Day), a start date, end date, and a short

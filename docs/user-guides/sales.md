@@ -169,6 +169,16 @@ entirely, an admin can hand over **all** your open leads at once when they
 deactivate your account (Admin guide, Section 9) — you don't need to
 reassign each one yourself first.
 
+**Just going on leave for a few days? You don't need to Reassign at all.**
+When your manager approves your Leave Request, if you currently own any
+open leads you'll be prompted (via them) to pick a covering teammate —
+that colleague automatically gets access to your leads' WhatsApp chats on
+wadesk for the exact leave period, and it reverts on its own the moment
+your leave ends. Ownership itself never changes, so nothing needs
+reassigning back when you return. Use the **Reassign** button instead only
+when a lead should genuinely change hands for good (leaving the company,
+rebalancing workload).
+
 **Campaign source:** if a website lead came in through a tracked ad or link,
 the lead page shows a **Campaign** line (e.g. "google / cpc /
 seo-pune-2026") so you know which channel it came from before you call.
