@@ -2233,3 +2233,93 @@ Record every "we chose X because Y" here — this is the project's memory.
   clean, migrated against local MySQL (two new nullable `leads` columns,
   no seeder/menu changes). Docs: `sales.md`/`telecaller.md` extended,
   new `integrations.md` "Integration 15."
+- **2026-09-09 (same day) — Correction: both templates shipped bilingual
+  (English + Hindi in one body), 4 variables not 2, both Meta-approved and
+  live.** The entry above described the templates as first drafted
+  (2 variables, English only) — the owner asked for both languages in the
+  same message (not separate template variants) so any lead can read it
+  regardless of language, and for `lead_checkin` specifically, real line
+  breaks rather than one continuous paragraph. WhatsApp Manager's own
+  template editor auto-increments `{{` on every insertion and won't let an
+  earlier number be reused, so the Hindi half repeats the same name/service
+  as `{{3}}`/`{{4}}` rather than reusing `{{1}}`/`{{2}}` — accepted as the
+  simplest fix rather than fighting the editor. `SendLeadWelcomeMessageJob`/
+  `SendLeadCheckInJob`'s `variables` payload updated from
+  `[name, service]` to `[name, service, name, service]` to match. Both
+  templates submitted via browser automation in WhatsApp Manager (owner's
+  own already-authenticated Chrome session, explicit permission each step)
+  under the correct WABA — a real mismatch was caught and corrected first
+  (the WABA matching wadesk.in's own config had a completely different,
+  unrelated phone number than the real Marketing number, 9112095202).
+  PR #179 merged + deployed same day once Meta approved both: `migrate
+  --force` (the two new `leads` columns), prod `.env` gained
+  `WADESK_LEAD_WELCOME_TEMPLATE_NAME=lead_welcome`/
+  `WADESK_LEAD_CHECKIN_TEMPLATE_NAME=lead_checkin`, `config:cache`,
+  verified resolving correctly over SSH.
+- **2026-09-09 (same day) — Automatic re-engagement + visibility parity for
+  non-GMB Meta leads, closing a real gap the welcome/check-in launch left
+  open.** Once welcome/check-in shipped, comparing it against the existing
+  GMB Visibility Audit funnel exposed an asymmetry: a GMB-tagged lead who
+  goes quiet gets an automatic funnel-stall recovery nudge
+  (`SendVisibilityAuditRecoveryNudges`, 2-4hr thresholds), but every OTHER
+  Meta lead depended entirely on a telecaller remembering to click
+  **📱 Send WhatsApp check-in** by hand. Confirmed the fix via
+  AskUserQuestion: build both an automatic nudge (mirroring the GMB
+  pattern) AND a Lead Generation visibility badge, not just one; the owner
+  picked a flat **6-hour** no-reply wait (their own "4-6 hours" range,
+  picked the midpoint) over the GMB thresholds' shorter funnel-stage
+  timers, since this is a simpler "did anyone reply at all" check, not a
+  funnel-progression one.
+  New `App\Console\Commands\SendLeadWelcomeFollowUps`
+  (`app:send-lead-welcome-followups`, scheduled `everyThirtyMinutes()`,
+  same cadence as the VA recovery nudges) reuses the existing
+  `SendLeadCheckInJob` directly rather than a new job — it's the same
+  template/send either way, only the trigger differs (staff click vs.
+  elapsed time). Fires **once** per lead (`last_checkin_sent_at IS NULL`
+  guards it, the same column the manual button's own 24h cooldown already
+  uses, so an automatic and a manual send can never double up).
+  Deliberately excludes GMB-tagged leads with zero extra code — a GMB lead
+  never gets `welcome_message_sent_at` set in the first place (it gets the
+  VA invite instead), so the `whereNotNull('welcome_message_sent_at')`
+  filter already excludes them for free.
+  **Real bug caught and fixed before this could ship, not a new one**:
+  `Lead::outreachAttemptSummary()`'s existing `whatsapp_inbound_reply`
+  detection (any note with `user_id=null` and no `[Sent via WhatsApp by`
+  prefix) already had a documented, deliberately-accepted gap for a rare
+  case (a Meta intake note with no prefix either). But
+  `SendLeadWelcomeMessageJob`/`SendLeadCheckInJob`'s own confirmation notes
+  ("✨ Automated welcome message sent..." / "✨ Re-engagement check-in
+  sent...", both `user_id=null`, no WhatsApp-outbound prefix) hit this
+  exact same gap on **every single successful send** — not a rare edge
+  case here, but guaranteed, which would have made the new
+  `isAwaitingWelcomeReply()` check read "already replied" the instant the
+  welcome note itself was created, silently disabling the entire feature
+  before it could ever fire. Fixed with a new
+  `Lead::INTERNAL_MARKER_NOTE_PREFIXES` exclusion list in
+  `outreachAttemptSummary()` (checked before either the inbound or
+  outbound classification), scoped narrowly to just these two known marker
+  bodies — the older, rarer intake-note gap was left as-is, already
+  documented as an accepted false-negative elsewhere. This same fix also
+  correctly restores `isUnresponsive()`'s own accuracy for any Meta lead
+  that received the automatic welcome, which had been silently
+  broken since the welcome/check-in feature shipped earlier the same day
+  (a lead could rack up 3+ unanswered attempts and still never surface as
+  unresponsive, since its own welcome-confirmation note was misread as a
+  reply) — caught proactively while building this feature, not from a bug
+  report.
+  New `Lead::isAwaitingWelcomeReply()` (no time threshold — pure "still
+  quiet" signal, reused by both the command and) `Lead::
+  isOverdueForWelcomeReply()` (narrowed to the 6h threshold — drives the
+  Lead Generation per-row badge and the Needs Attention strip count).
+  Deliberately does NOT exclude a lead whose one-shot auto check-in
+  already fired from the badge/count — "still worth a phone call" is a
+  different question from "still eligible for another automated WhatsApp
+  send," and only the command itself needs that second guard. New
+  `attention=welcome_no_reply` link on the Needs Attention strip (teal, a
+  color not already used by the other five), mirroring
+  `unresponsive`/`stale_status`'s existing PHP-filter-then-`whereIn`
+  pattern exactly. 20 new Pest tests
+  (`SendLeadWelcomeFollowUpsTest`, `LeadWelcomeReplyTest`, plus 2 new cases
+  in `LeadListPrioritizationTest`, including one asserting the
+  `isUnresponsive()` fix directly), full suite green, Pint clean. Docs:
+  `sales.md`/`telecaller.md` extended.

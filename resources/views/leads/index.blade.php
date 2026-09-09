@@ -88,6 +88,11 @@
                    class="rounded-md border border-purple-200 bg-white px-3 py-2 text-sm font-medium text-purple-700 hover:bg-purple-50">
                     ✏️ {{ $attentionCounts['stale_status'] }} status may need updating
                 </a>
+                <a href="{{ route('leads.index', array_merge($ownerScope, ['attention' => 'welcome_no_reply'])) }}"
+                   title="Automatic Meta Ads welcome message sent 6+ hours ago — nobody has replied over WhatsApp since"
+                   class="rounded-md border border-teal-200 bg-white px-3 py-2 text-sm font-medium text-teal-700 hover:bg-teal-50">
+                    💬 {{ $attentionCounts['welcome_no_reply'] }} welcome sent, no reply
+                </a>
             </div>
         </div>
 
@@ -249,6 +254,9 @@
                                 <div class="text-xs text-gray-400">{{ $lead->company ?: '—' }}</div>
                                 @if ($callBadges[$lead->id] ?? null)
                                     <div class="mt-0.5 text-xs text-indigo-600" title="Best time to call this lead">📞 {{ $callBadges[$lead->id] }}</div>
+                                @endif
+                                @if ($lead->isOverdueForWelcomeReply())
+                                    <div class="mt-0.5 text-xs text-teal-600" title="Automatic welcome message sent {{ $lead->welcome_message_sent_at->diffForHumans() }} — no reply over WhatsApp yet">💬 Welcome sent, no reply</div>
                                 @endif
                             </td>
                             <td class="px-4 py-3 text-gray-600">{{ $lead->source->label() }}</td>

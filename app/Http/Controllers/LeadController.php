@@ -48,16 +48,19 @@ class LeadController extends Controller
         // try to parse the raw, possibly-malformed request value.
         $month = $this->validMonth($request);
 
-        // notes:created_at (not withCount) so Lead::hasStaleNewStatus() can
-        // tell a real note from an auto-generated intake note (created in
-        // the same request as the lead itself, whatever the capture
-        // channel) — a bare count can't distinguish those. Cheap at this
-        // scale (15/page), same "eager-load, filter in PHP" precedent as
+        // notes:created_at,user_id,body (not withCount) so Lead::
+        // hasStaleNewStatus() can tell a real note from an auto-generated
+        // intake note (created in the same request as the lead itself,
+        // whatever the capture channel) — a bare count can't distinguish
+        // those — and user_id/body let isOverdueForWelcomeReply() (via
+        // outreachAttemptSummary()) read the already-loaded relation
+        // instead of a fresh per-row query. Cheap at this scale (15/page),
+        // same "eager-load, filter in PHP" precedent as
         // unresponsiveLeadIds() below. callLogs (columns only) feeds the
         // "best time to call" badge via LeadCallTimingAdvisor below.
         $query = $this->filteredLeads($request, $month)
             ->with([
-                'owner', 'service', 'latestNote', 'notes:id,notable_id,notable_type,created_at',
+                'owner', 'service', 'latestNote', 'notes:id,notable_id,notable_type,user_id,body,created_at',
                 'callLogs:id,callable_id,callable_type,direction,outcome,called_at',
             ])
             ->withCount('callLogs');
@@ -121,7 +124,7 @@ class LeadController extends Controller
      * "or unowned" branch to exclude. Admin/Manager stay unscoped (oversight,
      * not a personal worklist).
      *
-     * @return array{overdue: int, due_today: int, hot_untouched: int, unresponsive: int, scoped_to_own: bool}
+     * @return array{overdue: int, due_today: int, hot_untouched: int, unresponsive: int, welcome_no_reply: int, scoped_to_own: bool}
      */
     private function attentionCounts(Request $request): array
     {
@@ -141,6 +144,7 @@ class LeadController extends Controller
                 ->where('ai_score', '>=', config('services.anthropic.hot_lead_threshold', 70))->count(),
             'unresponsive' => (int) $this->unresponsiveQuery($base())->count(),
             'stale_status' => (int) $this->staleStatusQuery($base())->count(),
+            'welcome_no_reply' => (int) $this->awaitingWelcomeReplyQuery($base())->count(),
             'scoped_to_own' => $scopedToOwn,
         ];
     }
@@ -176,6 +180,41 @@ class LeadController extends Controller
             ])
             ->get()
             ->filter(fn (Lead $lead) => $lead->hasStaleNewStatus())
+            ->pluck('id')
+            ->all();
+    }
+
+    /**
+     * Meta Ads leads (non-GMB) whose automatic welcome message went out at
+     * least Lead::WELCOME_FOLLOWUP_WAIT_HOURS ago with no reply from the
+     * lead, staff, or the after-hours AI since — see
+     * Lead::isOverdueForWelcomeReply(). Same threshold
+     * SendLeadWelcomeFollowUps uses for its own one-shot automatic
+     * check-in, so this badge/count and that automation never disagree
+     * about what counts as "gone quiet." Deliberately does NOT exclude a
+     * lead whose one-shot check-in already fired — the point here is
+     * "still worth a phone call," not "still eligible for another
+     * automated WhatsApp send" (that guard lives in the command alone).
+     */
+    private function awaitingWelcomeReplyQuery(Builder $query): Builder
+    {
+        return $query->whereIn('id', $this->awaitingWelcomeReplyLeadIds($query));
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function awaitingWelcomeReplyLeadIds(Builder $query): array
+    {
+        return $query->clone()
+            ->whereNotNull('welcome_message_sent_at')
+            ->whereIn('status', LeadStatus::openValues())
+            ->with([
+                'notes:id,notable_id,notable_type,user_id,body',
+                'callLogs:id,callable_id,callable_type,outcome',
+            ])
+            ->get()
+            ->filter(fn (Lead $lead) => $lead->isOverdueForWelcomeReply())
             ->pluck('id')
             ->all();
     }
@@ -546,6 +585,7 @@ class LeadController extends Controller
                 ->where('ai_score', '>=', config('services.anthropic.hot_lead_threshold', 70)))
             ->when($request->input('attention') === 'unresponsive', fn ($q) => $this->unresponsiveQuery($q))
             ->when($request->input('attention') === 'stale_status', fn ($q) => $this->staleStatusQuery($q))
+            ->when($request->input('attention') === 'welcome_no_reply', fn ($q) => $this->awaitingWelcomeReplyQuery($q))
             ->when($month, function ($q) use ($month) {
                 [$year, $monthNum] = explode('-', $month);
                 $q->whereYear('created_at', $year)->whereMonth('created_at', $monthNum);

@@ -92,6 +92,14 @@ Schedule::command('app:escalate-untouched-leads')->everyFiveMinutes();
 // until both WADESK_VISIBILITY_AUDIT_RECOVERY_*_TEMPLATE_NAME are set.
 Schedule::command('app:send-visibility-audit-recovery-nudges')->everyThirtyMinutes();
 
+// Generic (non-GMB) Meta Ads lead welcome follow-up — same "don't depend on
+// a human noticing" idea as the recovery nudges above, for every other Meta
+// lead: one automatic WhatsApp check-in (reuses the existing manual
+// lead_checkin job/template) once Lead::WELCOME_FOLLOWUP_WAIT_HOURS (6h)
+// pass with no reply. Ships inert until WADESK_LEAD_CHECKIN_TEMPLATE_NAME
+// is set (already is, live 2026-09-09).
+Schedule::command('app:send-lead-welcome-followups')->everyThirtyMinutes();
+
 // Visibility Audit first-invite sweep — safety net for a lead whose
 // one-shot eligibility dispatch silently no-op'd (see
 // SendVisibilityAuditFirstInviteSweep's own docblock for the real incident

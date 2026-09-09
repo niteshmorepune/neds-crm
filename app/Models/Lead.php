@@ -365,6 +365,24 @@ class Lead extends Model
     private const WHATSAPP_OUTBOUND_PREFIX = '[Sent via WhatsApp by';
 
     /**
+     * Bodies of Lead-facing internal marker notes that are neither inbound
+     * nor outbound WhatsApp traffic -- just "this automation ran" markers
+     * (SendLeadWelcomeMessageJob / SendLeadCheckInJob's own confirmation
+     * notes, both user_id=null with no WHATSAPP_OUTBOUND_PREFIX). Without
+     * excluding these, outreachAttemptSummary() below would misclassify
+     * them as an inbound reply the instant either job succeeds -- the same
+     * known "user_id=null, no prefix" gap already documented on
+     * whatsapp_inbound_reply, but unlike that rare intake-note case, this
+     * one is guaranteed on every single welcomed/checked-in lead, so it
+     * can't be left as an acceptable false negative here (it would make
+     * Lead::isAwaitingWelcomeReply() permanently read "replied").
+     */
+    private const INTERNAL_MARKER_NOTE_PREFIXES = [
+        '✨ Automated welcome message sent via WhatsApp',
+        '✨ Re-engagement check-in sent via WhatsApp.',
+    ];
+
+    /**
      * Extracted from LeadController::unresponsiveLeadIds() (2026-09-02) so
      * both the bulk list/strip-tile check and a single lead's own page (the
      * "next best action" advisor, AiAssistant::suggestLeadStatusUpdate())
@@ -385,7 +403,8 @@ class Lead extends Model
     public function outreachAttemptSummary(): array
     {
         $callLogs = $this->relationLoaded('callLogs') ? $this->callLogs : $this->callLogs()->get(['id', 'callable_id', 'callable_type', 'outcome']);
-        $notes = $this->relationLoaded('notes') ? $this->notes : $this->notes()->get(['id', 'notable_id', 'notable_type', 'user_id', 'body']);
+        $notes = ($this->relationLoaded('notes') ? $this->notes : $this->notes()->get(['id', 'notable_id', 'notable_type', 'user_id', 'body']))
+            ->reject(fn (Note $n) => collect(self::INTERNAL_MARKER_NOTE_PREFIXES)->contains(fn ($prefix) => str_starts_with($n->body, $prefix)));
 
         return [
             'calls' => $callLogs->count(),
@@ -415,6 +434,51 @@ class Lead extends Model
         }
 
         return ($summary['calls'] + $summary['whatsapp_outbound']) >= self::UNRESPONSIVE_ATTEMPT_THRESHOLD;
+    }
+
+    /**
+     * Same "don't depend on a human noticing" wait used by
+     * SendLeadWelcomeFollowUps' own one-shot automatic check-in, and by the
+     * Lead Generation "welcome sent, no reply" badge/count so neither ever
+     * disagrees with the other about what counts as "gone quiet." Owner-
+     * approved 2026-09-09 (asked for 4-6 hours; picked the midpoint —
+     * same-day cadence without being pushy).
+     */
+    public const WELCOME_FOLLOWUP_WAIT_HOURS = 6;
+
+    /**
+     * True once the automatic Meta Ads welcome message (SendLeadWelcomeMessageJob)
+     * has gone out and nobody -- the lead, staff, or the after-hours AI --
+     * has said anything back over WhatsApp since. Reuses
+     * outreachAttemptSummary()'s existing note-scanning (rather than a
+     * second copy) so this can never drift from isUnresponsive()'s own
+     * reply detection. No time threshold here -- see
+     * isOverdueForWelcomeReply() below for the narrowed, "worth surfacing"
+     * version.
+     */
+    public function isAwaitingWelcomeReply(): bool
+    {
+        if ($this->welcome_message_sent_at === null || ! $this->status->isOpen()) {
+            return false;
+        }
+
+        $summary = $this->outreachAttemptSummary();
+
+        return ! $summary['whatsapp_inbound_reply'] && $summary['whatsapp_outbound'] === 0;
+    }
+
+    /**
+     * isAwaitingWelcomeReply(), narrowed to "it's been long enough that
+     * this is actually worth surfacing" -- drives the Lead Generation
+     * per-row badge. Deliberately does NOT check last_checkin_sent_at (the
+     * one-shot automatic nudge already having fired doesn't make a lead
+     * any less worth a phone call) -- that guard belongs to
+     * SendLeadWelcomeFollowUps alone, so a lead can't be auto-nudged twice.
+     */
+    public function isOverdueForWelcomeReply(): bool
+    {
+        return $this->isAwaitingWelcomeReply()
+            && $this->welcome_message_sent_at->lte(now()->subHours(self::WELCOME_FOLLOWUP_WAIT_HOURS));
     }
 
     /**

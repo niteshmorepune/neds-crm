@@ -212,7 +212,13 @@ lead and click **📱 Send WhatsApp check-in** (next to the goal picker) — a
 different approved template asking if they're still interested and inviting
 a reply, same idea as the automatic welcome but for re-engaging later. Limited
 to once per 24 hours per lead so it stays a considerate nudge, not a repeat
-blast.
+blast. **You don't have to remember to click it, either** — if 6 hours pass
+with no reply from the lead, you, or the after-hours assistant, the CRM
+sends this same check-in automatically, once. A **💬 Welcome sent, no
+reply** badge shows on the lead's row (and in the Needs Attention strip)
+the moment it's been quiet that long, whether or not the automatic
+check-in has fired yet — worth a phone call in the meantime, since
+WhatsApp is a helpful channel here, not a replacement for calling.
 
 **Visibility Audit Funnel:** **Lead Generation → VA Recovery** shows the
 whole journey for Meta Ads leads tagged the GMB service — how many came in,
