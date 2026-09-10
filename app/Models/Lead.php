@@ -375,11 +375,17 @@ class Lead extends Model
      * whatsapp_inbound_reply, but unlike that rare intake-note case, this
      * one is guaranteed on every single welcomed/checked-in lead, so it
      * can't be left as an acceptable false negative here (it would make
-     * Lead::isAwaitingWelcomeReply() permanently read "replied").
+     * Lead::isAwaitingWelcomeReply() permanently read "replied"). The two
+     * "❌ ... failed to deliver" markers are WadeskMessageStatusController's
+     * own downgrade notes (Meta's async delivery-failure webhook, e.g. the
+     * "healthy ecosystem engagement" pacing throttle) -- same user_id=null,
+     * no-prefix shape, same misclassification risk.
      */
     private const INTERNAL_MARKER_NOTE_PREFIXES = [
         '✨ Automated welcome message sent via WhatsApp',
         '✨ Re-engagement check-in sent via WhatsApp.',
+        '❌ Welcome WhatsApp message failed to deliver',
+        '❌ Re-engagement check-in failed to deliver',
     ];
 
     /**

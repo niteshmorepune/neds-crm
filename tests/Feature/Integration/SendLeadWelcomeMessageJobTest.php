@@ -48,6 +48,7 @@ it('sends the welcome template with the lead\'s name and service, and marks it s
     });
 
     expect($lead->fresh()->welcome_message_sent_at)->not->toBeNull();
+    expect($lead->fresh()->welcome_message_wadesk_id)->toBe('wamsg_1');
     $note = $lead->notes()->latest()->first();
     expect($note->body)->toContain('Automated welcome message sent via WhatsApp');
 });
@@ -91,6 +92,7 @@ it('still marks the lead sent, without a note, when wadesk.in skips an opted-out
     (new SendLeadWelcomeMessageJob($lead->id))->handle();
 
     expect($lead->fresh()->welcome_message_sent_at)->not->toBeNull()
+        ->and($lead->fresh()->welcome_message_wadesk_id)->toBeNull()
         ->and($lead->notes()->count())->toBe(0);
 });
 

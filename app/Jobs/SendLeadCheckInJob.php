@@ -84,6 +84,13 @@ class SendLeadCheckInJob implements ShouldQueue
             $lead->forceFill(['last_checkin_sent_at' => now()])->saveQuietly();
 
             if ($response->json('skipped') !== true) {
+                // wadesk_message_id lets Api\WadeskMessageStatusController find
+                // this lead back later if Meta's own async status webhook
+                // reports this send FAILED after wadesk.in already accepted it
+                // here (e.g. the "healthy ecosystem engagement" pacing
+                // throttle, error 131049) -- see that controller's docblock.
+                $lead->forceFill(['checkin_wadesk_id' => $response->json('messageId')])->saveQuietly();
+
                 $lead->notes()->create([
                     'user_id' => null,
                     'body' => '✨ Re-engagement check-in sent via WhatsApp.',

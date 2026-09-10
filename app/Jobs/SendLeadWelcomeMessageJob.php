@@ -99,6 +99,13 @@ class SendLeadWelcomeMessageJob implements ShouldQueue
             $lead->forceFill(['welcome_message_sent_at' => now()])->saveQuietly();
 
             if ($response->json('skipped') !== true) {
+                // wadesk_message_id lets Api\WadeskMessageStatusController find
+                // this lead back later if Meta's own async status webhook
+                // reports this send FAILED after wadesk.in already accepted it
+                // here (e.g. the "healthy ecosystem engagement" pacing
+                // throttle, error 131049) -- see that controller's docblock.
+                $lead->forceFill(['welcome_message_wadesk_id' => $response->json('messageId')])->saveQuietly();
+
                 $lead->notes()->create([
                     'user_id' => null,
                     'body' => '✨ Automated welcome message sent via WhatsApp — asking when\'s a good time to call.',

@@ -69,6 +69,19 @@ it('does not let its own welcome/check-in confirmation notes count as a reply', 
     expect($welcomed->fresh()->isAwaitingWelcomeReply())->toBeTrue();
 });
 
+it('does not let a delivery-failure marker note count as a reply either', function () {
+    // WadeskMessageStatusController's own downgrade notes -- same user_id=null,
+    // no-WHATSAPP_OUTBOUND_PREFIX shape as the success markers above.
+    $lead = Lead::factory()->create(['welcome_message_sent_at' => null]);
+    $lead->notes()->create(['user_id' => null, 'body' => '❌ Welcome WhatsApp message failed to deliver: some reason']);
+    $lead->notes()->create(['user_id' => null, 'body' => '❌ Re-engagement check-in failed to deliver: some reason']);
+
+    // welcome_message_sent_at is null (the failure downgrade clears it), so
+    // isAwaitingWelcomeReply() itself reads false -- the real regression this
+    // guards is outreachAttemptSummary()'s reply detection directly.
+    expect($lead->fresh()->outreachAttemptSummary()['whatsapp_inbound_reply'])->toBeFalse();
+});
+
 it('does not break isUnresponsive() -- the internal marker notes are excluded there too', function () {
     // Regression guard for the outreachAttemptSummary() fix: a lead with 3
     // outbound WhatsApp attempts and a welcome-confirmation note (but no

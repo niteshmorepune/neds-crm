@@ -23,7 +23,7 @@ beforeEach(function () {
 });
 
 it('sends the check-in template with the lead\'s name and service, and records it', function () {
-    Http::fake(['https://wadesk.test/api/send-template' => Http::response(['conversationId' => 'c1'], 201)]);
+    Http::fake(['https://wadesk.test/api/send-template' => Http::response(['conversationId' => 'c1', 'messageId' => 'wamsg_2'], 201)]);
     $seo = Service::factory()->create(['name' => 'SEO', 'is_active' => true]);
     $lead = Lead::factory()->create(['name' => 'Priya Shah', 'phone' => '+91 98765 43210', 'service_id' => $seo->id]);
 
@@ -37,6 +37,7 @@ it('sends the check-in template with the lead\'s name and service, and records i
     });
 
     expect($lead->fresh()->last_checkin_sent_at)->not->toBeNull();
+    expect($lead->fresh()->checkin_wadesk_id)->toBe('wamsg_2');
     expect($lead->notes()->latest()->first()->body)->toContain('Re-engagement check-in sent via WhatsApp');
 });
 
@@ -56,6 +57,7 @@ it('still updates the timestamp, without a note, when wadesk.in skips an opted-o
     (new SendLeadCheckInJob($lead->id))->handle();
 
     expect($lead->fresh()->last_checkin_sent_at)->not->toBeNull()
+        ->and($lead->fresh()->checkin_wadesk_id)->toBeNull()
         ->and($lead->notes()->count())->toBe(0);
 });
 
