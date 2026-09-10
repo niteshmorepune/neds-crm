@@ -124,6 +124,32 @@ it('eligibleCovers matches a Telecaller peer held only as an additional role', f
         ->and($eligible->pluck('id'))->not->toContain($rep->id);
 });
 
+it('eligibleCovers falls back to a Sales peer when the leave-taker is the only active Telecaller', function () {
+    // Real incident, 2026-09-10: exactly this shape in production — one
+    // active Telecaller, no other Telecaller peer at all — left the
+    // Approval Center's WhatsApp Chat Coverage dropdown permanently empty.
+    $soleTelecaller = User::factory()->role(UserRole::Telecaller)->create();
+    $salesPeer = User::factory()->role(UserRole::Sales)->create();
+    $unrelated = User::factory()->role(UserRole::Support)->create();
+
+    $eligible = app(LeaveCoverage::class)->eligibleCovers($soleTelecaller);
+
+    expect($eligible->pluck('id'))->toContain($salesPeer->id)
+        ->and($eligible->pluck('id'))->not->toContain($unrelated->id)
+        ->and($eligible->pluck('id'))->not->toContain($soleTelecaller->id);
+});
+
+it('eligibleCovers never falls back to a Sales peer when a real Telecaller peer already exists', function () {
+    $rep = User::factory()->role(UserRole::Telecaller)->create();
+    $telecallerPeer = User::factory()->role(UserRole::Telecaller)->create();
+    $salesPeer = User::factory()->role(UserRole::Sales)->create();
+
+    $eligible = app(LeaveCoverage::class)->eligibleCovers($rep);
+
+    expect($eligible->pluck('id'))->toContain($telecallerPeer->id)
+        ->and($eligible->pluck('id'))->not->toContain($salesPeer->id);
+});
+
 // ──────────────────────────────────────────────────────────────────────────
 // Scheduled command (app:sync-leave-cover-to-wadesk)
 // ──────────────────────────────────────────────────────────────────────────

@@ -16,8 +16,11 @@ use Illuminate\Support\Collection;
  * picked (so their wadesk.in WhatsApp chats don't sit silently unwatched
  * while they're out) and who's eligible to cover — mirrors
  * UserUpdateRequest's deactivation-handover rule (required, not a silent
- * no-op) and LeadReassignRequest's "same-role peer only" eligibility rule,
- * applied here to Leave approval instead.
+ * no-op) and LeadReassignRequest's "same-role peer preferred" eligibility
+ * rule, applied here to Leave approval instead. Unlike a lead reassignment,
+ * eligibility here falls back to the other Sales/Telecaller role when no
+ * same-role peer exists at all (see eligibleCovers()) — this is a
+ * temporary WhatsApp-visibility stand-in, not a change of lead ownership.
  */
 class LeaveCoverage
 {
@@ -40,6 +43,17 @@ class LeaveCoverage
      * Telecaller roles (primary or additional), excluding the leave-taker
      * themselves. A user with neither role has nobody eligible to pick.
      *
+     * Falls back to the OTHER Sales/Telecaller role only when no same-role
+     * peer exists at all. Real incident, 2026-09-10: this company currently
+     * has exactly one active Telecaller (Rohit Dhulasavant) — restricting
+     * strictly to a same-role peer left the WhatsApp Chat Coverage dropdown
+     * on Approval Center permanently empty whenever he applied for leave,
+     * making the leave impossible to approve at all (a `required` select
+     * with zero options). Sales and Telecaller both work the same WhatsApp
+     * conversations day to day, so either can reasonably stand in
+     * temporarily — this never overrides a real same-role peer when one is
+     * actually available, it only kicks in when the primary pool is empty.
+     *
      * @return Collection<int, User>
      */
     public function eligibleCovers(User $user): Collection
@@ -52,9 +66,19 @@ class LeaveCoverage
             return collect();
         }
 
-        return User::where('is_active', true)
+        $sameRole = User::where('is_active', true)
             ->where('id', '!=', $user->id)
             ->withAnyRole(...$relevantRoles->all())
+            ->orderBy('name')
+            ->get();
+
+        if ($sameRole->isNotEmpty()) {
+            return $sameRole;
+        }
+
+        return User::where('is_active', true)
+            ->where('id', '!=', $user->id)
+            ->withAnyRole(UserRole::Sales, UserRole::Telecaller)
             ->orderBy('name')
             ->get();
     }

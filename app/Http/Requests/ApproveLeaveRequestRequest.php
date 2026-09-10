@@ -58,7 +58,7 @@ class ApproveLeaveRequestRequest extends FormRequest
             if (! $eligible) {
                 $validator->errors()->add(
                     'covering_user_id',
-                    'Choose an active teammate who shares the same Sales/Telecaller role.'
+                    'Choose an active Sales or Telecaller teammate.'
                 );
             }
         });
