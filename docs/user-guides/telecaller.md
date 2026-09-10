@@ -141,6 +141,11 @@ under **Calling** in the sidebar. Logging a call against a brand-new
 (**New**) lead automatically moves its status to **Contacted** for you.
 Logged one by mistake? A **Delete** link appears next to it — you can
 remove your own, or a manager/admin can remove anyone's.
+**A WhatsApp voice call you answer on wadesk gets logged here
+automatically** (added 2026-09-10) — no need to also click Log a call for
+the same conversation. Only a call that's actually answered counts; a
+missed or declined WhatsApp call still shows in wadesk's own chat thread
+but isn't added here.
 
 **Best time to call:** open any lead and you'll see a **📞 Best time to
 call** box above its call history — every attempt already made to that

@@ -704,14 +704,18 @@ summary above:
 - **Covering teammate (Sales/Telecaller only)** — if the person requesting
   leave is Sales or Telecaller and currently owns/handles any open leads,
   Approve shows an extra **"Covering WhatsApp chats…"** dropdown that you
-  must fill in before it lets you approve — pick another active teammate
-  in the same role. That colleague automatically gets temporary access to
-  the leave-taker's WhatsApp chats on wadesk (their own Marketing-line
-  chats stay untouched), starting as soon as you approve and ending on its
-  own once the leave period is over — nothing to remember to undo. If the
-  person has no open leads, or isn't Sales/Telecaller, Approve works as
-  normal with no extra step. Both the employee's own Leave history and
-  **Team Leave Records** show who's covering, if anyone.
+  must fill in before it lets you approve — pick another active Sales or
+  Telecaller teammate. The dropdown prefers someone in the same role, but
+  offers the other role too whenever no same-role peer is available (e.g.
+  a Sales rep covering for the team's only Telecaller) — WhatsApp coverage
+  is just a temporary stand-in, not a change of who owns the lead, so
+  either role can fill in. That colleague automatically gets temporary
+  access to the leave-taker's WhatsApp chats on wadesk (their own
+  Marketing-line chats stay untouched), starting as soon as you approve and
+  ending on its own once the leave period is over — nothing to remember to
+  undo. If the person has no open leads, or isn't Sales/Telecaller, Approve
+  works as normal with no extra step. Both the employee's own Leave history
+  and **Team Leave Records** show who's covering, if anyone.
 - **Work From Home → Review pending** — same approve/reject flow as Leave
   Requests, one level up in the sidebar, but approving a WFH request never
   touches attendance — the employee is still working, so they check in/out

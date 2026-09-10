@@ -312,6 +312,11 @@ your "follow-ups due" list — same list, no separate place to look.
   flip that field. Logged a call by mistake (wrong lead, duplicate entry)?
   A **Delete** link appears next to it (Calls tab, lead page, or the
   Calling list) — only you or a manager/admin can delete it.
+  **A WhatsApp voice call you answer on wadesk gets logged here
+  automatically** (added 2026-09-10) — no need to also click Log a call
+  for the same conversation. Only a call that's actually answered counts;
+  a missed or declined WhatsApp call still shows in wadesk's own chat
+  thread but isn't added here.
 - **Best time to call:** a lead's own page shows a **📞 Best time to call**
   box above its call history — every past attempt made to that specific
   lead (time and outcome), plus a recommended hour band for your next try.
