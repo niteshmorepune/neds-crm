@@ -961,4 +961,67 @@ Older entries (2026-06-10 through 2026-08-25) moved to `docs/decisions-log-archi
   (`SendLeadWelcomeFollowUpsTest`, `LeadWelcomeReplyTest`, plus 2 new cases
   in `LeadListPrioritizationTest`, including one asserting the
   `isUnresponsive()` fix directly), full suite green, Pint clean. Docs:
+  updated (see below for the two follow-on entries from the same investigation).
+- **2026-09-10 — Real incident: Meta's own "healthy ecosystem engagement"
+  pacing throttle (error 131049) was silently blocking some `lead_welcome`
+  sends, with nothing to ever retry them — fixed + deployed (`153f226`).**
+  Surfaced from an owner-shared wadesk.in inbox screenshot showing a
+  failed send to a real lead. `WadeskMessageStatusController`'s existing
+  failure-detection (shipped hours earlier, `d97fee3`) correctly resets
+  `welcome_message_sent_at`/`wadesk_id` on a Meta-rejected send, but
+  nothing downstream ever re-attempted it — a throttled lead just sat
+  with no automation scheduled to reach it again. Checking real
+  production data found this wasn't a one-off: of the last 9 automated
+  welcome sends, the most recent 2 leads in a row had failed 100% of
+  their attempts — a real shift, not random noise. New
+  `App\Console\Commands\RetryFailedLeadWelcomeMessages`
+  (`app:retry-failed-lead-welcome-messages`, every 30 min) re-dispatches
+  `SendLeadWelcomeMessageJob` for a lead with a real prior failure note
+  (not a never-attempted one — that stays `LeadObserver`'s job), waits
+  `Lead::WELCOME_RETRY_WAIT_HOURS` (2h) between attempts, and gives up
+  after `WELCOME_RETRY_MAX_ATTEMPTS` (3) with a one-time note pointing
+  staff at the manual "Send WhatsApp check-in" button rather than
+  hammering a live throttle forever. Reuses existing `Lead` notes as the
+  source of truth for attempt history (no new columns). 10 new Pest
+  tests, full suite green, Pint clean, deployed via the standard SSH
+  `git pull` (no migration), verified live against the real leads that
+  surfaced the gap.
+- **2026-09-10 (later) — Synced answered wadesk.in WhatsApp voice calls
+  into the CRM's own `CallLog`, so they count toward employee performance
+  reports like a manually-logged phone call.** Owner asked for this once
+  wadesk.in's new inbound WhatsApp Calling API feature (a same-day
+  build in that separate repo — see its own CLAUDE.md) was confirmed
+  working end-to-end. Confirmed scope via AskUserQuestion first:
+  **answered calls only** — `call_logs.user_id` is required (not
+  nullable), and only a call someone actually answered has an
+  unambiguous person to attribute it to; a missed/declined/failed call
+  has no clear "who" and was left visible only in wadesk's own thread/
+  `Call` table, not synced here. New `App\Http\Controllers\Api\
+  WadeskCallLogController` (`POST /api/webhooks/wadesk/call-log`, same
+  Bearer-token trust boundary as every other wadesk.in-facing endpoint)
+  matches the caller's phone to a Customer or Lead (Customer checked
+  first, same precedence `WhatsappWebhookController` already used) and
+  the answering wadesk agent's email to a real CRM `User.email` — a
+  wadesk agent whose login doesn't share an email with a real CRM user
+  (e.g. a test/admin account) silently doesn't get logged, same
+  "never guess an attribution" contract every other wadesk↔CRM bridge
+  already follows. New nullable+unique `call_logs.wadesk_call_id` column
+  is the dedup key (mirrors the `leads.welcome_message_wadesk_id`/
+  `checkin_wadesk_id` external-reference-id pattern) so a retried
+  delivery can't double-log the same call.
+  **Real refactor along the way, not a new bug**: `WhatsappWebhookController
+  ::findCustomer()`'s phone-matching logic (Customer.phone/
+  alternate_phone, then an individual Contact's phone) was private to
+  that controller — extracted to a new `Customer::findByPhone()` static
+  method (mirroring `Lead::findOpenByPhone()`'s own shape exactly) once
+  this second real call site needed the identical resolution, so the two
+  webhook endpoints can't drift apart on how a client's phone number is
+  matched. Deliberately kept this integration minimal — it does NOT
+  replicate `CallLogController::store()`'s other side effects (lead
+  promotion, AI re-scoring, Visibility Audit touch logging, stall-reason/
+  goal capture) for an auto-synced call; those all depend on a human
+  actually filling out notes/outcome/next-action, which a WhatsApp call
+  sync has no equivalent of. 8 new Pest tests
+  (`WadeskCallLogTest`), full suite green, Pint clean, migrated locally
+  (one new nullable/unique column, no seeder/menu changes).
   `sales.md`/`telecaller.md` extended.

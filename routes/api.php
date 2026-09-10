@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\MetaLeadsWebhookController;
 use App\Http\Controllers\Api\RazorpayVisibilityAuditWebhookController;
 use App\Http\Controllers\Api\RazorpayWebhookController;
 use App\Http\Controllers\Api\SmdostWebhookController;
+use App\Http\Controllers\Api\WadeskCallLogController;
 use App\Http\Controllers\Api\WadeskMessageStatusController;
 use App\Http\Controllers\Api\WhatsappWebhookController;
 use App\Http\Middleware\VerifyBiometricBridgeToken;
@@ -61,6 +62,15 @@ Route::post('/leads/goal-capture', [LeadContextController::class, 'updateGoal'])
 Route::post('/webhooks/wadesk/message-failed', [WadeskMessageStatusController::class, 'handle'])
     ->middleware(['throttle:120,1', VerifyWhatsappWebhookToken::class])
     ->name('api.webhooks.wadesk.message-failed');
+
+// wadesk.in → CRM bridge. Called once an inbound WhatsApp voice call
+// (Meta Cloud API Calling) is ANSWERED, so it counts toward employee
+// performance reports the same way a manually-logged phone call does —
+// see WadeskCallLogController's docblock for the answered-only scope
+// decision. Same Bearer token, same wadesk.in trust boundary.
+Route::post('/webhooks/wadesk/call-log', [WadeskCallLogController::class, 'store'])
+    ->middleware(['throttle:120,1', VerifyWhatsappWebhookToken::class])
+    ->name('api.webhooks.wadesk.call-log');
 
 // socialmediadost.com → CRM bridge. Called when all content in a brief is
 // approved. Creates a draft invoice for the accounts team to price and send.

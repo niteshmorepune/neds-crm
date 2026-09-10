@@ -21,7 +21,7 @@ class CallLog extends Model
     protected $fillable = [
         'user_id', 'callable_type', 'callable_id', 'direction',
         'duration_minutes', 'outcome', 'notes', 'called_at',
-        'next_action', 'follow_up_at',
+        'next_action', 'follow_up_at', 'wadesk_call_id',
         'voice_transcript_status', 'voice_transcript', 'voice_transcribed_at',
     ];
 

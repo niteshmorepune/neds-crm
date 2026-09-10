@@ -9,6 +9,7 @@ use App\Enums\RecurringFrequency;
 use App\Enums\ReferralShareType;
 use App\Enums\UserRole;
 use App\Models\Concerns\LogsActivity;
+use App\Support\Phone;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -109,6 +110,33 @@ class Customer extends Model
     public function contacts(): HasMany
     {
         return $this->hasMany(Contact::class);
+    }
+
+    /**
+     * Checks every place a client's number can legitimately be recorded:
+     * the Customer's own phone, alternate_phone (real incident 2026-08-13
+     * — a client messaged from a second number only ever recorded as
+     * alternate_phone), and finally an individual Contact's phone (a
+     * person at that company, distinct from the company-level number).
+     * Extracted from WhatsappWebhookController::findCustomer() 2026-09-10
+     * once CallLogController's own wadesk-call-sync endpoint needed the
+     * identical resolution — mirrors Lead::findOpenByPhone()'s own
+     * static-finder shape so both webhook-facing endpoints share one
+     * source of truth per model instead of drifting apart.
+     */
+    public static function findByPhone(string $rawPhone): ?self
+    {
+        $digits = Phone::digits($rawPhone);
+        $last10 = Phone::last10($rawPhone);
+
+        $customer = static::where('phone', $digits)->first()
+            ?? static::where('phone', '+'.$digits)->first()
+            ?? static::where('phone', 'LIKE', '%'.$last10)->first()
+            ?? static::where('alternate_phone', $digits)->first()
+            ?? static::where('alternate_phone', '+'.$digits)->first()
+            ?? static::where('alternate_phone', 'LIKE', '%'.$last10)->first();
+
+        return $customer ?? Contact::where('phone', 'LIKE', '%'.$last10)->first()?->customer;
     }
 
     public function primaryContact(): HasOne

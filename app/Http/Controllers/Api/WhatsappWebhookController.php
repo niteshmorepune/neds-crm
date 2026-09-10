@@ -10,14 +10,12 @@ use App\Enums\VisibilityAuditTouchChannel;
 use App\Enums\VisibilityAuditTouchType;
 use App\Http\Controllers\Controller;
 use App\Jobs\ImportWhatsappTicketMedia;
-use App\Models\Contact;
 use App\Models\Customer;
 use App\Models\Lead;
 use App\Models\Ticket;
 use App\Models\VisibilityAuditTouch;
 use App\Models\WadeskMessageLog;
 use App\Services\VisibilityAuditFunnelMetrics;
-use App\Support\Phone;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -377,26 +375,12 @@ class WhatsappWebhookController extends Controller
     }
 
     /**
-     * Checks every place a client's number can legitimately be recorded:
-     * the Customer's own phone, their alternate_phone (2026-08-13 — real
-     * incident: a client messaged from a second number that was only ever
-     * recorded as alternate_phone, and this lookup didn't check it yet, so
-     * the message wrongly created a Lead instead of a Ticket), and finally
-     * an individual Contact's phone (a person at that company, distinct
-     * from the company-level number).
+     * See Customer::findByPhone() for the actual matching logic (extracted
+     * there 2026-09-10 so CallLogController's wadesk-call-sync endpoint
+     * shares the identical resolution instead of drifting).
      */
     private function findCustomer(string $rawPhone): ?Customer
     {
-        $digits = Phone::digits($rawPhone);
-        $last10 = Phone::last10($rawPhone);
-
-        $customer = Customer::where('phone', $digits)->first()
-            ?? Customer::where('phone', '+'.$digits)->first()
-            ?? Customer::where('phone', 'LIKE', '%'.$last10)->first()
-            ?? Customer::where('alternate_phone', $digits)->first()
-            ?? Customer::where('alternate_phone', '+'.$digits)->first()
-            ?? Customer::where('alternate_phone', 'LIKE', '%'.$last10)->first();
-
-        return $customer ?? Contact::where('phone', 'LIKE', '%'.$last10)->first()?->customer;
+        return Customer::findByPhone($rawPhone);
     }
 }
