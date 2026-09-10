@@ -25,6 +25,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
 #[ObservedBy(LeadObserver::class)]
 class Lead extends Model
@@ -379,13 +380,16 @@ class Lead extends Model
      * "❌ ... failed to deliver" markers are WadeskMessageStatusController's
      * own downgrade notes (Meta's async delivery-failure webhook, e.g. the
      * "healthy ecosystem engagement" pacing throttle) -- same user_id=null,
-     * no-prefix shape, same misclassification risk.
+     * no-prefix shape, same misclassification risk. The "⚠️ ... retry limit
+     * reached" marker is RetryFailedLeadWelcomeMessages' own give-up note --
+     * same shape again.
      */
     private const INTERNAL_MARKER_NOTE_PREFIXES = [
         '✨ Automated welcome message sent via WhatsApp',
         '✨ Re-engagement check-in sent via WhatsApp.',
         '❌ Welcome WhatsApp message failed to deliver',
         '❌ Re-engagement check-in failed to deliver',
+        self::WELCOME_GIVE_UP_NOTE_PREFIX,
     ];
 
     /**
@@ -485,6 +489,94 @@ class Lead extends Model
     {
         return $this->isAwaitingWelcomeReply()
             && $this->welcome_message_sent_at->lte(now()->subHours(self::WELCOME_FOLLOWUP_WAIT_HOURS));
+    }
+
+    /**
+     * Real incident, 2026-09-10: Meta's own "healthy ecosystem engagement"
+     * pacing throttle (error 131049) rejected several lead_welcome sends —
+     * WadeskMessageStatusController::handle() correctly detects this and
+     * resets welcome_message_sent_at/welcome_message_wadesk_id to null (see
+     * that controller's docblock), but nothing then re-attempts the send —
+     * the lead just sits with no automation scheduled to ever reach it
+     * again. RetryFailedLeadWelcomeMessages closes that gap by re-dispatching
+     * SendLeadWelcomeMessageJob (whose own idempotency guard already permits
+     * this, since it only checks welcome_message_sent_at !== null) for a
+     * lead that genuinely failed before, with backoff + a hard attempt cap
+     * so a persistently-throttled recipient doesn't get hammered forever.
+     */
+    public const WELCOME_RETRY_WAIT_HOURS = 2;
+
+    public const WELCOME_RETRY_MAX_ATTEMPTS = 3;
+
+    private const WELCOME_FAILURE_NOTE_PREFIX = '❌ Welcome WhatsApp message failed to deliver';
+
+    private const WELCOME_GIVE_UP_NOTE_PREFIX = '⚠️ Automated welcome message retry limit reached';
+
+    /** Every past delivery-failure note for this lead's welcome message, oldest first. */
+    private function welcomeMessageFailureNotes(): Collection
+    {
+        $notes = $this->relationLoaded('notes') ? $this->notes : $this->notes()->get(['id', 'notable_id', 'notable_type', 'body', 'created_at']);
+
+        return $notes
+            ->filter(fn (Note $n) => str_starts_with($n->body, self::WELCOME_FAILURE_NOTE_PREFIX))
+            ->sortBy('created_at')
+            ->values();
+    }
+
+    /**
+     * True once WELCOME_RETRY_MAX_ATTEMPTS failed sends have piled up for
+     * this lead — RetryFailedLeadWelcomeMessages stops retrying at that
+     * point, deliberately leaving the lead to a staff member's own manual
+     * "Send WhatsApp check-in" click rather than retrying a throttle
+     * indefinitely.
+     */
+    public function hasGivenUpOnWelcomeMessage(): bool
+    {
+        return $this->welcomeMessageFailureNotes()->count() >= self::WELCOME_RETRY_MAX_ATTEMPTS;
+    }
+
+    /**
+     * True exactly once, the first run after hasGivenUpOnWelcomeMessage()
+     * starts returning true — guards RetryFailedLeadWelcomeMessages' own
+     * give-up note so it posts once, not on every future 30-min run (nothing
+     * about a gave-up lead ever changes again on its own, so the failure
+     * count staying >= the cap forever would otherwise re-fire this note
+     * indefinitely).
+     */
+    public function needsWelcomeRetryGiveUpNote(): bool
+    {
+        if (! $this->hasGivenUpOnWelcomeMessage()) {
+            return false;
+        }
+
+        $notes = $this->relationLoaded('notes') ? $this->notes : $this->notes()->get(['id', 'notable_id', 'notable_type', 'body']);
+
+        return ! $notes->contains(fn (Note $n) => str_starts_with($n->body, self::WELCOME_GIVE_UP_NOTE_PREFIX));
+    }
+
+    /**
+     * A previously-failed welcome message is worth retrying once: it has
+     * never actually reached the lead (welcome_message_sent_at null), it has
+     * genuinely failed before (at least one failure note — distinct from a
+     * brand-new lead that's simply never been attempted yet, which is
+     * LeadObserver's job, not this one), it hasn't piled up
+     * WELCOME_RETRY_MAX_ATTEMPTS failures already, and enough time has
+     * passed since the last failure to give Meta's pacing throttle a chance
+     * to ease off rather than immediately re-hammering it.
+     */
+    public function isEligibleForWelcomeMessageRetry(): bool
+    {
+        if ($this->welcome_message_sent_at !== null || $this->last_checkin_sent_at !== null) {
+            return false;
+        }
+
+        $failures = $this->welcomeMessageFailureNotes();
+
+        if ($failures->isEmpty() || $this->hasGivenUpOnWelcomeMessage()) {
+            return false;
+        }
+
+        return $failures->last()->created_at->lte(now()->subHours(self::WELCOME_RETRY_WAIT_HOURS));
     }
 
     /**

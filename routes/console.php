@@ -100,6 +100,14 @@ Schedule::command('app:send-visibility-audit-recovery-nudges')->everyThirtyMinut
 // is set (already is, live 2026-09-09).
 Schedule::command('app:send-lead-welcome-followups')->everyThirtyMinutes();
 
+// Retries a lead_welcome send Meta's own pacing throttle rejected (error
+// 131049, "healthy ecosystem engagement") — see RetryFailedLeadWelcomeMessages'
+// own docblock for the real incident this covers. Same 30-min cadence as the
+// follow-up job above; the model's own WELCOME_RETRY_WAIT_HOURS backoff (2h)
+// and WELCOME_RETRY_MAX_ATTEMPTS cap (3) keep this from hammering a live
+// throttle.
+Schedule::command('app:retry-failed-lead-welcome-messages')->everyThirtyMinutes();
+
 // Keeps a currently-active leave's covering teammate synced to wadesk.in as
 // a temporary conversation assignee (App\Services\LeaveCoverage) — re-runs
 // periodically so a lead created/reassigned mid-leave also gets covered,
