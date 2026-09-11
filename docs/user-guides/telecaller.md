@@ -201,6 +201,16 @@ after hours, the assistant asks this same question (a real tappable
 list) and follows the same branching itself, so you may find it's
 already filled in by the time you open the lead.
 
+**Their budget, and the recommendation it produces:** next to the goal
+picker is a **Budget** picker (Under ₹3,000 / ₹3,000–₹6,000 /
+₹6,000–₹12,000 / ₹12,000+) — Meta's ad form asks this too, so it's often
+already filled in. Once both Goal and Budget are set, a blue
+**📋 Recommendation & Offer** panel shows which of the 4 entry offers (GBP
+Visibility Audit ₹120, Lead Generation Funnel Audit ₹299, Website +
+Conversion Growth Audit ₹499, or Personalized Digital Growth Strategy
+₹999) fits this lead, plus whether they've viewed their personal
+recommendation page, viewed the offer, clicked to pay, or already paid.
+
 **Every fresh Meta Ads lead also gets an automatic WhatsApp welcome**
 (except GMB-tagged ones, who get the Visibility Audit invite instead) —
 a thank-you plus "what time works for a quick call?" the moment the lead

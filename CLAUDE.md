@@ -1025,3 +1025,158 @@ Older entries (2026-06-10 through 2026-08-25) moved to `docs/decisions-log-archi
   (`WadeskCallLogTest`), full suite green, Pint clean, migrated locally
   (one new nullable/unique column, no seeder/menu changes).
   `sales.md`/`telecaller.md` extended.
+- **2026-09-12 — Meta Ads recommendation + offer funnel: 3 new entry
+  offers, a 16-cell recommendation matrix, and an in-app Razorpay Orders
+  checkout deliberately separate from the GBP offer's existing hosted
+  Payment Pages.** Owner asked for a full lead-recommendation-and-offer
+  funnel for Meta Ads leads (a much bigger ask than the existing GBP-only
+  Visibility Audit funnel): Meta's ad form asks a "biggest goal" question
+  (already captured as `Lead.goal` since 2026-09-08) and a "monthly
+  budget" question (not previously captured as a structured field), and
+  the CRM should recommend one of 4 entry offers based on the combination,
+  show a personalized page, and take payment. Inspected the existing
+  Visibility Audit funnel thoroughly before building anything (its offer
+  controller, funnel-tracking redirect hops, Razorpay Payment Page
+  checkout, webhook, purchase-matching job) — real, working, production
+  infrastructure, not a prototype — and reused as much of its shape as
+  made sense without touching any of its own code or behavior.
+  **New `App\Enums\LeadBudgetRange`** (`under_3000`/`3000_6000`/
+  `6000_12000`/`12000_plus`, plus a `leads.budget_range` column) — a new
+  bounded field, not a bucketing of the pre-existing `estimated_value`
+  (money paise) or `ai_budget_band` (AI-inferred Low/Medium/High) columns,
+  both of which mean something different. Mirrors `LeadGoal`'s own
+  precedent (added as its own field 2026-09-08) exactly, including a new
+  `matchBudgetRange()` in `ImportMetaLead` alongside the pre-existing
+  `matchGoal()`/`matchBudget()` — matched on the *count/size of numbers
+  present* (a range answer carries 2, a boundary answer carries 1) rather
+  than phrase-matching raw text, since neither "₹" nor "," nor "+"
+  reliably survive Meta's own slugified answer variant. Capturable
+  manually too, right next to the existing Goal picker on the lead page
+  and the Log a Call form (same "only writes what's actually filled in"
+  guard `stall_reason`/`goal` already use there).
+  **`App\Support\OfferRecommendationMatrix`** is the single source of
+  truth for all 16 (goal x budget) cells — recommendation name, offer,
+  price, and the exact Hindi/English headline/positioning/explanation
+  copy the owner specified — a flat literal array, not generated, so a
+  future price or copy change is a one-line edit in one place, never
+  duplicated into a view. Deliberately keeps two messaging rules baked
+  into every cell's explanation: a small budget is never framed as "too
+  low" (framed instead as "start with the right diagnostic step"), and a
+  large budget is never framed as "you have money to spend" (framed as a
+  genuine strategic planning opportunity) — both directly from the
+  owner's own spec.
+  **`App\Enums\OfferKey`** (GbpAudit/LeadGenerationAudit/
+  WebsiteGrowthAudit/GrowthStrategy) is the single source of truth for
+  price/route/CTA — `GbpAudit::price()` returns ₹120 but
+  `usesInAppCheckout()` is false for it alone, since that offer
+  deliberately keeps its own pre-existing Payment Page checkout untouched
+  (its route, price, and business logic were explicit "do not touch"
+  constraints). The 3 new offers get a real, new in-app Razorpay Orders +
+  Checkout.js flow (`OfferCheckoutController`, new `offer_purchases`
+  table) instead of the GBP page's hosted-Payment-Page mechanism —
+  confirmed via AskUserQuestion, since both were legitimate "reuse
+  existing architecture" choices already live in this app (the GBP
+  page's own Payment Pages, and `QuotationAdvancePaymentController`'s
+  in-app Orders API flow for milestone billing). Picked the in-app flow:
+  it needs zero manual Razorpay Dashboard setup before any of the 3 new
+  offers can take real money (the GBP page's Payment Pages, by contrast,
+  are a real "ships inert until the owner manually configures a URL per
+  tier" gap, same class as several past WhatsApp-template integrations),
+  and price is server-side by construction — `OfferCheckoutController::
+  order()` always resolves the amount from `OfferKey`, never the request,
+  and `verify()` re-fetches the order from Razorpay directly rather than
+  trusting anything the browser reports back, exactly mirroring
+  `QuotationAdvancePaymentController`'s own signature-verification
+  pattern. The existing async `RazorpayWebhookController` (previously
+  invoice-only) now also branches on `notes.offer_key` as a backup path
+  alongside the synchronous `verify()` call — same belt-and-suspenders
+  precedent as the invoice/quotation flow already has.
+  **Personalized recommendation page** at `/offers/recommendation/{token}`
+  — confirmed via AskUserQuestion that this needed an unguessable
+  `recommendation_token` (`Str::uuid()`, lazily generated exactly like
+  `Quotation::public_token`/`VisibilityAuditPurchase::report_token`)
+  rather than the GBP page's own bare `?lead=123` convention: that
+  existing pattern only ever tags a later funnel event, it never renders
+  anything about the lead back on screen, while this new page genuinely
+  displays a real name/goal/budget — a guessable sequential id would let
+  someone enumerate other leads' info. `noindex, nofollow` on the page
+  itself plus a `robots.txt` disallow. Recommendation generation
+  (`App\Actions\GenerateLeadRecommendation`) is idempotent — re-visiting
+  the page, or re-saving the same goal/budget from the lead page, never
+  creates a duplicate token or re-fires a `recommendation_created` funnel
+  event unless the underlying cell actually changed. The dev/QA
+  `?goal=&budget=` test-mode route (`/offers/recommendation/test`,
+  registered before the `{token}` route so it's never swallowed as one)
+  hard-404s via `abort_if(app()->environment('production'), ...)` — real
+  users can never manipulate their own recommendation or price through a
+  query parameter.
+  **New `offer_funnel_events` table** (mirrors
+  `visibility_audit_funnel_events`' shape, generalized across all 4
+  offers) captures `recommendation_created`/`recommendation_viewed`/
+  `offer_viewed`/`offer_cta_clicked`/`payment_started`/
+  `payment_succeeded`/`payment_failed` — deliberately did NOT build a new
+  full team-wide funnel dashboard alongside this (the existing Visibility
+  Audit Funnel dashboard is its own, separate, already-large feature) —
+  the events are captured and queryable, and the immediate admin/sales
+  need (understanding one specific lead's recommendation/offer/payment
+  state) is served directly on the Lead detail page's new **📋
+  Recommendation & Offer** panel instead. A team-wide rollup dashboard
+  for this new funnel is a reasonable fast-follow, not built here.
+  **3 new offer pages** (`/offers/lead-generation-audit`,
+  `/offers/website-growth-audit`, `/offers/growth-strategy`) visually
+  match the pre-existing GBP page's own hand-rolled CSS custom-property
+  design system almost exactly (same `--navy`/`--blue`/`--blue2` etc.
+  variable names, same section shapes — hero, problem cards, audit grid,
+  offer/buybox, steps, trust stats, FAQ, sticky mobile CTA) via a new
+  shared `resources/views/offers/partials/styles.blade.php` include —
+  the GBP page's own file was deliberately left completely untouched
+  (not even refactored to use the new shared partial) rather than risk
+  any visible/behavioral change to a page explicitly called out as
+  off-limits. Alpine.js loaded via CDN on these 3 new pages specifically
+  (not the app's own Vite bundle) — pulling in `resources/js/app.js`
+  would also load Livewire and Tailwind's CSS reset, which these
+  self-contained public pages don't use and don't want fighting the
+  hand-tuned stylesheet; the recommendation page needs no Alpine at all
+  (its CTAs are plain links to an offer page), so it only includes the
+  CSS half of that partial. Growth Strategy's "Where should your next
+  ₹10,000 go?" section explicitly states it's a strategic example, not a
+  guaranteed allocation or return, per the owner's own explicit
+  instruction not to imply any guarantee. Every proof point used
+  (66+ Maharashtra businesses / 12+ years / 4.9 Google rating) is one of
+  the 3 already-approved claims elsewhere in this app — nothing new was
+  invented.
+  **Real bug caught while testing, not shipped**: `OfferRecommendationMatrix::
+  all()` initially used `Collection::flatMap()` to flatten the 4x4 cell
+  array — since every goal's inner array shares the same 4 budget-value
+  string keys, `flatMap()`'s internal collapse silently overwrote all but
+  the last goal's 4 cells, leaving only 4 of 16 recommendations reachable
+  from `all()` (the `for()` lookup used by every real request was
+  unaffected — this only broke the coverage-check helper). Fixed with a
+  plain nested-foreach flatten instead of relying on Collection semantics
+  here.
+  134 new Pest tests (all 16 matrix combinations x price/offer/headline/
+  CTA, checkout order/verify price-tampering/signature/offer-mismatch/
+  IDOR/idempotency cases, all 4 offer pages render, the admin panel, the
+  budget-range Meta-import parser, goal-capture roundtrip), full suite
+  otherwise green (9 unrelated pre-existing date/UTC-midnight-boundary
+  flakes hit across `DailyPrioritiesDigestTest`/`WeeklyOwnerDigestTest`/
+  `MeetingRequestTest`/`DraftProjectDailyUpdatesCommandTest`/
+  `SendProjectUpdatesDigestTest`/`DailyReportTest` — none of these files
+  or the code they test were touched this session; confirmed via `git
+  log` that they predate this work). Pint clean, `npm run build` run (new
+  Tailwind utility classes on the Lead page's new panel). Migrated and
+  smoke-tested end-to-end against real local MySQL: a throwaway
+  `SMOKETEST` lead created directly, its real recommendation URL hit live
+  (correct offer/price/noindex confirmed), its offer-page view and
+  funnel-event rows verified in the database, then force-deleted — no
+  real Razorpay key configured locally, so the checkout endpoints
+  themselves were only exercised through the Pest suite, not live
+  payment. `sales.md`/`telecaller.md` extended (their PDFs regenerated;
+  the other 8 handouts' regenerated-but-unchanged PDF bytes discarded per
+  the established PDF-isn't-byte-stable gotcha), `BUILD_PLAN.md` gained a
+  new Milestone 12 section. **Remaining manual step**: none required to
+  ship — the 3 new offers use the in-app Razorpay Orders flow with the
+  same `RAZORPAY_KEY_ID`/`RAZORPAY_KEY_SECRET` already live in production
+  for invoice/quotation payments, so no new Razorpay Dashboard
+  configuration is needed before this goes live (unlike the GBP page's
+  own Payment Pages).

@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Enums\LeadBudgetRange;
 use App\Enums\LeadGoal;
 use App\Enums\LeadSource;
 use App\Enums\LeadStatus;
@@ -111,6 +112,7 @@ class ImportMetaLead implements ShouldQueue
 
         [$fields, $extra] = $this->parseFieldData($response->json('field_data', []));
         [$serviceId, $extra] = $this->matchServiceId($extra);
+        $budgetRange = $this->matchBudgetRange($extra);
         [$estimatedValue, $extra] = $this->matchBudget($extra);
         [$goal, $extra] = $this->matchGoal($extra);
 
@@ -121,7 +123,7 @@ class ImportMetaLead implements ShouldQueue
         $existingLead = filled($fields['phone']) ? Lead::findOpenByPhone($fields['phone']) : null;
 
         if ($existingLead !== null) {
-            $this->attachToExistingLead($existingLead, $campaignLabel, $serviceId, $estimatedValue, $goal, $extra);
+            $this->attachToExistingLead($existingLead, $campaignLabel, $serviceId, $estimatedValue, $goal, $budgetRange, $extra);
 
             return;
         }
@@ -135,6 +137,7 @@ class ImportMetaLead implements ShouldQueue
             'service_id' => $serviceId,
             'estimated_value' => $estimatedValue,
             'goal' => $goal?->value,
+            'budget_range' => $budgetRange?->value,
             'status' => LeadStatus::New->value,
             'owner_id' => null,
             'meta_leadgen_id' => $this->leadgenId,
@@ -171,7 +174,7 @@ class ImportMetaLead implements ShouldQueue
      *
      * @param  array<string, string>  $extra
      */
-    private function attachToExistingLead(Lead $lead, ?string $campaignLabel, ?int $serviceId, ?int $estimatedValue, ?LeadGoal $goal, array $extra): void
+    private function attachToExistingLead(Lead $lead, ?string $campaignLabel, ?int $serviceId, ?int $estimatedValue, ?LeadGoal $goal, ?LeadBudgetRange $budgetRange, array $extra): void
     {
         if ($lead->meta_leadgen_id === null) {
             $lead->update(['meta_leadgen_id' => $this->leadgenId]);
@@ -185,6 +188,7 @@ class ImportMetaLead implements ShouldQueue
             'service_id' => $lead->service_id === null ? $serviceId : null,
             'estimated_value' => $lead->estimated_value === null ? $estimatedValue : null,
             'goal' => $lead->goal === null ? $goal?->value : null,
+            'budget_range' => $lead->budget_range === null ? $budgetRange?->value : null,
         ], fn ($v) => $v !== null);
 
         if ($fill !== []) {
@@ -313,6 +317,59 @@ class ImportMetaLead implements ShouldQueue
      * @param  array<string, string>  $extra
      * @return array{0: ?int, 1: array<string, string>}
      */
+    /**
+     * Parses the exact LeadBudgetRange band out of a "budget"-labelled
+     * custom question — same "budget"/"बजट" key restriction as matchBudget()
+     * below, reading the SAME field that method separately parses into a
+     * raw rupee estimated_value. Deliberately never mutates/unsets $extra
+     * (matchBudget() below still does its own independent match+unset pass
+     * over the same key), so call order between the two never matters.
+     *
+     * Keyed on the count/size of numbers actually present (a "range" answer
+     * carries 2 numbers, a "boundary" answer carries 1) rather than
+     * phrase-matching the raw text — neither "₹" nor "," nor "+" reliably
+     * survive Meta's own slugified variant of an option's value.
+     *
+     * @param  array<string, string>  $extra
+     */
+    private function matchBudgetRange(array $extra): ?LeadBudgetRange
+    {
+        foreach ($extra as $key => $value) {
+            $lowerKey = mb_strtolower($key);
+
+            if (! str_contains($lowerKey, 'budget') && ! str_contains($lowerKey, 'बजट')) {
+                continue;
+            }
+
+            preg_match_all('/(\d[\d,]*(?:\.\d+)?)\s*([kK])?/', $value, $matches, PREG_SET_ORDER);
+
+            $numbers = array_map(
+                fn (array $match) => (float) str_replace(',', '', $match[1]) * (($match[2] ?? '') !== '' ? 1000 : 1),
+                $matches
+            );
+
+            if ($numbers === []) {
+                continue;
+            }
+
+            if (count($numbers) >= 2) {
+                return min($numbers[0], $numbers[1]) < 4500
+                    ? LeadBudgetRange::ThreeToSix
+                    : LeadBudgetRange::SixToTwelve;
+            }
+
+            $isPlus = str_contains($value, '+') || str_contains(mb_strtolower($value), 'plus');
+
+            if ($isPlus || $numbers[0] >= 9000) {
+                return LeadBudgetRange::TwelvePlus;
+            }
+
+            return $numbers[0] <= 4500 ? LeadBudgetRange::Under3000 : LeadBudgetRange::ThreeToSix;
+        }
+
+        return null;
+    }
+
     private function matchBudget(array $extra): array
     {
         foreach ($extra as $key => $value) {

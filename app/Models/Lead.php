@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\CallOutcome;
 use App\Enums\DealStage;
 use App\Enums\LeadBudgetBand;
+use App\Enums\LeadBudgetRange;
 use App\Enums\LeadGoal;
 use App\Enums\LeadSource;
 use App\Enums\LeadStatus;
@@ -26,6 +27,7 @@ use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 #[ObservedBy(LeadObserver::class)]
 class Lead extends Model
@@ -41,9 +43,17 @@ class Lead extends Model
         'source',
         'service_id',
         'goal',
+        'budget_range',
         'website_url',
         'gbp_url',
         'estimated_value',
+        'recommendation_key',
+        'recommendation_offer_key',
+        'recommendation_token',
+        'recommendation_generated_at',
+        'recommendation_viewed_at',
+        'offer_viewed_at',
+        'offer_clicked_at',
         'owner_id',
         'telecaller_id',
         'status',
@@ -77,6 +87,9 @@ class Lead extends Model
         'ai_score', 'ai_score_reason', 'ai_scored_at',
         'ai_budget_band', 'ai_urgency', 'ai_service_fit',
         'stall_reason',
+        'recommendation_key', 'recommendation_offer_key', 'recommendation_token',
+        'recommendation_generated_at', 'recommendation_viewed_at',
+        'offer_viewed_at', 'offer_clicked_at',
     ];
 
     protected function casts(): array
@@ -86,6 +99,7 @@ class Lead extends Model
             'status' => LeadStatus::class,
             'stall_reason' => StallReason::class,
             'goal' => LeadGoal::class,
+            'budget_range' => LeadBudgetRange::class,
             'service_id' => 'integer',
             'estimated_value' => 'integer',
             'next_follow_up_at' => 'datetime',
@@ -101,6 +115,10 @@ class Lead extends Model
             'visibility_audit_invite_emailed_at' => 'datetime',
             'welcome_message_sent_at' => 'datetime',
             'last_checkin_sent_at' => 'datetime',
+            'recommendation_generated_at' => 'datetime',
+            'recommendation_viewed_at' => 'datetime',
+            'offer_viewed_at' => 'datetime',
+            'offer_clicked_at' => 'datetime',
         ];
     }
 
@@ -798,6 +816,42 @@ class Lead extends Model
     public function visibilityAuditTouches(): HasMany
     {
         return $this->hasMany(VisibilityAuditTouch::class);
+    }
+
+    public function offerPurchases(): HasMany
+    {
+        return $this->hasMany(OfferPurchase::class);
+    }
+
+    public function offerFunnelEvents(): HasMany
+    {
+        return $this->hasMany(OfferFunnelEvent::class);
+    }
+
+    public function firstName(): ?string
+    {
+        if (blank($this->name)) {
+            return null;
+        }
+
+        return trim(explode(' ', trim($this->name))[0]) ?: null;
+    }
+
+    /**
+     * The personalized recommendation page's public, unguessable URL —
+     * generates recommendation_token lazily on first call if not already
+     * set, same non-expiring lazy-token pattern as Quotation::publicViewUrl()
+     * / VisibilityAuditPurchase::reportUrl(). Deliberately never the bare
+     * lead id — this page renders real goal/budget/name back on screen, so
+     * an incrementing id would let one lead's URL reveal another's.
+     */
+    public function recommendationUrl(): string
+    {
+        if ($this->recommendation_token === null) {
+            $this->forceFill(['recommendation_token' => (string) Str::uuid()])->save();
+        }
+
+        return route('offers.recommendation', $this->recommendation_token);
     }
 
     /**

@@ -388,6 +388,18 @@ your "follow-ups due" list — same list, no separate place to look.
   lets them know a Sales Expert will follow up — either way you'll see it
   already filled in, or the same bell notification you'd get from tagging
   it yourself, by the time you open the lead.
+- **Their budget, and the recommendation it produces:** right next to the
+  goal picker is a **Budget** picker (Under ₹3,000 / ₹3,000–₹6,000 /
+  ₹6,000–₹12,000 / ₹12,000+) — Meta's own ad form asks this alongside the
+  goal question, so it's often already filled in for a Meta Ads lead. The
+  moment both Goal and Budget are set, a blue **📋 Recommendation & Offer**
+  panel appears on the lead showing which of the 4 entry offers (GBP
+  Visibility Audit ₹120, Lead Generation Funnel Audit ₹299, Website +
+  Conversion Growth Audit ₹499, or Personalized Digital Growth Strategy
+  ₹999) we'd recommend for this exact goal/budget combination, plus
+  whether the lead has actually viewed their personal recommendation page,
+  viewed the offer page, clicked the buy button, or paid — so you know
+  exactly where they are in that funnel before you call.
 - On the Notes field, click **Dictate** and speak instead of typing — your
   browser transcribes it live into the box, and you can still edit before
   saving. (Chrome/Edge only; the button doesn't appear in browsers that

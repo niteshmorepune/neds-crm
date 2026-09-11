@@ -31,6 +31,9 @@ use App\Http\Controllers\LeaveRequestController;
 use App\Http\Controllers\ManagerActionCenterController;
 use App\Http\Controllers\MyDayController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\OfferCheckoutController;
+use App\Http\Controllers\OfferPageController;
+use App\Http\Controllers\OfferRecommendationController;
 use App\Http\Controllers\PartnerController;
 use App\Http\Controllers\PartnerPortal\ClientController;
 use App\Http\Controllers\PartnerReferralSettlementController;
@@ -105,6 +108,32 @@ Route::get('/offers/visibility-audit', [VisibilityAuditOfferController::class, '
 // to instead of a raw Razorpay Payment Page URL.
 Route::get('/offers/visibility-audit/enter', [VisibilityAuditFunnelTrackingController::class, 'enter'])->name('offers.visibility-audit.enter');
 Route::get('/offers/visibility-audit/checkout', [VisibilityAuditFunnelTrackingController::class, 'checkout'])->name('offers.visibility-audit.checkout');
+
+// The 3 new entry offers alongside the GBP audit above — same "public,
+// no login" shape. See App\Enums\OfferKey (single source of truth for
+// price/route) and App\Support\OfferRecommendationMatrix (which offer a
+// given goal+budget recommends).
+Route::get('/offers/lead-generation-audit', [OfferPageController::class, 'leadGenerationAudit'])->name('offers.lead-generation-audit');
+Route::get('/offers/website-growth-audit', [OfferPageController::class, 'websiteGrowthAudit'])->name('offers.website-growth-audit');
+Route::get('/offers/growth-strategy', [OfferPageController::class, 'growthStrategy'])->name('offers.growth-strategy');
+
+// In-app Razorpay Orders + Checkout.js flow backing the 3 pages above (the
+// existing GBP audit keeps its own separate Payment Page checkout,
+// untouched). {offer} is validated against OfferKey server-side — price is
+// never trusted from the client. See OfferCheckoutController.
+Route::post('/offers/checkout/{offer}/order', [OfferCheckoutController::class, 'order'])->name('offers.checkout.order');
+Route::post('/offers/checkout/{offer}/verify', [OfferCheckoutController::class, 'verify'])->name('offers.checkout.verify');
+Route::post('/offers/checkout/{offer}/failed', [OfferCheckoutController::class, 'failed'])->name('offers.checkout.failed');
+
+// Dev/QA test-mode route registered BEFORE the {token} route below so
+// "test" is never swallowed as a token — the controller method itself
+// 404s outside local/testing regardless. See OfferRecommendationController.
+Route::get('/offers/recommendation/test', [OfferRecommendationController::class, 'test'])->name('offers.recommendation.test');
+
+// The personalized recommendation page — public, reached via a lead's own
+// unguessable recommendation_token (Lead::recommendationUrl()), never a
+// bare lead id, since this page renders real name/goal/budget on screen.
+Route::get('/offers/recommendation/{token}', [OfferRecommendationController::class, 'show'])->name('offers.recommendation');
 
 // Step 4 of the post-payment conversion pipeline — the permanent, public
 // report-view link a paid customer's audit report is shared through (email
