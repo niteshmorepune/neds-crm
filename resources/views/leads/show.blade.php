@@ -45,6 +45,7 @@
                         @endif
                         <div><span class="text-gray-400">Service:</span> {{ $lead->service?->name ?? '—' }}</div>
                         <div><span class="text-gray-400">Goal:</span> {{ $lead->goal?->label() ?? '—' }}</div>
+                        <div><span class="text-gray-400">Budget:</span> {{ $lead->budget_range?->label() ?? '—' }}</div>
                         <div><span class="text-gray-400">Est. value:</span> {{ \App\Support\Money::format($lead->estimated_value) }}</div>
                         <div><span class="text-gray-400">Website:</span>
                             @if ($lead->website_url)
@@ -75,6 +76,12 @@
                                     <option value="">— Not asked yet —</option>
                                     @foreach ($leadGoals as $goal)
                                         <option value="{{ $goal->value }}" @selected($lead->goal === $goal)>{{ $goal->label() }}</option>
+                                    @endforeach
+                                </select>
+                                <select name="budget_range" class="block w-full rounded-md border-gray-300 text-sm shadow-sm">
+                                    <option value="">— Budget not asked yet —</option>
+                                    @foreach ($leadBudgetRanges as $budgetRange)
+                                        <option value="{{ $budgetRange->value }}" @selected($lead->budget_range === $budgetRange)>{{ $budgetRange->label() }}</option>
                                     @endforeach
                                 </select>
                                 <input type="url" name="website_url" value="{{ old('website_url', $lead->website_url) }}" placeholder="Website URL" class="block w-full rounded-md border-gray-300 text-sm shadow-sm" />
@@ -180,6 +187,27 @@
                                     </form>
                                 </div>
                             @endif
+                        </div>
+                    @endif
+
+                    @if ($recommendation)
+                        <div class="mt-3 rounded-md border border-blue-200 bg-blue-50 p-3 text-xs text-blue-900">
+                            <p class="font-medium">📋 Recommendation &amp; Offer</p>
+                            <dl class="mt-2 grid grid-cols-2 gap-x-3 gap-y-1">
+                                <div><span class="text-blue-600">Recommendation:</span> {{ $recommendation->recommendationName }}</div>
+                                <div><span class="text-blue-600">Offer:</span> {{ $recommendation->offerName() }} (₹{{ $recommendation->priceRupees() }})</div>
+                                <div><span class="text-blue-600">Recommendation viewed:</span> {{ $lead->recommendation_viewed_at ? $lead->recommendation_viewed_at->diffForHumans() : 'Not viewed yet' }}</div>
+                                <div><span class="text-blue-600">Offer page viewed:</span> {{ $lead->offer_viewed_at ? $lead->offer_viewed_at->diffForHumans() : 'Not viewed yet' }}</div>
+                                <div><span class="text-blue-600">Offer CTA clicked:</span> {{ $lead->offer_clicked_at ? $lead->offer_clicked_at->diffForHumans() : 'Not clicked yet' }}</div>
+                                @php $latestPurchase = $lead->offerPurchases->sortByDesc('created_at')->first(); @endphp
+                                <div><span class="text-blue-600">Payment:</span>
+                                    @if ($latestPurchase)
+                                        {{ $latestPurchase->status->label() }} — {{ $latestPurchase->offer_key->shortLabel() }}
+                                    @else
+                                        No purchase yet
+                                    @endif
+                                </div>
+                            </dl>
                         </div>
                     @endif
                 </div>

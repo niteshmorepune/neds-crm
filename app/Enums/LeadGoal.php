@@ -34,4 +34,31 @@ enum LeadGoal: string
     {
         return $this !== self::NotSure;
     }
+
+    /**
+     * The query-param spelling used by the dev/QA recommendation test mode
+     * (?goal=generate-leads etc.) — deliberately distinct from the enum's
+     * own snake_case value, which predates this and is used elsewhere
+     * (imports, DB storage).
+     */
+    public function slug(): string
+    {
+        return match ($this) {
+            self::GenerateLeads => 'generate-leads',
+            self::RankHigher => 'rank-google',
+            self::GrowBusiness => 'grow-online',
+            self::NotSure => 'not-sure',
+        };
+    }
+
+    public static function fromSlug(?string $slug): ?self
+    {
+        return match ($slug) {
+            'generate-leads' => self::GenerateLeads,
+            'rank-google' => self::RankHigher,
+            'grow-online' => self::GrowBusiness,
+            'not-sure' => self::NotSure,
+            default => null,
+        };
+    }
 }

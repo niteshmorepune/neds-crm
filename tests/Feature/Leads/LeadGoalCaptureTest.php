@@ -2,6 +2,7 @@
 
 use App\Enums\CallDirection;
 use App\Enums\CallOutcome;
+use App\Enums\LeadBudgetRange;
 use App\Enums\LeadGoal;
 use App\Enums\UserRole;
 use App\Models\Lead;
@@ -154,4 +155,32 @@ it('never clears an existing goal/links just because the Log a Call form left th
     $lead->refresh();
     expect($lead->goal)->toBe(LeadGoal::RankHigher)
         ->and($lead->website_url)->toBe('https://example.com');
+});
+
+it('saves budget_range alongside goal and generates the recommendation immediately', function () {
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    $lead = Lead::factory()->create(['owner_id' => $sales->id]);
+
+    $this->actingAs($sales)
+        ->post(route('leads.goal-capture.update', $lead), [
+            'goal' => LeadGoal::GenerateLeads->value,
+            'budget_range' => LeadBudgetRange::Under3000->value,
+        ])
+        ->assertRedirect();
+
+    $lead->refresh();
+    expect($lead->goal)->toBe(LeadGoal::GenerateLeads)
+        ->and($lead->budget_range)->toBe(LeadBudgetRange::Under3000)
+        ->and($lead->recommendation_key)->toBe('lead-generation-audit')
+        ->and($lead->recommendation_offer_key)->toBe('lead_generation_audit')
+        ->and($lead->recommendation_token)->not->toBeNull();
+});
+
+it('rejects an invalid budget_range value', function () {
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    $lead = Lead::factory()->create(['owner_id' => $sales->id]);
+
+    $this->actingAs($sales)
+        ->post(route('leads.goal-capture.update', $lead), ['budget_range' => 'not-a-real-range'])
+        ->assertSessionHasErrors('budget_range');
 });

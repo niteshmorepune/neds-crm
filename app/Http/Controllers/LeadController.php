@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Actions\ConvertLead;
+use App\Actions\GenerateLeadRecommendation;
 use App\Actions\ReassignLead;
 use App\Enums\DealStage;
+use App\Enums\LeadBudgetRange;
 use App\Enums\LeadGoal;
 use App\Enums\LeadReassignmentReason;
 use App\Enums\LeadSource;
@@ -27,6 +29,7 @@ use App\Services\CallTimingMetrics;
 use App\Services\LeadCallTimingAdvisor;
 use App\Services\VisibilityAuditFunnelMetrics;
 use App\Support\Money;
+use App\Support\OfferRecommendationMatrix;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
@@ -344,7 +347,7 @@ class LeadController extends Controller
 
         // 'notes' added 2026-09-03 — Lead::isUnresponsive()/hasStaleNewStatus()
         // both need it loaded to avoid a second query on this same page.
-        $lead->load(['owner', 'telecaller', 'service', 'convertedCustomer', 'convertedDeal', 'callLogs.user', 'notes']);
+        $lead->load(['owner', 'telecaller', 'service', 'convertedCustomer', 'convertedDeal', 'callLogs.user', 'notes', 'offerPurchases']);
 
         $canReassign = $this->user()->can('reassign', $lead);
 
@@ -361,6 +364,10 @@ class LeadController extends Controller
             'callAdvice' => $timingAdvisor->recommendationFor($lead),
             'stallReasons' => StallReason::cases(),
             'leadGoals' => LeadGoal::cases(),
+            'leadBudgetRanges' => LeadBudgetRange::cases(),
+            'recommendation' => ($lead->goal !== null && $lead->budget_range !== null)
+                ? OfferRecommendationMatrix::for($lead->goal, $lead->budget_range)
+                : null,
         ]);
     }
 
@@ -374,23 +381,27 @@ class LeadController extends Controller
      * logging (Lead::$activityExcept) — capturing it should refresh
      * lastTouchedAt(), not be treated as incidental metadata.
      */
-    public function updateGoalCapture(Request $request, Lead $lead): RedirectResponse
+    public function updateGoalCapture(Request $request, Lead $lead, GenerateLeadRecommendation $generateRecommendation): RedirectResponse
     {
         $this->authorize('update', $lead);
 
         $data = $request->validate([
             'goal' => ['nullable', Rule::enum(LeadGoal::class)],
+            'budget_range' => ['nullable', Rule::enum(LeadBudgetRange::class)],
             'website_url' => ['nullable', 'url', 'max:2048'],
             'gbp_url' => ['nullable', 'url', 'max:2048'],
         ]);
 
         $lead->update([
             'goal' => $data['goal'] ?? null,
+            'budget_range' => $data['budget_range'] ?? null,
             'website_url' => $data['website_url'] ?? null,
             'gbp_url' => $data['gbp_url'] ?? null,
         ]);
 
-        return back()->with('status', 'Goal and links saved.');
+        $generateRecommendation->handle($lead->fresh());
+
+        return back()->with('status', 'Goal, budget and links saved.');
     }
 
     /**

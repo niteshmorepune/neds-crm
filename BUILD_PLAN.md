@@ -176,6 +176,36 @@ link through to the underlying filtered list, not just sit as a static number.
 - Group + filter by both fields independently in `ImportantLinksManager`
   (global page and the per-client Links tab both use this component today).
 
+## Milestone 12 — Meta Ads recommendation + offer funnel (2026-09-12)
+Owner-requested, ad hoc (full spec given directly, not pre-written here):
+production lead-recommendation + offer funnel for Meta Ads leads.
+- `App\Enums\LeadBudgetRange` (Meta Q2's exact 4 bands) + `leads.budget_range`,
+  alongside the pre-existing `goal` field.
+- `App\Support\OfferRecommendationMatrix` — the single source of truth for
+  the 16-cell goal x budget -> recommendation/offer/copy matrix (see
+  CLAUDE.md's 2026-09-12 decisions log entry for the exact cell contents and
+  the reasoning behind every architecture choice).
+- `App\Enums\OfferKey` — GBP Audit ₹120 (pre-existing, untouched), Lead
+  Generation Funnel Audit ₹299, Website + Conversion Growth Audit ₹499,
+  Personalized Digital Growth Strategy ₹999 (all 3 new).
+- New offer pages at `/offers/lead-generation-audit`,
+  `/offers/website-growth-audit`, `/offers/growth-strategy`, visually
+  matching the pre-existing `/offers/visibility-audit` page exactly
+  (shared `resources/views/offers/partials/styles.blade.php`).
+- New in-app Razorpay Orders + Checkout.js payment flow
+  (`OfferCheckoutController`, `offer_purchases` table) for the 3 new
+  offers — mirrors `QuotationAdvancePaymentController`'s pattern, not the
+  GBP page's own external Payment Pages, so price is server-side by
+  construction with no manual Razorpay Dashboard setup required.
+- Personalized recommendation page at `/offers/recommendation/{token}`
+  (unguessable `recommendation_token`, noindex/nofollow), plus a
+  `?goal=&budget=` dev/QA test-mode route that 404s outside
+  local/testing.
+- `offer_funnel_events` table + a new "📋 Recommendation & Offer" panel on
+  the Lead detail page for admin/sales visibility.
+- 134 new Pest tests covering all 16 matrix combinations, checkout
+  price/signature/IDOR edge cases, and page renders.
+
 ## Deployment runbook (Hostinger Business)
 1. In hPanel create MySQL DB + user; note credentials.
 2. Enable SSH if available on the plan; otherwise use hPanel Git deploy or FTP.

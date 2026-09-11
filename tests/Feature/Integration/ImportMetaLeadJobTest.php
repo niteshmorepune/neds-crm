@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\LeadBudgetRange;
 use App\Enums\LeadGoal;
 use App\Enums\LeadSource;
 use App\Enums\LeadStatus;
@@ -266,6 +267,25 @@ it('parses a "k" shorthand budget answer into estimated_value paise', function (
 
     expect(Lead::where('meta_leadgen_id', 'lg-1')->first()->estimated_value)->toBe(1750000);
 });
+
+it('maps every Meta Q2 budget option to the correct LeadBudgetRange band', function (string $answer, LeadBudgetRange $expected) {
+    fakeMetaGraphResponse([
+        ['name' => 'what_is_your_approximate_monthly_marketing_budget', 'values' => [$answer]],
+    ]);
+
+    ImportMetaLead::dispatchSync('lg-1');
+
+    expect(Lead::where('meta_leadgen_id', 'lg-1')->first()->budget_range)->toBe($expected);
+})->with([
+    'Under ₹3,000' => ['Under ₹3,000', LeadBudgetRange::Under3000],
+    '₹3,000 – ₹6,000' => ['₹3,000 – ₹6,000', LeadBudgetRange::ThreeToSix],
+    '₹6,000 – ₹12,000' => ['₹6,000 – ₹12,000', LeadBudgetRange::SixToTwelve],
+    '₹12,000+' => ['₹12,000+', LeadBudgetRange::TwelvePlus],
+    'slug under_3000' => ['under_3000', LeadBudgetRange::Under3000],
+    'slug 3000_6000' => ['3000_6000', LeadBudgetRange::ThreeToSix],
+    'slug 6000_12000' => ['6000_12000', LeadBudgetRange::SixToTwelve],
+    'slug 12000_plus' => ['12000_plus', LeadBudgetRange::TwelvePlus],
+]);
 
 it('leaves a non-numeric budget answer as a note instead of guessing', function () {
     fakeMetaGraphResponse([
