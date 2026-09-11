@@ -655,6 +655,21 @@ checkout or pays is re-scored immediately and rises accordingly in the
 Lead Generation page's Priority sort — you don't need to cross-check this
 dashboard against the Priority list by hand to confirm they agree.
 
+## Meta Ads recommendation + offer funnel (the other 3 offers)
+Separate from the Visibility Audit Funnel above, which is specific to the
+₹120 GBP audit: every Meta lead's **Goal** and **Budget** answers now
+also drive an automatic recommendation for one of four entry offers — GBP
+Visibility Audit ₹120, Lead Generation Funnel Audit ₹299, Website +
+Conversion Growth Audit ₹499, or Personalized Digital Growth Strategy
+₹999 — based on a fixed 16-cell goal × budget matrix. Once both fields
+are set (usually pre-filled from the ad form, editable from any lead's
+own page), a **📋 Recommendation & Offer** panel appears there showing
+which offer was recommended and whether the lead has viewed their
+personal recommendation page, viewed the offer, clicked to pay, or paid.
+There's no dashboard for this funnel yet (unlike the one above) — check
+individual leads for now; a team-wide rollup is a possible later addition
+once there's real volume to look at.
+
 ## Employee 360°
 Sidebar → **Employee 360°** — one consolidated page per employee: this
 month's performance (the same score/rank/focus-area the Employee

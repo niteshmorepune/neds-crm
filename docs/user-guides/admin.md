@@ -744,6 +744,27 @@ map them automatically:
   Anything that doesn't match either pattern is preserved as a note on the
   lead rather than dropped, so it's never lost — it just won't feed the
   score automatically.
+- **Goal** — the question's own wording must contain the word **"goal"**
+  (e.g. "What is your biggest business goal?"), with options matching one
+  of the CRM's own four: **Generate More Leads**, **Rank Higher on
+  Google**, **Grow My Business Online**, or **Not Sure – Need Expert
+  Advice**. This is the exact question the Meta Ads recommendation funnel
+  is built on (see below) — it sets the lead's **Goal** field the same
+  Log a Call form/lead-page picker would.
+- **Recommendation funnel:** if the **Budget** question's four options are
+  worded to match the CRM's own bands exactly — **Under ₹3,000**,
+  **₹3,000–₹6,000**, **₹6,000–₹12,000**, **₹12,000+** — the lead also gets
+  a structured **Budget** band (separate from the free-form estimate
+  above) and, once both Goal and Budget are set, an automatic
+  recommendation for one of the four entry offers (GBP Visibility Audit
+  ₹120 / Lead Generation Funnel Audit ₹299 / Website + Conversion Growth
+  Audit ₹499 / Personalized Digital Growth Strategy ₹999) — see the
+  **📋 Recommendation & Offer** panel on the lead's own page, and the
+  offer pages themselves at `/offers/lead-generation-audit`,
+  `/offers/website-growth-audit`, and `/offers/growth-strategy` (GBP
+  Audit's own page and checkout are unchanged). A differently-worded
+  budget question still feeds the free-form estimate above fine — it just
+  won't produce this exact-band recommendation.
 - Use the **"Higher intent"** form type (adds a review screen before
   submit) over "More volume" — meaningfully fewer fat-finger/junk
   submissions for a small increase in cost per lead.
