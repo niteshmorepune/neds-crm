@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\OfferKey;
 use App\Enums\VisibilityAuditFunnelEventType;
 use App\Enums\VisibilityAuditTier;
 use App\Enums\VisibilityAuditTouchChannel;
@@ -291,6 +292,17 @@ it('counts Meta leads with no service tagged yet, and excludes tagged/non-Meta l
     expect($this->metrics->awaitingServiceTag())->toBe(2);
 });
 
+it('excludes a lead with a resolved recommendation_offer_key, even with no service_id (e.g. Growth Strategy)', function () {
+    Lead::factory()->create(['meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => null]);
+    Lead::factory()->create([
+        'meta_leadgen_id' => 'lg_'.uniqid(),
+        'service_id' => null,
+        'recommendation_offer_key' => OfferKey::GrowthStrategy->value,
+    ]);
+
+    expect($this->metrics->awaitingServiceTag())->toBe(1);
+});
+
 // ──────────────────────────────────────────────────────────────────────────────
 // isVisibilityAuditCohort()
 // ──────────────────────────────────────────────────────────────────────────────
@@ -382,6 +394,12 @@ it('returns the actual leads awaiting a service tag, oldest first', function () 
     $older->forceFill(['created_at' => now()->subDays(2)])->saveQuietly();
 
     Lead::factory()->create(['meta_leadgen_id' => 'lg_'.uniqid(), 'service_id' => $this->gmb->id]); // tagged — excluded
+
+    Lead::factory()->create([
+        'meta_leadgen_id' => 'lg_'.uniqid(),
+        'service_id' => null,
+        'recommendation_offer_key' => OfferKey::GrowthStrategy->value,
+    ]); // already routed — excluded even with no service_id
 
     expect($this->metrics->leadsAwaitingServiceTag()->pluck('name')->all())->toBe(['Older', 'Newer']);
 });

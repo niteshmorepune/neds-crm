@@ -601,9 +601,12 @@ above), with a pickable date range instead of a fixed 7 days:
   paid, how many got a phone call before they paid vs. converted from the
   automated WhatsApp messages alone. This is the number to watch if you're
   deciding whether chasing these leads by phone is worth the time.
-- **Awaiting service tag** — a callout for Meta leads that can't enter this
-  funnel yet because nobody has tagged a service on them (they need the GMB
-  service tag to qualify); links straight to those leads.
+- **Awaiting service tag** — a callout for Meta leads the CRM genuinely
+  can't route yet, because their ad form never captured goal/budget AND
+  nobody has manually tagged a service on them either (see "Meta Ads
+  recommendation + offer funnel" below — once goal+budget resolve, the
+  service tag is set automatically, so a lead with a real recommendation
+  never appears here even if untagged); links straight to those leads.
 - **Failed sends** — a red callout when any AI-WhatsApp message failed to
   send in the window, linking straight to those leads so someone can follow
   up manually. Only appears when there's something to act on.

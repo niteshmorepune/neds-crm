@@ -478,12 +478,25 @@ class VisibilityAuditFunnelMetrics
      * own established preference (see the class docblock) since source can
      * be unreliably overwritten by Meta's own auto-WhatsApp-message webhook
      * race.
+     *
+     * Excludes any lead with a resolved recommendation_offer_key — since the
+     * 2026-09-12 "unified funnel" milestone, a lead's routing (and, since
+     * "service tag auto-derive" the same day, its own service_id for 3 of
+     * the 4 offers) is decided by goal+budget, not a manual service tag.
+     * Without this exclusion, every Growth Strategy-recommended lead (no 1:1
+     * Service match, so service_id stays null by design — see
+     * GenerateLeadRecommendation) would sit here FOREVER even though it's
+     * already fully routed and needs nothing from staff — the exact
+     * permanent false nag that trained staff to default everyone to GMB
+     * just to clear it, which was the whole reason this filter needed
+     * fixing.
      */
     public function awaitingServiceTag(?Carbon $from = null, ?Carbon $to = null): int
     {
         return Lead::query()
             ->whereNotNull('meta_leadgen_id')
             ->whereNull('service_id')
+            ->whereNull('recommendation_offer_key')
             ->when($from, fn ($q) => $q->where('created_at', '>=', $from))
             ->when($to, fn ($q) => $q->where('created_at', '<=', $to))
             ->count();
@@ -493,8 +506,9 @@ class VisibilityAuditFunnelMetrics
      * The actual Leads behind awaitingServiceTag()'s count, oldest first —
      * so the AI Activity Summary panel can name the longest-waiting ones
      * instead of only showing a bare number. Same eligibility rule
-     * (meta_leadgen_id set, service_id null), just returning rows instead
-     * of a count.
+     * (meta_leadgen_id set, service_id AND recommendation_offer_key both
+     * null — see awaitingServiceTag()'s own docblock), just returning rows
+     * instead of a count.
      *
      * $ownerId narrows to one owner's own leads — see stuckAtLanding()'s
      * docblock for why (Recovery worklist "Your Gaps" section).
@@ -506,6 +520,7 @@ class VisibilityAuditFunnelMetrics
         return Lead::query()
             ->whereNotNull('meta_leadgen_id')
             ->whereNull('service_id')
+            ->whereNull('recommendation_offer_key')
             ->when($ownerId, fn ($q) => $q->where('owner_id', $ownerId))
             ->oldest('created_at')
             ->limit($limit)

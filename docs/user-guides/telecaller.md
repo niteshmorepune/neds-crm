@@ -113,21 +113,31 @@ that reaches the client even with the window closed, with a working **Pay
 Now** button.
 
 **Visibility Audit Funnel:** **Lead Generation → VA Recovery** shows the
-whole Meta Ads → offer page → checkout → paid journey for GMB-tagged
-leads, plus a queue of who's stuck at which stage — worth a follow-up
-call. The CRM automatically WhatsApps a first invite as soon as one of
-these leads comes in (Meta's own form never sends them anywhere), then
-nudges again a few hours later if they stall, so someone already on this
-list may convert before you even get to them. A row still stuck at
-checkout or the offer page also gets a green **WhatsApp →** button next
-to "Open lead" — it jumps straight into that lead's wadesk chat with the
-matching recovery template already picked and filled in, ready for you
-to review and send. Below that whole-team queue, **Your gaps** and
-**Your message log** show just your own leads —
-who's stuck or missing a service tag, and every AI-WhatsApp send to your
-own leads. A lead's own page also shows a colored **"Visibility Audit:"**
-badge right under its name, so opening the lead directly tells you the
-same thing this queue does.
+GBP-specific slice of the wider Meta Ads offer funnel — the Meta Ads →
+offer page → checkout → paid journey for a lead the goal+budget matrix
+recommends the GBP Visibility Audit for — plus a queue of who's stuck at
+which stage, worth a follow-up call. The CRM automatically WhatsApps a
+first invite as soon as one of these leads comes in (Meta's own form
+never sends them anywhere), then nudges again a few hours later if they
+stall, so someone already on this list may convert before you even get to
+them. A row still stuck at checkout or the offer page also gets a green
+**WhatsApp →** button next to "Open lead" — it jumps straight into that
+lead's wadesk chat with the matching recovery template already picked and
+filled in, ready for you to review and send. Below that whole-team queue,
+**Your gaps** and **Your message log** show just your own leads — who's
+stuck waiting on a call, or every AI-WhatsApp send to your own leads. A
+lead's own page also shows a colored **"Visibility Audit:"** badge right
+under its name, so opening the lead directly tells you the same thing
+this queue does.
+
+**You should not need to manually pick a service on a Meta lead anymore.**
+The moment a lead's goal+budget answers are known (auto-captured from the
+ad form, or filled in via the Goal/Budget picker on the lead's own page),
+the CRM already knows which of the 4 offers fits, has already sent the
+right automated message, and tags the matching service itself. Don't
+default a Meta lead's service to GMB out of habit — it's not what
+decides which offer they get, and the tag isn't doing anything once the
+recommendation has already resolved.
 
 Reaching checkout or paying re-scores the lead's AI score immediately, so
 it also rises in the Priority sort above — the two lists stay in sync
@@ -212,9 +222,10 @@ Conversion Growth Audit ₹499, or Personalized Digital Growth Strategy
 recommendation page, viewed the offer, clicked to pay, or already paid.
 
 **Every fresh Meta Ads lead also gets an automatic WhatsApp welcome**
-(except GMB-tagged ones, who get the Visibility Audit invite instead) —
-a thank-you plus "what time works for a quick call?" the moment the lead
-is created, specifically to get them to reply so WhatsApp's 24-hour
+the moment its goal+budget resolve to one of the 3 non-GBP offers above
+(a lead recommended the GBP offer instead gets the Visibility Audit
+invite) — a thank-you plus "what time works for a quick call?", specifically
+to get them to reply so WhatsApp's 24-hour
 window opens up. If one of your leads has gone quiet and that window's
 closed, open the lead and click **📱 Send WhatsApp check-in** to send a
 re-engagement template and try again — limited to once every 24 hours

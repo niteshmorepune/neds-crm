@@ -7,6 +7,7 @@ use App\Jobs\SendOfferRecommendationReadyJob;
 use App\Jobs\SendVisibilityAuditFirstInviteEmailJob;
 use App\Jobs\SendVisibilityAuditFirstInviteJob;
 use App\Models\Lead;
+use App\Models\Service;
 use Illuminate\Support\Facades\Queue;
 
 beforeEach(function () {
@@ -111,4 +112,107 @@ it('returns null and dispatches nothing when goal or budget is missing', functio
     expect($result)->toBeNull();
     Queue::assertNotPushed(SendOfferRecommendationReadyJob::class);
     Queue::assertNotPushed(SendVisibilityAuditFirstInviteJob::class);
+});
+
+// ──────────────────────────────────────────────────────────────────────────
+// service_id auto-derive from the resolved recommendation — 2026-09-12
+// "service tag auto-derive" decisions log entry
+// ──────────────────────────────────────────────────────────────────────────
+
+it('sets service_id to GMB when the recommendation resolves to GbpAudit', function () {
+    $gmb = Service::factory()->create(['name' => 'GMB', 'is_active' => true]);
+    $lead = metaLeadWithoutRecommendation([
+        'goal' => LeadGoal::RankHigher->value,
+        'budget_range' => LeadBudgetRange::Under3000->value,
+        'service_id' => null,
+    ]);
+
+    app(GenerateLeadRecommendation::class)->handle($lead);
+
+    expect($lead->fresh()->service_id)->toBe($gmb->id);
+});
+
+it('sets service_id to Website Design & Development when the recommendation resolves to WebsiteGrowthAudit', function () {
+    $website = Service::factory()->create(['name' => 'Website Design & Development', 'is_active' => true]);
+    $lead = metaLeadWithoutRecommendation([
+        'goal' => LeadGoal::GrowBusiness->value,
+        'budget_range' => LeadBudgetRange::ThreeToSix->value,
+        'service_id' => null,
+    ]);
+
+    app(GenerateLeadRecommendation::class)->handle($lead);
+
+    expect($lead->fresh()->service_id)->toBe($website->id);
+});
+
+it('sets service_id to Performance Marketing when the recommendation resolves to LeadGenerationAudit', function () {
+    $performanceMarketing = Service::factory()->create(['name' => 'Performance Marketing', 'is_active' => true]);
+    $lead = metaLeadWithoutRecommendation([
+        'goal' => LeadGoal::GenerateLeads->value,
+        'budget_range' => LeadBudgetRange::Under3000->value,
+        'service_id' => null,
+    ]);
+
+    app(GenerateLeadRecommendation::class)->handle($lead);
+
+    expect($lead->fresh()->service_id)->toBe($performanceMarketing->id);
+});
+
+it('leaves service_id untouched when the recommendation resolves to GrowthStrategy, which spans multiple services', function () {
+    $habitual = Service::factory()->create(['name' => 'GMB', 'is_active' => true]);
+    $lead = metaLeadWithoutRecommendation([
+        'goal' => LeadGoal::GenerateLeads->value,
+        'budget_range' => LeadBudgetRange::SixToTwelve->value,
+        'service_id' => $habitual->id,
+    ]);
+
+    app(GenerateLeadRecommendation::class)->handle($lead);
+
+    expect($lead->fresh()->service_id)->toBe($habitual->id);
+});
+
+it('overwrites an existing habitual service_id when the recommendation resolves to a different, mapped offer', function () {
+    $gmb = Service::factory()->create(['name' => 'GMB', 'is_active' => true]);
+    $website = Service::factory()->create(['name' => 'Website Design & Development', 'is_active' => true]);
+    $lead = metaLeadWithoutRecommendation([
+        'goal' => LeadGoal::GrowBusiness->value,
+        'budget_range' => LeadBudgetRange::ThreeToSix->value,
+        'service_id' => $gmb->id,
+    ]);
+
+    app(GenerateLeadRecommendation::class)->handle($lead);
+
+    expect($lead->fresh()->service_id)->toBe($website->id);
+});
+
+it('does not re-touch a staff-corrected service_id on a later call once the recommendation itself is unchanged', function () {
+    Service::factory()->create(['name' => 'GMB', 'is_active' => true]);
+    $seo = Service::factory()->create(['name' => 'SEO', 'is_active' => true]);
+    $lead = metaLeadWithoutRecommendation([
+        'goal' => LeadGoal::RankHigher->value,
+        'budget_range' => LeadBudgetRange::Under3000->value,
+        'service_id' => null,
+    ]);
+
+    app(GenerateLeadRecommendation::class)->handle($lead);
+
+    // Staff manually overrides the auto-derived tag with real information.
+    $lead->fresh()->forceFill(['service_id' => $seo->id])->saveQuietly();
+
+    app(GenerateLeadRecommendation::class)->handle($lead->fresh());
+
+    expect($lead->fresh()->service_id)->toBe($seo->id);
+});
+
+it('resolves GMB via the resilient GMB/GMB Services name lookup, matching gmbServiceId()\'s own precedent', function () {
+    $renamed = Service::factory()->create(['name' => 'GMB Services', 'is_active' => true]);
+    $lead = metaLeadWithoutRecommendation([
+        'goal' => LeadGoal::RankHigher->value,
+        'budget_range' => LeadBudgetRange::Under3000->value,
+        'service_id' => null,
+    ]);
+
+    app(GenerateLeadRecommendation::class)->handle($lead);
+
+    expect($lead->fresh()->service_id)->toBe($renamed->id);
 });

@@ -71,6 +71,7 @@ use App\Http\Controllers\TeamWorkloadController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\TwoFactorSetupController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\VisibilityAuditCheckoutController;
 use App\Http\Controllers\VisibilityAuditDashboardController;
 use App\Http\Controllers\VisibilityAuditFunnelTrackingController;
 use App\Http\Controllers\VisibilityAuditOfferController;
@@ -96,16 +97,35 @@ Route::get('/partner/upload/{token}', [PartnerUploadController::class, 'show'])-
 Route::post('/partner/upload/{token}', [PartnerUploadController::class, 'store'])->name('partner-upload.store');
 
 // Visibility Audit offer — public landing page, no login required. Linked
-// from the Meta Lead Ads "thank you" screen; CTAs go to Razorpay Payment
-// Pages, not this app's own Razorpay Orders integration.
+// from the Meta Lead Ads "thank you" screen. The GBP tier (the only one
+// actually linked from this page) now checks out in-app via
+// VisibilityAuditCheckoutController, same Razorpay Orders + Checkout.js
+// mechanism as the 3 offers below — reversed from its own original
+// external Payment Page checkout, see the 2026-09-12 "GBP in-app checkout"
+// decisions log entry. Website/Both tiers still use the external Payment
+// Page mechanism below, untouched (they aren't linked from any live page).
 Route::get('/offers/visibility-audit', [VisibilityAuditOfferController::class, 'show'])->name('offers.visibility-audit');
+
+// GBP tier's own in-app checkout — mirrors offers.checkout.{order,verify}
+// below but hardcodes the ₹120 GBP price server-side and additionally
+// requires a `gbp_url` (the one thing this offer needs that a matched
+// Lead's own record doesn't already have). See VisibilityAuditCheckoutController.
+Route::post('/offers/visibility-audit/order', [VisibilityAuditCheckoutController::class, 'order'])->name('offers.visibility-audit.order');
+Route::post('/offers/visibility-audit/verify', [VisibilityAuditCheckoutController::class, 'verify'])->name('offers.visibility-audit.verify');
 
 // Invisible tracking redirects in front of the offer above — see
 // VisibilityAuditFunnelTrackingController's docblock for why these exist
 // (telling apart the funnel's drop-off points, not just "Lead"/"Lead paid").
-// `enter` is what Meta's Lead Ads thank-you-screen button should link to;
-// `checkout` is what the landing page's own "Get My Audit Offer" CTAs link
-// to instead of a raw Razorpay Payment Page URL.
+// `enter` is what Meta's Lead Ads thank-you-screen button links to.
+// `checkout` now only actually serves the Website/Both tiers' own external
+// Payment Pages (still fully functional, just not linked from any live
+// page) — a GBP-tier hit (e.g. an older recovery email/WhatsApp link still
+// pointing here) gracefully falls through to this action's own existing
+// "payment URL not configured" branch and redirects to the landing page
+// instead, since the GBP Payment Page config key is now gone. That's a
+// deliberate, acceptable degrade (an in-app Checkout.js flow can't be deep
+// linked into "already paying" the way an external Payment Page URL could)
+// — verified working, not a loose end.
 Route::get('/offers/visibility-audit/enter', [VisibilityAuditFunnelTrackingController::class, 'enter'])->name('offers.visibility-audit.enter');
 Route::get('/offers/visibility-audit/checkout', [VisibilityAuditFunnelTrackingController::class, 'checkout'])->name('offers.visibility-audit.checkout');
 

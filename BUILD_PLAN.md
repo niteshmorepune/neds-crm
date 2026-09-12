@@ -255,6 +255,55 @@ right after Milestone 13's unification made it the natural next step.
   dashboard tests (unmodified in behavior, only the renamed title
   assertion updated).
 
+## Milestone 15 — GBP offer: in-app Razorpay checkout, replacing the external Payment Page (2026-09-12)
+Owner-requested reversal of a Milestone 12 decision — that milestone
+explicitly kept the GBP tier on its own pre-existing external Razorpay
+Payment Page as "out of scope to change." The owner asked directly for
+that to change: same in-app Razorpay Orders + Checkout.js flow the other
+3 offers use, no Payment Page needed.
+- New `App\Http\Controllers\VisibilityAuditCheckoutController` (`order()`/
+  `verify()`), scoped to the ₹120 GBP tier only — mirrors
+  `OfferCheckoutController`'s own pattern, but carries tier/gbp_url/lead_id
+  in the Razorpay order's own `notes` rather than a placeholder DB row
+  (`VisibilityAuditPurchase` has no pending/paid status concept to begin
+  with).
+- Reuses the Lead's existing name/phone/email as Checkout.js `prefill`
+  data instead of asking for it again — the **only** new field this offer
+  collects is the GBP/Maps link itself, per the owner's own reasoning that
+  asking again for information the lead form already captured makes no
+  sense.
+- New `RazorpayClient::fetchPayment()` — recovers the payer's own
+  contact/email from Razorpay's own Checkout.js modal for an unmatched/
+  anonymous visitor (Checkout.js's success handler never returns that data
+  itself).
+- Website (₹240) and "Both" (₹360) tiers deliberately untouched — still on
+  their own external Payment Page + the existing tier-agnostic webhook,
+  confirmed via AskUserQuestion since neither is linked from any live page
+  today. Removed only the GBP-specific `RAZORPAY_PAYMENT_PAGE_GBP_AUDIT`
+  env var/config key; the shared webhook controller matches by amount, not
+  by config key, so it's unaffected.
+- 14 new Pest tests (`VisibilityAuditCheckoutTest`), `VisibilityAuditOffer
+  ControllerTest` rewritten for the new `$razorpayConfigured` gate. See
+  CLAUDE.md's 2026-09-12 "GBP in-app checkout" decisions log entry.
+
+## Milestone 16 — Auto-derive Lead.service_id from the recommendation offer (2026-09-12)
+Owner-flagged data-quality gap, not a bug report: staff had been manually
+tagging almost every Meta lead's service as GMB by habit, regardless of
+what the lead's own goal/budget answers actually resolved to.
+- `GenerateLeadRecommendation::handle()` now also sets `service_id` (new
+  public `serviceIdForOffer()`) whenever the recommendation itself is
+  first generated or later changes — GbpAudit→GMB, WebsiteGrowthAudit→
+  Website Design & Development, LeadGenerationAudit→Performance
+  Marketing; GrowthStrategy deliberately left unmapped (spans multiple
+  services). Overwrites a stale manual tag, but never re-touches a value
+  a rep corrects afterward once the recommendation itself is unchanged.
+- New `app:backfill-lead-service-tags` (`--dry-run` supported) corrects
+  every existing lead whose `service_id` disagrees with its own resolved
+  `recommendation_offer_key` — a deploy-time step, not yet run against
+  production.
+- 18 new Pest tests. See CLAUDE.md's 2026-09-12 "service tag auto-derive"
+  decisions log entry.
+
 ## Deployment runbook (Hostinger Business)
 1. In hPanel create MySQL DB + user; note credentials.
 2. Enable SSH if available on the plan; otherwise use hPanel Git deploy or FTP.
