@@ -1,5 +1,5 @@
 <x-portal-app-layout header="Raise a Ticket">
-    @if (config('company.whatsapp'))
+    @if (config('services.wadesk.support_number'))
     <div class="mb-6 flex items-center justify-between gap-4 rounded-xl bg-green-50 border border-green-200 px-5 py-3.5">
         <p class="text-sm text-green-800 font-medium">For urgent issues — get a faster response on WhatsApp.</p>
         <x-whatsapp-button label="Chat now" message="Hi, I have an urgent support query." class="shrink-0 text-xs" />

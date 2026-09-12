@@ -140,6 +140,22 @@ it('renders the portal ticket create page', function () {
     $this->actingAs($this->contactA, 'portal')->get(route('portal.tickets.create'))->assertOk()->assertSee('Raise a Ticket');
 });
 
+it('shows the Support WhatsApp line, never the Marketing one, on portal ticket pages', function () {
+    config(['services.wadesk.support_number' => '918007733737', 'services.wadesk.marketing_number' => '919112095202']);
+
+    $create = $this->actingAs($this->contactA, 'portal')->get(route('portal.tickets.create'))->assertOk();
+    $create->assertSee('wa.me/918007733737', false);
+    $create->assertDontSee('919112095202', false);
+
+    $index = $this->actingAs($this->contactA, 'portal')->get(route('portal.tickets.index'))->assertOk();
+    $index->assertSee('wa.me/918007733737', false);
+    $index->assertDontSee('919112095202', false);
+
+    $home = $this->actingAs($this->contactA, 'portal')->get(route('portal.home'))->assertOk();
+    $home->assertSee('wa.me/918007733737', false);
+    $home->assertDontSee('919112095202', false);
+});
+
 it('lets a portal contact rate a resolved ticket', function () {
     $ticket = Ticket::factory()->create(['customer_id' => $this->customerA->id, 'status' => TicketStatus::Resolved]);
 

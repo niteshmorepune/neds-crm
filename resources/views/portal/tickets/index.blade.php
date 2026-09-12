@@ -2,7 +2,7 @@
     <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
         <p class="text-sm text-gray-500">Track your support requests below.</p>
         <div class="flex items-center gap-3">
-            @if (config('company.whatsapp'))
+            @if (config('services.wadesk.support_number'))
                 <x-whatsapp-button label="Chat on WhatsApp" />
             @endif
             <a href="{{ route('portal.tickets.create') }}"

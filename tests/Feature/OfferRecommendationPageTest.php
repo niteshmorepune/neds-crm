@@ -88,6 +88,15 @@ it('shows a graceful fallback page for an unknown token, not a 500', function ()
         ->assertSee('recommendation');
 });
 
+it('shows the Marketing WhatsApp line, never Support, on the fallback page', function () {
+    config(['services.wadesk.support_number' => '918007733737', 'services.wadesk.marketing_number' => '919112095202']);
+
+    $response = $this->get(route('offers.recommendation', 'not-a-real-token'))->assertNotFound();
+
+    $response->assertSee('wa.me/919112095202', false);
+    $response->assertDontSee('918007733737', false);
+});
+
 it('shows a graceful fallback for a lead with a token but no goal/budget yet', function () {
     $lead = Lead::factory()->create(['goal' => null, 'budget_range' => null]);
     $token = $lead->recommendationUrl();

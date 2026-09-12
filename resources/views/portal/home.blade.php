@@ -95,7 +95,7 @@
             </div>
         </a>
 
-        @if (config('company.whatsapp'))
+        @if (config('services.wadesk.support_number'))
         <div class="flex items-center gap-4 rounded-xl bg-green-50 border border-green-200 px-5 py-4">
             <div class="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center shrink-0">
                 <svg class="w-5 h-5 text-green-600" viewBox="0 0 24 24" fill="currentColor">
