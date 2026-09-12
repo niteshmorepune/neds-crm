@@ -21,8 +21,8 @@
     <h1 style="font-size:clamp(28px,4vw,42px)">We couldn't load your personalized <em>recommendation</em></h1>
     <p style="max-width:560px;margin:0 auto 28px;color:#475467">यह link expire हो चुका है या उपलब्ध नहीं है. कोई बात नहीं — आप सीधे हमसे बात कर सकते हैं, या हमारी GBP Visibility Audit offer देख सकते हैं.</p>
     <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
-      @if (config('company.whatsapp'))
-        <a class="primary" href="https://wa.me/{{ config('company.whatsapp') }}" target="_blank" rel="noopener">WhatsApp us →</a>
+      @if (config('services.wadesk.marketing_number'))
+        <a class="primary" href="https://wa.me/{{ config('services.wadesk.marketing_number') }}" target="_blank" rel="noopener">WhatsApp us →</a>
       @endif
       @if (config('company.phone'))
         <a class="primary" style="background:linear-gradient(135deg,#344054,#101828)" href="tel:{{ config('company.phone') }}">Call us: {{ config('company.phone') }}</a>

@@ -4,9 +4,13 @@
     'class'   => '',
 ])
 
-@if (config('company.whatsapp'))
+@if (config('services.wadesk.support_number'))
     @php
-        $url = 'https://wa.me/' . config('company.whatsapp') . '?text=' . rawurlencode($message);
+        // Post-sale support line specifically — this component only ever
+        // renders in the client portal (existing customers), never a
+        // marketing/offer-funnel page. See services.wadesk.marketing_number
+        // for the pre-sale line those pages use instead.
+        $url = 'https://wa.me/' . config('services.wadesk.support_number') . '?text=' . rawurlencode($message);
     @endphp
     <a href="{{ $url }}"
        target="_blank"

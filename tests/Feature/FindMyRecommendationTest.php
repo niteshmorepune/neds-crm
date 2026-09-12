@@ -10,6 +10,15 @@ it('renders the phone lookup page', function () {
         ->assertSee('personalized recommendation', false);
 });
 
+it('shows the Marketing WhatsApp line, never Support, on this lead-facing page', function () {
+    config(['services.wadesk.support_number' => '918007733737', 'services.wadesk.marketing_number' => '919112095202']);
+
+    $response = $this->get(route('offers.find-my-recommendation'))->assertOk();
+
+    $response->assertSee('wa.me/919112095202', false);
+    $response->assertDontSee('918007733737', false);
+});
+
 it('requires a phone number', function () {
     $this->post(route('offers.find-my-recommendation.lookup'), [])
         ->assertSessionHasErrors('phone');

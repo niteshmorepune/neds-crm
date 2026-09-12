@@ -24,7 +24,14 @@ return [
     */
     'reply_to_email' => env('COMPANY_REPLY_TO_EMAIL', 'contact@niranjanenterprises.com'),
     'phone' => env('COMPANY_PHONE', ''),
-    'whatsapp' => env('COMPANY_WHATSAPP', ''), // E.164 without +, e.g. 919028099919
+    // No generic 'whatsapp' key here on purpose — every WhatsApp "chat with
+    // us" link in this app is one of the two real business lines
+    // (services.wadesk.support_number / marketing_number, see
+    // config/services.php), chosen by the page's own context (client
+    // portal/support vs. a lead/offer-funnel page). A single generic
+    // number here previously caused a real mix-up: several pages showed
+    // whichever number happened to be set, regardless of which line was
+    // actually correct for that page.
 
     /*
     | Fallback Google Calendar appointment-scheduling link shown to clients

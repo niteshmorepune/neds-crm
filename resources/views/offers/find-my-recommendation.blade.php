@@ -42,8 +42,8 @@
 
     <p style="margin-top:24px;font-size:13px;color:var(--muted)">
       Prefer to just message us?
-      @if (config('company.whatsapp'))
-        <a href="https://wa.me/{{ config('company.whatsapp') }}" target="_blank" rel="noopener" style="color:var(--blue);font-weight:800">WhatsApp us →</a>
+      @if (config('services.wadesk.marketing_number'))
+        <a href="https://wa.me/{{ config('services.wadesk.marketing_number') }}" target="_blank" rel="noopener" style="color:var(--blue);font-weight:800">WhatsApp us →</a>
       @endif
     </p>
   </div>
