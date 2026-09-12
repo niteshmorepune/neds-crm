@@ -337,7 +337,11 @@ class ImportMetaLead implements ShouldQueue
         foreach ($extra as $key => $value) {
             $lowerKey = mb_strtolower($key);
 
-            if (! str_contains($lowerKey, 'budget') && ! str_contains($lowerKey, 'बजट')) {
+            // 2026-09-12: a second Hindi-language ad variant phrases this
+            // question as "...कितना खर्च कर सकते हैं?" — खर्च ("spend") rather
+            // than बजट ("budget"). Confirmed against the ad's real copy ahead
+            // of launch, same as matchBudget() below.
+            if (! str_contains($lowerKey, 'budget') && ! str_contains($lowerKey, 'बजट') && ! str_contains($lowerKey, 'खर्च')) {
                 continue;
             }
 
@@ -381,7 +385,10 @@ class ImportMetaLead implements ShouldQueue
             // "budget" — बजट is the literal Hindi word for it. Confirmed
             // against 2 real leads (#370/#371) whose budget answers were
             // otherwise silently dropped into the generic note dump.
-            if (! str_contains($lowerKey, 'budget') && ! str_contains($lowerKey, 'बजट')) {
+            // 2026-09-12: a second Hindi variant asks "...कितना खर्च कर सकते
+            // हैं?" instead — खर्च ("spend"), not बजट. Confirmed against the
+            // ad's real copy ahead of launch.
+            if (! str_contains($lowerKey, 'budget') && ! str_contains($lowerKey, 'बजट') && ! str_contains($lowerKey, 'खर्च')) {
                 continue;
             }
 
@@ -432,17 +439,19 @@ class ImportMetaLead implements ShouldQueue
         // Array keys can't be enum instances, so this is a plain list of
         // [enum, phrases] pairs rather than an enum-keyed map.
         $needles = [
-            [LeadGoal::GenerateLeads, ['generate more leads', 'generate leads', 'लीड्स प्राप्त करना']],
-            [LeadGoal::RankHigher, ['rank higher']],
-            [LeadGoal::GrowBusiness, ['grow my business', 'grow business', 'ऑनलाइन बढ़ाना']],
-            [LeadGoal::NotSure, ['not sure', 'expert advice']],
-            // Only the two Hindi phrases above are confirmed against real
-            // leads (#370/#371, 2026-09-09) — RankHigher/NotSure have no
-            // known Hindi phrasing yet since no lead has picked either
-            // option on this ad's Hindi variant. Deliberately left
-            // unmatched rather than guessing a translation (same
-            // never-fabricate discipline as the FAQ Hindi content) — add
-            // the real phrase here the first time one is actually seen.
+            [LeadGoal::GenerateLeads, ['generate more leads', 'generate leads', 'लीड्स प्राप्त करना', 'leads प्राप्त करना']],
+            [LeadGoal::RankHigher, ['rank higher', 'ranking पाना']],
+            [LeadGoal::GrowBusiness, ['grow my business', 'grow business', 'ऑनलाइन बढ़ाना', 'online बढ़ाना']],
+            [LeadGoal::NotSure, ['not sure', 'expert advice', 'पक्का नहीं']],
+            // Only the two Hindi-only phrases (लीड्स प्राप्त करना,
+            // ऑनलाइन बढ़ाना) are confirmed against real leads (#370/#371,
+            // 2026-09-09). The 3 mixed English/Devanagari phrases
+            // (leads प्राप्त करना / ranking पाना / online बढ़ाना) plus
+            // पक्का नहीं are from a second Hindi ad variant's exact copy,
+            // confirmed against the ad's real text ahead of launch
+            // (2026-09-12) rather than a live lead — same never-fabricate
+            // discipline as the FAQ Hindi content, applied to text the
+            // owner supplied directly instead of a lead's own answer.
         ];
 
         foreach ($extra as $key => $value) {
@@ -450,7 +459,9 @@ class ImportMetaLead implements ShouldQueue
 
             // 2026-09-09: same Hindi-form-variant gap as matchBudget() above
             // — लक्ष्य is the literal Hindi word for "goal."
-            if (! str_contains($lowerKey, 'goal') && ! str_contains($lowerKey, 'लक्ष्य')) {
+            // 2026-09-12: a second Hindi variant asks "...सबसे बड़ी ज़रूरत
+            // क्या है?" instead — ज़रूरत ("need"), not लक्ष्य.
+            if (! str_contains($lowerKey, 'goal') && ! str_contains($lowerKey, 'लक्ष्य') && ! str_contains($lowerKey, 'ज़रूरत')) {
                 continue;
             }
 
