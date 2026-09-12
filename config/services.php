@@ -350,12 +350,15 @@ return [
 
         // Visibility Audit offer landing page (/offers/visibility-audit).
         // Each of these is a Razorpay Payment Page URL (Dashboard → Payment
-        // Pages — a separate, simpler product from the Orders API above),
-        // one per offer tier. The page hides a tier's CTA entirely rather
-        // than link to a blank/'#' URL when its value is unset, so this is
-        // safe to leave blank until the Payment Pages actually exist.
+        // Pages — a separate, simpler product from the Orders API above).
+        // The GBP tier moved to the in-app Orders + Checkout.js flow
+        // (VisibilityAuditCheckoutController) — see the 2026-09-12 "GBP
+        // in-app checkout" decisions log entry — so only the Website/Both
+        // tiers still use a Payment Page here; neither is linked from any
+        // live page today. The page hides a tier's CTA entirely rather than
+        // link to a blank/'#' URL when its value is unset, so this is safe
+        // to leave blank until the Payment Pages actually exist.
         'payment_pages' => [
-            'gbp_audit' => env('RAZORPAY_PAYMENT_PAGE_GBP_AUDIT'),
             'website_audit' => env('RAZORPAY_PAYMENT_PAGE_WEBSITE_AUDIT'),
             'both_audit' => env('RAZORPAY_PAYMENT_PAGE_BOTH_AUDIT'),
         ],

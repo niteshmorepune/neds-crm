@@ -90,6 +90,42 @@ class RazorpayClient
         }
     }
 
+    /**
+     * Re-fetches a payment entity from Razorpay directly — used when a
+     * checkout wasn't attributed to a known Lead at order() time, to
+     * recover the `contact`/`email` the payer actually typed into
+     * Razorpay's own hosted Checkout.js modal (never returned to the
+     * browser's own success handler, only visible server-side via this
+     * lookup).
+     *
+     * @return array{id: string, contact: ?string, email: ?string}|null
+     */
+    public function fetchPayment(string $paymentId): ?array
+    {
+        if (! $this->configured()) {
+            return null;
+        }
+
+        try {
+            $response = $this->http()->get(self::BASE_URL."/payments/{$paymentId}");
+
+            if (! $response->successful()) {
+                Log::warning('Razorpay payment fetch failed', [
+                    'status' => $response->status(),
+                    'payment_id' => $paymentId,
+                ]);
+
+                return null;
+            }
+
+            return $response->json();
+        } catch (\Throwable $e) {
+            Log::warning('Razorpay payment fetch exception', ['error' => $e->getMessage()]);
+
+            return null;
+        }
+    }
+
     private function http()
     {
         return Http::withBasicAuth(

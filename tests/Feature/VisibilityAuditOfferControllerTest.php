@@ -9,33 +9,29 @@ it('renders the offer page without requiring login', function () {
         ->assertSee('₹120');
 });
 
-it('shows "Coming soon" when the GBP Razorpay Payment Page URL is not configured', function () {
-    config(['services.razorpay.payment_pages.gbp_audit' => null]);
+it('shows "Coming soon" when Razorpay is not configured', function () {
+    config(['services.razorpay.key_id' => null, 'services.razorpay.key_secret' => null]);
 
     $this->get(route('offers.visibility-audit'))
         ->assertOk()
         ->assertSee('Coming soon');
 });
 
-it('links every CTA to the funnel-tracking checkout redirect, not the raw Razorpay URL', function () {
-    config(['services.razorpay.payment_pages.gbp_audit' => 'https://pages.razorpay.com/gbp-audit']);
+it('renders the in-app checkout script and gbp_url field when Razorpay is configured', function () {
+    config(['services.razorpay.key_id' => 'rzp_test_123', 'services.razorpay.key_secret' => 'secret']);
 
     $response = $this->get(route('offers.visibility-audit'))->assertOk();
 
-    $checkoutUrl = route('offers.visibility-audit.checkout', ['tier' => 'gbp']);
-    $response->assertSee($checkoutUrl, false);
-    $response->assertDontSee('https://pages.razorpay.com/gbp-audit', false);
-
-    // Hero, buy box, final section, and sticky mobile bar all link to it.
-    expect(substr_count($response->getContent(), $checkoutUrl))->toBe(4);
+    $response->assertSee('gbp_url', false);
+    $response->assertSee(route('offers.visibility-audit.order'), false);
+    $response->assertSee(route('offers.visibility-audit.verify'), false);
 });
 
-it('carries a lead reference through to every checkout CTA when present', function () {
-    config(['services.razorpay.payment_pages.gbp_audit' => 'https://pages.razorpay.com/gbp-audit']);
+it('carries a lead reference through to the checkout script when present', function () {
+    config(['services.razorpay.key_id' => 'rzp_test_123', 'services.razorpay.key_secret' => 'secret']);
     $lead = Lead::factory()->create();
 
     $response = $this->get(route('offers.visibility-audit', ['lead' => $lead->id]))->assertOk();
 
-    $checkoutUrl = htmlspecialchars(route('offers.visibility-audit.checkout', ['tier' => 'gbp', 'lead' => $lead->id]));
-    expect(substr_count($response->getContent(), $checkoutUrl))->toBe(4);
+    $response->assertSee("leadId: {$lead->id}", false);
 });

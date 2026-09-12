@@ -390,8 +390,11 @@ creation) and that the bot hasn't been removed from the group.
 
 **What it does:** Meta's native Lead Ads form (Instant Form, filled inside
 Facebook/Instagram) captures a submitter's name/phone/email but never sends
-them anywhere — so for a Meta Ads lead tagged the **GMB** service, the CRM
-sends a first WhatsApp invite automatically the moment the lead is created
+them anywhere — so for a Meta Ads lead the goal+budget recommendation
+matrix resolves into the GBP Visibility Audit offer (see Integration 16
+below — since 2026-09-12 this is decided by the lead's own goal+budget
+answers, not a manual service tag), the CRM sends a first WhatsApp invite
+automatically the moment the lead is created
 (`App\Jobs\SendVisibilityAuditFirstInviteJob`, `WADESK_VISIBILITY_
 AUDIT_FIRST_INVITE_TEMPLATE_NAME`), showing them the offer for the first
 time. From there, the `/offers/visibility-audit` page and its checkout link
@@ -423,10 +426,16 @@ same "Stop promotions"/Dynamic-URL-button/Marketing-category contract.
 off again later, that's a fresh nudge opportunity, but a single stall never
 sends the same message twice.
 
-**Only Meta Ads leads tagged the GMB service are invited** — a Meta lead
-form for SEO, Website Design, or another service is left alone, since the
-Visibility Audit offer is specifically a Google Business Profile audit and
-inviting an off-target lead to it would read as spam, not help.
+**Only a Meta Ads lead whose goal+budget resolve to the GBP offer is
+invited** — a lead the matrix recommends a different offer for gets that
+offer's own first-touch message instead (Integration 16), never this one,
+since the Visibility Audit offer is specifically a Google Business Profile
+audit and inviting an off-target lead to it would read as spam, not help.
+A lead whose ad form never captured goal/budget at all falls back to the
+older, service-tag-based rule (GMB-tagged → this invite) as a safety net —
+see Integration 16's own docblock reference
+(`LeadObserver::routeMetaLeadFirstTouch()`) for exactly when that fallback
+applies.
 
 **If invites or nudges stop arriving:** confirm the relevant template name
 is set in `.env` (each one silently no-ops on its own until its var is
@@ -561,13 +570,15 @@ anything else is wrong.
 
 **What it does:** two new outbound sends via the existing wadesk.in `POST
 /api/send-template` contract. First, `App\Jobs\SendLeadWelcomeMessageJob`
-fires automatically the moment any Meta Ads lead is created (except a
-GMB-tagged one, which gets `visibility_audit_first_invite_template_name`
-instead — never both) — a thank-you that also asks what time works for a
-quick call, deliberately specific rather than a generic "any questions?" so
-the lead is likely to actually reply. Second, `App\Jobs\SendLeadCheckInJob`
-is triggered manually by staff via the **📱 Send WhatsApp check-in** button
-on a lead's own page, for re-engaging a lead who's gone quiet later.
+fires automatically the moment any Meta Ads lead is created whose own
+goal+budget resolve to one of the 3 non-GBP offers (see Integration 16
+below) — a thank-you that also asks what time works for a quick call,
+deliberately specific rather than a generic "any questions?" so the lead
+is likely to actually reply. A lead the matrix instead resolves to the GBP
+offer gets `visibility_audit_first_invite_template_name` instead — never
+both. Second, `App\Jobs\SendLeadCheckInJob` is triggered manually by staff
+via the **📱 Send WhatsApp check-in** button on a lead's own page, for
+re-engaging a lead who's gone quiet later.
 
 **Why it exists:** Meta's native Lead Ads form never opens a real WhatsApp
 conversation with the submitter — until the lead sends a message of their
@@ -598,6 +609,52 @@ no-ops:** confirm `WADESK_LEAD_WELCOME_TEMPLATE_NAME`/
 wadesk.in's — these sends originate from the CRM, the reverse direction of
 Integration 14 above) and that the named template is genuinely
 Meta-approved. Both jobs no-op silently (by design) until configured.
+
+---
+
+## Integration 16 — Meta Ads goal+budget recommendation matrix decides everything, including the service tag
+
+**What it does:** every Meta Ads lead answers two questions on the ad form
+itself — their biggest goal and their monthly budget. The moment both are
+known (`App\Actions\GenerateLeadRecommendation`, called from
+`LeadObserver::routeMetaLeadFirstTouch()` the instant the lead is
+created), a 16-cell matrix (`App\Support\OfferRecommendationMatrix`)
+resolves which of the 4 offers — GBP Visibility Audit, Lead Generation
+Funnel Audit, Website + Conversion Growth Audit, Personalized Digital
+Growth Strategy — genuinely fits that lead, and the CRM automatically
+sends the matching first-touch WhatsApp message for it (Integration 12 for
+GBP, Integration 15 for the other 3). **This is the single thing that
+decides both which offer a lead sees and which automated message goes
+out — nothing else does.**
+
+**Since 2026-09-12, it also sets the lead's own service tag** — GBP
+Audit → GMB, Website Growth Audit → Website Design & Development, Lead
+Generation Audit → Performance Marketing (Growth Strategy has no single
+matching service and is deliberately left untagged). **Staff should never
+need to manually pick a service on a Meta lead for this to work** — doing
+so was a real, reported problem: staff had been defaulting nearly every
+Meta lead's service to GMB by habit (traced back to sales/telecaller
+guide text, since corrected, that used to say tagging a service was what
+"turned on" the automated invite — true before this milestone, false
+after it), which corrupted Service-wise reporting even though it never
+actually changed which offer a lead got or which message was sent.
+
+**The old service-tag rule still exists, but only as a fallback** — for
+the rare Meta lead whose specific ad form variant never asked the
+goal/budget questions at all, `routeMetaLeadFirstTouch()` falls back to
+the pre-2026-09-12 rule (GMB-tagged → the GBP invite, anything else → the
+generic welcome). A manually-picked service tag only ever matters for
+this one fallback case; once a lead's goal+budget resolve, its own
+service tag is derived automatically and any earlier manual tag gets
+overwritten to match.
+
+**If a Meta lead's service tag looks wrong, or you're not sure why it
+changed:** check its own **📋 Recommendation & Offer** panel first (Lead
+page) — if it shows a resolved recommendation, the service tag came from
+that, not from anyone's manual entry, and should be left alone.
+`app:backfill-lead-service-tags --dry-run` (SSH) shows every existing lead
+whose service tag currently disagrees with its own resolved
+recommendation, without changing anything.
 
 ---
 

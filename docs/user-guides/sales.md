@@ -209,9 +209,11 @@ on the lead — except the **"What is your biggest goal?"** question, which
 fills in the lead's **Goal** field directly (see "Their goal, and their
 Website/GBP link" below) when the answer matches one of its four options.
 **A WhatsApp welcome message goes out automatically, too** — the moment a
-Meta Ads lead is created (except GMB-tagged ones, who get the Visibility
-Audit invite instead), the CRM thanks them for reaching out and asks what
-time works for a quick call. This is deliberately more than a plain "thanks"
+Meta Ads lead's goal+budget resolve to one of the 3 non-GBP offers (a lead
+recommended the GBP offer instead gets the Visibility Audit invite — see
+"Their budget, and the recommendation it produces" below for how that's
+decided), the CRM thanks them for reaching out and asks what time works
+for a quick call. This is deliberately more than a plain "thanks"
 — getting them to actually reply is what opens WhatsApp's 24-hour window,
 so you (or the after-hours assistant) can message them freely from then on
 instead of being limited to approved templates. You'll see a note on the
@@ -231,15 +233,17 @@ check-in has fired yet — worth a phone call in the meantime, since
 WhatsApp is a helpful channel here, not a replacement for calling.
 
 **Visibility Audit Funnel:** **Lead Generation → VA Recovery** shows the
-whole journey for Meta Ads leads tagged the GMB service — how many came in,
-how many were invited, how many viewed the offer page, reached checkout,
-and paid — plus the same "who's stuck, at which stage" queue as before.
-Meta's own lead form never sends anyone to the offer page on its own, so
-the CRM sends a first WhatsApp invite automatically as soon as one of these
-leads is created; if they stall after that, a separate recovery nudge goes
-out 2–4 hours later, both "Stop promotions"-gated templates. Each queued
-row links straight to that lead's own page so you can act with the usual
-tools — a lead who converts from either automatic message simply
+GBP-specific slice of the wider Meta Ads offer funnel — for a lead the
+goal+budget matrix recommends the GBP Visibility Audit (Section on Their
+goal/budget below explains how that's decided), how many came in, how
+many were invited, how many viewed the offer page, reached checkout, and
+paid — plus the same "who's stuck, at which stage" queue as before. The
+CRM sends a first WhatsApp invite automatically as soon as one of these
+leads is created (Meta's own lead form never sends anyone to the offer
+page on its own); if they stall after that, a separate recovery nudge
+goes out 2–4 hours later, both "Stop promotions"-gated templates. Each
+queued row links straight to that lead's own page so you can act with the
+usual tools — a lead who converts from either automatic message simply
 disappears off the list, nothing extra to do there. A row still stuck at
 checkout or the offer page also gets a green **WhatsApp →** button
 alongside "Open lead" — it jumps straight into that lead's own wadesk
@@ -279,12 +283,28 @@ automatic, with two points where you take over:
    client can pay a milestone advance online themselves once it's sent.
 
 Below that whole-team queue, two more sections show just **your own**
-leads: **Your gaps** (your leads missing a service tag, stuck waiting on a
-call, or who replied on WhatsApp with no response from you yet — each
-with an "Open lead" link) and **Your message log** (every AI-WhatsApp send
-to your own leads, with the outcome). If a lead needs a service tag,
-tagging it (Edit → Service → GMB) is what actually turns the automated
-invite on — it does nothing at all until that's set.
+leads: **Your gaps** (your leads stuck waiting on a call, who replied on
+WhatsApp with no response from you yet, or a Meta lead the CRM genuinely
+can't route yet — see below — each with an "Open lead" link) and **Your
+message log** (every AI-WhatsApp send to your own leads, with the
+outcome).
+
+**You should not need to manually pick a service on a Meta lead to "turn
+on" anything anymore.** The moment a lead's own goal+budget answers are
+known (auto-captured from the ad form itself, or you fill them in via the
+Goal/Budget picker on the lead's own page), the CRM already knows which
+of the 4 offers fits and has already sent the right automated message —
+and it tags the matching service itself (GMB, Website Design &
+Development, or Performance Marketing) at that same moment, so there's
+nothing left for you to set. **Don't default a Meta lead's service to
+GMB out of habit** — if the goal+budget matrix later disagrees with a
+manual tag, the system corrects it back the next time that lead's
+recommendation changes, so a habitual tag doesn't stick around, but it
+does mean the tag you typed was never actually doing anything. A lead
+only shows up in **Your gaps** as genuinely needing a service tag when
+its ad form never captured goal/budget at all — that's the rare case
+where a manual tag (Edit → Service) is the only signal the CRM has to
+decide anything.
 
 **Automatic nurture follow-ups:** if a New lead sits with no note or logged
 call from you for **1, 3, or 7 days**, the CRM drafts a follow-up message for

@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Google Business Profile Audit | Niranjan Enterprises</title>
 <meta name="description" content="Is your business visible on Google? Get a professional Google Business Profile review and audit for ₹120. Find the gaps that may be costing you calls and customers.">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js" defer></script>
 <style>
 :root{
   --navy:#071d49;--blue:#164cc0;--blue2:#285fe0;--red:#d92d20;--yellow:#ffc400;
@@ -60,6 +62,8 @@ h2{font-size:clamp(30px,4vw,45px);line-height:1.1;letter-spacing:-.04em;margin:0
 .faq{max-width:820px;margin:38px auto 0}.faq details{border-bottom:1px solid var(--line);padding:17px 0}.faq summary{cursor:pointer;font-weight:800;list-style:none;display:flex;justify-content:space-between}.faq summary::-webkit-details-marker{display:none}.faq summary:after{content:"+";color:var(--blue);font-size:20px}.faq details[open] summary:after{content:"−"}.faq p{color:var(--muted);font-size:14px;margin:10px 28px 0 0}
 .final{background:var(--navy);color:#fff;padding:75px 0}.final h2{color:#fff;max-width:750px;margin-left:auto;margin-right:auto}.final p{color:#cbd5e1;max-width:620px;margin:0 auto 23px}.footer{background:#06152f;color:#98a2b3;padding:24px 0;font-size:11px;text-align:center}
 .sticky{display:none}
+.buyerror{margin-top:12px;padding:10px 12px;border-radius:10px;background:#fef3f2;border:1px solid #fecdca;color:var(--red);font-size:13px}
+.gbpfield{margin:17px 0}.gbpfield label{display:block;font-size:13px;font-weight:800;color:#344054;margin-bottom:6px}.gbpfield input{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:11px;font-size:14px;color:var(--ink)}.gbpfield input:focus{outline:2px solid var(--blue2);outline-offset:1px}
 @media(max-width:900px){
  .hero-grid,.offer,.sample,.trust{grid-template-columns:1fr}.ad-card{max-width:600px;margin:auto}.problem{grid-template-columns:1fr}.steps{grid-template-columns:1fr 1fr}.offer-copy{order:1}.buybox{order:0}
 }
@@ -93,8 +97,8 @@ h2{font-size:clamp(30px,4vw,45px);line-height:1.1;letter-spacing:-.04em;margin:0
         <li>Categories & Services Audit</li>
         <li>Reviews, Photos & Content Review</li>
       </ul>
-      @if ($gbpPaymentUrl)
-        <a class="primary" href="{{ route('offers.visibility-audit.checkout', array_filter(['tier' => 'gbp', 'lead' => $lead])) }}">{{ $ctaLabel }}</a>
+      @if ($razorpayConfigured)
+        <a class="primary" href="#buy" x-data x-on:click.prevent="document.getElementById('buy').scrollIntoView({behavior:'smooth'}); document.getElementById('gbp_url')?.focus()">{{ $ctaLabel }}</a>
       @else
         <span class="primary disabled">Coming soon</span>
       @endif
@@ -159,8 +163,12 @@ h2{font-size:clamp(30px,4vw,45px);line-height:1.1;letter-spacing:-.04em;margin:0
         <div><h3>Google Business Profile Audit</h3><div class="price">₹120</div><div class="regular">Regular value ₹3,000</div><span class="save">Save ₹2,880</span></div>
         <span class="tag">ONE-TIME</span>
       </div>
-      @if ($gbpPaymentUrl)
-        <a class="primary buybtn" href="{{ route('offers.visibility-audit.checkout', array_filter(['tier' => 'gbp', 'lead' => $lead])) }}">{{ $ctaLabel }}</a>
+      @if ($razorpayConfigured)
+        <div class="gbpfield">
+          <label for="gbp_url">Your Google Business Profile / Maps link</label>
+          <input type="url" id="gbp_url" name="gbp_url" placeholder="https://g.co/kgs/... or your Maps link" required>
+        </div>
+        <button type="button" class="primary buybtn" x-data x-on:click="$dispatch('open-va-checkout')">{{ $ctaLabel }}</button>
       @else
         <span class="primary buybtn disabled">Coming soon</span>
       @endif
@@ -247,8 +255,8 @@ h2{font-size:clamp(30px,4vw,45px);line-height:1.1;letter-spacing:-.04em;margin:0
     <div class="kicker" style="color:#8fb0ff">Your customers are searching</div>
     <h2>Before spending more on marketing, find out whether your Google Business Profile is doing its job.</h2>
     <p>Get your Google Business Profile reviewed and discover the gaps that may be holding back your local visibility.</p>
-    @if ($gbpPaymentUrl)
-      <a class="primary" href="{{ route('offers.visibility-audit.checkout', array_filter(['tier' => 'gbp', 'lead' => $lead])) }}">{{ $ctaLabel }}</a>
+    @if ($razorpayConfigured)
+      <a class="primary" href="#buy" x-data x-on:click.prevent="document.getElementById('buy').scrollIntoView({behavior:'smooth'}); document.getElementById('gbp_url')?.focus()">{{ $ctaLabel }}</a>
     @else
       <span class="primary disabled">Coming soon</span>
     @endif
@@ -259,12 +267,14 @@ h2{font-size:clamp(30px,4vw,45px);line-height:1.1;letter-spacing:-.04em;margin:0
 
 <div class="sticky">
   <div class="sticky-price"><span>GBP Review & Audit</span><strong>₹120 one-time</strong></div>
-  @if ($gbpPaymentUrl)
-    <a class="primary" href="{{ route('offers.visibility-audit.checkout', array_filter(['tier' => 'gbp', 'lead' => $lead])) }}">Get My Offer →</a>
+  @if ($razorpayConfigured)
+    <a class="primary" href="#buy" x-data x-on:click.prevent="document.getElementById('buy').scrollIntoView({behavior:'smooth'}); document.getElementById('gbp_url')?.focus()">Get My Offer →</a>
   @else
     <span class="primary disabled">Coming soon</span>
   @endif
 </div>
+
+@include('offers.partials.visibility-audit-checkout-script', ['leadId' => $lead])
 
 </body>
 </html>

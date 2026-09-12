@@ -1180,6 +1180,83 @@ Older entries (2026-06-10 through 2026-08-25) moved to `docs/decisions-log-archi
   for invoice/quotation payments, so no new Razorpay Dashboard
   configuration is needed before this goes live (unlike the GBP page's
   own Payment Pages).
+- **2026-09-12 (later same day) — Milestone 15: GBP offer moved to the
+  same in-app Razorpay Orders + Checkout.js flow as the other 3 offers,
+  reversing Milestone 12's own "out of scope to change" call on this
+  page's payment flow.** The owner asked directly: *"In-app Orders +
+  Checkout.js to be implemented, so we do not need to use razorpay
+  payment page anymore."* Milestone 12 (above) had deliberately kept
+  `GbpAudit::usesInAppCheckout()` false and left this page's own external
+  Payment Page checkout untouched, on the reasoning that it was a
+  separate, already-working mechanism not worth touching in that
+  milestone — the owner has now explicitly asked for exactly that change,
+  so this entry supersedes that "out of scope" note rather than leaving it
+  standing as if still true.
+  When asked how the GBP profile link would be collected (the old
+  Payment Page had its own custom form field for it), the owner corrected
+  the premise: *"If the lead had already submitted the lead form with
+  his/her information then why to again ask for it. GBP link is only the
+  information actually to collect if he/she wants to pay Rs120, correct?"*
+  — so the new flow prefills name/phone/email straight from the matched
+  Lead into Checkout.js and asks the visitor for only the one genuinely
+  new piece of information, the GBP/Maps link.
+  Confirmed 2 scope decisions via AskUserQuestion before building: (1)
+  **GBP tier only** — the Website (₹240) and "Both" (₹360) tiers exist in
+  code/config but aren't linked from any live page today (confirmed by
+  re-reading `VisibilityAuditOfferController`'s own pre-existing
+  docblock), so they're left fully untouched, including their own external
+  Payment Page + the shared `RazorpayVisibilityAuditWebhookController`;
+  and (2) **remove** the now-dead `RAZORPAY_PAYMENT_PAGE_GBP_AUDIT` env
+  var/config key specifically, not the webhook controller itself, which
+  still needs to keep serving those two dormant tiers if ever re-linked —
+  verified safe by reading that controller first: it matches a completed
+  payment to a tier by **amount**, never by which Payment Page config key
+  was used, so removing only this one key can't affect Website/Both.
+  New `App\Http\Controllers\VisibilityAuditCheckoutController`
+  (`order()`/`verify()`), mirroring `OfferCheckoutController`'s own
+  price-resolved-server-side/re-fetch-order-at-verify pattern almost
+  exactly, but hardcoding the ₹120 GBP price and requiring a `gbp_url`.
+  Unlike `OfferPurchase`, `VisibilityAuditPurchase` has never had a
+  pending/paid status concept (every row already IS a completed payment),
+  so there's no placeholder row to create at `order()` time — the tier,
+  submitted `gbp_url`, and matched lead id all ride in the Razorpay
+  order's own `notes` field instead, read back authoritatively via
+  `fetchOrder()` at `verify()` time rather than trusted from the browser.
+  New `RazorpayClient::fetchPayment()` — Checkout.js's success handler
+  never returns the contact/email a payer typed into Razorpay's own hosted
+  modal (only shown when no `prefill` exists, i.e. an unmatched/anonymous
+  visitor), so without this, `RecordVisibilityAuditPurchase`'s own
+  `Lead::findOpenByPhone()` matching would have no phone number to work
+  with for that visitor. A new VA-specific checkout script partial
+  (`offers/partials/visibility-audit-checkout-script.blade.php`) is a
+  deliberate small duplication of the shared `checkout-script.blade.php`
+  used by the other 3 offers, not a generalization of it — the shared
+  script's `order()` call sends no request body at all, while this one
+  needs to send `{gbp_url}` and block the whole payment flow client-side
+  until that field is filled.
+  Traced through `VisibilityAuditRecoveryNudgeEmail`'s and the WhatsApp
+  recovery template's existing links (both still point at the old
+  `.checkout?tier=gbp` route) before concluding no change was needed
+  there: `VisibilityAuditFunnelTrackingController::checkout()` already has
+  a graceful "config not set → redirect to the landing page instead of a
+  raw external redirect" fallback, which now fires automatically for GBP
+  once its config key is gone — an old recovery link still works, it just
+  lands the recipient on the offer page instead of directly into a
+  payment flow, an accepted, expected consequence of an in-app
+  JS-triggered checkout (which, unlike an external Payment Page URL,
+  can't be deep-linked into "already paying").
+  14 new Pest tests (`VisibilityAuditCheckoutTest` — price always ₹120
+  server-side regardless of client input, signature/amount/tier tampering
+  all rejected, idempotent on `razorpay_payment_id`, lead-matched prefill
+  vs. anonymous-payment-entity fallback both covered),
+  `VisibilityAuditOfferControllerTest` rewritten for the new
+  `$razorpayConfigured` gate (replacing the old `$gbpPaymentUrl`-based
+  assertions), full suite green (no new unrelated flakes beyond the
+  already-documented ones), Pint clean. `VisibilityAuditFunnelTrackingTest`
+  needed no changes — it sets `services.razorpay.payment_pages.gbp_audit`
+  directly at runtime, which still works as a pure-unit exercise of that
+  controller's own tier-agnostic redirect logic even though the config
+  file no longer defines that key by default.
 - **2026-09-12 (later same day) — Unified the Meta Ads funnel: the
   goal+budget recommendation matrix now decides the offer for EVERY Meta
   lead, GMB included, instead of the GBP path being routed separately by
@@ -1389,3 +1466,90 @@ Older entries (2026-06-10 through 2026-08-25) moved to `docs/decisions-log-archi
   green, Pint clean. No new migrations — every column/table this reads
   already existed from Milestone 12/13. Menu re-seed needed on deploy
   (label change only, no new item/route).
+- **2026-09-12 (later same day) — service_id auto-derived from the
+  resolved recommendation offer, correcting a real data-quality gap the
+  owner flagged: staff had been manually tagging almost every Meta
+  lead's service as GMB by habit, regardless of what the lead actually
+  wanted.** Owner's own question: *"how CRM will understand which
+  service is the lead looking for on the basis of information filled on
+  the lead form? As team is manually entering GMB for almost all
+  leads."* Investigated before proposing anything: `ImportMetaLead::
+  matchServiceId()` only auto-sets `service_id` if the ad form itself
+  asks a "which service" question whose answer text exactly matches an
+  active Service name — since the real ad forms only ask "biggest goal"
+  and "budget" (the two questions the whole recommendation matrix is
+  built on), this essentially never fires for a real Meta lead, so
+  `service_id` stays null until a human sets it. Confirmed
+  `GenerateLeadRecommendation::handle()` (Milestone 12/13) already
+  decides the offer shown to a lead purely from `goal`+`budget_range`,
+  fully independent of `service_id` — so the habitual GMB tagging wasn't
+  corrupting the actual offer/routing, only Service-wise reporting and
+  any service-keyed Lead Assignment Rules.
+  Confirmed 2 scope decisions via AskUserQuestion: (1) auto-derive
+  `service_id` from the resolved `recommendation_offer_key` rather than
+  locking the field or leaving it a pure training/process fix — with an
+  explicit mapping only for the 3 offers that have an unambiguous 1:1
+  Service match (GbpAudit→GMB, WebsiteGrowthAudit→Website Design &
+  Development, LeadGenerationAudit→Performance Marketing);
+  GrowthStrategy spans multiple services and is deliberately left
+  untouched rather than forcing a misleading tag; (2) backfill existing
+  Meta leads too, not just going forward — the owner had already noticed
+  the reporting distortion, so a going-forward-only fix would have left
+  it uncorrected for months.
+  `GenerateLeadRecommendation::handle()` now sets `service_id` (via new
+  public `serviceIdForOffer()`) inside the same `if ($lead->
+  recommendation_key !== ...)` branch that already guards every other
+  recommendation-changed write — so it fires exactly when a lead's
+  recommendation is first generated or later changes (e.g. goal/budget
+  edited), never on an unchanged re-check, and deliberately **overwrites**
+  whatever `service_id` was there before (a genuinely new/changed
+  recommendation is a stronger signal than a habitual guess). Once set,
+  a later call with the SAME recommendation does not re-touch it — so a
+  rep who manually corrects it afterward with real information isn't
+  fought by the system (the "lock the field" alternative was explicitly
+  not chosen). GMB is resolved via the same resilient
+  `whereIn(['GMB', 'GMB Services'])` lookup `VisibilityAuditFunnelMetrics::
+  gmbServiceId()` already uses, rather than a bare hardcoded name, since
+  that Service row has been renamed in production before (see
+  [[feedback-gotchas]]).
+  New `App\Console\Commands\BackfillLeadServiceTags`
+  (`app:backfill-lead-service-tags`, `--dry-run` supported) corrects
+  every existing lead with a resolved `recommendation_offer_key` whose
+  `service_id` disagrees with `serviceIdForOffer()` — reuses the exact
+  same mapping method rather than duplicating it, same "one-off
+  correction command, not a permanent scheduled job" pattern as
+  `BackfillClientProvisioning`.
+  18 new Pest tests (`GenerateLeadRecommendationTest` extended — all 3
+  mapped offers set the right service, GrowthStrategy leaves it alone,
+  overwrite-vs-no-re-touch-once-settled both covered, the renamed-Service
+  resilience case; new `BackfillLeadServiceTagsTest`), full suite green,
+  Pint clean. No migration (reuses the existing `leads.service_id`/
+  `recommendation_offer_key` columns). The backfill command itself has
+  not yet been run against production — that's a deploy-time step, same
+  as any other one-off correction command in this app.
+  **Found the actual root cause while fixing this, not just the
+  symptom**: `sales.md`/`telecaller.md` themselves were still telling
+  staff *"tagging it (Edit → Service → GMB) is what actually turns the
+  automated invite on — it does nothing at all until that's set"* — true
+  before the 2026-09-12 "unified funnel" milestone, false after it (goal+
+  budget already decides and fires the invite on its own), but nobody had
+  gone back to correct this specific instructional line when that
+  milestone shipped. Staff were very likely following their own training
+  material exactly as written. Fixed both guides (removed the now-false
+  instruction, explained the auto-derive instead), plus
+  `integrations.md`'s Integration 12 ("Only Meta Ads leads tagged the GMB
+  service are invited" — same staleness) and Integration 15 ("except a
+  GMB-tagged one" — same), and added a new Integration 16 documenting the
+  unified goal+budget-decides-everything mechanism as its own entry,
+  since none existed despite it being the single most consequential
+  routing decision in the app. **Also found and fixed a second, closely
+  related bug this same staleness was hiding**: `VisibilityAuditFunnelMetrics::
+  awaitingServiceTag()`/`leadsAwaitingServiceTag()` (the "Your gaps"/
+  manager-dashboard nag that told staff a lead needs a service tag) never
+  checked whether the lead already had a resolved `recommendation_offer_key`
+  — meaning every Growth Strategy-recommended lead (deliberately left
+  service-less, no 1:1 Service match) would have nagged forever with no
+  way to clear it except mistagging it, the exact same harmful workaround
+  in a different guise. Both methods now also exclude any lead with a
+  resolved recommendation. `manager.md`'s "Awaiting service tag" callout
+  description updated to match. 2 new Pest tests for this second fix.
