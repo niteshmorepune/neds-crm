@@ -1704,3 +1704,28 @@ Older entries (2026-06-10 through 2026-08-25) moved to `docs/decisions-log-archi
   migration (reuses existing Lead columns/matching). Smoke-tested
   end-to-end against real local MySQL (both the GBP and non-GBP redirect
   branches, cleaned up after).
+- **2026-09-12 (later same day) — Real bug, owner-caught: the new
+  `find-my-recommendation` page (and several other pages, once audited)
+  showed the Support WhatsApp line instead of Marketing.** Owner spotted
+  it live: `wa.me/918007733737` (Support) was showing where
+  `wa.me/919112095202` (Marketing) belonged. Root cause: this session's
+  own new pages read a single generic `company.whatsapp` config value —
+  which turned out to be set to the Support number — instead of the two
+  already-correctly-configured, separately-tracked business lines
+  (`services.wadesk.support_number`/`marketing_number`, live since the
+  2026-08-03 multi-number rollout). Audited every usage of
+  `company.whatsapp` across the app, not just the one page reported —
+  found 3 MORE pages with the identical mistake, none related to this
+  session's own new work: the client portal's shared `whatsapp-button`
+  component (used on `portal/home`, `portal/tickets/create`,
+  `portal/tickets/index` — all Support-context, correctly needed
+  `support_number`) and the pre-existing `recommendation-unavailable`
+  fallback page (lead-facing, needed `marketing_number`). Fixed all 6
+  real usages to read the correct line for their own context, then
+  removed the now-fully-unused `company.whatsapp` config key entirely
+  (and its now-dead `COMPANY_WHATSAPP` line from production `.env`)
+  rather than leave a stale, confusing generic setting sitting around for
+  a future page to accidentally reach for again.
+  7 new Pest tests (one per fixed page, asserting the correct number
+  renders and the wrong one explicitly does not), full suite green, Pint
+  clean. No migration. Deployed same session, verified live.
