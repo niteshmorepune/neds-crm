@@ -327,6 +327,29 @@ GBP flow, fixed in the same pass.
 - 16 new/updated Pest tests. See CLAUDE.md's 2026-09-12 "website URL
   capture + GBP prefill/write-back fix" decisions log entry.
 
+## Milestone 18 — Dynamic landing page for Meta's thank-you-screen button (2026-09-12)
+Owner asked which URL to give Meta as the funnel's landing page. Meta's
+Instant Form thank-you-screen button is a static URL with no per-
+submission personalization (confirmed via research — it can't carry a
+lead id, phone, or answers); the real "dynamic" mechanism has to work by
+asking the visitor to self-identify.
+- New `FindMyRecommendationController` + `/offers/find-my-recommendation`
+  — visitor confirms their phone number, the CRM looks it up
+  (`Lead::findOpenByPhone()`) and forwards them to their own already-
+  resolved recommendation (GBP via the existing `enter` tracking hop, the
+  other 3 via `Lead::recommendationUrl()`). Friendly in-page messages for
+  "not found yet" / "still resolving" instead of an error.
+- Found and left a note (not fixed here) that
+  `VisibilityAuditFunnelTrackingController::enter()` — what Meta's button
+  used to point at — is hardcoded to always redirect to GBP regardless of
+  a lead's real recommendation, a leftover from before the funnel was
+  unified. The new page bypasses this by routing non-GBP leads directly.
+- `docs/meta-ads-playbook.md` updated with the real URL to give Meta, and
+  flagged (not rewritten) that its own form-question design predates the
+  live goal+budget-driven form.
+- 7 new Pest tests. See CLAUDE.md's 2026-09-12 "dynamic landing page"
+  decisions log entry.
+
 ## Deployment runbook (Hostinger Business)
 1. In hPanel create MySQL DB + user; note credentials.
 2. Enable SSH if available on the plan; otherwise use hPanel Git deploy or FTP.

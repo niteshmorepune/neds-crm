@@ -1639,3 +1639,68 @@ Older entries (2026-06-10 through 2026-08-25) moved to `docs/decisions-log-archi
   Docs: `sales.md`/`telecaller.md` extended with a short note on the new
   field's prefill/write-back behavior, right next to the existing
   Goal-capture section both guides already had.
+- **2026-09-12 (later same day) — "Dynamic landing page" for the Meta ad's
+  own thank-you-screen button: `/offers/find-my-recommendation`, a
+  phone-lookup gateway in front of the existing per-lead recommendation
+  page.** Owner asked which URL to actually give Meta as the funnel's "main
+  landing page," floating a UTM-parameter idea. Researched Meta's real
+  Instant Form capabilities before answering (web search + Meta/third-party
+  docs — see this session's own sourced findings): Instant Forms do support
+  dynamic macros (`{{ad.id}}`, `{{campaign.name}}`, etc.) via a form-level
+  "Tracking Parameters" feature, but those are delivered **server-side**
+  bundled into the lead's own webhook/API payload — never appended to the
+  browser's own redirect URL — and even that mechanism only ever carries
+  **ad-level** facts known before anyone submits, never the *individual
+  submitter's* own identity (name, phone, lead id), since Meta doesn't hand
+  that back to the browser at click time at all. Confirmed separately: the
+  Thank-You screen's own "Website URL" button field has no dynamic
+  parameter support of any kind — a single static URL, fixed once per
+  form. This is a real, structural platform limitation, not a
+  configuration gap on our side — no UTM scheme can carry "this is lead
+  #4821, recommend them Growth Strategy" to a static button.
+  Also found a real, live bug while investigating this:
+  `VisibilityAuditFunnelTrackingController::enter()` — the route Meta's
+  static button had been pointed at — is hardcoded to always redirect to
+  the GBP ₹120 offer page regardless of the actual lead's own resolved
+  recommendation, a leftover from before the funnel was unified across all
+  4 offers (Milestone 13). Anyone clicking through today sees a ₹120 GBP
+  audit even when their real WhatsApp message (sent moments later) is
+  actually going to recommend the ₹999 Growth Strategy or another offer
+  entirely.
+  Since no URL-based mechanism can carry per-submission identity, built the
+  only structurally possible "dynamic" landing page: the visitor confirms
+  the phone number they just gave Meta, the CRM looks it up
+  (`Lead::findOpenByPhone()`, the same matching every other wadesk.in/
+  Meta-facing lookup already uses) and forwards them straight to their own
+  already-resolved recommendation — `GenerateLeadRecommendation::handle()`,
+  the same decision every other channel (WhatsApp, email) already relies
+  on, so there is exactly one place in the app that ever decides "which
+  offer," never a second parallel implementation.
+  New `FindMyRecommendationController` (`show()`/`lookup()`) +
+  `/offers/find-my-recommendation` (GET the form, POST the lookup — the
+  POST throttled at `throttle:10,1`, stricter than a normal page view,
+  since a phone number is not unguessable the way a `recommendation_token`
+  is). A GBP-recommended lead is routed through the existing
+  `offers.visibility-audit.enter` hop (so it still counts as a real
+  `LandingViewed` event, same as every other channel that reaches GBP); a
+  non-GBP lead is routed straight to `Lead::recommendationUrl()` — its
+  `RecommendationViewed` event is already logged by
+  `OfferRecommendationController::show()` itself, no separate hop needed.
+  A lead not found yet, or found but not yet resolved (goal/budget still
+  missing), gets a plain, friendly in-page message rather than an error —
+  the first genuinely is possible (someone submits, then immediately
+  visits before the webhook has even landed) and both are expected,
+  non-error states.
+  `docs/meta-ads-playbook.md`'s own "Thank-you screen" section updated
+  with the real URL to give Meta and the reasoning above — and flagged
+  (not rewritten) that the rest of that doc's own form design (a "Which
+  service are you looking for?" multiple-choice question, ₹10,000+ budget
+  bands) predates the current goal+budget-driven form entirely and is
+  stale; a full rewrite against the live form is a separate follow-up, not
+  done here.
+  7 new Pest tests (`FindMyRecommendationTest` — renders, validates,
+  not-found/not-yet-resolved friendly states, both redirect branches, the
+  last-10-digit phone-matching fallback), full suite green, Pint clean. No
+  migration (reuses existing Lead columns/matching). Smoke-tested
+  end-to-end against real local MySQL (both the GBP and non-GBP redirect
+  branches, cleaned up after).

@@ -20,6 +20,7 @@ use App\Http\Controllers\DealController;
 use App\Http\Controllers\EmployeeProfileController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\FestivalController;
+use App\Http\Controllers\FindMyRecommendationController;
 use App\Http\Controllers\GoogleConnectionController;
 use App\Http\Controllers\HelpController;
 use App\Http\Controllers\IncentiveController;
@@ -154,6 +155,16 @@ Route::get('/offers/recommendation/test', [OfferRecommendationController::class,
 // unguessable recommendation_token (Lead::recommendationUrl()), never a
 // bare lead id, since this page renders real name/goal/budget on screen.
 Route::get('/offers/recommendation/{token}', [OfferRecommendationController::class, 'show'])->name('offers.recommendation');
+
+// The one URL given to Meta's Instant Form as the Thank-You-screen
+// "Website URL" — Meta's own button can't carry per-submission data, so
+// this page asks the visitor to confirm their phone number and forwards
+// them to their own already-resolved recommendation. See
+// FindMyRecommendationController's own docblock for the full reasoning.
+// The lookup POST is throttled more strictly than a normal page view since,
+// unlike the token above, a phone number is not unguessable.
+Route::get('/offers/find-my-recommendation', [FindMyRecommendationController::class, 'show'])->name('offers.find-my-recommendation');
+Route::post('/offers/find-my-recommendation', [FindMyRecommendationController::class, 'lookup'])->middleware('throttle:10,1')->name('offers.find-my-recommendation.lookup');
 
 // Step 4 of the post-payment conversion pipeline — the permanent, public
 // report-view link a paid customer's audit report is shared through (email
