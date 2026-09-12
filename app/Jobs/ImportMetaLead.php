@@ -439,19 +439,22 @@ class ImportMetaLead implements ShouldQueue
         // Array keys can't be enum instances, so this is a plain list of
         // [enum, phrases] pairs rather than an enum-keyed map.
         $needles = [
-            [LeadGoal::GenerateLeads, ['generate more leads', 'generate leads', 'लीड्स प्राप्त करना', 'leads प्राप्त करना']],
-            [LeadGoal::RankHigher, ['rank higher', 'ranking पाना']],
-            [LeadGoal::GrowBusiness, ['grow my business', 'grow business', 'ऑनलाइन बढ़ाना', 'online बढ़ाना']],
+            [LeadGoal::GenerateLeads, ['generate more leads', 'generate leads', 'लीड्स प्राप्त करना']],
+            [LeadGoal::RankHigher, ['rank higher', 'रैंकिंग पाना']],
+            [LeadGoal::GrowBusiness, ['grow my business', 'grow business', 'ऑनलाइन बढ़ाना']],
             [LeadGoal::NotSure, ['not sure', 'expert advice', 'पक्का नहीं']],
-            // Only the two Hindi-only phrases (लीड्स प्राप्त करना,
-            // ऑनलाइन बढ़ाना) are confirmed against real leads (#370/#371,
-            // 2026-09-09). The 3 mixed English/Devanagari phrases
-            // (leads प्राप्त करना / ranking पाना / online बढ़ाना) plus
-            // पक्का नहीं are from a second Hindi ad variant's exact copy,
-            // confirmed against the ad's real text ahead of launch
-            // (2026-09-12) rather than a live lead — same never-fabricate
-            // discipline as the FAQ Hindi content, applied to text the
-            // owner supplied directly instead of a lead's own answer.
+            // लीड्स प्राप्त करना / ऑनलाइन बढ़ाना confirmed against leads
+            // #370/#371 (2026-09-09). रैंकिंग पाना / पक्का नहीं confirmed
+            // 2026-09-12 against 21 real leads (#125 onward, dating back
+            // to 2026-08-08) once this second Hindi ad variant's own
+            // real Graph API payload was pulled directly — the mixed
+            // English/Devanagari guesses first added the same day, from
+            // ad copy the owner had pasted rather than a real payload
+            // ("leads प्राप्त करना", "ranking पाना", "online बढ़ाना"),
+            // turned out not to match Meta's actual transliteration
+            // (रैंकिंग/बिज़नेस/एक्सपर्ट, not the Latin words) and were
+            // replaced here rather than left as dead, wrong guesses —
+            // see [[feedback-gotchas]].
         ];
 
         foreach ($extra as $key => $value) {
