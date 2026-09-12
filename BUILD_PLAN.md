@@ -304,6 +304,29 @@ what the lead's own goal/budget answers actually resolved to.
 - 18 new Pest tests. See CLAUDE.md's 2026-09-12 "service tag auto-derive"
   decisions log entry.
 
+## Milestone 17 — Website Growth Audit collects a website URL; GBP's own prefill/write-back gap fixed too (2026-09-12)
+Owner-requested, mirroring the GBP tier's own gbp_url capture: the ₹499
+Website Growth Audit checkout now asks for the website URL before
+payment. Building it surfaced two related gaps already present in the
+GBP flow, fixed in the same pass.
+- New `OfferKey::collectsWebsiteUrl()` (true only for
+  `WebsiteGrowthAudit`); `OfferCheckoutController::order()` requires/
+  stores it only for that offer; new `offer_purchases.website_url`
+  column (migration). Shared checkout script gained an optional
+  `websiteUrlFieldId` param, unused by the other 2 offers.
+- GBP's own checkout field now prefills from `Lead.gbp_url` when already
+  known (it never did); both `RecordOfferPurchase` and
+  `RecordVisibilityAuditPurchase` now write the checkout-captured link
+  back onto the matched Lead's own `website_url`/`gbp_url` field
+  (previously purchase-only, invisible outside that record) —
+  deliberately overwriting a stale value with a fresher one typed at
+  checkout.
+- Website Growth Audit's hero/final/sticky CTAs now scroll-and-focus the
+  new field instead of dispatching checkout directly, matching the GBP
+  page's own pattern.
+- 16 new/updated Pest tests. See CLAUDE.md's 2026-09-12 "website URL
+  capture + GBP prefill/write-back fix" decisions log entry.
+
 ## Deployment runbook (Hostinger Business)
 1. In hPanel create MySQL DB + user; note credentials.
 2. Enable SSH if available on the plan; otherwise use hPanel Git deploy or FTP.

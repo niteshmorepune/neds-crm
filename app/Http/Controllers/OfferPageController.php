@@ -19,7 +19,9 @@ use Illuminate\View\View;
  * CTA (same harmless ?lead= convention that page already uses) — present
  * only to attribute a later purchase/CTA click back to a specific Lead and
  * to prefill the checkout's contact details; never required, and this page
- * never renders anything about the lead itself.
+ * never renders anything about the lead itself. `leadWebsiteUrl` is passed
+ * for every offer for simplicity, but only the Website Growth Audit view
+ * actually renders it — see OfferKey::collectsWebsiteUrl().
  */
 class OfferPageController extends Controller
 {
@@ -58,6 +60,7 @@ class OfferPageController extends Controller
         return view($view, [
             'offerKey' => $offer,
             'leadId' => $lead?->id,
+            'leadWebsiteUrl' => $lead?->website_url,
             'razorpayConfigured' => $razorpay->configured(),
         ]);
     }

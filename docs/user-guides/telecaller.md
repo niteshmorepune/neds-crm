@@ -220,6 +220,10 @@ Visibility Audit ₹120, Lead Generation Funnel Audit ₹299, Website +
 Conversion Growth Audit ₹499, or Personalized Digital Growth Strategy
 ₹999) fits this lead, plus whether they've viewed their personal
 recommendation page, viewed the offer, clicked to pay, or already paid.
+The Website Growth Audit's own checkout page asks for the website URL
+directly (same idea as GBP asking for a GBP/Maps link) — it prefills from
+this lead's own Website URL if you've already captured it, and whatever
+gets submitted at checkout saves straight back onto that same field.
 
 **Every fresh Meta Ads lead also gets an automatic WhatsApp welcome**
 the moment its goal+budget resolve to one of the 3 non-GBP offers above

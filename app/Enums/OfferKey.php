@@ -80,6 +80,20 @@ enum OfferKey: string
         return $this !== self::GbpAudit;
     }
 
+    /**
+     * Whether checkout collects an extra website_url field before payment —
+     * true only for WebsiteGrowthAudit, the one offer this diagnostic
+     * actually needs a website to review. Mirrors GBP's own gbp_url
+     * capture on the visibility-audit checkout, but scoped to this single
+     * offer rather than every one of the 4 — Lead Generation Audit and
+     * Growth Strategy have no equivalent single piece of missing
+     * information to ask for.
+     */
+    public function collectsWebsiteUrl(): bool
+    {
+        return $this === self::WebsiteGrowthAudit;
+    }
+
     public function cta(): string
     {
         return match ($this) {

@@ -132,6 +132,21 @@ class RecordVisibilityAuditPurchase implements ShouldQueue
             ? $this->attachToExistingLead($lead, $tier)
             : $this->createLead($tier);
 
+        // Reflects whatever link was actually captured at checkout onto the
+        // Lead's own gbp_url/website_url fields (the same fields the
+        // Goal-capture panel reads/edits), not just onto this purchase row —
+        // a deliberately fresh value typed at checkout is worth overwriting
+        // a stale/blank one with. A no-op update() when unchanged (e.g. it
+        // was prefilled from the lead itself) fires no query/activity event.
+        $linkUpdates = array_filter([
+            'gbp_url' => $this->gbpUrl,
+            'website_url' => $this->websiteUrl,
+        ], fn (?string $v) => $v !== null);
+
+        if ($linkUpdates !== []) {
+            $lead->update($linkUpdates);
+        }
+
         // A pre-existing lead that was never assigned (e.g. it predates any
         // active Sales user) gets one more chance at the VA-Paid rule here.
         // createLead() below already resolves it for the brand-new-lead case

@@ -22,6 +22,7 @@ class OfferPurchase extends Model
         'payer_name',
         'payer_phone',
         'payer_email',
+        'website_url',
         'paid_at',
     ];
 

@@ -53,11 +53,76 @@ it('returns 503 from order() when Razorpay is not configured', function () {
     $this->postJson(route('offers.checkout.order', OfferKey::GrowthStrategy->value))->assertStatus(503);
 });
 
+// ──────────────────────────────────────────────────────────────────────────
+// website_url — collected only for WebsiteGrowthAudit, reflected onto the Lead
+// ──────────────────────────────────────────────────────────────────────────
+
+it('requires website_url to create an order for the Website Growth Audit offer', function () {
+    Http::fake();
+
+    $this->postJson(route('offers.checkout.order', OfferKey::WebsiteGrowthAudit->value), [])
+        ->assertStatus(422);
+});
+
+it('stores the submitted website_url on the order and the purchase for Website Growth Audit', function () {
+    Http::fake(['api.razorpay.com/v1/orders' => Http::response(['id' => 'order_wg1', 'amount' => 49900, 'currency' => 'INR'])]);
+
+    $this->postJson(route('offers.checkout.order', OfferKey::WebsiteGrowthAudit->value), ['website_url' => 'https://mysite.example.com'])
+        ->assertOk();
+
+    Http::assertSent(fn ($request) => $request['notes']['website_url'] === 'https://mysite.example.com');
+    expect(OfferPurchase::where('razorpay_order_id', 'order_wg1')->first()->website_url)->toBe('https://mysite.example.com');
+});
+
+it('does not require or store website_url for the other 2 non-GBP offers', function () {
+    Http::fake(['api.razorpay.com/v1/orders' => Http::response(['id' => 'order_lg9', 'amount' => 29900, 'currency' => 'INR'])]);
+
+    $this->postJson(route('offers.checkout.order', OfferKey::LeadGenerationAudit->value), [])->assertOk();
+
+    Http::assertSent(fn ($request) => ! array_key_exists('website_url', $request['notes']));
+    expect(OfferPurchase::where('razorpay_order_id', 'order_lg9')->first()->website_url)->toBeNull();
+});
+
+it('reflects a captured website_url onto the matched lead once the payment is recorded', function () {
+    $lead = Lead::factory()->create(['phone' => '9812300001', 'website_url' => null]);
+
+    $purchase = OfferPurchase::create([
+        'offer_key' => OfferKey::WebsiteGrowthAudit->value,
+        'price_paise' => 49900,
+        'status' => OfferPurchaseStatus::Pending,
+        'razorpay_order_id' => 'order_wg2',
+        'payer_phone' => '9812300001',
+        'website_url' => 'https://freshly-typed.example.com',
+    ]);
+
+    (new RecordOfferPurchase($purchase->id, 'pay_wg2'))->handle();
+
+    expect($lead->fresh()->website_url)->toBe('https://freshly-typed.example.com');
+});
+
+it('overwrites a stale existing website_url on the lead with the one captured at checkout', function () {
+    $lead = Lead::factory()->create(['phone' => '9812300002', 'website_url' => 'https://old-site.example.com']);
+
+    $purchase = OfferPurchase::create([
+        'offer_key' => OfferKey::WebsiteGrowthAudit->value,
+        'price_paise' => 49900,
+        'status' => OfferPurchaseStatus::Pending,
+        'razorpay_order_id' => 'order_wg3',
+        'lead_id' => $lead->id,
+        'payer_phone' => '9812300002',
+        'website_url' => 'https://corrected-site.example.com',
+    ]);
+
+    (new RecordOfferPurchase($purchase->id, 'pay_wg3'))->handle();
+
+    expect($lead->fresh()->website_url)->toBe('https://corrected-site.example.com');
+});
+
 it('attributes the order to a lead passed via ?lead= and logs CTA-clicked/payment-started events', function () {
-    Http::fake(['api.razorpay.com/v1/orders' => Http::response(['id' => 'order_lg2', 'amount' => 49900, 'currency' => 'INR'])]);
+    Http::fake(['api.razorpay.com/v1/orders' => Http::response(['id' => 'order_lg2', 'amount' => 29900, 'currency' => 'INR'])]);
     $lead = Lead::factory()->create(['name' => 'Ramesh Traders', 'phone' => '9876543210']);
 
-    $this->postJson(route('offers.checkout.order', OfferKey::WebsiteGrowthAudit->value).'?lead='.$lead->id)
+    $this->postJson(route('offers.checkout.order', OfferKey::LeadGenerationAudit->value).'?lead='.$lead->id)
         ->assertOk()
         ->assertJson(['contact_name' => 'Ramesh Traders']);
 

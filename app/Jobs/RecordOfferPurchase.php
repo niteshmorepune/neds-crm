@@ -67,6 +67,16 @@ class RecordOfferPurchase implements ShouldQueue
                 $purchase->update(['lead_id' => $lead->id]);
             }
 
+            // Reflects the checkout-captured link onto the Lead's own
+            // website_url field (same field the Goal-capture panel reads),
+            // not just onto this purchase row — a deliberately fresh value
+            // typed at checkout is worth overwriting a stale/blank one with.
+            // A no-op update() when it's unchanged (e.g. it was prefilled
+            // from the lead itself) fires no query/activity event.
+            if ($purchase->website_url !== null) {
+                $lead->update(['website_url' => $purchase->website_url]);
+            }
+
             $amount = number_format($purchase->price_paise / 100);
             $lead->notes()->create([
                 'user_id' => null,
