@@ -69,19 +69,25 @@
                         </div>
 
                         @php
-                            $goalCaptureNeedsAsking = $lead->goal === null
-                                || $lead->budget_range === null
-                                || ($lead->goal?->needsWebsiteOrGbp() && ! $lead->website_url && ! $lead->gbp_url);
+                            $goalBudgetKnown = $lead->goal !== null && $lead->budget_range !== null;
+                            $linksStillNeeded = $lead->goal?->needsWebsiteOrGbp() && ! $lead->website_url && ! $lead->gbp_url;
+                            $fullyCaptured = $goalBudgetKnown && ! $linksStillNeeded;
                         @endphp
-                        <div class="mt-3 rounded-md border border-gray-200 p-3" x-data="{ editing: {{ $goalCaptureNeedsAsking || $errors->any() ? 'true' : 'false' }} }">
-                            <div x-show="!editing" x-cloak class="flex items-center justify-between">
-                                <p class="text-xs text-gray-500">🎯 Goal, budget & links already captured.</p>
-                                <button type="button" x-on:click="editing = true" class="text-xs font-medium text-indigo-600 hover:underline">Edit</button>
-                            </div>
-                            <div x-show="editing" x-cloak>
-                                <p class="mb-2 text-xs font-medium text-gray-500">🎯 What are they looking for?</p>
-                                <form method="POST" action="{{ route('leads.goal-capture.update', $lead) }}" class="space-y-2">
-                                    @csrf
+                        <div class="mt-3 rounded-md border border-gray-200 p-3" x-data="{ editing: {{ (! $goalBudgetKnown || $errors->any()) ? 'true' : 'false' }} }">
+                            <form method="POST" action="{{ route('leads.goal-capture.update', $lead) }}" class="space-y-2">
+                                @csrf
+                                <div x-show="!editing" x-cloak class="flex items-center justify-between gap-2">
+                                    <p class="text-xs text-gray-500">
+                                        @if ($fullyCaptured)
+                                            🎯 Goal, budget & links already captured.
+                                        @else
+                                            🎯 Goal: {{ $lead->goal?->label() ?? '—' }} · Budget: {{ $lead->budget_range?->label() ?? '—' }}
+                                        @endif
+                                    </p>
+                                    <button type="button" x-on:click="editing = true" class="shrink-0 text-xs font-medium text-indigo-600 hover:underline">Edit</button>
+                                </div>
+                                <div x-show="editing" x-cloak class="space-y-2">
+                                    <p class="mb-2 text-xs font-medium text-gray-500">🎯 What are they looking for?</p>
                                     <select name="goal" class="block w-full rounded-md border-gray-300 text-sm shadow-sm">
                                         <option value="">— Not asked yet —</option>
                                         @foreach ($leadGoals as $goal)
@@ -94,11 +100,13 @@
                                             <option value="{{ $budgetRange->value }}" @selected($lead->budget_range === $budgetRange)>{{ $budgetRange->label() }}</option>
                                         @endforeach
                                     </select>
+                                </div>
+                                <div x-show="editing || {{ $linksStillNeeded ? 'true' : 'false' }}" x-cloak class="space-y-2">
                                     <input type="url" name="website_url" value="{{ old('website_url', $lead->website_url) }}" placeholder="Website URL" class="block w-full rounded-md border-gray-300 text-sm shadow-sm" />
                                     <input type="url" name="gbp_url" value="{{ old('gbp_url', $lead->gbp_url) }}" placeholder="Google Business Profile link" class="block w-full rounded-md border-gray-300 text-sm shadow-sm" />
                                     <button type="submit" class="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-500">Save</button>
-                                </form>
-                            </div>
+                                </div>
+                            </form>
                         </div>
 
                         @if ($lead->phone)
