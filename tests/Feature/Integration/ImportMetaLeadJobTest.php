@@ -394,7 +394,7 @@ it('parses a Hindi-language form\'s budget question/answer, real production text
     'range, averaged (lead #370)' => ['₹6,000_–_₹12,000', 900000],
 ]);
 
-it('maps a second Hindi-language ad variant\'s goal question/answer (2026-09-12 ad copy)', function (string $key, string $answer, LeadGoal $expected) {
+it('maps a second Hindi-language ad variant\'s goal question/answer, real production text (leads #125 onward, 2026-09-12)', function (string $key, string $answer, LeadGoal $expected) {
     fakeMetaGraphResponse([
         ['name' => $key, 'values' => [$answer]],
     ]);
@@ -405,21 +405,21 @@ it('maps a second Hindi-language ad variant\'s goal question/answer (2026-09-12 
     expect($lead->goal)->toBe($expected)
         ->and($lead->notes()->count())->toBe(0);
 })->with([
-    'generate leads' => [
-        'इनमेसे_आपके_business_की_सबसे_बड़ी_ज़रूरत_क्या_है?', 'अधिक_leads_प्राप्त_करना', LeadGoal::GenerateLeads,
+    'generate leads (lead #407)' => [
+        'इनमेसे_आपके_बिज़नेस_को_सबसे_बड़ी_ज़रूरत_क्या_है?', 'अधिक_लीड्स_प्राप्त_करना', LeadGoal::GenerateLeads,
     ],
-    'rank higher' => [
-        'इनमेसे_आपके_business_की_सबसे_बड़ी_ज़रूरत_क्या_है?', 'Google_पर_बेहतर_ranking_पाना', LeadGoal::RankHigher,
+    'rank higher (lead #398)' => [
+        'इनमेसे_आपके_बिज़नेस_को_सबसे_बड़ी_ज़रूरत_क्या_है?', 'google_पर_बेहतर_रैंकिंग_पाना', LeadGoal::RankHigher,
     ],
-    'grow business' => [
-        'इनमेसे_आपके_business_की_सबसे_बड़ी_ज़रूरत_क्या_है?', 'अपने_business_को_online_बढ़ाना', LeadGoal::GrowBusiness,
+    'grow business (lead #374)' => [
+        'इनमेसे_आपके_बिज़नेस_को_सबसे_बड़ी_ज़रूरत_क्या_है?', 'अपने_बिज़नेस_को_ऑनलाइन_बढ़ाना', LeadGoal::GrowBusiness,
     ],
-    'not sure' => [
-        'इनमेसे_आपके_business_की_सबसे_बड़ी_ज़रूरत_क्या_है?', 'पक्का_नहीं_–_Expert_की_सलाह_चाहिए', LeadGoal::NotSure,
+    'not sure (lead #391)' => [
+        'इनमेसे_आपके_बिज़नेस_को_सबसे_बड़ी_ज़रूरत_क्या_है?', 'पक्का_नहीं_–_एक्सपर्ट_की_सलाह_चाहिए', LeadGoal::NotSure,
     ],
 ]);
 
-it('parses a second Hindi-language ad variant\'s budget question into the right band (2026-09-12 ad copy)', function (string $answer, LeadBudgetRange $expected) {
+it('parses a second Hindi-language ad variant\'s budget question into the right band, real production text (leads #125 onward, 2026-09-12)', function (string $answer, LeadBudgetRange $expected) {
     fakeMetaGraphResponse([
         ['name' => 'इस_काम_के_लिए_आप_हर_महीने_कितना_खर्च_कर_सकते_हैं?', 'values' => [$answer]],
     ]);

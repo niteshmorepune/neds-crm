@@ -1763,3 +1763,61 @@ Older entries (2026-06-10 through 2026-08-25) moved to `docs/decisions-log-archi
   this ad's exact copy), full suite green (60/60 in this file), Pint
   clean. No migration, no deploy required beyond the next normal git pull
   (pure parsing-logic change, no schema/route/menu changes).
+- **2026-09-12 (same day, minutes later) — Correction, caught by the owner
+  from a real live lead (#407) within minutes of the deploy above: the
+  fallback check landed immediately, and it disagreed with the ad copy
+  the fix above was built from.** Investigated the real stored Note text
+  for #407 directly rather than guessing again: Meta's actual field
+  KEYS matched the new gates fine (`ज़रूरत`/`खर्च` both present, confirming
+  that half of the fix), but the goal option VALUES Meta actually sends
+  are pure-Devanagari transliterations — `google_पर_बेहतर_रैंकिंग_पाना`
+  (रैंकिंग, not the Latin "ranking" the pasted ad copy used) — not the
+  mixed English/Devanagari text the owner's pasted copy suggested. The
+  `ranking पाना`/`online बढ़ाना`/`leads प्राप्त करना` needles added minutes
+  earlier never matched anything real and were dead code from the start.
+  **Widened the read to all 21 real leads carrying this ad's answers**
+  (`whereHas('notes', ...'ज़रूरत'... 'खर्च'...)`), not just #407 — found
+  this ad has actually been running since **2026-08-08** (lead #125), not
+  newly launched as the owner's question implied; 19 of the 21 are
+  already `contacted` by staff (who'd evidently been reading the Hindi
+  text and hand-setting goal/budget_range through the existing picker UI
+  as a manual workaround), 2 are `lost`, only #407 itself was untouched.
+  Replaced the 3 wrong guesses with the confirmed real phrase
+  (`रैंकिंग पाना`) and removed the ones that had no real counterpart at
+  all (`leads प्राप्त करना`/`online बढ़ाना` — GenerateLeads/GrowBusiness's
+  ALREADY-confirmed #370/#371 needles cover the real Devanagari text
+  fine on their own). `पक्का नहीं` (NotSure) was independently confirmed
+  correct against real leads #391/#404 (Meta's real answer is
+  `पक्का_नहीं_–_एक्सपर्ट_की_सलाह_चाहिए` — एक्सपर्ट, not Latin "Expert",
+  but "पक्का नहीं" alone matches either way). Tests rewritten against
+  these 4 real leads' exact stored text instead of the ad-copy guesses.
+  **Real lesson, not just this one incident**: ad copy a person retypes
+  from memory/screenshot when relaying it is not the same ground truth
+  as the literal bytes Meta's Graph API actually sends — the earlier
+  "confirmed against the ad's real copy" framing in the entry above
+  should have read "confirmed against the OWNER's transcription of the
+  copy," a materially weaker claim; the very next real lead is a strictly
+  better and cheap-to-get source of truth once the field is genuinely
+  live, and should be checked before treating a pasted question as
+  ground truth for a needle addition, not just relied on after the fact
+  when something looks wrong. See [[feedback-gotchas]].
+  **Backfill, data-only, explicitly no messaging**: confirmed via
+  AskUserQuestion that the 16 affected leads (of the 21) missing at
+  least one of goal/budget_range/estimated_value should be corrected on
+  the Lead record itself only — never calling
+  `GenerateLeadRecommendation::handle()` for the backfill, since that
+  would dispatch a real WhatsApp "here's your recommendation" message via
+  `SendOfferRecommendationReadyJob`/the VA invite job to leads who, in 19
+  of 21 cases, staff already personally contacted (or, in 2 cases,
+  already marked Lost) — an automated message arriving on top of that
+  would read as a confusing, unprompted re-engagement, not a fix. Ran via
+  the standard read/write/reflection scratch-script pattern (private
+  `matchGoal()`/`matchBudgetRange()`/`matchBudget()` re-invoked via
+  Reflection against each lead's own already-stored "Additional form
+  answers" note text, values written to the Lead only where the target
+  field was still null — 5 of the 21 already had both fields staff-set
+  by hand and were correctly left untouched).
+  The 8 goal/budget Pest tests added minutes earlier were rewritten
+  against these 4 real leads' exact stored text (no new tests added this
+  round — same 60/60 in this file), Pint clean, deployed same session
+  (`git pull`+view-cache only, no migration).
