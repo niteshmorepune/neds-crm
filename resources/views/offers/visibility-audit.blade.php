@@ -166,7 +166,7 @@ h2{font-size:clamp(30px,4vw,45px);line-height:1.1;letter-spacing:-.04em;margin:0
       @if ($razorpayConfigured)
         <div class="gbpfield">
           <label for="gbp_url">Your Google Business Profile / Maps link</label>
-          <input type="url" id="gbp_url" name="gbp_url" placeholder="https://g.co/kgs/... or your Maps link" required>
+          <input type="url" id="gbp_url" name="gbp_url" value="{{ $leadGbpUrl ?? '' }}" placeholder="https://g.co/kgs/... or your Maps link" required>
         </div>
         <button type="button" class="primary buybtn" x-data x-on:click="$dispatch('open-va-checkout')">{{ $ctaLabel }}</button>
       @else

@@ -5,6 +5,12 @@
     $leadId (nullable int) from the including view; open the checkout by
     dispatching a window "open-offer-checkout" event from the page's own CTA
     button (x-on:click="$dispatch('open-offer-checkout')").
+
+    Pass $websiteUrlFieldId (a DOM id string) when this offer collects an
+    extra field before payment — currently only Website Growth Audit's own
+    website_url input (OfferKey::collectsWebsiteUrl()). Omitted entirely for
+    Lead Generation Audit/Growth Strategy, which send no extra body at all,
+    unchanged from before this field existed.
 --}}
 @if ($razorpayConfigured)
     <div x-data="offerCheckout({
@@ -12,6 +18,7 @@
             verifyUrl: '{{ route('offers.checkout.verify', $offerKey->value) }}',
             failedUrl: '{{ route('offers.checkout.failed', $offerKey->value) }}',
             leadId: {{ $leadId ?? 'null' }},
+            websiteUrlFieldId: @json($websiteUrlFieldId ?? null),
          })"
          x-on:open-offer-checkout.window="pay()">
         <div x-show="loading" style="display:none;position:fixed;inset:0;z-index:50;align-items:center;justify-content:center;background:rgba(7,29,73,.45)">
@@ -24,7 +31,7 @@
     </div>
 
     <script>
-        function offerCheckout({ orderUrl, verifyUrl, failedUrl, leadId }) {
+        function offerCheckout({ orderUrl, verifyUrl, failedUrl, leadId, websiteUrlFieldId }) {
             return {
                 loading: false,
                 error: null,
@@ -48,13 +55,28 @@
                 async pay() {
                     this.error = null;
                     this.success = false;
+
+                    let websiteUrl = null;
+                    if (websiteUrlFieldId) {
+                        const field = document.getElementById(websiteUrlFieldId);
+                        websiteUrl = field ? field.value.trim() : '';
+                        if (! websiteUrl) {
+                            this.error = 'Please enter your website URL first.';
+                            field?.focus();
+                            return;
+                        }
+                    }
+
                     this.loading = true;
                     try {
                         await this.loadCheckoutScript();
 
                         const orderRes = await fetch(this.withLead(orderUrl), {
                             method: 'POST',
-                            headers: { 'X-CSRF-TOKEN': this.csrfToken(), 'Accept': 'application/json' },
+                            headers: websiteUrl
+                                ? { 'X-CSRF-TOKEN': this.csrfToken(), 'Accept': 'application/json', 'Content-Type': 'application/json' }
+                                : { 'X-CSRF-TOKEN': this.csrfToken(), 'Accept': 'application/json' },
+                            ...(websiteUrl ? { body: JSON.stringify({ website_url: websiteUrl }) } : {}),
                         });
                         const order = await orderRes.json();
                         if (! orderRes.ok) throw new Error(order.message || 'Could not start the payment.');

@@ -1553,3 +1553,89 @@ Older entries (2026-06-10 through 2026-08-25) moved to `docs/decisions-log-archi
   in a different guise. Both methods now also exclude any lead with a
   resolved recommendation. `manager.md`'s "Awaiting service tag" callout
   description updated to match. 2 new Pest tests for this second fix.
+- **2026-09-12 (later same day) — Website Growth Audit checkout now
+  collects the website URL, mirroring the GBP tier's own gbp_url capture
+  — plus a matching fix to a gap that turned out to also exist on GBP.**
+  Owner's own observation: *"Like the way we are capturing Google
+  Business Profile / Maps link on visibility page before paying Rs 120,
+  similarly i think website url to capture on
+  .../offers/website-growth-audit and there links to be reflected on
+  crm."* Investigated before building: `OfferPurchase` (the table behind
+  all 3 non-GBP offers) had no `website_url` column at all, and the
+  Website Growth Audit checkout sent no extra body — a genuine gap,
+  exactly as the owner suspected. Also found two closely related gaps
+  while checking how GBP's own gbp_url capture actually behaves end to
+  end: (1) the GBP checkout field never prefilled from `Lead.gbp_url`
+  even when a telecaller (or the wadesk after-hours assistant) had
+  already captured it via the separate Goal-capture flow — it always
+  asked fresh; (2) neither GBP's nor (the new) Website Growth Audit's
+  checkout-captured link ever wrote back onto the Lead's own
+  `gbp_url`/`website_url` fields — it only ever lived on the purchase
+  row, invisible outside that one purchase's own detail. Confirmed 3
+  scope decisions via AskUserQuestion before building: prefill +
+  only-ask-if-blank (not always-ask-fresh), write the captured link back
+  onto the Lead (not purchase-only), and fix GBP's own prefill gap in the
+  same pass rather than leaving it for later.
+  New `OfferKey::collectsWebsiteUrl()` (true only for
+  `WebsiteGrowthAudit` — Lead Generation Audit and Growth Strategy have
+  no single missing piece of information to ask for, so neither gets this
+  field). `OfferCheckoutController::order()` now validates `website_url`
+  as required only when the resolved offer's `collectsWebsiteUrl()` is
+  true, carries it in the Razorpay order's own `notes`, and stores it on
+  the new `offer_purchases.website_url` column (mirrors
+  `visibility_audit_purchases.gbp_url`'s shape exactly). The shared
+  `offers/partials/checkout-script.blade.php` gained an optional
+  `websiteUrlFieldId` parameter — when a page passes one (only
+  `website-growth-audit.blade.php` does), `pay()` blocks with an inline
+  error and focuses the field before ever opening Checkout.js, same
+  guard shape as the VA-specific script's own `gbpUrlValue()` check;
+  omitted entirely for the other 2 offers, which send no extra body at
+  all, byte-for-byte unchanged from before this field existed.
+  `OfferPageController::render()` (shared across all 3 offer pages) now
+  also passes `leadWebsiteUrl` to every view for simplicity, though only
+  the Website Growth Audit template actually renders it — same harmless
+  "pass it everywhere, only one page uses it" precedent
+  `VisibilityAuditOfferController::show()` already established for its
+  own new `leadGbpUrl`.
+  **The two related GBP-side fixes, applied in the same pass**:
+  `VisibilityAuditOfferController::show()` now fetches the full `Lead`
+  model (previously only its id) and passes `leadGbpUrl` so the checkout
+  field's own `value="{{ $leadGbpUrl ?? '' }}"` prefills correctly.
+  `RecordOfferPurchase`/`RecordVisibilityAuditPurchase` (both jobs) now
+  write the checkout-captured link back onto the matched Lead's own
+  `website_url`/`gbp_url` field whenever one was captured — deliberately
+  **overwrites** any existing stale value on the Lead (a value someone
+  just deliberately typed at checkout is a stronger, fresher signal than
+  whatever was there before), and is a true no-op (no query, no activity
+  log entry) when the submitted value matches what was already
+  there — the common case once prefill is working, since the payer
+  usually just leaves the field as shown. Reused the exact same `update()`
+  (not `saveQuietly()`) the 2026-09-08 Goal-capture milestone already
+  chose for this same pair of fields, since capturing a real link is
+  itself genuine evidence of contact and should refresh
+  `lastTouchedAt()`, not be excluded from it.
+  Also fixed, as a direct consequence of adding a required field to a
+  page that previously had none: the hero, final-section, and sticky
+  mobile-bar CTAs on `website-growth-audit.blade.php` previously
+  dispatched the checkout event directly (there was nothing to fill in
+  first) — now they scroll to the buybox and focus the `website_url`
+  field instead, exactly mirroring the pattern already established on
+  the GBP page for the same reason; only the buybox's own dedicated Pay
+  button still dispatches checkout directly. The hero CTA also gained a
+  `$razorpayConfigured` gate + "Coming soon" fallback it had never had
+  (a small, pre-existing, unrelated gap fixed along the way since it sat
+  directly in the code being touched).
+  16 new/updated Pest tests (`OfferCheckoutTest` — website_url required
+  only for Website Growth Audit, stored on the order/purchase, written
+  back to the Lead and overwriting a stale value, untouched for the
+  other 2 offers; `OfferPagesRenderTest` — the field renders/prefills
+  correctly and is absent from the other 2 pages;
+  `VisibilityAuditCheckoutTest` — GBP's own prefill and write-back/
+  overwrite covered too; one pre-existing `OfferCheckoutTest` case
+  switched from `WebsiteGrowthAudit` to `LeadGenerationAudit` as its
+  example offer, since it predates this field and was never actually
+  testing anything related to it), full suite green, Pint clean. New
+  migration (`offer_purchases.website_url`, nullable), migrated locally.
+  Docs: `sales.md`/`telecaller.md` extended with a short note on the new
+  field's prefill/write-back behavior, right next to the existing
+  Goal-capture section both guides already had.

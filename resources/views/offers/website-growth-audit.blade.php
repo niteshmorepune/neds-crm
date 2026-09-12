@@ -11,6 +11,9 @@
 <meta property="og:description" content="Aapki website sirf dikh rahi hai — ya business bhi generate kar rahi hai? ₹499 mein pata karein.">
 <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js" defer></script>
 @include('offers.partials.styles')
+<style>
+.urlfield{margin:17px 0}.urlfield label{display:block;font-size:13px;font-weight:800;color:#344054;margin-bottom:6px}.urlfield input{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:11px;font-size:14px;color:var(--ink)}.urlfield input:focus{outline:2px solid var(--blue2);outline-offset:1px}
+</style>
 </head>
 <body>
 
@@ -35,7 +38,11 @@
         <li>WhatsApp, Calls &amp; Forms</li>
         <li>Local SEO Signals</li>
       </ul>
-      <a class="primary" href="#buy" x-data x-on:click.prevent="$dispatch('open-offer-checkout'); document.getElementById('buy').scrollIntoView({behavior:'smooth'})">{{ $ctaLabel }}</a>
+      @if ($razorpayConfigured)
+        <a class="primary" href="#buy" x-data x-on:click.prevent="document.getElementById('buy').scrollIntoView({behavior:'smooth'}); document.getElementById('website_url')?.focus()">{{ $ctaLabel }}</a>
+      @else
+        <span class="primary disabled">Coming soon</span>
+      @endif
       <div class="micro">One-time audit · <b>Secure online payment</b> · Digital report</div>
     </div>
     <div class="hero-card">
@@ -102,6 +109,10 @@
       </div>
       <div class="price">₹499</div>
       @if ($razorpayConfigured)
+        <div class="urlfield">
+          <label for="website_url">Your website URL</label>
+          <input type="url" id="website_url" name="website_url" value="{{ $leadWebsiteUrl ?? '' }}" placeholder="https://yourbusiness.com" required>
+        </div>
         <button type="button" class="primary buybtn" x-data x-on:click="$dispatch('open-offer-checkout')">{{ $ctaLabel }}</button>
       @else
         <span class="primary disabled buybtn">Coming soon</span>
@@ -159,7 +170,7 @@
     <h2>पता करें आपकी website <em style="color:var(--yellow);font-style:normal">business</em> generate कर रही है या नहीं</h2>
     <p>एक ₹499 का diagnostic step, जो आपकी website को actual growth engine बनाने की दिशा दिखाता है.</p>
     @if ($razorpayConfigured)
-      <button type="button" class="primary" x-data x-on:click="$dispatch('open-offer-checkout')">{{ $ctaLabel }}</button>
+      <a class="primary" href="#buy" x-data x-on:click.prevent="document.getElementById('buy').scrollIntoView({behavior:'smooth'}); document.getElementById('website_url')?.focus()">{{ $ctaLabel }}</a>
     @else
       <span class="primary disabled">Coming soon</span>
     @endif
@@ -173,11 +184,11 @@
 @if ($razorpayConfigured)
   <div class="sticky">
     <div class="sticky-price">Website Growth Audit<strong>₹499</strong></div>
-    <button type="button" class="primary" x-data x-on:click="$dispatch('open-offer-checkout')">Get Audit →</button>
+    <a class="primary" href="#buy" x-data x-on:click.prevent="document.getElementById('buy').scrollIntoView({behavior:'smooth'}); document.getElementById('website_url')?.focus()">Get Audit →</a>
   </div>
 @endif
 
-@include('offers.partials.checkout-script')
+@include('offers.partials.checkout-script', ['websiteUrlFieldId' => 'website_url'])
 
 </body>
 </html>

@@ -33,13 +33,22 @@ class OfferCheckoutController extends Controller
             return response()->json(['message' => 'Online payment is not available right now.'], 503);
         }
 
+        $websiteUrl = null;
+
+        if ($offer->collectsWebsiteUrl()) {
+            $data = $request->validate(['website_url' => ['required', 'string', 'max:500']]);
+            $websiteUrl = $data['website_url'];
+        }
+
         $lead = $this->resolveLead($request);
 
-        $order = $razorpay->createOrder(
-            $offer->priceInPaise(),
-            'offer-'.Str::uuid(),
-            ['offer_key' => $offer->value, 'lead_id' => (string) ($lead->id ?? '')],
-        );
+        $notes = ['offer_key' => $offer->value, 'lead_id' => (string) ($lead->id ?? '')];
+
+        if ($websiteUrl !== null) {
+            $notes['website_url'] = $websiteUrl;
+        }
+
+        $order = $razorpay->createOrder($offer->priceInPaise(), 'offer-'.Str::uuid(), $notes);
 
         if ($order === null) {
             return response()->json(['message' => 'Could not start the payment. Please try again shortly.'], 502);
@@ -54,6 +63,7 @@ class OfferCheckoutController extends Controller
             'payer_name' => $lead?->name,
             'payer_phone' => $lead?->phone,
             'payer_email' => $lead?->email,
+            'website_url' => $websiteUrl,
         ]);
 
         if ($lead !== null) {

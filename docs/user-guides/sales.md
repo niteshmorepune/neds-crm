@@ -419,7 +419,13 @@ your "follow-ups due" list — same list, no separate place to look.
   ₹999) we'd recommend for this exact goal/budget combination, plus
   whether the lead has actually viewed their personal recommendation page,
   viewed the offer page, clicked the buy button, or paid — so you know
-  exactly where they are in that funnel before you call.
+  exactly where they are in that funnel before you call. **The Website
+  Growth Audit's own checkout page also asks for the website URL directly**
+  (same idea as the GBP tier asking for a GBP/Maps link) — it prefills from
+  the lead's own Website URL field above when already known, so a lead who
+  already gave it to you isn't asked to retype it, and whatever they submit
+  at checkout is saved straight back onto this same field once the
+  payment goes through.
 - On the Notes field, click **Dictate** and speak instead of typing — your
   browser transcribes it live into the box, and you can still edit before
   saving. (Chrome/Edge only; the button doesn't appear in browsers that

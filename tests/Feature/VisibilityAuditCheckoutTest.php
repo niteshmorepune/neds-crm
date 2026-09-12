@@ -80,6 +80,26 @@ it('verifies a correctly signed payment and records the purchase, matching the l
     expect($purchase->tier)->toBe(VisibilityAuditTier::Gbp);
     expect($purchase->gbp_url)->toBe('https://g.co/kgs/xyz');
     expect($purchase->lead_id)->toBe($lead->id);
+    expect($lead->fresh()->gbp_url)->toBe('https://g.co/kgs/xyz');
+});
+
+it('overwrites a stale existing gbp_url on the matched lead with the one captured at checkout', function () {
+    $lead = Lead::factory()->create(['phone' => '9123456790', 'gbp_url' => 'https://g.co/kgs/old']);
+
+    Http::fake(['api.razorpay.com/v1/orders/order_va9' => Http::response([
+        'id' => 'order_va9',
+        'amount' => 12000,
+        'notes' => ['tier' => 'gbp', 'gbp_url' => 'https://g.co/kgs/corrected', 'lead_id' => (string) $lead->id],
+    ])]);
+    $signature = hash_hmac('sha256', 'order_va9|pay_va9', 'test-key-secret');
+
+    $this->postJson(route('offers.visibility-audit.verify'), [
+        'razorpay_order_id' => 'order_va9',
+        'razorpay_payment_id' => 'pay_va9',
+        'razorpay_signature' => $signature,
+    ])->assertOk();
+
+    expect($lead->fresh()->gbp_url)->toBe('https://g.co/kgs/corrected');
 });
 
 it('rejects verify with a bad signature', function () {
