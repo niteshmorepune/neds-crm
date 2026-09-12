@@ -1821,3 +1821,42 @@ Older entries (2026-06-10 through 2026-08-25) moved to `docs/decisions-log-archi
   against these 4 real leads' exact stored text (no new tests added this
   round — same 60/60 in this file), Pint clean, deployed same session
   (`git pull`+view-cache only, no migration).
+- **2026-09-12 (same day, right after) — "What are they looking for?"
+  capture panel on the Lead page collapses to a one-line summary once
+  goal/budget/links are already known, instead of always showing the
+  full edit form.** Owner flagged it from a real screenshot (lead #406,
+  a Meta lead whose goal/budget/est. value were ALL already correctly
+  auto-captured from the form): the panel unconditionally rendered two
+  `<select>` dropdowns (pre-filled, duplicating the Goal:/Budget: lines
+  already shown in the header two lines above) plus Website URL/GBP link
+  inputs (ALSO duplicating the header's own Website:/GBP link: lines) —
+  4 fields shown twice on the same page, "eating space" for no reason
+  once a Meta lead's own form already answered them. `leads/show.blade.php`
+  now computes `$goalCaptureNeedsAsking` (true when goal is null, OR
+  budget_range is null, OR the goal needs a Website/GBP link that isn't
+  captured yet) and wraps the panel in `x-data="{ editing: ... }"` —
+  matching this exact file's own existing Alpine toggle convention (the
+  Reassign panel, `x-data="{ open: false }"` + `x-show` + `x-cloak`) —
+  collapsed to "🎯 Goal, budget & links already captured." + an Edit
+  link when nothing is missing, expanded to the original full form
+  otherwise (or immediately if validation errors exist, so a rejected
+  submission doesn't disappear). The dropdowns/inputs and their pre-fill
+  values are unchanged — this only wraps them in a show/hide toggle, no
+  new fields, no route/controller change. **Real, but expected, gotcha
+  hit writing the tests**: `x-show` keeps BOTH the collapsed-summary and
+  expanded-form markup in the server-rendered HTML at all times (Alpine
+  only toggles visibility client-side after JS runs) — so a Pest
+  `assertDontSee` on the collapsed-state summary text always fails
+  regardless of state, since that div is unconditionally present; the
+  correct thing to assert from an HTTP test is the PHP-computed
+  `editing: true`/`editing: false` value serialized into the `x-data`
+  attribute itself, not which block is visually shown. 3 new Pest tests
+  written against that signal (collapses when everything's known, stays
+  expanded when goal or budget is missing, stays expanded when a
+  link-needing goal has no website/gbp yet) plus the 3 pre-existing
+  capture-panel tests re-verified unaffected, full suite green, Pint
+  clean. Visually confirmed both states end-to-end in a real local
+  browser session (Alpine actually toggling, not just the HTML assertion)
+  before shipping — a throwaway `SMOKETEST Visual Check` lead created,
+  clicked through both collapsed and expanded states, then deleted. No
+  migration, no route change — deploy is `git pull`+view-cache only.

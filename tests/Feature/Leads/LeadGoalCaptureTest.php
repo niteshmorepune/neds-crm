@@ -101,6 +101,44 @@ it('does not show the website/gbp banner once a link has already been captured',
         ->assertDontSee('Ask for their Website or GBP link');
 });
 
+it('collapses the goal/links capture panel to a summary once everything needed is already captured', function () {
+    // Both the collapsed-summary and expanded-form markup are always present
+    // in the server-rendered HTML — Alpine's x-show only toggles visibility
+    // client-side after JS runs, so a Pest HTTP test (no JS execution) can
+    // only assert on the PHP-computed `editing:` state in x-data, not on
+    // which block is actually visible.
+    $manager = User::factory()->role(UserRole::Manager)->create();
+    $lead = Lead::factory()->create(['goal' => LeadGoal::NotSure, 'budget_range' => LeadBudgetRange::Under3000]);
+
+    $this->actingAs($manager)->get(route('leads.show', $lead))
+        ->assertOk()
+        ->assertSee('Goal, budget & links already captured.', false)
+        ->assertSee('editing: false');
+});
+
+it('keeps the goal/links capture panel expanded while something is still missing', function () {
+    $manager = User::factory()->role(UserRole::Manager)->create();
+    $lead = Lead::factory()->create(['goal' => LeadGoal::NotSure, 'budget_range' => null]);
+
+    $this->actingAs($manager)->get(route('leads.show', $lead))
+        ->assertOk()
+        ->assertSee('editing: true');
+});
+
+it('keeps the goal/links capture panel expanded while a link-needing goal has no website/gbp yet', function () {
+    $manager = User::factory()->role(UserRole::Manager)->create();
+    $lead = Lead::factory()->create([
+        'goal' => LeadGoal::GrowBusiness,
+        'budget_range' => LeadBudgetRange::Under3000,
+        'website_url' => null,
+        'gbp_url' => null,
+    ]);
+
+    $this->actingAs($manager)->get(route('leads.show', $lead))
+        ->assertOk()
+        ->assertSee('editing: true');
+});
+
 it('shows a schedule-a-call banner when the lead is Not Sure', function () {
     $manager = User::factory()->role(UserRole::Manager)->create();
     $lead = Lead::factory()->create(['goal' => LeadGoal::NotSure]);
