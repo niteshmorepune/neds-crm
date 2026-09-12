@@ -39,7 +39,7 @@ it('renders the dashboard for a Manager with real data', function () {
 
     $this->actingAs($manager)->get(route('reports.visibility-audit-funnel'))
         ->assertOk()
-        ->assertSee('Visibility Audit Funnel Dashboard')
+        ->assertSee('Offer Funnel Dashboard')
         ->assertSee('Eligible leads');
 });
 
@@ -242,4 +242,90 @@ it('shows "No lead matched" for an anonymous purchase with no lead_id', function
         ->assertOk()
         ->assertSee('Anonymous Payer')
         ->assertSee('No lead matched');
+});
+
+// ──────────────────────────────────────────────────────────────────────────
+// "All offers" unified section (PR #182 unification + this milestone)
+// ──────────────────────────────────────────────────────────────────────────
+
+it('shows the all-offers unified section, including a non-GBP offer recommended in the window', function () {
+    $lead = Lead::factory()->create([
+        'name' => 'Priya Non-GBP Lead',
+        'recommendation_offer_key' => 'growth_strategy',
+        'recommendation_generated_at' => now(),
+    ]);
+
+    $manager = User::factory()->role(UserRole::Manager)->create();
+
+    $this->actingAs($manager)->get(route('reports.visibility-audit-funnel'))
+        ->assertOk()
+        ->assertSee('All offers')
+        ->assertSee('Growth Strategy')
+        ->assertSee('GBP Visibility Audit')
+        ->assertSee('By goal');
+});
+
+it('links a non-GBP by-offer cell to the offer-leads drill-down, and a GBP cell to the existing leads drill-down', function () {
+    Lead::factory()->create(['recommendation_offer_key' => 'growth_strategy', 'recommendation_generated_at' => now()]);
+
+    $manager = User::factory()->role(UserRole::Manager)->create();
+
+    $response = $this->actingAs($manager)->get(route('reports.visibility-audit-funnel'));
+
+    $response->assertOk();
+    // href attributes are HTML-escaped by Blade ({{ }}), so `&` becomes
+    // `&amp;` in the rendered markup — assert on the path + escaped query
+    // pieces rather than a raw route() string with literal `&`.
+    $response->assertSee('/reports/visibility-audit-funnel/offer-leads?offer=growth_strategy', false);
+    $response->assertSee('stage=recommended', false);
+    $response->assertSee('/reports/visibility-audit-funnel/leads?stage=eligible', false);
+});
+
+// ──────────────────────────────────────────────────────────────────────────
+// offerLeads() drill-down — the non-GBP counterpart to leads()
+// ──────────────────────────────────────────────────────────────────────────
+
+it('redirects a guest away from the offer-leads drill-down', function () {
+    $this->get(route('reports.visibility-audit-funnel.offer-leads', ['offer' => 'growth_strategy', 'stage' => 'recommended']))->assertRedirect('/login');
+});
+
+it('forbids a Sales user from the offer-leads drill-down', function () {
+    $sales = User::factory()->role(UserRole::Sales)->create();
+
+    $this->actingAs($sales)->get(route('reports.visibility-audit-funnel.offer-leads', ['offer' => 'growth_strategy', 'stage' => 'recommended']))->assertForbidden();
+});
+
+it('404s the offer-leads drill-down for GbpAudit — that offer stays on the existing leads() route', function () {
+    $manager = User::factory()->role(UserRole::Manager)->create();
+
+    $this->actingAs($manager)->get(route('reports.visibility-audit-funnel.offer-leads', ['offer' => 'gbp_audit', 'stage' => 'recommended']))->assertNotFound();
+});
+
+it('404s the offer-leads drill-down for an unknown offer', function () {
+    $manager = User::factory()->role(UserRole::Manager)->create();
+
+    $this->actingAs($manager)->get(route('reports.visibility-audit-funnel.offer-leads', ['offer' => 'not-a-real-offer', 'stage' => 'recommended']))->assertNotFound();
+});
+
+it('404s the offer-leads drill-down for an unknown stage', function () {
+    $manager = User::factory()->role(UserRole::Manager)->create();
+
+    $this->actingAs($manager)->get(route('reports.visibility-audit-funnel.offer-leads', ['offer' => 'growth_strategy', 'stage' => 'not-a-real-stage']))->assertNotFound();
+});
+
+it('lists the leads behind a non-GBP offer stage for a Manager', function () {
+    $lead = Lead::factory()->create([
+        'name' => 'Priya Growth Strategy Lead',
+        'phone' => '+91 98765 43210',
+        'recommendation_offer_key' => 'growth_strategy',
+        'recommendation_generated_at' => now(),
+        'recommendation_viewed_at' => now(),
+    ]);
+
+    $manager = User::factory()->role(UserRole::Manager)->create();
+
+    $this->actingAs($manager)->get(route('reports.visibility-audit-funnel.offer-leads', ['offer' => 'growth_strategy', 'stage' => 'viewed']))
+        ->assertOk()
+        ->assertSee('Priya Growth Strategy Lead')
+        ->assertSee('Growth Strategy');
 });

@@ -1323,3 +1323,69 @@ Older entries (2026-06-10 through 2026-08-25) moved to `docs/decisions-log-archi
   vars. WhatsApp template submission for the 3 new templates is a
   separate follow-up step with the owner (same process as every prior
   template), not done in this session.
+- **2026-09-12 (later same day) — Milestone 14: team-wide Offer Funnel
+  dashboard, folded into the existing VA dashboard page rather than a new
+  sidebar entry.** The obvious next step once Milestone 13 unified the
+  routing: the reporting was still split in two (VA's own dashboard for
+  GBP, nothing at all for the other 3 offers — a gap the Milestone 12
+  backlog note already flagged as a deliberate fast-follow). Confirmed 3
+  scope decisions via AskUserQuestion before building: (1) a genuinely
+  UNIFIED view across all 4 offers, not a 3-offer-only page living
+  alongside the untouched VA one — reconciling `OfferPurchase` and
+  `VisibilityAuditPurchase` (two separate tables, no shared parent) into
+  one summary/trend/by-offer table; (2) GBP shown top-of-funnel only
+  (recommended/notified/viewed/reached-offer/paid, same 5 columns as the
+  other 3) — its own richer post-purchase pipeline (audit_ready →
+  gmeet_held → report_sent) stays exclusively on the pre-existing
+  GBP-detail section below, no duplication; (3) folded into the existing
+  `reports/visibility-audit-funnel` page (same route, same
+  `menu.access:visibility-audit-funnel` key) rather than a new sidebar
+  entry — lower risk than it sounds, since nothing about the existing
+  GBP-specific section's own controller logic or tests needed to change,
+  only new sections added alongside it.
+  `App\Services\OfferFunnelMetrics` gained `funnelSummary(?OfferKey, from,
+  to)` (5-stage shape — recommended → notified → viewed → reached_offer →
+  paid — deliberately matching `VisibilityAuditFunnelMetrics::
+  funnelSummary()`'s own 5 keys one-for-one so a GBP row and a non-GBP row
+  can share one table; this offer family's own "viewed the offer's own
+  page" stage is folded into "recommended" for this shared shape, since
+  GBP has no separate recommendation-page-vs-offer-page split to mirror —
+  see the class's own docblock), `byOfferBreakdown()` (one row per non-GBP
+  offer), `trend()` (daily recommended/paid, Asia/Kolkata-bucketed, same
+  `Carbon\CarbonPeriod` gotcha as every other trend method in this app),
+  `leadsForStage()` (drill-down), and `byGoalBudgetBreakdown()` (the one
+  genuinely offer-agnostic method here — `Lead.goal`/`budget_range` are
+  shared columns regardless of which offer ends up recommended, so this
+  queries `Lead` directly rather than going through either offer-specific
+  table; "paid" is a union of both `OfferPurchase` and
+  `VisibilityAuditPurchase` lead ids, the one place the two tables are
+  explicitly reconciled).
+  `VisibilityAuditDashboardController::index()` now also injects
+  `OfferFunnelMetrics`, builds the by-offer table (GBP's own row remapped
+  from `VisibilityAuditFunnelMetrics::funnelSummary()` via a new
+  `remapGbpSummary()`), sums all 4 rows into one "all offers" summary
+  (`sumStages()` — recomputes stage-to-stage percentages from the summed
+  counts rather than averaging per-offer percentages, which would be
+  wrong at very different offer volumes), and merges the two trend series
+  by array index (`combineTrends()` — both trend() methods already
+  iterate the identical `CarbonPeriod` for the same `$from`/`$to`, so
+  zipping by index is safe and avoids a second date-string re-match). New
+  `offerLeads()` action + `reports/offer-funnel-leads.blade.php` view for
+  the 3 non-GBP offers' own drill-down; GBP's cells in the new by-offer
+  table link to the existing `leads()` action instead, via a small
+  `$gbpStageMap` in the view (recommended→eligible, notified→invited,
+  viewed→landing_viewed, reached_offer→checkout_viewed, paid→paid).
+  Sidebar label renamed "VA Funnel Analytics" → "Offer Funnel Analytics"
+  (menu **key** and route name deliberately left unchanged — only the
+  seeder's `label` field and the page's own title/H1 changed) to match
+  the page's now-broader scope; `docs/user-guides/manager.md`,
+  `admin.md`, and `integrations.md` updated for both the rename and the
+  new "All offers" section (grepped every guide for the old label first,
+  per this project's own "check every guide, not just the obvious one"
+  gotcha).
+  45 new/updated Pest tests (14 new `OfferFunnelMetricsTest` cases + 8 new
+  `VisibilityAuditDashboardTest` cases, the existing 23 dashboard tests
+  otherwise unchanged apart from one renamed-title assertion), full suite
+  green, Pint clean. No new migrations — every column/table this reads
+  already existed from Milestone 12/13. Menu re-seed needed on deploy
+  (label change only, no new item/route).

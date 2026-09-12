@@ -615,7 +615,7 @@ All integration events leave a trace in the CRM:
 | Lead Generation → source filter | Leads auto-created from Website, WhatsApp (both lines), and Meta Ads |
 | Lead → notes → green "Sent via WhatsApp" badge | Outbound Marketing-line WhatsApp replies sent from a lead |
 | Lead Generation → VA Recovery | Leads currently stuck at the Visibility Audit landing page or checkout |
-| VA Funnel Analytics → Message log | A "Failed" row with a real Meta error reason (not just a bare wadesk.in HTTP error) confirms the delivery-failure feedback loop is working |
+| Offer Funnel Analytics → Message log | A "Failed" row with a real Meta error reason (not just a bare wadesk.in HTTP error) confirms the delivery-failure feedback loop is working |
 
 If any integration stops working, the most common causes are:
 1. **Server `.env` out of date** — a key (`DRISHTI_SERVICE_KEY`,
