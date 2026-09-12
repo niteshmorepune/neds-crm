@@ -1860,3 +1860,48 @@ Older entries (2026-06-10 through 2026-08-25) moved to `docs/decisions-log-archi
   before shipping — a throwaway `SMOKETEST Visual Check` lead created,
   clicked through both collapsed and expanded states, then deleted. No
   migration, no route change — deploy is `git pull`+view-cache only.
+- **2026-09-12 (same day, minutes later) — Correction: the all-or-nothing
+  toggle above was too coarse, caught by the owner from the SAME real
+  lead (#406) right after deploy.** #406's goal (Grow My Business
+  Online) and budget (Under ₹3,000) were both already known, but that
+  goal still needs a Website/GBP link and neither was captured yet — so
+  under the first version's single `editing` flag (true whenever
+  ANYTHING was missing) the whole panel stayed fully expanded, still
+  showing the two duplicate Goal/Budget dropdowns the owner had just
+  asked to stop seeing. Split into two independent concerns instead of
+  one flag: `$goalBudgetKnown` (drives whether the Goal/Budget
+  `<select>` pair collapses to a compact "Goal: X · Budget: Y" line —
+  now collapses the instant BOTH are known, regardless of link status)
+  and `$linksStillNeeded` (drives whether the Website URL/GBP link
+  inputs + Save button stay visibly reachable — shown via
+  `x-show="editing || {{ $linksStillNeeded ? 'true' : 'false' }}"`, so
+  they're live without a click whenever there's a genuine outstanding
+  ask, exactly mirroring the pre-existing "Ask for their Website or GBP
+  link" banner's own condition). `$fullyCaptured` (`$goalBudgetKnown && !
+  $linksStillNeeded`) picks which one-line summary text to show when
+  collapsed. **Real null-pointer bug caught by the test suite before
+  shipping, not live**: the first draft's collapsed-summary branch read
+  `$lead->goal->label()`/`$lead->budget_range->label()` unconditionally
+  in the `@else` (not-fully-captured) branch — since Blade renders BOTH
+  the collapsed and expanded markup unconditionally (Alpine's `x-show`
+  only hides via client-side JS, never removes from the server response),
+  this branch executes even for a lead where only ONE of goal/budget is
+  set, e.g. the "keeps the panel expanded while something is missing"
+  test's own fixture — crashing every existing lead-show test that hit
+  it with "Call to a member function label() on null." Fixed with
+  `?->label() ?? '—'` on both — a second instance of the exact same
+  x-show-always-renders-both-branches gotcha this feature's own first
+  version had already surfaced once.
+  Rewrote the affected test to assert the new split behavior directly
+  (`editing: false` even though a link is still missing, the "Goal: X ·
+  Budget: Y" text present, `x-show="editing || true"` literal confirming
+  `$linksStillNeeded` evaluated correctly) plus a `x-show="editing ||
+  false"` assertion on the fully-captured case. Full 17-test
+  `LeadGoalCaptureTest` suite green, all 376 tests in `tests/Feature/Leads/`
+  re-verified green (no other view/test in that directory touches this
+  panel, checked rather than assumed), Pint clean. Visually re-verified
+  all 3 real states end-to-end in a local browser before shipping again
+  (3 throwaway `SMOKETEST State A/B/C` leads spanning fully-captured,
+  goal+budget-known-link-missing, and nothing-known — matching #406's own
+  exact shape for state B — all deleted after). No migration, no route
+  change — deploy is `git pull`+view-cache only.

@@ -113,7 +113,8 @@ it('collapses the goal/links capture panel to a summary once everything needed i
     $this->actingAs($manager)->get(route('leads.show', $lead))
         ->assertOk()
         ->assertSee('Goal, budget & links already captured.', false)
-        ->assertSee('editing: false');
+        ->assertSee('editing: false')
+        ->assertSee('x-show="editing || false"', false);
 });
 
 it('keeps the goal/links capture panel expanded while something is still missing', function () {
@@ -125,7 +126,13 @@ it('keeps the goal/links capture panel expanded while something is still missing
         ->assertSee('editing: true');
 });
 
-it('keeps the goal/links capture panel expanded while a link-needing goal has no website/gbp yet', function () {
+it('collapses the goal/budget dropdowns but keeps the website/gbp inputs live when goal+budget are known but a needed link is still missing', function () {
+    // Real gap caught from a live lead (#406): goal+budget were both
+    // already known but its goal still needed a Website/GBP link that
+    // hadn't been captured yet — the panel should not duplicate the
+    // already-known goal/budget as dropdowns, but the link inputs must
+    // stay reachable without a click since that's a genuine outstanding
+    // ask (mirrors the "Ask for their Website or GBP link" banner).
     $manager = User::factory()->role(UserRole::Manager)->create();
     $lead = Lead::factory()->create([
         'goal' => LeadGoal::GrowBusiness,
@@ -136,7 +143,11 @@ it('keeps the goal/links capture panel expanded while a link-needing goal has no
 
     $this->actingAs($manager)->get(route('leads.show', $lead))
         ->assertOk()
-        ->assertSee('editing: true');
+        ->assertSee('editing: false')
+        ->assertSee('Goal: Grow My Business Online', false)
+        ->assertSee('Budget: Under ₹3,000', false)
+        ->assertDontSee('Goal, budget & links already captured.', false)
+        ->assertSee('x-show="editing || true"', false);
 });
 
 it('shows a schedule-a-call banner when the lead is Not Sure', function () {
