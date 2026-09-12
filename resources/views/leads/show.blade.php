@@ -68,26 +68,37 @@
                             <x-stall-reason-picker :record="$lead" update-route="leads.stall-reason.update" :reasons="$stallReasons" />
                         </div>
 
-                        <div class="mt-3 rounded-md border border-gray-200 p-3">
-                            <p class="mb-2 text-xs font-medium text-gray-500">🎯 What are they looking for?</p>
-                            <form method="POST" action="{{ route('leads.goal-capture.update', $lead) }}" class="space-y-2">
-                                @csrf
-                                <select name="goal" class="block w-full rounded-md border-gray-300 text-sm shadow-sm">
-                                    <option value="">— Not asked yet —</option>
-                                    @foreach ($leadGoals as $goal)
-                                        <option value="{{ $goal->value }}" @selected($lead->goal === $goal)>{{ $goal->label() }}</option>
-                                    @endforeach
-                                </select>
-                                <select name="budget_range" class="block w-full rounded-md border-gray-300 text-sm shadow-sm">
-                                    <option value="">— Budget not asked yet —</option>
-                                    @foreach ($leadBudgetRanges as $budgetRange)
-                                        <option value="{{ $budgetRange->value }}" @selected($lead->budget_range === $budgetRange)>{{ $budgetRange->label() }}</option>
-                                    @endforeach
-                                </select>
-                                <input type="url" name="website_url" value="{{ old('website_url', $lead->website_url) }}" placeholder="Website URL" class="block w-full rounded-md border-gray-300 text-sm shadow-sm" />
-                                <input type="url" name="gbp_url" value="{{ old('gbp_url', $lead->gbp_url) }}" placeholder="Google Business Profile link" class="block w-full rounded-md border-gray-300 text-sm shadow-sm" />
-                                <button type="submit" class="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-500">Save</button>
-                            </form>
+                        @php
+                            $goalCaptureNeedsAsking = $lead->goal === null
+                                || $lead->budget_range === null
+                                || ($lead->goal?->needsWebsiteOrGbp() && ! $lead->website_url && ! $lead->gbp_url);
+                        @endphp
+                        <div class="mt-3 rounded-md border border-gray-200 p-3" x-data="{ editing: {{ $goalCaptureNeedsAsking || $errors->any() ? 'true' : 'false' }} }">
+                            <div x-show="!editing" x-cloak class="flex items-center justify-between">
+                                <p class="text-xs text-gray-500">🎯 Goal, budget & links already captured.</p>
+                                <button type="button" x-on:click="editing = true" class="text-xs font-medium text-indigo-600 hover:underline">Edit</button>
+                            </div>
+                            <div x-show="editing" x-cloak>
+                                <p class="mb-2 text-xs font-medium text-gray-500">🎯 What are they looking for?</p>
+                                <form method="POST" action="{{ route('leads.goal-capture.update', $lead) }}" class="space-y-2">
+                                    @csrf
+                                    <select name="goal" class="block w-full rounded-md border-gray-300 text-sm shadow-sm">
+                                        <option value="">— Not asked yet —</option>
+                                        @foreach ($leadGoals as $goal)
+                                            <option value="{{ $goal->value }}" @selected($lead->goal === $goal)>{{ $goal->label() }}</option>
+                                        @endforeach
+                                    </select>
+                                    <select name="budget_range" class="block w-full rounded-md border-gray-300 text-sm shadow-sm">
+                                        <option value="">— Budget not asked yet —</option>
+                                        @foreach ($leadBudgetRanges as $budgetRange)
+                                            <option value="{{ $budgetRange->value }}" @selected($lead->budget_range === $budgetRange)>{{ $budgetRange->label() }}</option>
+                                        @endforeach
+                                    </select>
+                                    <input type="url" name="website_url" value="{{ old('website_url', $lead->website_url) }}" placeholder="Website URL" class="block w-full rounded-md border-gray-300 text-sm shadow-sm" />
+                                    <input type="url" name="gbp_url" value="{{ old('gbp_url', $lead->gbp_url) }}" placeholder="Google Business Profile link" class="block w-full rounded-md border-gray-300 text-sm shadow-sm" />
+                                    <button type="submit" class="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-500">Save</button>
+                                </form>
+                            </div>
                         </div>
 
                         @if ($lead->phone)
