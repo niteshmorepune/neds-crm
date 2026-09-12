@@ -1180,3 +1180,146 @@ Older entries (2026-06-10 through 2026-08-25) moved to `docs/decisions-log-archi
   for invoice/quotation payments, so no new Razorpay Dashboard
   configuration is needed before this goes live (unlike the GBP page's
   own Payment Pages).
+- **2026-09-12 (later same day) — Unified the Meta Ads funnel: the
+  goal+budget recommendation matrix now decides the offer for EVERY Meta
+  lead, GMB included, instead of the GBP path being routed separately by
+  campaign/service tag.** Owner correction, not a bug report: after
+  Milestone 12 shipped, the owner pointed out that "GMB Visibility" was
+  never really its own separate thing — the underlying ask was always
+  "Online Visibility," and the lead form's goal/budget questions exist
+  precisely so the CRM can pick the best-fit offer itself, before handing
+  off to Sales. Checked the actual routing code before agreeing: `LeadObserver::
+  sendVisibilityAuditInviteIfEligible()` decided purely from
+  `service_id === gmbServiceId()` — a tag applied at import/campaign
+  time — and never once consulted the lead's own `goal`/`budget_range`
+  answers, even though `OfferRecommendationMatrix` (Milestone 12) already
+  existed specifically to make that exact decision for the other 3
+  offers. A GMB-tagged lead was hard-locked into the GBP offer by campaign
+  tag alone, even if their real answers pointed at Growth Strategy;
+  conversely a non-GMB-tagged lead whose answers resolved to GbpAudit
+  already worked correctly at the recommendation-page/matrix level (the
+  matrix's own `OfferKey::GbpAudit::url()` already pointed at the existing
+  `/offers/visibility-audit` page) — the gap was specifically in the
+  automated first-touch MESSAGING layer, which never even ran the matrix
+  for a GMB-tagged lead.
+  Confirmed 2 scope decisions via AskUserQuestion before touching
+  anything (both revenue-critical, GBP checkout explicitly out of bounds
+  to modify per this file's own Milestone 12 entry): (1) the matrix
+  becomes authoritative for every Meta lead's first-touch message,
+  service-tag routing demoted to a fallback for when goal/budget haven't
+  been captured/parsed yet (not retired outright — a real, still-live
+  case: some Meta ad campaigns' own forms never ask the "biggest goal"
+  question at all, so `goal`/`budget_range` can legitimately stay null
+  forever for a real GMB lead); (2) the recovery-nudge cron unifies into
+  one command across all 4 offers rather than two independent ones.
+  **`App\Actions\GenerateLeadRecommendation::handle()`** is now the single
+  dispatch point for the whole funnel's first-touch message, not just a
+  data-resolution action — right where it already logs a
+  `RecommendationCreated` event (only on a genuine new/changed
+  recommendation, its pre-existing `$dirty` guard), it now also dispatches,
+  gated on `meta_leadgen_id !== null` (never auto-messages a lead whose
+  goal/budget a rep filled in by hand on a Website/Referral lead): `offerKey
+  === GbpAudit` → the existing, byte-for-byte unchanged
+  `SendVisibilityAuditFirstInviteJob`/`-EmailJob`; any other offer → new
+  `App\Jobs\SendOfferRecommendationReadyJob` (modeled closely on the VA
+  job's own shape — same wadesk.in contract, same `hasStaffWhatsappReplySince()`
+  guard, same skipped/opted-out handling — but logs a plain internal Note
+  on success instead of a `VisibilityAuditTouch` row, since that table is
+  VA-specific; mirrors `SendLeadWelcomeMessageJob`'s note-logging pattern
+  instead). Its Dynamic-URL button points straight at
+  `/offers/recommendation/{token}` — no new tracking redirect hop needed,
+  since `OfferRecommendationController::show()` already logs
+  `RecommendationViewed` on every hit. New `Lead.recommendation_notified_at`
+  column is its idempotency guard, mirroring `visibility_audit_invited_at`
+  exactly.
+  **`LeadObserver`**: `sendVisibilityAuditInviteIfEligible()` and
+  `sendWelcomeMessageIfEligible()` collapsed into one
+  `routeMetaLeadFirstTouch()` — calls `GenerateLeadRecommendation::handle()`
+  first; only when it returns null (goal/budget not yet known) does the
+  observer fall back to the previous service-tag behavior verbatim (GMB tag
+  → VA invite, else → generic `SendLeadWelcomeMessageJob`), so a GMB
+  campaign lead whose form never asked the goal/budget questions still
+  reliably gets the GBP invite exactly as before. Both call sites
+  (`created()`, and the `updated()` race-condition branch for Meta's own
+  auto-WhatsApp-beats-the-webhook case) updated to call the one method.
+  **Recovery nudges**: new `App\Services\OfferFunnelMetrics`
+  (`pendingRecommendationNudges()`/`pendingOfferNudges()`, modeled on
+  `VisibilityAuditFunnelMetrics`'s own `pendingLandingNudges()`/
+  `pendingCheckoutNudges()` shape, explicitly excluding any
+  GbpAudit-recommended lead — that offer stays entirely on the existing,
+  untouched VA metrics/nudge pipeline) + new
+  `App\Jobs\SendOfferRecoveryNudgeJob` (mirrors
+  `SendVisibilityAuditRecoveryNudgeJob` exactly: per-event `nudged_at`
+  marking via new `offer_funnel_events.nudged_at` column, same
+  re-check-before-send purchase/staff-reply guards) + new
+  `App\Console\Commands\SendOfferFunnelRecoveryNudges`
+  (`app:send-offer-funnel-recovery-nudges`, every 30 min), which inlines
+  the old `SendVisibilityAuditRecoveryNudges` command's own body unchanged
+  for the GBP path and adds the new `OfferFunnelMetrics`-driven path for
+  the other 3 — one cron, one combined dispatch count, replacing the old
+  GBP-only command (deleted; its one command-level test in
+  `VisibilityAuditRecoveryNudgeTest.php` updated to call the new command
+  name, every other test in that file — job/metrics behavior — left
+  untouched since none of it changed). Same 2h/4h wait-threshold pacing
+  as the original VA nudges, applied identically to the new "offer"
+  (hotter)/"recommendation" (softer) stages.
+  **Real bug caught by the new tests, not shipped**: `OfferFunnelEvent`'s
+  `$fillable` array never included `nudged_at` at all (a gap from
+  Milestone 12, since nothing had needed to write that column until this
+  session added the mark-nudged logic) — every `$event->update(['nudged_at'
+  => now()])`/`OfferFunnelEvent::create([..., 'nudged_at' => ...])` call
+  silently no-op'd on that one field, so an event could never actually be
+  marked nudged and a test creating an already-nudged fixture never
+  produced one either. Fixed by adding it to `$fillable`, caught
+  immediately by 3 new tests failing for the right reason before this
+  shipped.
+  **Corrected an assumption made mid-build, not shipped as stated**: the
+  build brief assumed `CallLogController::store()`'s existing goal-capture
+  block already called `GenerateLeadRecommendation` (a third "choke point"
+  alongside the Lead page and Meta import) — checked the actual code and
+  found it does not: that form only ever writes `goal` (never
+  `budget_range`, and the form has no budget_range field at all) and
+  never invokes the action, so logging a call today cannot trigger a
+  recommendation or a first-touch message. Left as-is rather than silently
+  expanding scope to add a new budget field + UI to the Log a Call form —
+  a real, separate gap, tracked in the backlog rather than bundled into
+  this routing-unification change.
+  **Second real bug, caught by the full suite (not the new tests) before
+  push**: `RetryFailedLeadWelcomeMessagesTest.php`'s own fixtures never
+  seed a GMB `Service` row, so `VisibilityAuditFunnelMetrics::gmbServiceId()`
+  returned null inside that file specifically. The OLD
+  `sendWelcomeMessageIfEligible()`'s bare `$lead->service_id !==
+  gmbServiceId()` check happened to treat "both null" as equal (not
+  eligible), so a null-service lead's welcome dispatch was — by accident,
+  not by design — silently skipped at creation in that one file's test
+  environment, which is what let those tests pass without ever re-faking
+  the queue after building their fixtures. The new
+  `routeMetaLeadFirstTouch()`'s explicit `$lead->service_id !== null &&`
+  guard closes that accidental null-equals-null match — correct and
+  identical to old behavior in production (a real GMB Service always
+  exists, so `gmbServiceId()` is never actually null there) — but it
+  meant this one file's fixtures started actually dispatching
+  `SendLeadWelcomeMessageJob` at `metaLead()` creation time, same as they
+  always should have, breaking 6 of that file's `assertNotPushed`
+  assertions (they were unknowingly asserting against the retry command's
+  dispatch AND a leftover creation-time one). Fixed the test, not the
+  routing: added a fresh `Queue::fake()` right before each test's own
+  `Artisan::call()`, same established pattern
+  `VisibilityAuditFirstInviteTest`'s own sweep-command test already uses
+  for exactly this reason ("re-fake to discard the creation-time
+  dispatches from LeadObserver").
+  30 new Pest tests (`GenerateLeadRecommendationTest`,
+  `LeadFirstTouchRoutingTest`, `SendOfferRecommendationReadyJobTest`,
+  `SendOfferRecoveryNudgeJobTest`, `OfferFunnelMetricsTest`,
+  `SendOfferFunnelRecoveryNudgesCommandTest`), full suite green — 3462
+  tests, same one pre-existing unrelated `MeetingRequestTest` IST-window
+  flake documented in the Milestone 12 entry above (confirmed via `git
+  log` that file predates this session) — Pint clean. No menu/
+  sidebar changes (this is pure backend routing — same buttons, same
+  pages staff already use), so no re-seed needed on deploy; two small
+  migrations (`leads.recommendation_notified_at`,
+  `offer_funnel_events.nudged_at`). `.env.example` documents the 3 new
+  `WADESK_OFFER_RECOMMENDATION*`/`WADESK_OFFER_RECOVERY_TEMPLATE_NAME`
+  vars. WhatsApp template submission for the 3 new templates is a
+  separate follow-up step with the owner (same process as every prior
+  template), not done in this session.

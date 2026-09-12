@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Mail;
 
 /**
  * Email sibling of SendVisibilityAuditRecoveryNudgeJob (WhatsApp) —
- * dispatched from the same SendVisibilityAuditRecoveryNudges command loop,
+ * dispatched from the same SendOfferFunnelRecoveryNudges command loop,
  * its own job for the same channel-independence reason as
  * SendVisibilityAuditFirstInviteEmailJob. No wadesk config/Meta template
  * approval needed.

@@ -77,7 +77,7 @@ class VisibilityAuditFunnelMetrics
     /**
      * stuckAtLanding(), narrowed to Leads whose latest landing_viewed event
      * hasn't been nudged yet and is older than $olderThan — used by
-     * SendVisibilityAuditRecoveryNudges so a lead is only ever nudged once
+     * SendOfferFunnelRecoveryNudges so a lead is only ever nudged once
      * per visit, not once per scheduler run. Also excludes a lead staff has
      * already replied to (over WhatsApp) since that visit — real incident,
      * 2026-08-21: a customer already mid-conversation with a human-sent

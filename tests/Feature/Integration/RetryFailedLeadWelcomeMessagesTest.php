@@ -11,8 +11,12 @@ use Illuminate\Support\Facades\Queue;
 beforeEach(function () {
     // LeadObserver dispatches SyncLeadToWadeskJob/SendTelegramLeadAlertJob/
     // ScoreLead/SendLeadWelcomeMessageJob on every Lead::factory()->create()
-    // below -- faking the queue keeps those from actually running, so
-    // assertions here only ever see this command's own dispatches.
+    // below -- faking the queue keeps those from actually running. Every
+    // test below re-fakes the queue again right before its own
+    // Artisan::call() (same pattern as VisibilityAuditFirstInviteTest's
+    // sweep-command test) to discard that creation-time dispatch, so
+    // assertions here only ever see this command's own dispatches, not the
+    // routing decision LeadObserver already made when metaLead() was built.
     Queue::fake();
 });
 
@@ -46,6 +50,7 @@ it('retries a lead whose welcome failed past the backoff window', function () {
     $lead = metaLead();
     failWelcome($lead, at: now()->subHours(3));
 
+    Queue::fake();
     Artisan::call('app:retry-failed-lead-welcome-messages');
 
     Queue::assertPushed(SendLeadWelcomeMessageJob::class, fn ($job) => $job->leadId === $lead->id);
@@ -55,6 +60,7 @@ it('does not retry before the backoff window has passed', function () {
     $lead = metaLead();
     failWelcome($lead, at: now()->subMinutes(30));
 
+    Queue::fake();
     Artisan::call('app:retry-failed-lead-welcome-messages');
 
     Queue::assertNotPushed(SendLeadWelcomeMessageJob::class);
@@ -63,6 +69,7 @@ it('does not retry before the backoff window has passed', function () {
 it('does not retry a lead that has never actually been attempted', function () {
     metaLead(['welcome_message_sent_at' => null]);
 
+    Queue::fake();
     Artisan::call('app:retry-failed-lead-welcome-messages');
 
     Queue::assertNotPushed(SendLeadWelcomeMessageJob::class);
@@ -71,6 +78,7 @@ it('does not retry a lead that has never actually been attempted', function () {
 it('does not retry a lead whose welcome already succeeded', function () {
     $lead = metaLead(['welcome_message_sent_at' => now()->subHours(3)]);
 
+    Queue::fake();
     Artisan::call('app:retry-failed-lead-welcome-messages');
 
     Queue::assertNotPushed(SendLeadWelcomeMessageJob::class);
@@ -81,6 +89,7 @@ it('does not retry a lead that already got a check-in (manual or automatic)', fu
     failWelcome($lead, at: now()->subHours(3));
     $lead->forceFill(['last_checkin_sent_at' => now()->subMinutes(5)])->save();
 
+    Queue::fake();
     Artisan::call('app:retry-failed-lead-welcome-messages');
 
     Queue::assertNotPushed(SendLeadWelcomeMessageJob::class);
@@ -93,6 +102,7 @@ it('does not retry a Converted or Lost lead', function () {
     $lost = metaLead(['status' => LeadStatus::Lost]);
     failWelcome($lost, at: now()->subHours(3));
 
+    Queue::fake();
     Artisan::call('app:retry-failed-lead-welcome-messages');
 
     Queue::assertNotPushed(SendLeadWelcomeMessageJob::class);
@@ -103,6 +113,7 @@ it('skips a GMB-tagged lead -- it gets the Visibility Audit recovery nudge inste
     $lead = metaLead(['service_id' => $gmb->id]);
     failWelcome($lead, at: now()->subHours(3));
 
+    Queue::fake();
     Artisan::call('app:retry-failed-lead-welcome-messages');
 
     Queue::assertNotPushed(SendLeadWelcomeMessageJob::class);
@@ -112,6 +123,7 @@ it('gives up after the max attempts and leaves a note instead of retrying again'
     $lead = metaLead();
     failWelcome($lead, times: Lead::WELCOME_RETRY_MAX_ATTEMPTS, at: now()->subHours(3));
 
+    Queue::fake();
     Artisan::call('app:retry-failed-lead-welcome-messages');
 
     Queue::assertNotPushed(SendLeadWelcomeMessageJob::class);
@@ -122,7 +134,9 @@ it('only posts the give-up note once, not on every subsequent run', function () 
     $lead = metaLead();
     failWelcome($lead, times: Lead::WELCOME_RETRY_MAX_ATTEMPTS, at: now()->subHours(3));
 
+    Queue::fake();
     Artisan::call('app:retry-failed-lead-welcome-messages');
+    Queue::fake();
     Artisan::call('app:retry-failed-lead-welcome-messages');
 
     expect($lead->notes()->where('body', 'like', '%retry limit reached%')->count())->toBe(1);
@@ -132,6 +146,7 @@ it('does not misclassify its own give-up note as an inbound reply', function () 
     $lead = metaLead();
     failWelcome($lead, times: Lead::WELCOME_RETRY_MAX_ATTEMPTS, at: now()->subHours(3));
 
+    Queue::fake();
     Artisan::call('app:retry-failed-lead-welcome-messages');
 
     expect($lead->fresh()->outreachAttemptSummary()['whatsapp_inbound_reply'])->toBeFalse();

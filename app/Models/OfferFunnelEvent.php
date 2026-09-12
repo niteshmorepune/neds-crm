@@ -13,6 +13,7 @@ class OfferFunnelEvent extends Model
         'event_type',
         'offer_key',
         'lead_id',
+        'nudged_at',
     ];
 
     protected function casts(): array
@@ -20,6 +21,7 @@ class OfferFunnelEvent extends Model
         return [
             'event_type' => OfferFunnelEventType::class,
             'offer_key' => OfferKey::class,
+            'nudged_at' => 'datetime',
         ];
     }
 
