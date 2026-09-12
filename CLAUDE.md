@@ -1729,3 +1729,37 @@ Older entries (2026-06-10 through 2026-08-25) moved to `docs/decisions-log-archi
   7 new Pest tests (one per fixed page, asserting the correct number
   renders and the wrong one explicitly does not), full suite green, Pint
   clean. No migration. Deployed same session, verified live.
+- **2026-09-12 (later same day) — Pre-emptive fix, not a live incident: a
+  second Hindi-language Meta ad variant's goal/budget questions would have
+  silently missed the whole recommendation funnel, same failure class as
+  the 2026-09-09 Hindi-form incident.** Owner shared the exact new ad copy
+  before launch and asked whether the funnel would work the same way.
+  Checked `ImportMetaLead::matchGoal()`/`matchBudget()`/`matchBudgetRange()`
+  against the literal new questions/options rather than assuming: both
+  question KEYS use different Hindi words than the ones the 2026-09-09 fix
+  gated on — this ad asks "...सबसे बड़ी **ज़रूरत** क्या है?" ("need," not
+  लक्ष्य "goal") and "...कितना **खर्च** कर सकते हैं?" ("spend," not बजट
+  "budget") — so both field-key gates would have skipped these fields
+  entirely, exactly like the original incident. Separately, all 4 goal
+  OPTIONS mix English words into Devanagari text (`leads`, `ranking`,
+  `online`, `Expert`) in ways the existing pure-Devanagari needles
+  (`ऑनलाइन बढ़ाना`, `लीड्स प्राप्त करना`) don't match — e.g. "online
+  बढ़ाना" (Latin "online") is a different string than "ऑनलाइन बढ़ाना"
+  (Devanagari "online"). The budget side's number-counting logic needed no
+  changes — it's phrase-agnostic and already handled ₹-range/plus answers
+  correctly once the key gate passes.
+  Extended both key gates to also accept `ज़रूरत`/`खर्च`, and added 4 new
+  mixed-script needles to `matchGoal()` (`leads प्राप्त करना`, `ranking
+  पाना`, `online बढ़ाना`, `पक्का नहीं`) — sourced from the ad's own real
+  copy the owner pasted ahead of launch, not a live lead's answer, which
+  is a deliberate one-time divergence from this codebase's usual
+  "never fabricate a Hindi match, confirm against a real lead first"
+  discipline (see [[feedback-gotchas]]): confirmed via AskUserQuestion
+  that fixing pre-launch was worth that tradeoff rather than repeating the
+  #370/#371 incident a third time. If Meta's actual slugification of this
+  mixed-script text differs from what these tests assume, the first real
+  leads from this ad are the fallback check.
+  8 new Pest tests (4 goal-option cases + 4 budget-band cases, all using
+  this ad's exact copy), full suite green (60/60 in this file), Pint
+  clean. No migration, no deploy required beyond the next normal git pull
+  (pure parsing-logic change, no schema/route/menu changes).

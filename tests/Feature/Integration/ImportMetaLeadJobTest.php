@@ -394,6 +394,48 @@ it('parses a Hindi-language form\'s budget question/answer, real production text
     'range, averaged (lead #370)' => ['₹6,000_–_₹12,000', 900000],
 ]);
 
+it('maps a second Hindi-language ad variant\'s goal question/answer (2026-09-12 ad copy)', function (string $key, string $answer, LeadGoal $expected) {
+    fakeMetaGraphResponse([
+        ['name' => $key, 'values' => [$answer]],
+    ]);
+
+    ImportMetaLead::dispatchSync('lg-1');
+
+    $lead = Lead::where('meta_leadgen_id', 'lg-1')->first();
+    expect($lead->goal)->toBe($expected)
+        ->and($lead->notes()->count())->toBe(0);
+})->with([
+    'generate leads' => [
+        'इनमेसे_आपके_business_की_सबसे_बड़ी_ज़रूरत_क्या_है?', 'अधिक_leads_प्राप्त_करना', LeadGoal::GenerateLeads,
+    ],
+    'rank higher' => [
+        'इनमेसे_आपके_business_की_सबसे_बड़ी_ज़रूरत_क्या_है?', 'Google_पर_बेहतर_ranking_पाना', LeadGoal::RankHigher,
+    ],
+    'grow business' => [
+        'इनमेसे_आपके_business_की_सबसे_बड़ी_ज़रूरत_क्या_है?', 'अपने_business_को_online_बढ़ाना', LeadGoal::GrowBusiness,
+    ],
+    'not sure' => [
+        'इनमेसे_आपके_business_की_सबसे_बड़ी_ज़रूरत_क्या_है?', 'पक्का_नहीं_–_Expert_की_सलाह_चाहिए', LeadGoal::NotSure,
+    ],
+]);
+
+it('parses a second Hindi-language ad variant\'s budget question into the right band (2026-09-12 ad copy)', function (string $answer, LeadBudgetRange $expected) {
+    fakeMetaGraphResponse([
+        ['name' => 'इस_काम_के_लिए_आप_हर_महीने_कितना_खर्च_कर_सकते_हैं?', 'values' => [$answer]],
+    ]);
+
+    ImportMetaLead::dispatchSync('lg-1');
+
+    $lead = Lead::where('meta_leadgen_id', 'lg-1')->first();
+    expect($lead->budget_range)->toBe($expected)
+        ->and($lead->notes()->count())->toBe(0);
+})->with([
+    'under 3000' => ['₹3,000_से_कम', LeadBudgetRange::Under3000],
+    '3000 to 6000' => ['₹3,000_–_₹6,000', LeadBudgetRange::ThreeToSix],
+    '6000 to 12000' => ['₹6,000_–_₹12,000', LeadBudgetRange::SixToTwelve],
+    '12000 plus' => ['₹12,000+', LeadBudgetRange::TwelvePlus],
+]);
+
 it('backfills goal on the matched lead only when it does not already have one', function () {
     $withoutGoal = Lead::factory()->create(['phone' => '9876543210', 'source' => LeadSource::Whatsapp, 'goal' => null]);
     fakeMetaGraphResponse([
