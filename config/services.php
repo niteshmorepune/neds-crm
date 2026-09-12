@@ -182,6 +182,51 @@ return [
         // clarify? Reply here anytime, or let me know a good time to
         // call."
         'lead_checkin_template_name' => env('WADESK_LEAD_CHECKIN_TEMPLATE_NAME'),
+
+        // Offer recommendation ready (App\Jobs\SendOfferRecommendationReadyJob,
+        // dispatched from App\Actions\GenerateLeadRecommendation the moment a
+        // Meta lead's goal+budget answers resolve to one of the 3 non-GBP
+        // entry offers — see the 2026-09-12 "unified funnel" decisions log
+        // entry). GbpAudit-recommended leads deliberately keep using
+        // visibility_audit_first_invite_template_name above instead — this
+        // template is only ever sent for LeadGenerationAudit/
+        // WebsiteGrowthAudit/GrowthStrategy. Submit as Marketing category
+        // (unsolicited first outreach), plus a required "Stop promotions"
+        // Quick Reply opt-out button. Same Dynamic-URL button contract as
+        // every other template here, but the base URL configured in Meta
+        // Business Manager must end in "/offers/recommendation/" (trailing
+        // slash, no query string) — buttonUrlParam supplies the
+        // recommendation_token itself, appended as a path segment, e.g.
+        // ".../offers/recommendation/<token>". Body has only {{1}}=name.
+        // Suggested body: "Hi {{1}}, thanks for sharing a bit about your
+        // business! Based on what you told us, we've put together a
+        // personalized recommendation for you — tap below to see it."
+        'offer_recommendation_template_name' => env('WADESK_OFFER_RECOMMENDATION_TEMPLATE_NAME'),
+
+        // Recovery nudges for the unified offer funnel
+        // (App\Jobs\SendOfferRecoveryNudgeJob, dispatched by
+        // App\Console\Commands\SendOfferFunnelRecoveryNudges, scheduled) —
+        // one template per stage, same softer/hotter split as the
+        // visibility_audit_recovery_*_template_name pair above. Both ship
+        // inert until set (template must be Meta-approved first), same
+        // Dynamic-URL button contract as offer_recommendation_template_name
+        // above (buttonUrlParam = recommendation_token, appended to
+        // ".../offers/recommendation/"). Body has only {{1}}=name. Submit
+        // both as Marketing category, same required opt-out button.
+        //
+        // recommendation_recovery: softer stage — sent to a lead who got the
+        // recommendation-ready message but never even opened the
+        // recommendation page. Suggested body: "Hi {{1}}, just checking —
+        // did you get a chance to see the personalized recommendation we
+        // put together for you? Tap below to take a look."
+        'offer_recommendation_recovery_template_name' => env('WADESK_OFFER_RECOMMENDATION_RECOVERY_TEMPLATE_NAME'),
+
+        // offer_recovery: hotter stage — sent to a lead who opened their
+        // recommended offer's own page (or clicked its CTA) but never paid.
+        // Suggested body: "Hi {{1}}, you were just a step away from your
+        // personalized growth plan! Tap below whenever you're ready to go
+        // ahead."
+        'offer_recovery_template_name' => env('WADESK_OFFER_RECOVERY_TEMPLATE_NAME'),
     ],
 
     // nedsdrishti.in — agency service delivery platform.

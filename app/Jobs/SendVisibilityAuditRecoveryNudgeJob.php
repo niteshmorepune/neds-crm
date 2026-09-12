@@ -19,7 +19,9 @@ use Illuminate\Support\Facades\Log;
 /**
  * Sends one WhatsApp recovery-nudge template to a Lead stuck at a Visibility
  * Audit funnel stage (see VisibilityAuditFunnelMetrics::pendingLandingNudges()/
- * pendingCheckoutNudges(), dispatched by SendVisibilityAuditRecoveryNudges).
+ * pendingCheckoutNudges(), dispatched by SendOfferFunnelRecoveryNudges —
+ * renamed from SendVisibilityAuditRecoveryNudges 2026-09-12 when it became
+ * one unified cron across all 4 offers; this job's own logic is unchanged).
  * Same wadesk.in POST /api/send-template contract as
  * SendVisibilityAuditPaymentConfirmationJob — no-ops (logs, never throws)
  * until wadesk config and the relevant template name are set, so this ships
@@ -71,7 +73,7 @@ class SendVisibilityAuditRecoveryNudgeJob implements ShouldQueue
         }
 
         // The eligibility check ("hasn't paid yet") only ran once, when
-        // SendVisibilityAuditRecoveryNudges queried and dispatched this job —
+        // SendOfferFunnelRecoveryNudges queried and dispatched this job —
         // on the database queue, real time passes before this handle() runs,
         // long enough for the payment to land in between. Re-check here so a
         // just-paid lead never gets a "still interested?" nudge seconds after

@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use App\Actions\GenerateLeadRecommendation;
 use App\Enums\LeadGoal;
 use App\Enums\LeadStatus;
 use App\Enums\UserRole;
@@ -37,7 +38,10 @@ class LeadObserver
     /** Fields that materially affect the score; an update touching none is ignored. */
     private const SCORING_FIELDS = ['name', 'company', 'email', 'phone', 'source', 'service_id', 'estimated_value'];
 
-    public function __construct(private readonly VisibilityAuditFunnelMetrics $visibilityAuditFunnelMetrics) {}
+    public function __construct(
+        private readonly VisibilityAuditFunnelMetrics $visibilityAuditFunnelMetrics,
+        private readonly GenerateLeadRecommendation $generateLeadRecommendation,
+    ) {}
 
     public function created(Lead $lead): void
     {
@@ -45,8 +49,7 @@ class LeadObserver
         $this->autoAssignTelecaller($lead);
         $this->queueScore($lead);
         $this->notifyNewLead($lead);
-        $this->sendVisibilityAuditInviteIfEligible($lead);
-        $this->sendWelcomeMessageIfEligible($lead);
+        $this->routeMetaLeadFirstTouch($lead);
 
         // autoAssign()/autoAssignTelecaller()'s own save() calls above already
         // fire a nested updated() call whenever either finds an assignee,
@@ -99,8 +102,7 @@ class LeadObserver
         // that lead is invisible to the invite despite genuinely having
         // submitted the Meta form.
         if ($lead->wasChanged(['meta_leadgen_id', 'service_id'])) {
-            $this->sendVisibilityAuditInviteIfEligible($lead);
-            $this->sendWelcomeMessageIfEligible($lead);
+            $this->routeMetaLeadFirstTouch($lead);
         }
 
         // Fires from either goal-capture path (the telecaller UI or
@@ -249,12 +251,13 @@ class LeadObserver
     }
 
     /**
-     * Meta's native Lead Ads form never sends the submitter anywhere — this
-     * is what actually shows them the Visibility Audit offer for the first
-     * time. Deliberately scoped to leads that genuinely submitted a Meta
-     * lead form, tagged the GMB service specifically (not every Meta lead —
-     * a Website Design or SEO inquiry has nothing to do with this offer),
-     * confirmed with the owner.
+     * The single first-touch routing decision for a Meta Ads lead — see the
+     * 2026-09-12 "unified funnel" decisions log entry. Replaces the old
+     * sendVisibilityAuditInviteIfEligible()/sendWelcomeMessageIfEligible()
+     * split, which decided purely from service_id === gmbServiceId() and
+     * never looked at the lead's own goal/budget answers at all — a GMB-
+     * tagged lead was locked into the GBP offer by campaign tag alone, even
+     * when its real answers pointed at a better-fit offer.
      *
      * Gated on meta_leadgen_id, NOT source === MetaAds — a real production
      * lead (id 225) surfaced why: Meta's own auto-sent WhatsApp message
@@ -264,37 +267,39 @@ class LeadObserver
      * corrects source back to Meta Ads there — see its own docblock).
      * meta_leadgen_id is set unconditionally on both paths regardless of
      * source, so it remains the reliable "did this really submit the Meta
-     * form" signal to gate the invite on.
+     * form" signal to gate any first-touch message on.
+     *
+     * GenerateLeadRecommendation::handle() is the matrix-driven decision —
+     * when a lead's goal+budget answers already resolve to a recommendation
+     * (set at Meta import time by ImportMetaLead, or captured later by a
+     * rep), it owns the entire first-touch dispatch itself (GbpAudit -> the
+     * existing VA invite; any other offer -> SendOfferRecommendationReadyJob)
+     * and this method does nothing further. Only when it returns null
+     * (goal/budget haven't been captured/parsed — e.g. an older or
+     * differently-shaped Meta ad form that never asked those questions) does
+     * this fall back to the previous service-tag behavior as a safety net,
+     * so a GMB campaign lead with no goal/budget answers still reliably
+     * gets the GBP invite exactly as before, and every other untagged/
+     * unresolved Meta lead still gets the generic welcome message.
      */
-    private function sendVisibilityAuditInviteIfEligible(Lead $lead): void
-    {
-        if ($lead->meta_leadgen_id === null || $lead->service_id === null) {
-            return;
-        }
-
-        if ($lead->service_id === $this->visibilityAuditFunnelMetrics->gmbServiceId()) {
-            SendVisibilityAuditFirstInviteJob::dispatch($lead->id);
-            SendVisibilityAuditFirstInviteEmailJob::dispatch($lead->id);
-        }
-    }
-
-    /**
-     * The generic counterpart to sendVisibilityAuditInviteIfEligible()
-     * above — every OTHER Meta Ads lead (any service, or none tagged at
-     * all) gets this instead of the VA-specific first invite, never both.
-     * Same meta_leadgen_id gating and same reasoning (real race condition
-     * where WhatsApp's own auto-message reaches the CRM before the Lead
-     * Ads webhook does — see the docblock above).
-     */
-    private function sendWelcomeMessageIfEligible(Lead $lead): void
+    private function routeMetaLeadFirstTouch(Lead $lead): void
     {
         if ($lead->meta_leadgen_id === null) {
             return;
         }
 
-        if ($lead->service_id !== $this->visibilityAuditFunnelMetrics->gmbServiceId()) {
-            SendLeadWelcomeMessageJob::dispatch($lead->id);
+        if ($this->generateLeadRecommendation->handle($lead) !== null) {
+            return;
         }
+
+        if ($lead->service_id !== null && $lead->service_id === $this->visibilityAuditFunnelMetrics->gmbServiceId()) {
+            SendVisibilityAuditFirstInviteJob::dispatch($lead->id);
+            SendVisibilityAuditFirstInviteEmailJob::dispatch($lead->id);
+
+            return;
+        }
+
+        SendLeadWelcomeMessageJob::dispatch($lead->id);
     }
 
     /**

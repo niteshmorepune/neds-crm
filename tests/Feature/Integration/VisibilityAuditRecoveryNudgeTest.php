@@ -454,6 +454,11 @@ it('still includes a lead in pending nudges when a staff reply predates the stuc
 // ──────────────────────────────────────────────────────────────────────────────
 
 it('dispatches one nudge job per pending lead across both stages', function () {
+    // Command name changed 2026-09-12 — SendVisibilityAuditRecoveryNudges was
+    // retired in favor of the unified app:send-offer-funnel-recovery-nudges,
+    // which still dispatches these exact same (unchanged) VA jobs for a
+    // GbpAudit-recommended lead. See SendOfferFunnelRecoveryNudgesTest for
+    // the new command's own coverage of the other 3 offers.
     Queue::fake();
 
     $checkoutLead = Lead::factory()->create();
@@ -465,7 +470,7 @@ it('dispatches one nudge job per pending lead across both stages', function () {
     $tooRecentLead = Lead::factory()->create();
     VisibilityAuditFunnelEvent::create(['event_type' => VisibilityAuditFunnelEventType::PaymentViewed, 'lead_id' => $tooRecentLead->id]);
 
-    Artisan::call('app:send-visibility-audit-recovery-nudges');
+    Artisan::call('app:send-offer-funnel-recovery-nudges');
 
     Queue::assertPushed(SendVisibilityAuditRecoveryNudgeJob::class, 2);
     Queue::assertPushed(fn (SendVisibilityAuditRecoveryNudgeJob $job) => $job->leadId === $checkoutLead->id && $job->stage === VisibilityAuditFunnelEventType::PaymentViewed);

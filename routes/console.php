@@ -85,12 +85,16 @@ Schedule::command('app:send-dashboard-followup-reminders')->everyFiveMinutes();
 // in. Checked every 5 minutes so reminders land close to the real threshold.
 Schedule::command('app:escalate-untouched-leads')->everyFiveMinutes();
 
-// Visibility Audit recovery nudges — WhatsApp templates for leads stuck at
-// checkout/landing (see VisibilityAuditFunnelMetrics), so this doesn't
-// depend on staff noticing during office hours. 30 min is frequent enough
-// against the 2-4hr wait thresholds without being wasteful; ships inert
-// until both WADESK_VISIBILITY_AUDIT_RECOVERY_*_TEMPLATE_NAME are set.
-Schedule::command('app:send-visibility-audit-recovery-nudges')->everyThirtyMinutes();
+// Offer funnel recovery nudges — one unified cron across all 4 offers
+// (GBP via the existing, unchanged VisibilityAuditFunnelMetrics/VA jobs; the
+// other 3 via OfferFunnelMetrics/SendOfferRecoveryNudgeJob), so a stalled
+// lead doesn't depend on staff noticing during office hours regardless of
+// which offer they were recommended. 30 min is frequent enough against the
+// 2-4hr wait thresholds without being wasteful; ships inert per-template
+// until each WADESK_*_TEMPLATE_NAME is set. Replaces the old, GBP-only
+// app:send-visibility-audit-recovery-nudges command — see the 2026-09-12
+// "unified funnel" decisions log entry.
+Schedule::command('app:send-offer-funnel-recovery-nudges')->everyThirtyMinutes();
 
 // Generic (non-GMB) Meta Ads lead welcome follow-up — same "don't depend on
 // a human noticing" idea as the recovery nudges above, for every other Meta

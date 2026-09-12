@@ -8,7 +8,7 @@ use App\Models\Lead;
 use Illuminate\Console\Command;
 
 /**
- * The generic (non-GMB) counterpart to SendVisibilityAuditRecoveryNudges:
+ * The generic (non-GMB) counterpart to SendOfferFunnelRecoveryNudges:
  * GMB-tagged leads already get an automatic funnel-stall nudge if they stop
  * progressing, but every OTHER Meta Ads lead depended entirely on a
  * telecaller remembering to click "Send WhatsApp check-in" by hand. This

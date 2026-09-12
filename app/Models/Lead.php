@@ -119,6 +119,7 @@ class Lead extends Model
             'recommendation_viewed_at' => 'datetime',
             'offer_viewed_at' => 'datetime',
             'offer_clicked_at' => 'datetime',
+            'recommendation_notified_at' => 'datetime',
         ];
     }
 
