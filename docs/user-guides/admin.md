@@ -541,7 +541,7 @@ only confirms it *accepted* a request — WhatsApp's real delivery outcome
 (e.g. Meta's "healthy ecosystem engagement" quality throttle, error
 131049) arrives later, asynchronously. wadesk.in now forwards that back
 to the CRM the moment it happens, which downgrades the matching touch
-from "Sent" to "Failed" (with the real reason) on the **VA Funnel
+from "Sent" to "Failed" (with the real reason) on the **Offer Funnel
 Analytics** message log and failed-sends callout — so a genuinely
 undelivered message no longer sits shown as a clean success forever. No
 action needed here; this is wired between the two apps automatically

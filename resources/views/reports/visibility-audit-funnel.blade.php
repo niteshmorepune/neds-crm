@@ -1,9 +1,9 @@
 <x-app-layout>
-    <x-slot name="header">Visibility Audit Funnel Dashboard</x-slot>
+    <x-slot name="header">Offer Funnel Dashboard</x-slot>
 
     <div class="max-w-7xl mx-auto space-y-6">
         <div class="flex flex-wrap items-center justify-between gap-2">
-            <h1 class="text-xl font-semibold text-gray-900">Visibility Audit Funnel Dashboard</h1>
+            <h1 class="text-xl font-semibold text-gray-900">Offer Funnel Dashboard</h1>
             <div class="flex items-center gap-3">
                 <a href="{{ route('reports.visibility-audit-funnel.messages', ['from' => $fromInput, 'to' => $toInput]) }}" class="text-sm font-medium text-indigo-600 hover:underline">Message log →</a>
                 <a href="{{ route('leads.visibility-audit-recovery') }}" class="text-sm font-medium text-indigo-600 hover:underline">Recovery worklist →</a>
@@ -43,10 +43,136 @@
 
         <livewire:visibility-audit-activity-summary />
 
+        {{-- ═══════════════════════════════════════════════════════════
+             ALL OFFERS — unified across GBP + the 3 goal/budget-matrix
+             offers (PR #182). See VisibilityAuditDashboardController's
+             own docblock for why this lives on the same page as the
+             GBP-specific detail below rather than its own sidebar entry.
+             ═══════════════════════════════════════════════════════════ --}}
+        <div>
+            <h2 class="text-lg font-semibold text-gray-900 mb-1">All offers — unified funnel</h2>
+            <p class="mb-3 text-xs text-gray-500">Every Meta lead recommended into any of the 4 offers, whichever the goal+budget matrix (or, for older GMB-tagged leads with no goal/budget captured, the service-tag fallback) decided fit them.</p>
+
+            <div class="grid grid-cols-2 gap-3 sm:grid-cols-5">
+                <div class="rounded-lg bg-white p-4 shadow-sm">
+                    <div class="text-xs text-gray-500">Recommended</div>
+                    <div class="text-xl font-semibold text-indigo-600">{{ $allOffersFunnel['recommended'] }}</div>
+                </div>
+                <div class="rounded-lg bg-white p-4 shadow-sm">
+                    <div class="text-xs text-gray-500">Notified (WhatsApp)</div>
+                    <div class="text-xl font-semibold text-indigo-600">{{ $allOffersFunnel['notified'] }}</div>
+                    <div class="text-xs text-gray-400">{{ $allOffersFunnel['notified_pct'] !== null ? $allOffersFunnel['notified_pct'].'% of recommended' : '—' }}</div>
+                </div>
+                <div class="rounded-lg bg-white p-4 shadow-sm">
+                    <div class="text-xs text-gray-500">Viewed recommendation</div>
+                    <div class="text-xl font-semibold text-indigo-600">{{ $allOffersFunnel['viewed'] }}</div>
+                    <div class="text-xs text-gray-400">{{ $allOffersFunnel['viewed_pct'] !== null ? $allOffersFunnel['viewed_pct'].'% of notified' : '—' }}</div>
+                </div>
+                <div class="rounded-lg bg-white p-4 shadow-sm">
+                    <div class="text-xs text-gray-500">Reached offer/checkout</div>
+                    <div class="text-xl font-semibold text-indigo-600">{{ $allOffersFunnel['reached_offer'] }}</div>
+                    <div class="text-xs text-gray-400">{{ $allOffersFunnel['reached_offer_pct'] !== null ? $allOffersFunnel['reached_offer_pct'].'% of viewed' : '—' }}</div>
+                </div>
+                <div class="rounded-lg bg-white p-4 shadow-sm">
+                    <div class="text-xs text-gray-500">Paid</div>
+                    <div class="text-xl font-semibold text-indigo-600">{{ $allOffersFunnel['paid'] }}</div>
+                    <div class="text-xs text-gray-400">{{ $allOffersFunnel['paid_pct'] !== null ? $allOffersFunnel['paid_pct'].'% of reached' : '—' }}</div>
+                </div>
+            </div>
+            <p class="mt-2 text-xs text-gray-500">Overall conversion (paid / recommended): <span class="font-medium text-gray-700">{{ $allOffersFunnel['overall_pct'] !== null ? $allOffersFunnel['overall_pct'].'%' : '—' }}</span></p>
+        </div>
+
+        {{-- By-offer breakdown --}}
+        <div class="rounded-lg bg-white p-4 shadow-sm overflow-x-auto">
+            <p class="mb-3 text-xs font-medium text-gray-500">By offer</p>
+            @php
+                $gbpStageMap = ['recommended' => 'eligible', 'notified' => 'invited', 'viewed' => 'landing_viewed', 'reached_offer' => 'checkout_viewed', 'paid' => 'paid'];
+                $offerLabels = [
+                    'gbp_audit' => 'GBP Visibility Audit',
+                    'lead_generation_audit' => 'Lead Generation Audit',
+                    'website_growth_audit' => 'Website Growth Audit',
+                    'growth_strategy' => 'Growth Strategy',
+                ];
+            @endphp
+            <table class="min-w-full divide-y divide-gray-200 text-sm">
+                <thead>
+                    <tr class="text-left text-xs text-gray-500">
+                        <th class="px-4 py-2">Offer</th>
+                        @foreach ($offerStages as $stageKey => $stageLabel)
+                            <th class="px-4 py-2">{{ $stageLabel }}</th>
+                        @endforeach
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @foreach ($byOffer as $offerKey => $row)
+                        <tr>
+                            <td class="px-4 py-2 font-medium text-gray-900">{{ $offerLabels[$offerKey] }}</td>
+                            @foreach ($offerStages as $stageKey => $stageLabel)
+                                <td class="px-4 py-2">
+                                    @if ($offerKey === 'gbp_audit')
+                                        <a href="{{ route('reports.visibility-audit-funnel.leads', ['stage' => $gbpStageMap[$stageKey], 'from' => $fromInput, 'to' => $toInput]) }}" class="text-indigo-600 hover:underline">{{ $row[$stageKey] }}</a>
+                                    @else
+                                        <a href="{{ route('reports.visibility-audit-funnel.offer-leads', ['offer' => $offerKey, 'stage' => $stageKey, 'from' => $fromInput, 'to' => $toInput]) }}" class="text-indigo-600 hover:underline">{{ $row[$stageKey] }}</a>
+                                    @endif
+                                </td>
+                            @endforeach
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+
+        {{-- Goal x budget breakdown --}}
+        <div class="rounded-lg bg-white p-4 shadow-sm overflow-x-auto">
+            <p class="mb-1 text-xs font-medium text-gray-500">By goal &times; budget — recommended (paid)</p>
+            <p class="mb-3 text-xs text-gray-400">Every offer's recommendation is driven by these two answers — see which combinations actually convert.</p>
+            @php
+                $goals = \App\Enums\LeadGoal::cases();
+                $budgets = \App\Enums\LeadBudgetRange::cases();
+            @endphp
+            <table class="min-w-full divide-y divide-gray-200 text-sm">
+                <thead>
+                    <tr class="text-left text-xs text-gray-500">
+                        <th class="px-4 py-2">Goal \ Budget</th>
+                        @foreach ($budgets as $budget)
+                            <th class="px-4 py-2">{{ $budget->label() }}</th>
+                        @endforeach
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @foreach ($goals as $goal)
+                        <tr>
+                            <td class="px-4 py-2 font-medium text-gray-900">{{ $goal->label() }}</td>
+                            @foreach ($budgets as $budget)
+                                @php $cell = $goalBudget[$goal->value][$budget->value]; @endphp
+                                <td class="px-4 py-2 text-gray-700">
+                                    {{ $cell['recommended'] }}{{ $cell['paid'] > 0 ? ' ('.$cell['paid'].')' : '' }}
+                                </td>
+                            @endforeach
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+
+        {{-- All-offers daily trend --}}
+        <div class="rounded-lg bg-white p-4 shadow-sm">
+            <p class="mb-3 text-xs font-medium text-gray-500">All offers — daily trend</p>
+            <div class="h-64">
+                <canvas id="offerFunnelTrend"></canvas>
+            </div>
+        </div>
+
+        <hr class="border-gray-200" />
+
+        {{-- ═══════════════════════════════════════════════════════════
+             GBP DETAIL — unchanged since before the unification: stage
+             counts, AI-vs-staff channel breakdown, message log.
+             ═══════════════════════════════════════════════════════════ --}}
         {{-- Funnel stage counts + stage-to-stage conversion --}}
         <div>
             <h3 class="text-sm font-semibold uppercase tracking-wide text-gray-500 mb-2">
-                Meta lead-form → paid, GMB-tagged leads
+                GBP detail — Meta lead-form → paid, GMB-tagged leads
             </h3>
             <div class="grid grid-cols-2 gap-3 sm:grid-cols-5">
                 @php
@@ -179,6 +305,26 @@
                             { label: 'Landing viewed', data: trend.map(d => d.landing_viewed), borderColor: '#f59e0b', backgroundColor: '#f59e0b', tension: 0.2 },
                             { label: 'Checkout viewed', data: trend.map(d => d.checkout_viewed), borderColor: '#ef4444', backgroundColor: '#ef4444', tension: 0.2 },
                             { label: 'Paid', data: trend.map(d => d.paid), borderColor: '#10b981', backgroundColor: '#10b981', tension: 0.2 },
+                        ],
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+                    },
+                });
+            })();
+            (function () {
+                const ctx = document.getElementById('offerFunnelTrend');
+                if (!ctx) return;
+                const trend = @json($combinedTrend);
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: trend.map(d => d.label),
+                        datasets: [
+                            { label: 'Recommended (all offers)', data: trend.map(d => d.recommended), borderColor: '#6366f1', backgroundColor: '#6366f1', tension: 0.2 },
+                            { label: 'Paid (all offers)', data: trend.map(d => d.paid), borderColor: '#10b981', backgroundColor: '#10b981', tension: 0.2 },
                         ],
                     },
                     options: {

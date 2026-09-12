@@ -410,15 +410,20 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
     });
 
     /*
-     * Visibility Audit funnel dashboard — Admin/Manager oversight over the
-     * AI-automated vs. staff-manual-outreach funnel. Gated by
-     * menu.access:visibility-audit-funnel (its own sidebar item), with a
-     * further Admin/Manager-only check inside the controller (same
+     * Offer Funnel dashboard — Admin/Manager oversight over the WHOLE
+     * unified offer funnel (all 4 offers since PR #182's unification), plus
+     * the AI-automated vs. staff-manual-outreach detail that's always been
+     * GBP-specific. Gated by menu.access:visibility-audit-funnel (its own
+     * sidebar item, route/menu key deliberately left unchanged even though
+     * the page itself now covers more than GBP — see the 2026-09-12
+     * "team-wide offer funnel dashboard" decisions log entry for why), with
+     * a further Admin/Manager-only check inside the controller (same
      * belt-and-suspenders pattern the other role-gated Reports routes use).
      */
     Route::middleware('menu.access:visibility-audit-funnel')->group(function () {
         Route::get('reports/visibility-audit-funnel', [VisibilityAuditDashboardController::class, 'index'])->name('reports.visibility-audit-funnel');
         Route::get('reports/visibility-audit-funnel/leads', [VisibilityAuditDashboardController::class, 'leads'])->name('reports.visibility-audit-funnel.leads');
+        Route::get('reports/visibility-audit-funnel/offer-leads', [VisibilityAuditDashboardController::class, 'offerLeads'])->name('reports.visibility-audit-funnel.offer-leads');
         Route::get('reports/visibility-audit-funnel/messages', [VisibilityAuditDashboardController::class, 'messages'])->name('reports.visibility-audit-funnel.messages');
         Route::get('reports/visibility-audit-funnel/purchases', [VisibilityAuditDashboardController::class, 'purchases'])->name('reports.visibility-audit-funnel.purchases');
     });

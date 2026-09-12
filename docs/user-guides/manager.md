@@ -561,8 +561,28 @@ recovery message** — writes a client-facing apology grounded in the actual
 ticket that was rated poorly (not just the generic flag). Review and
 personalize it before sending; nothing goes out automatically.
 
-## Visibility Audit Funnel Dashboard
-Sidebar → **VA Funnel Analytics** — a full analytics view over the same Visibility
+## Offer Funnel Dashboard
+Sidebar → **Offer Funnel Analytics** — a full analytics view over the whole
+unified offer funnel: every Meta lead's goal+budget answers now decide which
+of the 4 offers (GBP Visibility Audit, Lead Generation Funnel Audit, Website +
+Conversion Growth Audit, Personalized Digital Growth Strategy) fits them,
+regardless of which service the ad campaign was tagged — see "Meta Ads
+recommendation + offer funnel" below for the full picture.
+
+### All offers — unified funnel
+At the top of the page: one combined 5-stage summary (Recommended → Notified
+via WhatsApp → Viewed their recommendation → Reached the offer/checkout →
+Paid) across all 4 offers together, a **by-offer table** breaking those same
+5 stages down per offer (GBP included, as its own row), a **goal × budget
+table** showing how many leads each combination recommends and how many of
+those actually paid, and a combined daily trend chart. Click any number in
+the by-offer table to see the actual leads behind it — GBP's own cells reuse
+the detailed drill-down below; the other 3 offers get their own equivalent
+list (name, phone, goal, budget, owner, when recommended, a link to open the
+lead).
+
+### GBP detail
+Below that: the original, unchanged analytics specific to the GBP Visibility
 Audit funnel the weekly digest summarizes (see "The company dashboard"
 above), with a pickable date range instead of a fixed 7 days:
 - **Stage counts + conversion %** — eligible → invited (WhatsApp) → viewed
@@ -656,19 +676,20 @@ Lead Generation page's Priority sort — you don't need to cross-check this
 dashboard against the Priority list by hand to confirm they agree.
 
 ## Meta Ads recommendation + offer funnel (the other 3 offers)
-Separate from the Visibility Audit Funnel above, which is specific to the
-₹120 GBP audit: every Meta lead's **Goal** and **Budget** answers now
-also drive an automatic recommendation for one of four entry offers — GBP
-Visibility Audit ₹120, Lead Generation Funnel Audit ₹299, Website +
-Conversion Growth Audit ₹499, or Personalized Digital Growth Strategy
-₹999 — based on a fixed 16-cell goal × budget matrix. Once both fields
-are set (usually pre-filled from the ad form, editable from any lead's
-own page), a **📋 Recommendation & Offer** panel appears there showing
-which offer was recommended and whether the lead has viewed their
-personal recommendation page, viewed the offer, clicked to pay, or paid.
-There's no dashboard for this funnel yet (unlike the one above) — check
-individual leads for now; a team-wide rollup is a possible later addition
-once there's real volume to look at.
+Every Meta lead's **Goal** and **Budget** answers now drive an automatic
+recommendation for one of four entry offers — GBP Visibility Audit ₹120,
+Lead Generation Funnel Audit ₹299, Website + Conversion Growth Audit ₹499, or
+Personalized Digital Growth Strategy ₹999 — based on a fixed 16-cell goal ×
+budget matrix, regardless of which service the ad campaign itself was tagged
+(a GMB-tagged lead can still be recommended into any of the 4, whichever
+their real answers fit best; the old "GMB tag always means the GBP offer"
+routing only kicks in as a fallback when goal/budget haven't been captured
+yet). Once both fields are set (usually pre-filled from the ad form, editable
+from any lead's own page), a **📋 Recommendation & Offer** panel appears there
+showing which offer was recommended and whether the lead has viewed their
+personal recommendation page, viewed the offer, clicked to pay, or paid. The
+team-wide rollup for this — by offer, and by goal × budget — is the "All
+offers" section at the top of the Offer Funnel Dashboard above.
 
 ## Employee 360°
 Sidebar → **Employee 360°** — one consolidated page per employee: this

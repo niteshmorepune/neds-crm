@@ -206,6 +206,55 @@ production lead-recommendation + offer funnel for Meta Ads leads.
 - 134 new Pest tests covering all 16 matrix combinations, checkout
   price/signature/IDOR edge cases, and page renders.
 
+## Milestone 13 — Unify the Meta Ads funnel under the recommendation matrix (2026-09-12)
+Owner correction, not a bug report: GMB-tagged leads were still routed to
+the GBP offer purely by service tag, bypassing the goal+budget matrix
+built in Milestone 12 for every other offer.
+- `App\Actions\GenerateLeadRecommendation::handle()` is now the single
+  first-touch dispatch point for all 4 offers — GbpAudit still fires the
+  existing, unchanged VA jobs; the other 3 fire the new
+  `App\Jobs\SendOfferRecommendationReadyJob`.
+- `LeadObserver::routeMetaLeadFirstTouch()` replaces the old GMB-tag-only
+  split, falling back to service-tag routing only when goal/budget aren't
+  captured yet (some Meta ad forms never ask those questions).
+- New `App\Services\OfferFunnelMetrics` + `App\Jobs\SendOfferRecoveryNudgeJob`
+  + one unified `app:send-offer-funnel-recovery-nudges` cron, replacing the
+  old GBP-only recovery-nudge command.
+- 2 new migrations (`leads.recommendation_notified_at`,
+  `offer_funnel_events.nudged_at`), 3 new wadesk WhatsApp templates
+  (`offer_recommendation`/`offer_recommendation_recovery`/`offer_recovery`,
+  bilingual English+Hindi, all Meta-approved and live).
+- 30 new Pest tests. See CLAUDE.md's 2026-09-12 "unified funnel" decisions
+  log entry for the two real bugs found and fixed along the way.
+
+## Milestone 14 — Team-wide Offer Funnel dashboard (2026-09-12)
+Fast-follow explicitly deferred from Milestone 12's own backlog note, built
+right after Milestone 13's unification made it the natural next step.
+- `App\Services\OfferFunnelMetrics` gained dashboard-aggregation methods
+  (`funnelSummary()`, `byOfferBreakdown()`, `trend()`, `leadsForStage()`,
+  `byGoalBudgetBreakdown()`) mirroring `VisibilityAuditFunnelMetrics`'s own
+  method shapes, so the two can sit side by side in one view.
+- The existing `reports/visibility-audit-funnel` dashboard (route/menu key
+  unchanged) gained a new "All offers — unified funnel" section: combined
+  5-stage summary tiles, a by-offer breakdown table (GBP as a 4th row,
+  remapped from `VisibilityAuditFunnelMetrics::funnelSummary()`), a goal x
+  budget breakdown, and a combined daily trend chart — folded into the
+  existing page rather than a new sidebar entry, per the owner's own
+  AskUserQuestion decision. Sidebar label renamed "VA Funnel Analytics" →
+  "Offer Funnel Analytics" to match the broader scope; page title renamed
+  "Visibility Audit Funnel Dashboard" → "Offer Funnel Dashboard".
+  GBP's own deeper post-purchase pipeline (audit_ready/gmeet_held/
+  report_sent) deliberately stays exclusively on this same page's
+  pre-existing GBP-detail section below — top-of-funnel only in the new
+  unified section, no duplication.
+- New `reports/visibility-audit-funnel/offer-leads` drill-down route +
+  `reports/offer-funnel-leads.blade.php` view for the 3 non-GBP offers'
+  stage cells; GBP's own cells reuse the existing `leads()` drill-down.
+- New Pest coverage for every new metrics method + the new controller
+  action + the extended dashboard render, alongside the existing 23
+  dashboard tests (unmodified in behavior, only the renamed title
+  assertion updated).
+
 ## Deployment runbook (Hostinger Business)
 1. In hPanel create MySQL DB + user; note credentials.
 2. Enable SSH if available on the plan; otherwise use hPanel Git deploy or FTP.
