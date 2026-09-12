@@ -97,9 +97,31 @@ sitting unscored vs. auto-flagging 🔥 Hot the moment it lands.
 **Thank-you screen:**
 > Headline: "Thanks — we've got it!"
 > Description: "Someone from our team will call or WhatsApp you within 1
-> business day. In the meantime, check out our work at
-> niranjanenterprises.com."
+> business day. In the meantime, check out our recommendation below."
 > Button: View Website
+> **URL: `https://crm.niranjanenterprises.co.in/offers/find-my-recommendation`**
+
+**2026-09-12 update — why this specific URL, not a specific offer page:**
+Meta's own thank-you-screen button is a single static URL with no
+per-submission personalization — it cannot carry the lead's own id, phone,
+or answers (that data isn't available in the browser at all; Meta only
+delivers it to us later via webhook). Since the CRM now recommends one of
+4 different offers per lead (goal+budget matrix — see
+`docs/user-guides/manager.md`'s "Meta Ads recommendation + offer funnel"
+section), pointing this button at any ONE specific offer page would show
+the wrong price/offer to 3 out of 4 people. `/offers/find-my-recommendation`
+asks the visitor to confirm the phone number they just gave Meta, looks up
+their own Lead, and forwards them straight to whichever offer the matrix
+actually resolved for them — see `FindMyRecommendationController`. **This
+same reasoning is why the older "Which service are you looking for?"
+question below is now stale** — the live ad form actually asks "What is
+your biggest goal?" / monthly budget (see `docs/user-guides/sales.md`'s
+"Their goal, and their Website/GBP link" section for the real, current
+question text/options) — the rest of this playbook (campaign copy, budget
+bands, service-name multiple-choice) predates that change and has not yet
+been reconciled with the live form; treat the campaign creative/copy
+sections below as historical unless/until this whole doc is rewritten
+against the current form.
 
 ---
 
