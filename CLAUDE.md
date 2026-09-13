@@ -2002,9 +2002,15 @@ Older entries (2026-06-10 through 2026-08-25) moved to `docs/decisions-log-archi
   already-proven-correct pattern in this same codebase, and the bug was
   actively failing every real send in production at that moment,
   deployed without waiting for local Pest to recover — verified
-  correctness directly against production logs instead (a real send for
-  lead #382 going from the `(#132000)` error to a clean 201, confirmed
-  by re-triggering `queue:work` post-deploy and reading the actual
-  wadesk.in response), which is arguably more authoritative than a unit
-  test for this specific class of external-API integration bug anyway.
-  Pint clean, deployed (`git pull`, no migration, no route change).
+  correctness directly against production instead, post-deploy:
+  `SendOfferRecommendationReadyJob::dispatchSync(382)` (a real, immediate
+  send, not queued) went from the `(#132000)` error to
+  `recommendation_notified_at` actually being set and a genuine "✨
+  Automated recommendation-ready message sent via WhatsApp" note landing
+  on the lead — a real message reached Akash Surve. More authoritative
+  than a unit test would have been for this specific class of
+  external-API integration bug. Pint clean, deployed (`git pull`, no
+  migration, no route change). The rest of the ~45-lead backlog is left
+  to the next natural `app:send-offer-funnel-recovery-nudges` cron tick
+  rather than manually swept, same reasoning as the earlier
+  AskUserQuestion decision.
