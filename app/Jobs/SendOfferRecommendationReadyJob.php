@@ -81,7 +81,16 @@ class SendOfferRecommendationReadyJob implements ShouldQueue
                     'phone' => $digits,
                     'businessNumber' => $marketingNumber,
                     'templateName' => $templateName,
-                    'variables' => [$lead->name ?: 'there'],
+                    // Bilingual template body: {{1}} in the English half,
+                    // {{2}} in the Hindi half — both the lead's own name,
+                    // same "repeat the value per placeholder" shape as
+                    // lead_welcome/lead_checkin's own 4-variable bodies.
+                    // Sending only one value here is exactly the gap that
+                    // made every real send fail with Meta's own (#132000)
+                    // "Number of parameters does not match" once the
+                    // template-sync issue was fixed — confirmed live
+                    // against the real backlog (2026-09-13).
+                    'variables' => [$lead->name ?: 'there', $lead->name ?: 'there'],
                     'buttonUrlParam' => $lead->recommendation_token,
                 ]);
 

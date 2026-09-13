@@ -1958,3 +1958,53 @@ Older entries (2026-06-10 through 2026-08-25) moved to `docs/decisions-log-archi
   SSH access to that VPS from this environment; the owner needs to run
   its usual `git pull && docker compose up -d --build` themselves. See
   [[wadesk-multinumber]] for the full investigation and evidence.
+- **2026-09-13 (same day, after the owner's own wadesk.in deploy) — Third
+  real bug in the same offer-funnel WhatsApp chain, found by manually
+  re-triggering the send for a real lead (#382) rather than assuming the
+  wadesk.in template-sync fix was the whole story.** Owner asked to
+  correct lead #382's stale `goal` (see the entry above — a second Meta
+  form resubmission's answer had been silently discarded by the
+  never-overwrite-an-existing-goal rule). Fixed the goal, called
+  `GenerateLeadRecommendation::handle()` to regenerate — service_id/
+  recommendation_offer_key all recomputed correctly — but manually ran
+  `queue:work --stop-when-empty` to actually process the resulting
+  `SendOfferRecommendationReadyJob` for real (not `Queue::fake()`'d),
+  and it STILL failed: Meta returned `(#132000) Number of parameters
+  does not match the expected number of params`. Checked the log for
+  every other lead — the owner's own natural 30-min recovery-nudge cron
+  had already run (05:31 UTC) and hit the exact same error across the
+  entire ~45-lead backlog. Root cause: `offer_recommendation`/
+  `offer_recommendation_recovery`/`offer_recovery` are bilingual
+  templates (English `{{1}}` + Hindi `{{2}}`, both meant to be the
+  lead's own name — confirmed by re-reading each template's actual body
+  text on wadesk.in's Templates page) but `SendOfferRecommendationReadyJob`/
+  `SendOfferRecoveryNudgeJob` only ever sent one variable
+  (`[$lead->name ?: 'there']`) — the exact same bilingual-template
+  variable-count gotcha already hit and fixed once before for
+  `lead_welcome`/`lead_checkin` (2026-09-09 entry above), recurring here
+  because these 3 templates were never checked against that precedent
+  when built. Fixed both jobs to send the name twice
+  (`[$lead->name ?: 'there', $lead->name ?: 'there']`), matching
+  `lead_welcome`'s own established `[name, service, name, service]`
+  shape. 2 existing Pest tests updated (`variables` assertion in both
+  job test files) to expect the 2-element array.
+  **Real environment gotcha hit while verifying, unrelated to the fix
+  itself**: the local Pest suite became completely unresponsive mid-session
+  (confirmed by testing a totally unrelated, previously-fast, already-passing
+  test, which also hung) — `Stop-Process`/`taskkill`/`kill -9` all failed
+  to actually terminate the stuck `php.exe` processes, and `tasklist`
+  kept reporting byte-identical memory usage across many checks minutes
+  apart, suggesting stale/ghost process-table entries rather than
+  genuinely live work. Pint (which doesn't touch the test DB) ran
+  instantly and cleanly the whole time, and a direct `mysql -e "SELECT
+  1"` responded instantly too, ruling out the database. Given the fix
+  itself was a trivial, mechanically-identical repeat of an
+  already-proven-correct pattern in this same codebase, and the bug was
+  actively failing every real send in production at that moment,
+  deployed without waiting for local Pest to recover — verified
+  correctness directly against production logs instead (a real send for
+  lead #382 going from the `(#132000)` error to a clean 201, confirmed
+  by re-triggering `queue:work` post-deploy and reading the actual
+  wadesk.in response), which is arguably more authoritative than a unit
+  test for this specific class of external-API integration bug anyway.
+  Pint clean, deployed (`git pull`, no migration, no route change).

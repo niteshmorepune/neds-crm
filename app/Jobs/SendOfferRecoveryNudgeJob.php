@@ -92,7 +92,11 @@ class SendOfferRecoveryNudgeJob implements ShouldQueue
                     'phone' => $digits,
                     'businessNumber' => $marketingNumber,
                     'templateName' => $templateName,
-                    'variables' => [$lead->name ?: 'there'],
+                    // Both recovery templates are bilingual (English {{1}}
+                    // + Hindi {{2}}, both the lead's own name) — see
+                    // SendOfferRecommendationReadyJob's own comment for the
+                    // real (#132000) failure this fixes.
+                    'variables' => [$lead->name ?: 'there', $lead->name ?: 'there'],
                     'buttonUrlParam' => $lead->recommendation_token,
                 ]);
 

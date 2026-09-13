@@ -52,7 +52,7 @@ it('sends the recommendation-ready template with the recommendation token and ma
         return $request->url() === 'https://wadesk.test/api/send-template'
             && $request['phone'] === '919876543210'
             && $request['templateName'] === 'offer_recommendation_ready'
-            && $request['variables'] === ['Priya Shah']
+            && $request['variables'] === ['Priya Shah', 'Priya Shah']
             && $request['buttonUrlParam'] === $lead->recommendation_token;
     });
 
