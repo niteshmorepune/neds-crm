@@ -89,7 +89,7 @@ class Lead extends Model
         'stall_reason',
         'recommendation_key', 'recommendation_offer_key', 'recommendation_token',
         'recommendation_generated_at', 'recommendation_viewed_at',
-        'offer_viewed_at', 'offer_clicked_at',
+        'offer_viewed_at', 'offer_clicked_at', 'recommendation_retry_attempted_at',
     ];
 
     protected function casts(): array
@@ -120,6 +120,7 @@ class Lead extends Model
             'offer_viewed_at' => 'datetime',
             'offer_clicked_at' => 'datetime',
             'recommendation_notified_at' => 'datetime',
+            'recommendation_retry_attempted_at' => 'datetime',
         ];
     }
 
