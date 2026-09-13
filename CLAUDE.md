@@ -1905,3 +1905,56 @@ Older entries (2026-06-10 through 2026-08-25) moved to `docs/decisions-log-archi
   goal+budget-known-link-missing, and nothing-known — matching #406's own
   exact shape for state B — all deleted after). No migration, no route
   change — deploy is `git pull`+view-cache only.
+- **2026-09-13 (same day) — Two real, distinct wadesk.in-side gaps found
+  while the owner spot-checked a live WhatsApp conversation (lead #382):
+  (1) the offer/recommendation funnel's WhatsApp templates had been
+  approved by Meta all along but never synced into wadesk.in's own
+  database, so every send 404'd; (2) wadesk.in's own after-hours freeform
+  AI assistant has no idea the unified 4-offer matrix exists at all.**
+  Owner asked to verify a real conversation where the AI recommended the
+  GBP ₹120 offer to a lead whose answer ("Generate More Leads" + "Under
+  ₹3,000") the matrix itself resolves to `lead_generation_audit` (₹299) —
+  confirmed via `OfferRecommendationMatrix::for()` directly. Root-caused
+  by reading wadesk.in's own source (this session has local file access
+  to that sibling repo, though no SSH to its VPS): `ai-reply.ts`'s
+  `buildLeadContextBlock()` only ever reads
+  `context.visibilityAuditOfferUrl` — a GBP-only field computed via
+  `VisibilityAuditFunnelMetrics::isVisibilityAuditCohort()` — with no
+  equivalent for the other 3 offers at all, because `/api/leads/context`
+  (built 2026-07-16/08-20/09-08, before the unified funnel existed
+  2026-09-12) was never revisited when that shipped.
+  **(1) Fixed live, no code change needed**: opened wadesk.in's own
+  Templates page (already-authenticated browser session) and found
+  `offer_recommendation`/`offer_recommendation_recovery`/`offer_recovery`
+  genuinely absent from its list — not pending, not rejected, just never
+  created there at all. Clicked **Sync from Meta**; all 3 appeared
+  immediately, Approved, exact names matching the CRM's own config. This
+  was the sole root cause of the "zero sends ever" finding from earlier
+  the same day — Meta had approved them all along, nobody had run this
+  one sync step. Checked `SendOfferRecoveryNudgeJob`: a failed attempt
+  never sets `nudged_at`, so the ~45+-lead backlog needs no manual
+  backfill — the existing `app:send-offer-funnel-recovery-nudges` cron
+  (every 30 min) will pick every one of them up and succeed automatically
+  now that the templates exist. Confirmed via AskUserQuestion not to
+  force it manually — letting the natural cron cycle handle it was fine.
+  **(2) Built the fix, CRM-side deployed, wadesk.in-side needs the
+  owner's deploy**: `LeadContextController::show()` now also returns
+  `recommended_offer_name`/`recommended_offer_price`/
+  `recommended_offer_url` whenever `recommendation_offer_key` resolves to
+  one of the 3 non-GBP offers (via `OfferKey::tryFrom()` +
+  `Lead::recommendationUrl()`, the same tracked `/offers/recommendation/
+  {token}` entry point `SendOfferRecommendationReadyJob` already points
+  at) — deliberately omitted when the resolved offer IS GbpAudit, since
+  `visibility_audit_offer_url` already covers that case through its own
+  funnel-tracking `.enter` redirect hop, which must stay the one used for
+  GBP so its `LandingViewed` event keeps firing. 3 new Pest tests, full
+  `LeadContextTest` suite green (24/24), Pint clean, no migration — pure
+  additive JSON fields, deployed same session (`git pull`+view-cache
+  only, no route change since the route itself didn't change).
+  wadesk.in's own side (`crm-lead-context.ts`'s `CrmLeadContext`
+  interface + `ai-reply.ts`'s `buildLeadContextBlock()`, preferring the
+  new fields over the GBP-only one when both are present) was written
+  locally in that sibling repo this same session but NOT deployed — no
+  SSH access to that VPS from this environment; the owner needs to run
+  its usual `git pull && docker compose up -d --build` themselves. See
+  [[wadesk-multinumber]] for the full investigation and evidence.

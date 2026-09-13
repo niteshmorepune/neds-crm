@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\LeadBudgetRange;
 use App\Enums\LeadGoal;
 use App\Enums\LeadSource;
 use App\Enums\LeadStatus;
@@ -12,6 +13,7 @@ use App\Models\VisibilityAuditFunnelEvent;
 use App\Notifications\LeadWantsExpertAdviceNotification;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Str;
 
 beforeEach(function () {
     config(['services.whatsapp_webhook.token' => 'test-wa-token']);
@@ -158,6 +160,53 @@ it('reports needs_link=false and goal=null for a lead with no goal set yet', fun
 
     expect($response['goal'])->toBeNull()
         ->and($response['needs_link'])->toBeFalse();
+});
+
+it('includes recommended_offer_name/price/url for a lead recommended into one of the 3 non-GBP offers', function () {
+    Lead::factory()->create([
+        'phone' => '919876543230',
+        'goal' => LeadGoal::GenerateLeads,
+        'budget_range' => LeadBudgetRange::Under3000,
+        'recommendation_key' => 'lead-generation-audit',
+        'recommendation_offer_key' => 'lead_generation_audit',
+        'recommendation_token' => (string) Str::uuid(),
+    ]);
+
+    $response = $this->getJson('/api/leads/context?phone=919876543230', ['Authorization' => 'Bearer test-wa-token'])->json();
+
+    expect($response['recommended_offer_name'])->toBe('Lead Generation Funnel Audit')
+        ->and($response['recommended_offer_price'])->toBe(299)
+        ->and($response['recommended_offer_url'])->toContain('/offers/recommendation/');
+});
+
+it('omits recommended_offer_name/price/url when the resolved offer is GbpAudit — visibility_audit_offer_url already covers it', function () {
+    $lead = Lead::factory()->create([
+        'phone' => '919876543231',
+        'goal' => LeadGoal::RankHigher,
+        'budget_range' => LeadBudgetRange::Under3000,
+        'recommendation_key' => 'expert-direction-gbp-audit',
+        'recommendation_offer_key' => 'gbp_audit',
+        'recommendation_token' => (string) Str::uuid(),
+        'service_id' => Service::factory()->create(['name' => 'GMB', 'is_active' => true])->id,
+        'meta_leadgen_id' => 'lg_'.uniqid(),
+    ]);
+
+    $response = $this->getJson('/api/leads/context?phone=919876543231', ['Authorization' => 'Bearer test-wa-token'])->json();
+
+    expect($response['recommended_offer_name'])->toBeNull()
+        ->and($response['recommended_offer_price'])->toBeNull()
+        ->and($response['recommended_offer_url'])->toBeNull()
+        ->and($response['visibility_audit_offer_url'])->not->toBeNull();
+});
+
+it('omits recommended_offer_name/price/url for a lead with no recommendation resolved yet', function () {
+    Lead::factory()->create(['phone' => '919876543232', 'goal' => null, 'budget_range' => null]);
+
+    $response = $this->getJson('/api/leads/context?phone=919876543232', ['Authorization' => 'Bearer test-wa-token'])->json();
+
+    expect($response['recommended_offer_name'])->toBeNull()
+        ->and($response['recommended_offer_price'])->toBeNull()
+        ->and($response['recommended_offer_url'])->toBeNull();
 });
 
 it('rejects an unauthenticated goal-capture request', function () {
