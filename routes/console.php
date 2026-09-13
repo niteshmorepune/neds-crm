@@ -135,6 +135,13 @@ Schedule::command('app:send-visibility-audit-in-progress-nudges')->everyFifteenM
 // Ticket SLA breach escalation — check hourly during the working day.
 Schedule::command('app:check-ticket-sla')->hourly();
 
+// Narrow, first-pass alerting for two known offer-funnel failure shapes
+// (see MonitorOfferFunnelFailures' own docblock) — a spike in
+// SendOfferRecommendationReadyJob's WhatsApp send failures, or any Razorpay
+// order-creation exception. Hourly with its own 6h alert cooldown, so an
+// ongoing incident alerts once, not every hour.
+Schedule::command('app:monitor-offer-funnel-failures')->hourly();
+
 // Remind staff to submit their daily report at 6pm India time.
 Schedule::command('app:send-daily-report-reminders')->dailyAt('18:00')->timezone('Asia/Kolkata');
 
