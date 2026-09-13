@@ -112,6 +112,15 @@ Schedule::command('app:send-lead-welcome-followups')->everyThirtyMinutes();
 // throttle.
 Schedule::command('app:retry-failed-lead-welcome-messages')->everyThirtyMinutes();
 
+// One-shot stranded-lead safety net for the recommendation-ready WhatsApp
+// send (SendOfferRecommendationReadyJob) — see
+// RetryStrandedOfferRecommendationMessages' own docblock for the incident
+// this covers (71 leads stranded by two now-fixed wadesk.in issues). Daily,
+// not every-30-min like the jobs above — this is a slow-moving safety net
+// for a rare outage, not a routine follow-up cadence, and each lead only
+// ever gets one automated retry regardless of how many times this runs.
+Schedule::command('app:retry-stranded-offer-recommendation-messages')->dailyAt('08:20')->timezone('Asia/Kolkata');
+
 // Keeps a currently-active leave's covering teammate synced to wadesk.in as
 // a temporary conversation assignee (App\Services\LeaveCoverage) — re-runs
 // periodically so a lead created/reassigned mid-leave also gets covered,
