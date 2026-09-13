@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Enums\LeadGoal;
+use App\Enums\OfferKey;
 use App\Http\Controllers\Controller;
 use App\Models\Lead;
 use App\Services\VisibilityAuditFunnelMetrics;
@@ -25,6 +26,22 @@ use Illuminate\Validation\Rule;
  * goal-question flow (see updateGoal() below) — needs_link is precomputed
  * here (LeadGoal::needsWebsiteOrGbp()) rather than making wadesk's
  * TypeScript re-implement that enum's branching logic.
+ *
+ * recommended_offer_name/price/url (2026-09-13) close a real gap found live:
+ * the after-hours assistant's `visibility_audit_offer_url` field only ever
+ * covers the OLD, GBP-specific offer — once the 2026-09-12 unified
+ * goal+budget matrix started recommending one of the OTHER 3 offers for a
+ * lead, this endpoint had nothing to tell the assistant about that decision
+ * at all, so it kept defaulting to GBP regardless of what the matrix
+ * actually resolved (confirmed live on lead #382: matrix said
+ * lead_generation_audit, the assistant recommended GBP anyway since that
+ * was the only offer it had ever been told about). Deliberately omitted
+ * when the resolved offer IS GbpAudit — `visibility_audit_offer_url`
+ * already covers that case via its own funnel-tracking `.enter` redirect
+ * hop, which must stay the one used for GBP so its LandingViewed event
+ * still fires; this new field intentionally points at
+ * `recommendationUrl()` instead (the `/offers/recommendation/{token}`
+ * page), the equivalent tracked entry point for the other 3 offers.
  */
 class LeadContextController extends Controller
 {
@@ -39,6 +56,10 @@ class LeadContextController extends Controller
         }
 
         [$budgetRawAnswer, $additionalAnswers] = $this->extractFormAnswers($lead);
+        $recommendedOffer = OfferKey::tryFrom((string) $lead->recommendation_offer_key);
+        $recommendedNonGbpOffer = $recommendedOffer !== null && $recommendedOffer !== OfferKey::GbpAudit
+            ? $recommendedOffer
+            : null;
 
         return response()->json([
             'found' => true,
@@ -56,6 +77,9 @@ class LeadContextController extends Controller
             'needs_link' => $lead->goal?->needsWebsiteOrGbp() ?? false,
             'website_url' => $lead->website_url,
             'gbp_url' => $lead->gbp_url,
+            'recommended_offer_name' => $recommendedNonGbpOffer?->shortLabel(),
+            'recommended_offer_price' => $recommendedNonGbpOffer?->price(),
+            'recommended_offer_url' => $recommendedNonGbpOffer !== null ? $lead->recommendationUrl() : null,
         ]);
     }
 
