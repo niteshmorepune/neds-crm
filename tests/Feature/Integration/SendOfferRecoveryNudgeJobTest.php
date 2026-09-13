@@ -39,7 +39,7 @@ it('sends the softer recommendation-stage template and marks the event nudged', 
 
     Http::assertSent(function ($request) use ($lead) {
         return $request['templateName'] === 'offer_recommendation_recovery'
-            && $request['variables'] === ['Priya Shah']
+            && $request['variables'] === ['Priya Shah', 'Priya Shah']
             && $request['buttonUrlParam'] === $lead->recommendation_token;
     });
 
