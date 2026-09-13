@@ -79,7 +79,11 @@ class SendOfferRecoveryNudgeJob implements ShouldQueue
             return;
         }
 
-        if ($lead->hasStaffWhatsappReplySince($event->created_at)) {
+        // A call or a plain staff note counts as real engagement too, not
+        // just a WhatsApp reply — see Lead::hasStaffEngagementSince()'s own
+        // docblock (the lead #322 incident, 2026-09-13, is what this guard
+        // failed to catch).
+        if ($lead->hasStaffEngagementSince($event->created_at)) {
             return;
         }
 

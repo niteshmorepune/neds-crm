@@ -737,6 +737,51 @@ class Lead extends Model
     }
 
     /**
+     * True when a staff member has engaged with this lead at or after
+     * $since — a logged phone call (CallLog.user_id is always a real staff
+     * member, regardless of outcome: even a no-answer attempt is a
+     * deliberate action), a plain internal note a staff member wrote
+     * themselves (user_id not null — excludes system/automated notes and
+     * inbound-WhatsApp notes, both always user_id=null), or a staff
+     * WhatsApp reply (hasStaffWhatsappReplySince() above).
+     *
+     * Broader than hasStaffWhatsappReplySince() alone, which only ever
+     * caught the WhatsApp channel. Real incident, lead #322 (2026-09-13):
+     * staff had been actively working this lead entirely by phone (a
+     * Connected call telling the client "your proposal is ready") with no
+     * WhatsApp-tagged note in between, so an automated recovery-nudge job
+     * — which only ever checked hasStaffWhatsappReplySince() — still fired
+     * an unrelated ₹299 offer nudge on top of a live human conversation.
+     * The exact same gap had already been patched twice before, but only
+     * for the WhatsApp channel each time (see pendingFirstInvites()'s own
+     * 2026-08-28 incident note and pendingLandingNudges()'s 2026-08-21 one
+     * in VisibilityAuditFunnelMetrics) — never generalized to "any staff
+     * engagement" until now.
+     *
+     * Every automated first-touch/recovery/nudge job and eligibility
+     * filter in both the Visibility Audit and unified Offer funnels should
+     * call this, not the narrower method — unless it's genuinely asking a
+     * WhatsApp-specific question (see VisibilityAuditFunnelMetrics::
+     * unansweredInboundReplies(), which deliberately keeps the narrow
+     * check: "did staff answer this WhatsApp message on WhatsApp").
+     */
+    public function hasStaffEngagementSince(Carbon $since): bool
+    {
+        if ($this->hasStaffWhatsappReplySince($since)) {
+            return true;
+        }
+
+        if ($this->callLogs()->where('called_at', '>=', $since)->exists()) {
+            return true;
+        }
+
+        return $this->notes()
+            ->where('created_at', '>=', $since)
+            ->whereNotNull('user_id')
+            ->exists();
+    }
+
+    /**
      * Deep link into wadesk.in's inbox, straight to this lead's own
      * conversation — optionally with $templateName pre-selected in the
      * template picker, pre-filled with this lead's own name/id using the

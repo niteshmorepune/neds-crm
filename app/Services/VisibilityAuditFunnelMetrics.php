@@ -57,7 +57,8 @@ class VisibilityAuditFunnelMetrics
     /**
      * Narrows a stuckAtLanding()/stuckAtCheckout() collection to leads that
      * genuinely still need a human follow-up — excludes anyone staff has
-     * already replied to (over WhatsApp) since their latest funnel event.
+     * already engaged with (a call, a plain note, or a WhatsApp reply —
+     * see Lead::hasStaffEngagementSince()) since their latest funnel event.
      * Shared by the AI Activity Summary panel (Admin/Manager) and the
      * Recovery worklist's "Your Gaps" section (whoever's viewing) so both
      * apply the identical exclusion rule instead of drifting apart.
@@ -70,7 +71,7 @@ class VisibilityAuditFunnelMetrics
         return $stuckLeads->reject(function (Lead $lead) {
             $latestEvent = $lead->visibilityAuditFunnelEvents->first();
 
-            return $latestEvent === null || $lead->hasStaffWhatsappReplySince($latestEvent->created_at);
+            return $latestEvent === null || $lead->hasStaffEngagementSince($latestEvent->created_at);
         })->values();
     }
 
@@ -79,10 +80,13 @@ class VisibilityAuditFunnelMetrics
      * hasn't been nudged yet and is older than $olderThan — used by
      * SendOfferFunnelRecoveryNudges so a lead is only ever nudged once
      * per visit, not once per scheduler run. Also excludes a lead staff has
-     * already replied to (over WhatsApp) since that visit — real incident,
-     * 2026-08-21: a customer already mid-conversation with a human-sent
-     * custom proposal still got the automated "you haven't claimed the
-     * offer" nudge, since nothing previously checked for this.
+     * already engaged with (a call, a plain note, or a WhatsApp reply)
+     * since that visit — real incident, 2026-08-21: a customer already
+     * mid-conversation with a human-sent custom proposal still got the
+     * automated "you haven't claimed the offer" nudge. That fix only ever
+     * checked a WhatsApp reply; a second, near-identical incident (lead
+     * #322, 2026-09-13) showed a phone call was just as invisible, so this
+     * now calls Lead::hasStaffEngagementSince(), which covers both.
      */
     public function pendingLandingNudges(Carbon $olderThan): Collection
     {
@@ -90,7 +94,7 @@ class VisibilityAuditFunnelMetrics
             $latest = $lead->visibilityAuditFunnelEvents->first();
 
             return $latest !== null && $latest->nudged_at === null && $latest->created_at->lte($olderThan)
-                && ! $lead->hasStaffWhatsappReplySince($latest->created_at);
+                && ! $lead->hasStaffEngagementSince($latest->created_at);
         })->values();
     }
 
@@ -103,7 +107,7 @@ class VisibilityAuditFunnelMetrics
             $latest = $lead->visibilityAuditFunnelEvents->first();
 
             return $latest !== null && $latest->nudged_at === null && $latest->created_at->lte($olderThan)
-                && ! $lead->hasStaffWhatsappReplySince($latest->created_at);
+                && ! $lead->hasStaffEngagementSince($latest->created_at);
         })->values();
     }
 
@@ -122,16 +126,20 @@ class VisibilityAuditFunnelMetrics
      * re-checks this again immediately before sending regardless, same
      * dual-layer pattern as the recovery nudges' payment-race guard.
      *
-     * Also excludes a lead staff has already replied to over WhatsApp since
-     * it was created — same "don't interrupt a live human conversation" rule
-     * as needsFollowUp()/pendingLandingNudges()/pendingCheckoutNudges()
-     * above, just never applied to the first-invite cohort until a real
-     * incident (2026-08-28): a lead already mid-conversation with a
-     * human-sent proposal (a real call had happened) got the automated
-     * "come check out our offer" invite the moment its service was tagged
-     * GMB. SendVisibilityAuditFirstInviteJob/-EmailJob re-check this again
-     * immediately before sending regardless, same dual-layer pattern as the
-     * purchase-race guard above.
+     * Also excludes a lead staff has already engaged with (a call, a plain
+     * note, or a WhatsApp reply — see Lead::hasStaffEngagementSince())
+     * since it was created — same "don't interrupt a live human
+     * conversation" rule as needsFollowUp()/pendingLandingNudges()/
+     * pendingCheckoutNudges() above, just never applied to the first-invite
+     * cohort until a real incident (2026-08-28): a lead already
+     * mid-conversation with a human-sent proposal (a real call had
+     * happened) got the automated "come check out our offer" invite the
+     * moment its service was tagged GMB. That fix only ever checked a
+     * WhatsApp reply — the call the incident itself describes stayed
+     * invisible until a second, near-identical incident (lead #322,
+     * 2026-09-13) forced the check to be broadened. SendVisibilityAuditFirstInviteJob/-EmailJob
+     * re-check this again immediately before sending regardless, same
+     * dual-layer pattern as the purchase-race guard above.
      */
     public function pendingFirstInvites(Carbon $olderThan): Collection
     {
@@ -140,7 +148,7 @@ class VisibilityAuditFunnelMetrics
             ->whereDoesntHave('visibilityAuditPurchases')
             ->where('created_at', '<=', $olderThan)
             ->get()
-            ->reject(fn (Lead $lead) => $lead->hasStaffWhatsappReplySince($lead->created_at))
+            ->reject(fn (Lead $lead) => $lead->hasStaffEngagementSince($lead->created_at))
             ->values();
     }
 

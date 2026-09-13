@@ -85,7 +85,7 @@ class OfferFunnelMetrics
         $latest = $lead->offerFunnelEvents->first();
 
         return $latest !== null && $latest->nudged_at === null && $latest->created_at->lte($olderThan)
-            && ! $lead->hasStaffWhatsappReplySince($latest->created_at);
+            && ! $lead->hasStaffEngagementSince($latest->created_at);
     }
 
     /**
