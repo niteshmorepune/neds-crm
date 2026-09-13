@@ -426,6 +426,15 @@ your "follow-ups due" list — same list, no separate place to look.
   already gave it to you isn't asked to retype it, and whatever they submit
   at checkout is saved straight back onto this same field once the
   payment goes through.
+- **If that recommendation message doesn't seem to have gone out** — the
+  panel above still shows "Not viewed yet" a full day later and there's no
+  note on the lead about it — the CRM automatically retries it once, about
+  an hour after the recommendation was first generated. It skips the retry
+  (and stays silent) if anyone's already called, noted, or messaged the
+  lead by then, since a live conversation makes the automated message
+  redundant. This is a one-time safety net for a rare send failure, not a
+  repeat nudge — if it's still not gone out after that, just reach out
+  yourself.
 - On the Notes field, click **Dictate** and speak instead of typing — your
   browser transcribes it live into the box, and you can still edit before
   saving. (Chrome/Edge only; the button doesn't appear in browsers that

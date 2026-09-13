@@ -225,6 +225,15 @@ directly (same idea as GBP asking for a GBP/Maps link) — it prefills from
 this lead's own Website URL if you've already captured it, and whatever
 gets submitted at checkout saves straight back onto that same field.
 
+**If that recommendation message doesn't seem to have gone out** — the
+panel above still shows "Not viewed yet" a full day later and there's no
+note on the lead about it — the CRM automatically retries it once, about
+an hour after the recommendation was first generated. It skips the retry
+if anyone's already called, noted, or messaged the lead by then, since a
+live conversation makes the automated message redundant. This is a
+one-time safety net for a rare send failure, not a repeat nudge — if it's
+still not gone out after that, just reach out yourself.
+
 **Every fresh Meta Ads lead also gets an automatic WhatsApp welcome**
 the moment its goal+budget resolve to one of the 3 non-GBP offers above
 (a lead recommended the GBP offer instead gets the Visibility Audit
