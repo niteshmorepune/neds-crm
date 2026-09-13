@@ -104,6 +104,46 @@ it('skips sending when staff already replied over WhatsApp since the event', fun
     expect($event->fresh()->nudged_at)->toBeNull();
 });
 
+/**
+ * Real incident, lead #322 (2026-09-13): staff had been actively working
+ * this lead entirely by phone (a Connected call telling the client "your
+ * proposal is ready"), no WhatsApp-tagged note in between — the guard at
+ * the time only checked hasStaffWhatsappReplySince(), so this automated
+ * nudge fired an unrelated ₹299 offer on top of a live human conversation.
+ */
+it('skips sending when staff already engaged the lead by phone since the event', function () {
+    Http::fake(['https://wadesk.test/api/send-template' => Http::response(['conversationId' => 'c1'], 201)]);
+
+    $lead = leadWithToken();
+    $event = OfferFunnelEvent::create(['event_type' => OfferFunnelEventType::OfferViewed, 'lead_id' => $lead->id]);
+    \App\Models\CallLog::factory()->create([
+        'callable_type' => Lead::class,
+        'callable_id' => $lead->id,
+        'called_at' => now(),
+    ]);
+
+    (new SendOfferRecoveryNudgeJob($lead->id, $event->id, OfferFunnelEventType::OfferViewed))->handle();
+
+    Http::assertNothingSent();
+    expect($event->fresh()->nudged_at)->toBeNull();
+});
+
+it('skips sending when staff already left a plain note on the lead since the event', function () {
+    Http::fake(['https://wadesk.test/api/send-template' => Http::response(['conversationId' => 'c1'], 201)]);
+
+    $lead = leadWithToken();
+    $event = OfferFunnelEvent::create(['event_type' => OfferFunnelEventType::OfferViewed, 'lead_id' => $lead->id]);
+    $lead->notes()->create([
+        'user_id' => \App\Models\User::factory()->create()->id,
+        'body' => 'I informed the client that the proposal is ready and scheduled a call at 2 PM.',
+    ]);
+
+    (new SendOfferRecoveryNudgeJob($lead->id, $event->id, OfferFunnelEventType::OfferViewed))->handle();
+
+    Http::assertNothingSent();
+    expect($event->fresh()->nudged_at)->toBeNull();
+});
+
 it('no-ops when the template for that stage is not configured', function () {
     config(['services.wadesk.offer_recovery_template_name' => null]);
     Http::fake();

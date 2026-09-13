@@ -28,10 +28,10 @@ use Illuminate\Support\Facades\Log;
  * template name are set. Idempotent on Lead.welcome_message_sent_at — sent
  * at most once per lead, regardless of how many times this is dispatched.
  *
- * Skips a lead staff has already replied to over WhatsApp since it was
- * created (Lead::hasStaffWhatsappReplySince()) — same guard
- * SendVisibilityAuditFirstInviteJob uses, for the same reason: a real
- * human conversation already in progress makes this redundant.
+ * Skips a lead staff has already engaged with (a call, a plain note, or a
+ * WhatsApp reply) since it was created (Lead::hasStaffEngagementSince()) —
+ * same guard SendVisibilityAuditFirstInviteJob uses, for the same reason: a
+ * real human conversation already in progress makes this redundant.
  */
 class SendLeadWelcomeMessageJob implements ShouldQueue
 {
@@ -60,7 +60,10 @@ class SendLeadWelcomeMessageJob implements ShouldQueue
             return;
         }
 
-        if ($lead->hasStaffWhatsappReplySince($lead->created_at)) {
+        // A call or a plain staff note counts as real engagement too, not
+        // just a WhatsApp reply — see Lead::hasStaffEngagementSince()'s own
+        // docblock (the lead #322 incident, 2026-09-13).
+        if ($lead->hasStaffEngagementSince($lead->created_at)) {
             return;
         }
 

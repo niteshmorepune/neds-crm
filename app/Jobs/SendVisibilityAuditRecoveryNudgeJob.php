@@ -85,13 +85,17 @@ class SendVisibilityAuditRecoveryNudgeJob implements ShouldQueue
 
         // Same re-check-at-send-time reasoning as the purchase check above:
         // VisibilityAuditFunnelMetrics::pendingLandingNudges()/
-        // pendingCheckoutNudges() already filter out a lead staff has replied
-        // to since this funnel event, but that's a query-time snapshot — on
-        // the database queue, real time passes before this handle() runs, so
-        // re-check here too. Real incident, 2026-08-21: a customer already
-        // mid-conversation with a human-sent custom proposal still got this
-        // nudge.
-        if ($lead->hasStaffWhatsappReplySince($event->created_at)) {
+        // pendingCheckoutNudges() already filter out a lead staff has
+        // engaged with since this funnel event, but that's a query-time
+        // snapshot — on the database queue, real time passes before this
+        // handle() runs, so re-check here too. Real incident, 2026-08-21: a
+        // customer already mid-conversation with a human-sent custom
+        // proposal still got this nudge — and a second, later incident
+        // (lead #322, 2026-09-13, the offer-funnel counterpart of this job)
+        // showed the original fix only ever caught a WhatsApp reply, not a
+        // phone call, so it's now Lead::hasStaffEngagementSince(), which
+        // covers both.
+        if ($lead->hasStaffEngagementSince($event->created_at)) {
             return;
         }
 

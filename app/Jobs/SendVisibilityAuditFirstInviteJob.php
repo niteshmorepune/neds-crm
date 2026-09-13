@@ -31,10 +31,11 @@ use Illuminate\Support\Facades\Log;
  * Idempotent on Lead.visibility_audit_invited_at — a lead is only ever
  * invited once, regardless of how many times this job is dispatched.
  *
- * Skips a lead staff has already replied to over WhatsApp since it was
- * created (Lead::hasStaffWhatsappReplySince()) — a real human conversation
- * already in progress means this cold "come check out our offer" intro is
- * redundant/confusing, not a first contact. Same guard the recovery-nudge
+ * Skips a lead staff has already engaged with (a call, a plain note, or a
+ * WhatsApp reply) since it was created (Lead::hasStaffEngagementSince()) —
+ * a real human conversation already in progress means this cold "come check
+ * out our offer" intro is redundant/confusing, not a first contact. Same
+ * guard the recovery-nudge
  * jobs already use; see this class's handle() for the incident that
  * surfaced the gap here.
  */
@@ -83,10 +84,13 @@ class SendVisibilityAuditFirstInviteJob implements ShouldQueue
         // directly) still got this cold "come check out our offer" invite
         // the moment someone tagged its service GMB — same class of bug
         // SendVisibilityAuditRecoveryNudgeJob already guards against, just
-        // never applied here. If staff has personally replied on WhatsApp
-        // at any point since this lead was created, a human is already
-        // handling it — the automated intro would be redundant/confusing.
-        if ($lead->hasStaffWhatsappReplySince($lead->created_at)) {
+        // never applied here. The fix at the time only ever checked a
+        // WhatsApp reply, not the call the incident note itself describes —
+        // a second, near-identical incident (lead #322, 2026-09-13, the
+        // offer-funnel counterpart of this job) showed that gap was still
+        // live, so this now calls Lead::hasStaffEngagementSince(), which
+        // also covers a logged call or a plain staff note, not just WhatsApp.
+        if ($lead->hasStaffEngagementSince($lead->created_at)) {
             return;
         }
 

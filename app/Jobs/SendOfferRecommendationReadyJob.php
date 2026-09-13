@@ -28,10 +28,10 @@ use Illuminate\Support\Facades\Log;
  * lead, regardless of how many times this is dispatched (e.g. the lead's
  * recommendation later changes to a different one of the 3 offers).
  *
- * Skips a lead staff has already replied to over WhatsApp since it was
- * created (Lead::hasStaffWhatsappReplySince()) — same guard every other
- * first-touch job in this family uses: a real human conversation already in
- * progress makes an automated intro redundant.
+ * Skips a lead staff has already engaged with (a call, a plain note, or a
+ * WhatsApp reply) since it was created (Lead::hasStaffEngagementSince()) —
+ * same guard every other first-touch job in this family uses: a real human
+ * conversation already in progress makes an automated intro redundant.
  *
  * Unlike the Visibility Audit family, this does not log to VisibilityAuditTouch
  * (that table is VA-specific) — a plain internal Note on success instead,
@@ -66,9 +66,11 @@ class SendOfferRecommendationReadyJob implements ShouldQueue
 
         // Real time passes on the database queue between dispatch and this
         // handle() actually running — long enough for staff to have started
-        // a real conversation in between. Same guard every other first-touch
-        // job in this family uses.
-        if ($lead->hasStaffWhatsappReplySince($lead->created_at)) {
+        // a real conversation in between (a call or a plain note counts too,
+        // not just a WhatsApp reply — see Lead::hasStaffEngagementSince()'s
+        // own docblock, the lead #322 incident, 2026-09-13). Same guard
+        // every other first-touch job in this family uses.
+        if ($lead->hasStaffEngagementSince($lead->created_at)) {
             return;
         }
 
