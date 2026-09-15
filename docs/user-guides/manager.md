@@ -1051,6 +1051,13 @@ As a manager, you receive bell notifications for:
   (no note, call, or edit) an hour after it landed with its owner, you're
   notified — its owner already got their own reminder at 20 minutes. Worth
   a nudge to the rep, or reassigning it (see below) if they're unavailable.
+- 🔀 **Possible duplicate lead** — when a WhatsApp message from an unknown
+  number creates a new Lead whose name closely matches another Lead created
+  in the last 14 days under a different phone number, you're notified
+  immediately (this is the "same customer, different number" pattern —
+  their own WhatsApp number, not the one they typed into a form). The
+  notification links straight to Merge Leads with both records already
+  selected — nothing is merged automatically.
 - 🆕 **New client onboarded** — the first time any payment lands against a
   client (staff-recorded, an advance applied, or an online Razorpay
   payment), you and all admins are notified once with the client's name,

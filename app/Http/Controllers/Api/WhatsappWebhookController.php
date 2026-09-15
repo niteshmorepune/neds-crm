@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Actions\FlagPossibleDuplicateLead;
 use App\Enums\LeadSource;
 use App\Enums\LeadStatus;
 use App\Enums\TicketPriority;
@@ -19,10 +20,15 @@ use App\Services\VisibilityAuditFunnelMetrics;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class WhatsappWebhookController extends Controller
 {
-    public function __construct(private readonly VisibilityAuditFunnelMetrics $vaMetrics) {}
+    public function __construct(
+        private readonly VisibilityAuditFunnelMetrics $vaMetrics,
+        private readonly FlagPossibleDuplicateLead $duplicateFlagger,
+    ) {}
 
     public function handle(Request $request): JsonResponse
     {
@@ -221,7 +227,14 @@ class WhatsappWebhookController extends Controller
      * sends a WhatsApp message on the submitter's behalf right after they
      * submit the Instant Form, which otherwise lands as a second, separate
      * lead a few seconds after ImportMetaLead's Meta Ads lead (a real
-     * duplicate-lead pattern found in production 2026-08-13).
+     * duplicate-lead pattern found in production 2026-08-13). That only
+     * catches an EXACT phone match, though — when the alternate number is
+     * one findOpenByPhone can't match (the WhatsApp account's own number,
+     * never typed into any form), a genuinely brand-new Lead gets created
+     * instead. flagPossibleDuplicate() below is the after-the-fact catch
+     * for that case: a name-similarity check against recent Leads, alerting
+     * staff rather than silently letting a second, contextless AI auto-reply
+     * go unnoticed for hours (see App\Services\DuplicateLeadDetector).
      */
     private function handleUnmatchedNumber(array $data, string $direction, string $senderType): JsonResponse
     {
@@ -255,9 +268,30 @@ class WhatsappWebhookController extends Controller
             'whatsapp_conversation_id' => $data['conversation_id'],
         ]);
 
+        $this->flagPossibleDuplicate($lead);
+
         $this->recordLeadMessage($lead, $data, $direction, $senderType);
 
         return response()->json(['status' => 'lead_created', 'lead_id' => $lead->id]);
+    }
+
+    /**
+     * A side effect only, never a precondition — the Lead above is already
+     * created and this runs after it. Wrapped so a bug in the detector can
+     * never turn a "lead_created" response into a 500 (same "AI/integration
+     * failure must never break a core workflow" convention every other
+     * best-effort side effect in this app follows). See
+     * App\Services\DuplicateLeadDetector's own docblock for why this is
+     * deliberately an after-the-fact alert, not a check that could gate the
+     * lead or the (already independently-fired) WhatsApp auto-reply.
+     */
+    private function flagPossibleDuplicate(Lead $lead): void
+    {
+        try {
+            $this->duplicateFlagger->handle($lead);
+        } catch (Throwable $e) {
+            Log::warning('FlagPossibleDuplicateLead failed for lead '.$lead->id.': '.$e->getMessage());
+        }
     }
 
     /**
