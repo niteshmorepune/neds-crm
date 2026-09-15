@@ -92,6 +92,44 @@ it('excludes a lead with the exact same phone number as the new lead', function 
     expect(app(DuplicateLeadDetector::class)->findCandidate($newLead))->toBeNull();
 });
 
+it('never matches two leads both carrying the generic "WhatsApp Inquiry" fallback name — real false-positive shape found via a 2026-09-15 production dry-run', function () {
+    Lead::factory()->create([
+        'name' => 'WhatsApp Inquiry',
+        'phone' => '919999999998',
+        'created_at' => now()->subDay(),
+    ]);
+    $newLead = Lead::factory()->create([
+        'name' => 'WhatsApp Inquiry',
+        'phone' => '919011847108',
+        'created_at' => now(),
+    ]);
+
+    expect(app(DuplicateLeadDetector::class)->findCandidate($newLead))->toBeNull();
+});
+
+it('a genuinely unnamed lead created via the real webhook path never flags against another unnamed lead', function () {
+    User::factory()->create(['role' => UserRole::Admin, 'is_active' => true]);
+    Lead::factory()->create([
+        'name' => 'WhatsApp Inquiry',
+        'phone' => '919999999998',
+        'source' => LeadSource::Whatsapp,
+        'created_at' => now()->subDay(),
+    ]);
+
+    // No contact_name in the payload -- handleUnmatchedNumber() falls back
+    // to the same literal "WhatsApp Inquiry" string.
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '919011847108',
+        'message' => 'Hello',
+        'conversation_id' => 'conv_no_name_no_flag',
+    ], ['Authorization' => 'Bearer test-wa-token'])->assertOk();
+
+    $lead = Lead::where('whatsapp_conversation_id', 'conv_no_name_no_flag')->firstOrFail();
+    expect($lead->name)->toBe('WhatsApp Inquiry')
+        ->and($lead->possible_duplicate_of_lead_id)->toBeNull();
+    Notification::assertNothingSent();
+});
+
 it('returns null when the new lead has no similar-name candidate at all', function () {
     Lead::factory()->create([
         'name' => 'Priya Shah',

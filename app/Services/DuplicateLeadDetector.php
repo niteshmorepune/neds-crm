@@ -59,6 +59,28 @@ class DuplicateLeadDetector
     private const HONORIFICS = ['dr', 'mr', 'mrs', 'ms', 'shri', 'smt'];
 
     /**
+     * Names that are structurally incapable of identifying a real person,
+     * so must never be allowed to match regardless of token count — found
+     * via a 2026-09-15 read-only dry-run of this exact logic against the
+     * full 388-lead production history (no writes, no notifications; run
+     * on request after this feature had already shipped, to validate the
+     * threshold against real data beyond the 5 known pairs it was tuned
+     * on). 'whatsapp inquiry' is `WhatsappWebhookController::
+     * handleUnmatchedNumber()`'s own literal fallback name for a lead with
+     * no WhatsApp profile name set — happens routinely (not a rare edge
+     * case), and every two such leads landing within the 14-day window
+     * would otherwise match each other with 100% confidence despite
+     * carrying zero actual identifying signal. 5 of the dry-run's 37
+     * non-known-pair matches were exactly this, the single most common
+     * false-positive shape found — everything else was either internal
+     * staff self-testing with their own name/number (accepted noise, a
+     * human dismisses it in seconds) or a plausible genuine match. Notably,
+     * the fuzzy surname+concat rule (namesMatch()'s second branch) never
+     * fired on an unrelated pair even once across the full history.
+     */
+    private const GENERIC_PLACEHOLDER_NAMES = ['whatsapp inquiry'];
+
+    /**
      * Finds the single best-matching, older Lead this new Lead might be a
      * duplicate of. Only considers Leads created in the window immediately
      * before this one (see WINDOW_DAYS) with a different phone number — a
@@ -66,11 +88,16 @@ class DuplicateLeadDetector
      * backward-looking search. Returns null when the Lead's own name is too
      * weak a signal to match on at all (fewer than 2 tokens — see
      * normalize()'s docblock on the "Santosh" false-positive case this
-     * guards against).
+     * guards against — or a generic placeholder name, see
+     * GENERIC_PLACEHOLDER_NAMES).
      */
     public function findCandidate(Lead $lead): ?Lead
     {
         $normalized = self::normalize((string) $lead->name);
+
+        if (in_array($normalized, self::GENERIC_PLACEHOLDER_NAMES, true)) {
+            return null;
+        }
 
         if (count(self::tokens($normalized)) < 2) {
             return null;
