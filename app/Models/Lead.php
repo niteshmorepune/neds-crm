@@ -121,6 +121,7 @@ class Lead extends Model
             'offer_clicked_at' => 'datetime',
             'recommendation_notified_at' => 'datetime',
             'recommendation_retry_attempted_at' => 'datetime',
+            'duplicate_flagged_at' => 'datetime',
         ];
     }
 
@@ -284,6 +285,16 @@ class Lead extends Model
     public function telecaller(): BelongsTo
     {
         return $this->belongsTo(User::class, 'telecaller_id');
+    }
+
+    /**
+     * Set by App\Actions\FlagPossibleDuplicateLead when
+     * DuplicateLeadDetector finds an older Lead this one might duplicate —
+     * a human-reviewed suggestion, never an automatic merge.
+     */
+    public function possibleDuplicateOf(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'possible_duplicate_of_lead_id');
     }
 
     public function convertedCustomer(): BelongsTo

@@ -956,6 +956,23 @@ command options (`--lead-days`, `--manager-days`), not an admin-editable
 setting — change the scheduled command in `routes/console.php` to adjust
 them.
 
+**Possible duplicate lead alert:** a WhatsApp message from a phone number
+the CRM doesn't recognize normally creates a brand-new Lead — but if that
+sometimes means the same customer messaging from a second number (their
+WhatsApp account's own number, never typed into any form) rather than a
+genuinely new enquiry. Every active Admin/Manager gets a bell notification
+the moment this happens if the new Lead's name closely matches another
+Lead created in the last 14 days under a different phone number (honorific
+prefixes, emoji, and a missing/split middle name are all normalized away
+before comparing — an exact string match isn't required). This never
+merges anything automatically — it's a suggestion for a human to review;
+the notification links straight into the **Merge Leads** screen with both
+leads pre-selected. A false positive (two different real people who
+happen to share a similar name) costs a few seconds to dismiss; a missed
+real duplicate costs a customer a second, contextless AI auto-reply that
+can go unnoticed for hours — this is deliberately tuned toward flagging
+over staying silent.
+
 **Reassign All (bulk handover):** filter Lead Generation by **Owner**
 (the filter row) and, if you can reassign (Admin/Manager), a panel appears
 showing how many open leads that person has, with a one-click **Reassign
