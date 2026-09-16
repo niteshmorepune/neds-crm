@@ -81,6 +81,31 @@ class DuplicateLeadDetector
     private const GENERIC_PLACEHOLDER_NAMES = ['whatsapp inquiry'];
 
     /**
+     * Generic business-suffix words that must never, by themselves, drive a
+     * company<->name match — calibrated against a real word-frequency count
+     * over every non-null `company` value in production (2026-09-16
+     * investigation): "enterprises" alone appeared 26 times across
+     * otherwise-unrelated companies, "services"/"service" 14,
+     * "solutions"/"solution" 7, "ltd" 9, "pvt" 7, "group" 5, "business" 5 —
+     * exactly the shape of word that would make two unrelated businesses
+     * ("Sunrise Enterprises" / "Moonlight Enterprises") match on the suffix
+     * alone if it weren't stripped before comparison. "traders"/
+     * "industries" weren't in this dataset's top words but are common
+     * enough Indian business-name suffixes to include pre-emptively.
+     * Stripped from BOTH sides before companyNameMatch() runs its
+     * comparison — see that method's own docblock for what happens if
+     * stripping empties a side entirely.
+     *
+     * @var list<string>
+     */
+    private const GENERIC_BUSINESS_WORDS = [
+        'enterprise', 'enterprises',
+        'service', 'services',
+        'solution', 'solutions',
+        'group', 'traders', 'industries', 'business', 'ltd', 'pvt',
+    ];
+
+    /**
      * Finds the single best-matching, older Lead this new Lead might be a
      * duplicate of. Only considers Leads created in the window immediately
      * before this one (see WINDOW_DAYS) with a different phone number — a
@@ -89,19 +114,25 @@ class DuplicateLeadDetector
      * weak a signal to match on at all (fewer than 2 tokens — see
      * normalize()'s docblock on the "Santosh" false-positive case this
      * guards against — or a generic placeholder name, see
-     * GENERIC_PLACEHOLDER_NAMES).
+     * GENERIC_PLACEHOLDER_NAMES). This 2-token/placeholder gate is
+     * deliberately left exactly as it was — it only ever governs the new
+     * Lead's own `name` field; company<->name matching (see
+     * isDuplicateCandidate()) is a fully additive second path evaluated
+     * per-candidate below, not a change to this gate.
      */
     public function findCandidate(Lead $lead): ?Lead
     {
-        $normalized = self::normalize((string) $lead->name);
+        $normalizedName = self::normalize((string) $lead->name);
 
-        if (in_array($normalized, self::GENERIC_PLACEHOLDER_NAMES, true)) {
+        if (in_array($normalizedName, self::GENERIC_PLACEHOLDER_NAMES, true)) {
             return null;
         }
 
-        if (count(self::tokens($normalized)) < 2) {
+        if (count(self::tokens($normalizedName)) < 2) {
             return null;
         }
+
+        $normalizedCompany = self::normalizedOrNull($lead->company);
 
         return Lead::query()
             ->where('id', '!=', $lead->id)
@@ -109,8 +140,107 @@ class DuplicateLeadDetector
             ->where('created_at', '>=', $lead->created_at->copy()->subDays(self::WINDOW_DAYS))
             ->where('created_at', '<=', $lead->created_at)
             ->orderByDesc('created_at')
-            ->get(['id', 'name', 'phone', 'created_at'])
-            ->first(fn (Lead $candidate) => self::namesMatch($normalized, self::normalize((string) $candidate->name)));
+            ->get(['id', 'name', 'company', 'phone', 'created_at'])
+            ->first(fn (Lead $candidate) => self::isDuplicateCandidate($normalizedName, $normalizedCompany, $candidate));
+    }
+
+    /**
+     * Three independent checks, first match wins — name<->name (unchanged
+     * from before this build), then the two directions of the new
+     * company<->name path (Lead A's company vs Lead B's name, and vice
+     * versa). Deliberately no company<->company check — not asked for, and
+     * two Leads sharing a company legitimately happens (two contacts at the
+     * same real business, e.g. two people from the same office messaging
+     * separately) in a way two people sharing an entire full name doesn't.
+     */
+    private static function isDuplicateCandidate(string $normalizedName, ?string $normalizedCompany, Lead $candidate): bool
+    {
+        $candidateNormalizedName = self::normalize((string) $candidate->name);
+
+        if (self::namesMatch($normalizedName, $candidateNormalizedName)) {
+            return true;
+        }
+
+        // Lead's own company <-> candidate's name. The candidate's name
+        // still needs the same generic-placeholder guard findCandidate()
+        // already applies to the Lead's own name — a candidate's literal
+        // "WhatsApp Inquiry" fallback name is exactly as weak a signal here
+        // as it is in the name<->name path.
+        if ($normalizedCompany !== null
+            && ! in_array($candidateNormalizedName, self::GENERIC_PLACEHOLDER_NAMES, true)
+            && self::companyNameMatch($normalizedCompany, $candidateNormalizedName)
+        ) {
+            return true;
+        }
+
+        // Candidate's company <-> Lead's own name. $normalizedName already
+        // passed the placeholder/2-token gate in findCandidate() before the
+        // query ever ran, so no re-check is needed on this side.
+        $candidateNormalizedCompany = self::normalizedOrNull($candidate->company);
+
+        return $candidateNormalizedCompany !== null
+            && self::companyNameMatch($normalizedName, $candidateNormalizedCompany);
+    }
+
+    /**
+     * Cross-field variant of namesMatch() — compares one Lead's
+     * normalize()d `company` against another Lead's normalize()d `name`.
+     * The two comparison rules below (reused verbatim from namesMatch(),
+     * not a third, different similarity algorithm) are already symmetric
+     * in which argument represents "company" vs "name", so callers never
+     * need to try both orderings of the same pair.
+     *
+     * Deliberately does NOT require 2+ raw tokens on both sides the way
+     * namesMatch() does for person names. A company name is often a
+     * proper-noun-plus-generic-suffix ("Ayushmaan Enterprises") that
+     * reduces to a single significant token once the suffix is stripped —
+     * requiring 2 tokens post-strip would silently exclude exactly the
+     * real confirmed pairs this was built for (see
+     * DuplicateLeadDetectorTest). The generic-word strip below is what
+     * keeps this safe instead: if stripping empties either side, there is
+     * no real signal left and no match is attempted — a bare "Enterprises"
+     * == "Enterprises" can never fire on its own, regardless of how short
+     * either original string was.
+     */
+    public static function companyNameMatch(string $normalizedA, string $normalizedB): bool
+    {
+        $significantA = self::stripGenericBusinessWords(self::tokens($normalizedA));
+        $significantB = self::stripGenericBusinessWords(self::tokens($normalizedB));
+
+        if ($significantA === [] || $significantB === []) {
+            return false;
+        }
+
+        if (self::isTokenSubset($significantA, $significantB)) {
+            return true;
+        }
+
+        return self::surnameMatchesWithFuzzyFirstName($significantA, $significantB);
+    }
+
+    /**
+     * @param  list<string>  $tokens
+     * @return list<string>
+     */
+    private static function stripGenericBusinessWords(array $tokens): array
+    {
+        return array_values(array_filter($tokens, fn (string $t) => ! in_array($t, self::GENERIC_BUSINESS_WORDS, true)));
+    }
+
+    /**
+     * null for a blank/whitespace-only company (very common — most Leads
+     * have no company at all) or one that normalize()s down to nothing
+     * (e.g. punctuation-only). Callers treat null as "nothing to compare."
+     */
+    private static function normalizedOrNull(?string $value): ?string
+    {
+        if ($value === null || trim($value) === '') {
+            return null;
+        }
+
+        $normalized = self::normalize($value);
+
+        return $normalized === '' ? null : $normalized;
     }
 
     /**

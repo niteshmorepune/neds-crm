@@ -106,3 +106,79 @@ it('does not match two clearly unrelated full names', function () {
 
     expect(DuplicateLeadDetector::namesMatch($na, $nb))->toBeFalse();
 });
+
+// ──────────────────────────────────────────────────────────────────────────
+// companyNameMatch() — the 5 real confirmed company<->name blind-spot pairs
+// from the 2026-09-16 investigation (memory: backlog.md). None of these are
+// catchable by namesMatch() alone — that's the whole point of this rule.
+// ──────────────────────────────────────────────────────────────────────────
+
+it('matches all 5 confirmed real company<->name duplicate pairs after normalization', function (string $company, string $name) {
+    $nCompany = DuplicateLeadDetector::normalize($company);
+    $nName = DuplicateLeadDetector::normalize($name);
+
+    expect(DuplicateLeadDetector::companyNameMatch($nCompany, $nName))
+        ->toBeTrue("Expected company '{$company}' to match name '{$name}'");
+})->with([
+    'Lead #59/#89 (Ayushmaan Enterprises — generic suffix stripped down to one distinctive token)' => [
+        'Ayushmaan Enterprises – Water Purifier Ro Sales and Services in Mumbai', 'Ayushmaan Enterprises',
+    ],
+    'Lead #104/#332 (NSS Business Group — exact business name)' => [
+        'NSS Business Group', 'NSS BUSINESS GROUP',
+    ],
+    'Lead #177/#178 (Samarth Mobile Motor Controller — WhatsApp-relayed form data)' => [
+        'Samarth mobile motor controller', 'samarth mobile motor controller',
+    ],
+    'Lead #293/#294 (Jagdamba Electricals — near-identical business name, different phones)' => [
+        'Jagdamba Electricals & Repairs', 'Jagdamba Electricals and Repairs',
+    ],
+    'Lead #436/#437 (Leisure Pools/Fulgado Stanley — different phones)' => [
+        'LEISURE POOLS, Karjat. Maharashtra', 'Leisure Pools 2',
+    ],
+]);
+
+it('companyNameMatch is symmetric — order of the two arguments never changes the result', function (string $company, string $name) {
+    $nCompany = DuplicateLeadDetector::normalize($company);
+    $nName = DuplicateLeadDetector::normalize($name);
+
+    expect(DuplicateLeadDetector::companyNameMatch($nName, $nCompany))->toBeTrue();
+})->with([
+    ['Ayushmaan Enterprises – Water Purifier Ro Sales and Services in Mumbai', 'Ayushmaan Enterprises'],
+    ['Jagdamba Electricals & Repairs', 'Jagdamba Electricals and Repairs'],
+    ['LEISURE POOLS, Karjat. Maharashtra', 'Leisure Pools 2'],
+]);
+
+it('never matches on a shared generic business-suffix word alone — two unrelated companies both just called "X Enterprises"', function () {
+    $companyA = DuplicateLeadDetector::normalize('Sunrise Enterprises');
+    $companyB = DuplicateLeadDetector::normalize('Moonlight Enterprises');
+
+    expect(DuplicateLeadDetector::companyNameMatch($companyA, $companyB))->toBeFalse();
+});
+
+it('never matches when stripping generic words empties one side entirely — a company literally named just "Enterprises"', function () {
+    $bareGeneric = DuplicateLeadDetector::normalize('Enterprises');
+    $realBusiness = DuplicateLeadDetector::normalize('Ayushmaan Enterprises');
+
+    expect(DuplicateLeadDetector::companyNameMatch($bareGeneric, $realBusiness))->toBeFalse();
+});
+
+it('does not match two unrelated companies sharing only a generic multi-word suffix combination', function () {
+    $companyA = DuplicateLeadDetector::normalize('Kohinoor Traders and Services');
+    $companyB = DuplicateLeadDetector::normalize('Everest Traders and Services');
+
+    expect(DuplicateLeadDetector::companyNameMatch($companyA, $companyB))->toBeFalse();
+});
+
+it('still matches two genuinely identical business names that happen to both carry a generic suffix', function () {
+    $companyA = DuplicateLeadDetector::normalize('Morya Cab Services');
+    $companyB = DuplicateLeadDetector::normalize('Morya Cab Services');
+
+    expect(DuplicateLeadDetector::companyNameMatch($companyA, $companyB))->toBeTrue();
+});
+
+it('does not match two clearly unrelated company/name pairs', function () {
+    $company = DuplicateLeadDetector::normalize('Priya Shah Boutique');
+    $name = DuplicateLeadDetector::normalize('Ramesh Gaikwad');
+
+    expect(DuplicateLeadDetector::companyNameMatch($company, $name))->toBeFalse();
+});

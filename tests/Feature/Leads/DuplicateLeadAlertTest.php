@@ -146,6 +146,130 @@ it('returns null when the new lead has no similar-name candidate at all', functi
 });
 
 // ──────────────────────────────────────────────────────────────────────────
+// company<->name crossover path (2026-09-16 build) — real production shape:
+// a Meta Ads lead's own richer form data (company/email/goal) vs a later
+// WhatsApp blank-lead whose name gets set from the sender's own profile.
+// A pair already catchable by name<->name (e.g. "Dr Rahul jain"/"Rahul
+// Jain" above) is left completely untouched by this section.
+// ──────────────────────────────────────────────────────────────────────────
+
+it('finds a candidate via company<->name crossover — new lead\'s name matches an older lead\'s company (Leisure Pools/Fulgado Stanley shape)', function () {
+    $older = Lead::factory()->create([
+        'name' => 'Fulgado Stanley',
+        'company' => 'LEISURE POOLS, Karjat. Maharashtra',
+        'phone' => '+918652666457',
+        'source' => LeadSource::MetaAds,
+        'created_at' => now()->subMinutes(1),
+    ]);
+    $newLead = Lead::factory()->create([
+        'name' => 'Leisure Pools 2',
+        'company' => null,
+        'phone' => '919082406892',
+        'source' => LeadSource::Whatsapp,
+        'created_at' => now(),
+    ]);
+
+    $candidate = app(DuplicateLeadDetector::class)->findCandidate($newLead);
+
+    expect($candidate)->not->toBeNull()->id->toBe($older->id);
+});
+
+it('finds a candidate via company<->name crossover — new lead\'s own company matches an older lead\'s name (Jagdamba Electricals shape)', function () {
+    $older = Lead::factory()->create([
+        'name' => 'Jagdamba Electricals and Repairs',
+        'company' => null,
+        'phone' => '918208842972',
+        'source' => LeadSource::Whatsapp,
+        'created_at' => now()->subMinutes(1),
+    ]);
+    $newLead = Lead::factory()->create([
+        'name' => 'Sharad Kulkarni',
+        'company' => 'Jagdamba Electricals & Repairs',
+        'phone' => '+919028051929',
+        'source' => LeadSource::MetaAds,
+        'created_at' => now(),
+    ]);
+
+    $candidate = app(DuplicateLeadDetector::class)->findCandidate($newLead);
+
+    expect($candidate)->not->toBeNull()->id->toBe($older->id);
+});
+
+it('a null company on both sides never errors and never produces a spurious match', function () {
+    Lead::factory()->create([
+        'name' => 'Priya Shah',
+        'company' => null,
+        'phone' => '919999999998',
+        'created_at' => now()->subDay(),
+    ]);
+    $newLead = Lead::factory()->create([
+        'name' => 'Rahul Jain',
+        'company' => null,
+        'phone' => '919011847108',
+        'created_at' => now(),
+    ]);
+
+    expect(app(DuplicateLeadDetector::class)->findCandidate($newLead))->toBeNull();
+});
+
+it('the 14-day window applies identically to a company<->name match — 15+ days outside the window does not match', function () {
+    Lead::factory()->create([
+        'name' => 'Fulgado Stanley',
+        'company' => 'LEISURE POOLS, Karjat. Maharashtra',
+        'phone' => '+918652666457',
+        'created_at' => now()->subDays(15),
+    ]);
+    $newLead = Lead::factory()->create([
+        'name' => 'Leisure Pools 2',
+        'company' => null,
+        'phone' => '919082406892',
+        'created_at' => now(),
+    ]);
+
+    expect(app(DuplicateLeadDetector::class)->findCandidate($newLead))->toBeNull();
+});
+
+it('a candidate whose NAME is the generic "WhatsApp Inquiry" placeholder is still excluded even when its tokens would otherwise subset-match the new lead\'s company', function () {
+    Lead::factory()->create([
+        'name' => 'WhatsApp Inquiry',
+        'company' => null,
+        'phone' => '919999999998',
+        'created_at' => now()->subDay(),
+    ]);
+    // Deliberately contains both "whatsapp" and "inquiry" as real tokens —
+    // without the placeholder guard on the candidate's name, this would
+    // token-subset-match the fallback name above.
+    $newLead = Lead::factory()->create([
+        'name' => 'Someone',
+        'company' => 'WhatsApp Inquiry Services',
+        'phone' => '919011847108',
+        'created_at' => now(),
+    ]);
+
+    expect(app(DuplicateLeadDetector::class)->findCandidate($newLead))->toBeNull();
+});
+
+it('an existing name<->name-only pair still matches exactly as before — no regression from adding the company<->name path', function () {
+    $older = Lead::factory()->create([
+        'name' => 'Rahul Jain',
+        'phone' => '+917775817080',
+        'source' => LeadSource::MetaAds,
+        'created_at' => now()->subDays(5),
+    ]);
+    $newLead = Lead::factory()->create([
+        'name' => 'Dr Rahul jain',
+        'company' => null,
+        'phone' => '919011847108',
+        'source' => LeadSource::Whatsapp,
+        'created_at' => now(),
+    ]);
+
+    $candidate = app(DuplicateLeadDetector::class)->findCandidate($newLead);
+
+    expect($candidate)->not->toBeNull()->id->toBe($older->id);
+});
+
+// ──────────────────────────────────────────────────────────────────────────
 // Full webhook flow — flag + notify
 // ──────────────────────────────────────────────────────────────────────────
 
@@ -291,4 +415,63 @@ it('does not dispatch a mute job when the flagged lead has no whatsapp_conversat
 
     expect($lead->fresh()->possible_duplicate_of_lead_id)->toBe($olderLead->id);
     Queue::assertNotPushed(MuteWadeskConversationJob::class);
+});
+
+// ──────────────────────────────────────────────────────────────────────────
+// company<->name crossover — full flag + notify flow (same downstream
+// orchestration as name<->name; FlagPossibleDuplicateLead itself is
+// untouched by this build, only what findCandidate() can detect changed)
+// ──────────────────────────────────────────────────────────────────────────
+
+it('flags and notifies exactly once for a pair only linkable via company<->name — same downstream behavior as the name<->name path', function () {
+    $admin = User::factory()->create(['role' => UserRole::Admin, 'is_active' => true]);
+    $olderLead = Lead::factory()->create([
+        'name' => 'Fulgado Stanley',
+        'company' => 'LEISURE POOLS, Karjat. Maharashtra',
+        'phone' => '+918652666457',
+        'source' => LeadSource::MetaAds,
+        'created_at' => now()->subMinutes(1),
+    ]);
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '919082406892',
+        'contact_name' => 'Leisure Pools 2',
+        'message' => 'Hello, I filled your form',
+        'conversation_id' => 'conv_company_name_crossover',
+    ], ['Authorization' => 'Bearer test-wa-token'])
+        ->assertOk()
+        ->assertJson(['status' => 'lead_created']);
+
+    $newLead = Lead::where('whatsapp_conversation_id', 'conv_company_name_crossover')->firstOrFail();
+
+    expect($newLead->possible_duplicate_of_lead_id)->toBe($olderLead->id)
+        ->and($newLead->duplicate_flagged_at)->not->toBeNull();
+
+    Notification::assertSentTimes(PossibleDuplicateLeadNotification::class, 1);
+    Notification::assertSentTo($admin, PossibleDuplicateLeadNotification::class);
+    Queue::assertPushed(MuteWadeskConversationJob::class, fn ($job) => $job->conversationId === 'conv_company_name_crossover');
+});
+
+it('the one-shot duplicate_flagged_at guard applies identically to a company<->name-flagged lead — a second run never re-flags or re-notifies', function () {
+    $olderLead = Lead::factory()->create([
+        'name' => 'Fulgado Stanley',
+        'company' => 'LEISURE POOLS, Karjat. Maharashtra',
+        'phone' => '+918652666457',
+        'created_at' => now()->subMinutes(1),
+    ]);
+    $lead = Lead::factory()->create([
+        'name' => 'Leisure Pools 2',
+        'company' => null,
+        'phone' => '919082406892',
+        'whatsapp_conversation_id' => 'conv_company_name_one_shot',
+        'created_at' => now(),
+    ]);
+
+    app(FlagPossibleDuplicateLead::class)->handle($lead);
+    expect($lead->fresh()->possible_duplicate_of_lead_id)->toBe($olderLead->id);
+
+    Notification::fake(); // re-fake to discard the first run's dispatch
+    app(FlagPossibleDuplicateLead::class)->handle($lead->fresh());
+
+    Notification::assertNothingSent();
 });
