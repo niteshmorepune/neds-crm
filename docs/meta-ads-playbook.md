@@ -2,10 +2,12 @@
 
 A ready-to-use campaign structure and ad copy for running Facebook/Instagram
 Lead Ads to generate leads for NEDS's own services, plus how to read the
-results once they land in the CRM. Written 2026-07-19, after the CRM's Meta
-Lead Ads integration (webhook + auto-scoring) had been live and verified
-since 2026-07-09. See [`docs/user-guides/admin.md`](user-guides/admin.md)
-Section 16 for the technical webhook setup, and
+results once they land in the CRM. Originally written 2026-07-19; **fully
+rewritten 2026-09-16** against the CRM's current goal+budget-driven form and
+unified offer funnel — the earlier version's Instant Form (a "which service"
+question + open-ended budget bands) predates both and had drifted stale for
+two months. See [`docs/user-guides/admin.md`](user-guides/admin.md) Section
+16 for the technical webhook setup, and
 [`docs/user-guides/integrations.md`](user-guides/integrations.md) for how a
 lead is processed once it arrives.
 
@@ -18,6 +20,11 @@ lead is processed once it arrives.
       Section 16 if this ever needs re-registering)
 - [ ] App is in **Live** mode, not Development (required for real, non-test
       webhook delivery)
+- [ ] Thank-You screen button URL is set to
+      `https://crm.niranjanenterprises.co.in/offers/find-my-recommendation`
+      (already pasted into the live form as of 2026-09-16 — see "The
+      Instant Form" below for why this one URL works for every lead
+      regardless of which offer they end up recommended)
 - [ ] Decide which 1–2 service clusters to launch first — don't run all four
       below at once on a tight budget; start with whichever has your
       strongest current proof (best case studies, fastest turnaround) and
@@ -38,6 +45,13 @@ nothing like an AI Automation buyer. Run separate ad sets per cluster:
 4. **Software Development / AI Automation** — higher-ticket, longer
    consideration; needs a more specific angle than a punchy hook
 
+These clusters are purely a **creative/targeting choice** now, not a form
+answer — see "The Instant Form" below for why the CRM no longer needs (or
+asks) which service a lead wants. Pick a cluster to decide which ad
+creative/audience to run; the CRM figures out the right next step for each
+individual lead from their own goal+budget answers, regardless of which
+cluster's ad they clicked.
+
 **Objective:** Leads → Instant Forms (the only lead type the CRM's webhook
 listens for — the `leadgen` field). **Form type: "Higher intent,"** not
 "More volume" — the extra review screen before submit meaningfully cuts
@@ -56,10 +70,18 @@ run each at least 4–7 days before judging — Meta's learning phase needs
 real volume (roughly 50 conversions/week/ad set) before performance data
 means anything.
 
-## The Instant Form — same structure for all four campaigns
+## The Instant Form — same 2 questions for every campaign
 
-Only the "Which service" options change per cluster; everything else is
-identical across all four ads below.
+**This is the part that changed most since the original playbook.** The
+old form asked "Which service are you looking for?" (multiple choice, tied
+to an exact Service name) and an open budget-band question. Neither is
+used anymore — the CRM's `service_id` is now auto-derived from what the
+lead's goal+budget answers actually resolve to (see the 2026-09-12
+"service_id auto-derived" decisions log entry in `CLAUDE.md`), and a
+fixed, structured budget question replaced the old free-text one. Every
+live ad variant confirmed against real production data (English, and two
+separate Hindi phrasings, dating back to 2026-08-08) asks these same two
+questions — use this exact shape for any new campaign:
 
 **Form type:** Higher intent (review screen before submit)
 
@@ -72,25 +94,47 @@ will reach out within 1 business day — this isn't a mailing list."
 2. Phone Number *(standard, autofill)*
 3. Email *(standard, autofill)*
 4. Company Name *(standard, autofill)*
-5. **"Which service are you looking for?"** — multiple choice, options must
-   be the **exact active Service names** (case-insensitive match, but the
-   same words) so the CRM's `ImportMetaLead` job can tag the lead's service
-   automatically:
-   - Local Visibility ad → `SEO`, `GMB`
-   - Website ad → `Website Design & Development`
-   - Performance Marketing ad → `Performance Marketing`
-   - Software/AI ad → `Software Development`, `AI Automation`
-6. **"What's your approximate monthly budget for this?"** — multiple
-   choice; the question text must contain the word **"budget"** for the
-   CRM's budget parser to touch it:
-   - Under ₹10,000
-   - ₹10,000 – 25,000
-   - ₹25,000 – 50,000
-   - ₹50,000+
+5. **"What is your biggest goal?"** — multiple choice, exactly 4 options.
+   The CRM matches on the field's own **key** containing the word "goal"
+   (a Hindi variant asking the same thing has used "लक्ष्य" or "ज़रूरत"
+   instead — both are already handled), so phrase the question however
+   reads best, as long as the key/label includes one of those words. Use
+   these exact 4 option labels (the CRM matches the option's own text, not
+   just a hidden value, so keep the wording below):
+   - **Generate More Leads**
+   - **Rank Higher on Google**
+   - **Grow My Business Online**
+   - **Not Sure – Need Expert Advice**
+6. **"What's your approximate monthly marketing budget?"** — multiple
+   choice, exactly 4 options. The CRM matches on the field's key
+   containing "budget" (a Hindi variant has used "बजट" or "खर्च" instead —
+   both already handled):
+   - **Under ₹3,000**
+   - **₹3,000 – ₹6,000**
+   - **₹6,000 – ₹12,000**
+   - **₹12,000+**
 
-Get these two questions right and a Meta lead scores exactly as well as a
-rep manually entering one — right now that's the difference between a lead
-sitting unscored vs. auto-flagging 🔥 Hot the moment it lands.
+Do **not** add a separate "which service" question — it's no longer read
+by anything, and having staff (or the ad form) manually tag a service
+guess was actively producing bad data before this was automated (see the
+2026-09-12 decisions log entry: staff had been habitually tagging nearly
+every Meta lead's service as GMB regardless of what they actually wanted).
+A free-text "Tell us more" field is fine to add if useful for creative
+reasons, but it lands as an unstructured note, not a parsed field.
+
+**If you're localizing the form (Hindi or Marathi):** the CRM's parser has
+been updated twice already for real ad variants that phrased these
+questions differently than expected (see `app/Jobs/ImportMetaLead.php`'s
+`matchGoal()`/`matchBudgetRange()` — both keep a running comment log of
+every real phrasing confirmed against actual production leads). **Before
+launching a new localized variant, get the exact real question/option text
+Meta will send (not copy pasted from memory) and check it against those
+two methods, or check with whoever last touched this playbook** — a
+mismatch doesn't error, it just silently drops the answer into a generic
+note instead of being parsed, which has happened more than once already
+(see `feedback-gotchas.md`'s "never fabricate a Hindi match, confirm
+against a real lead first" entry). Get sign-off on any new-market copy
+this way before spending real budget on it.
 
 **Privacy policy:** `https://niranjanenterprises.com/privacy-policy/`
 
@@ -101,35 +145,68 @@ sitting unscored vs. auto-flagging 🔥 Hot the moment it lands.
 > Button: View Website
 > **URL: `https://crm.niranjanenterprises.co.in/offers/find-my-recommendation`**
 
-**2026-09-12 update — why this specific URL, not a specific offer page:**
-Meta's own thank-you-screen button is a single static URL with no
-per-submission personalization — it cannot carry the lead's own id, phone,
-or answers (that data isn't available in the browser at all; Meta only
-delivers it to us later via webhook). Since the CRM now recommends one of
-4 different offers per lead (goal+budget matrix — see
-`docs/user-guides/manager.md`'s "Meta Ads recommendation + offer funnel"
-section), pointing this button at any ONE specific offer page would show
-the wrong price/offer to 3 out of 4 people. `/offers/find-my-recommendation`
-asks the visitor to confirm the phone number they just gave Meta, looks up
-their own Lead, and forwards them straight to whichever offer the matrix
-actually resolved for them — see `FindMyRecommendationController`. **This
-same reasoning is why the older "Which service are you looking for?"
-question below is now stale** — the live ad form actually asks "What is
-your biggest goal?" / monthly budget (see `docs/user-guides/sales.md`'s
-"Their goal, and their Website/GBP link" section for the real, current
-question text/options) — the rest of this playbook (campaign copy, budget
-bands, service-name multiple-choice) predates that change and has not yet
-been reconciled with the live form; treat the campaign creative/copy
-sections below as historical unless/until this whole doc is rewritten
-against the current form.
+**Why this one URL, not a specific offer page:** Meta's own thank-you-screen
+button is a single static URL with no per-submission personalization — it
+cannot carry the lead's own id, phone, or answers (that data isn't
+available in the browser at all; Meta only delivers it to us later via
+webhook). Since the CRM recommends one of 4 different offers per lead
+(see "How the CRM uses these answers" below), pointing this button at any
+ONE specific offer page would show the wrong price/offer to most people.
+`/offers/find-my-recommendation` asks the visitor to confirm the phone
+number they just gave Meta, looks up their own Lead, and forwards them
+straight to whichever offer actually got recommended for them — see
+`FindMyRecommendationController`. **Confirmed live and pasted into the
+real ad form as of 2026-09-16.**
+
+## How the CRM uses these answers
+
+Once a lead's Goal and Budget are both known (from the form directly, or
+filled in later by a rep — see `docs/user-guides/sales.md`'s "Their goal,
+and their Website/GBP link" section), three things happen automatically,
+no manual tagging required:
+
+1. **`service_id` is derived**, not guessed — a fixed mapping from the
+   resolved offer (GBP Audit → GMB, Website Growth Audit → Website Design &
+   Development, Lead Generation Audit → Performance Marketing; Growth
+   Strategy spans multiple services and is left untagged deliberately).
+   This is what makes every service-wise report (including "After
+   launch" below) correct without anyone touching the Service field.
+2. **One of 4 entry offers is recommended**, from a fixed 16-cell
+   goal × budget matrix (`App\Support\OfferRecommendationMatrix`):
+
+   | Offer | Price |
+   |---|---|
+   | Google Business Profile Visibility Audit | ₹120 |
+   | Lead Generation Funnel Audit | ₹299 |
+   | Website + Conversion Growth Audit | ₹499 |
+   | Personalized Digital Growth Strategy | ₹999 |
+
+   The full 16-cell breakdown (which goal/budget combination maps to
+   which offer, and the exact Hindi/English positioning copy for each) is
+   documented in `docs/user-guides/manager.md`'s "Meta Ads recommendation
+   + offer funnel" section — not duplicated here, since it's tuned/edited
+   independently of ad campaign strategy.
+3. **A first-touch WhatsApp message goes out automatically**, pointing
+   the lead at their own personalized recommendation page — this is
+   separate from, and in addition to, the Thank-You screen button (covers
+   a lead who closes the browser tab before clicking it, or comes back to
+   WhatsApp later).
+
+**A lead whose form never asked these questions at all** (an older
+campaign, or one built by someone who skipped this playbook) still gets
+routed sensibly — a GMB-tagged campaign falls back to the original GBP
+invite, and any other lead gets a generic welcome message — but doesn't
+get the personalized recommendation, and staff will have to fill in
+Goal/Budget by hand on a call before any of the above kicks in. Always use
+the 2-question shape above for a new campaign so this happens automatically.
 
 ---
 
 ## Campaign 1 — Local Visibility (SEO + GMB)
 
-**Campaign/ad name in Meta:** `Local-Visibility-Pune-July2026-V1` — this
-exact name becomes the CRM's Campaign value in the Lead Source Performance
-report, so keep it recognizable.
+**Campaign/ad name in Meta:** `Local-Visibility-Pune-<Month><Year>-V1` —
+this exact name becomes the CRM's Campaign value in the Lead Source
+Performance report, so keep it recognizable.
 
 **Creative direction:** Before/after screenshot of a Google Maps pack or
 search ranking, or a simple stat-card graphic. Bilingual copy performs
@@ -154,7 +231,7 @@ better here than English-only.
 
 ## Campaign 2 — Website Design & Development
 
-**Campaign/ad name:** `Website-Dev-Pune-July2026-V1`
+**Campaign/ad name:** `Website-Dev-Pune-<Month><Year>-V1`
 
 **Creative direction:** Split-screen "outdated site vs. modern site"
 mockup, or a short video of a site loading fast on mobile.
@@ -179,7 +256,7 @@ mockup, or a short video of a site loading fast on mobile.
 
 ## Campaign 3 — Performance Marketing
 
-**Campaign/ad name:** `Perf-Marketing-Pune-July2026-V1`
+**Campaign/ad name:** `Perf-Marketing-Pune-<Month><Year>-V1`
 
 **Creative direction:** A simple "ROI up, cost down" style graph/stat
 visual — this audience responds to numbers, not lifestyle imagery.
@@ -204,7 +281,7 @@ visual — this audience responds to numbers, not lifestyle imagery.
 
 ## Campaign 4 — Software Development / AI Automation
 
-**Campaign/ad name:** `SoftwareAI-Pune-July2026-V1`
+**Campaign/ad name:** `SoftwareAI-Pune-<Month><Year>-V1`
 
 **Creative direction:** This is the highest-consideration, lowest-volume
 cluster — a longer-form, more specific angle works better than a punchy
@@ -239,6 +316,7 @@ closes.
 |---|---|
 | Did people click and submit? | Meta Ads Manager — CTR, cost-per-lead, form completion rate |
 | Did those leads become real business? | CRM: **Reports → Lead Source Performance**, filtered to Meta Ads — leads captured, conversion rate, **Avg AI score** (a quality proxy before a human even calls), and **Won value** |
+| Did they engage with, or pay for, their recommended offer? | CRM: **Offer Funnel Analytics** (Admin/Manager) — recommended → notified → viewed → reached offer → paid, both team-wide and broken down by goal × budget |
 
 **Weekly reconciliation:** pull Meta's per-ad CPL next to the CRM's
 per-campaign conversion rate + Won value (the campaign name you set above
@@ -261,5 +339,13 @@ integration work is worth it.
   in Ads Manager's own preview once pasted in, since exact truncation
   varies by placement.
 - "66+ Maharashtra businesses" is a real number pulled from the CRM
-  (active clients), not a placeholder — keep it updated if this copy gets
-  reused months from now.
+  (active clients), not a placeholder, and is also one of the 3 proof
+  points already used on the live offer pages (see
+  `resources/views/offers/`) — keep it updated if this copy gets reused
+  months from now and the real count has moved meaningfully.
+- If a future campaign genuinely needs a new question the CRM doesn't
+  parse yet (a new budget tier, a different goal option, a new language),
+  build the field-matching support in `ImportMetaLead` first and confirm
+  it against a real submitted lead before spending ad budget against it —
+  this playbook's own "How the CRM uses these answers" section only works
+  when the form asks exactly what the CRM is listening for.
