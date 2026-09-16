@@ -9,6 +9,7 @@ use App\Enums\VisibilityAuditTouchType;
 use App\Models\Activity;
 use App\Models\CallLog;
 use App\Models\Lead;
+use App\Models\LeadWhatsappConversation;
 use App\Models\Meeting;
 use App\Models\Note;
 use App\Models\User;
@@ -113,6 +114,47 @@ it('does not overwrite the primary lead\'s own whatsapp_conversation_id with the
     $merged = (new MergeLeads)->handle($primary, $duplicate, []);
 
     expect($merged->whatsapp_conversation_id)->toBe('primary_conv');
+});
+
+it('records the duplicate\'s own conversation_id as an additional mapping onto the primary when both leads have their own — real incident 2026-09-16, #421/#420 and #422/#423', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+    $primary = Lead::factory()->create(['whatsapp_conversation_id' => 'primary_conv']);
+    $duplicate = Lead::factory()->create(['whatsapp_conversation_id' => 'duplicate_conv']);
+
+    (new MergeLeads)->handle($primary, $duplicate, []);
+
+    $mapping = LeadWhatsappConversation::where('conversation_id', 'duplicate_conv')->first();
+    expect($mapping)->not->toBeNull()
+        ->and($mapping->lead_id)->toBe($primary->id)
+        // The primary's own column is untouched — this is an ADDITIONAL
+        // mapping, not a replacement.
+        ->and($primary->fresh()->whatsapp_conversation_id)->toBe('primary_conv');
+});
+
+it('does not create a mapping row when only one of the two leads has a conversation_id — no regression on the simple case', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+    $primary = Lead::factory()->create(['whatsapp_conversation_id' => null]);
+    $duplicate = Lead::factory()->create(['whatsapp_conversation_id' => 'duplicate_conv']);
+
+    (new MergeLeads)->handle($primary, $duplicate, []);
+
+    expect(LeadWhatsappConversation::count())->toBe(0);
+});
+
+it('does not throw and does not duplicate the row when a mapping for that conversation_id already exists (firstOrCreate, defensive)', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+    $existingOwner = Lead::factory()->create();
+    LeadWhatsappConversation::create(['lead_id' => $existingOwner->id, 'conversation_id' => 'already_mapped_conv']);
+
+    $primary = Lead::factory()->create(['whatsapp_conversation_id' => 'primary_conv']);
+    $duplicate = Lead::factory()->create(['whatsapp_conversation_id' => 'already_mapped_conv']);
+
+    expect(fn () => (new MergeLeads)->handle($primary, $duplicate, []))->not->toThrow(Throwable::class);
+    expect(LeadWhatsappConversation::where('conversation_id', 'already_mapped_conv')->count())->toBe(1)
+        ->and(LeadWhatsappConversation::where('conversation_id', 'already_mapped_conv')->first()->lead_id)->toBe($existingOwner->id);
 });
 
 it('leaves a breadcrumb note on the primary lead naming the merged-in duplicate', function () {

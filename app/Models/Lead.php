@@ -722,6 +722,17 @@ class Lead extends Model
     }
 
     /**
+     * Extra WhatsApp conversation IDs this Lead answers to, beyond its own
+     * whatsapp_conversation_id column — see LeadWhatsappConversation's own
+     * docblock for why this exists (a merge of two Leads that each had
+     * their own live conversation).
+     */
+    public function additionalWhatsappConversations(): HasMany
+    {
+        return $this->hasMany(LeadWhatsappConversation::class);
+    }
+
+    /**
      * The single most recent note — eager-loadable without an N+1, for the
      * Lead Generation list's "Latest Note" column.
      */

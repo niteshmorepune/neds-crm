@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\MergeLeads;
 use App\Enums\LeadSource;
 use App\Enums\LeadStatus;
 use App\Enums\TicketStatus;
@@ -10,11 +11,13 @@ use App\Jobs\ImportWhatsappTicketMedia;
 use App\Models\Contact;
 use App\Models\Customer;
 use App\Models\Lead;
+use App\Models\LeadWhatsappConversation;
 use App\Models\Service;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Models\VisibilityAuditTouch;
 use App\Notifications\LeadRestoredByIncomingMessageNotification;
+use App\Notifications\MergedLeadMessagedNotification;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Notification;
 
@@ -791,4 +794,249 @@ it('does not report restored=true or notify anyone for the ordinary repeat-messa
         ->assertJson(['status' => 'lead_note_added', 'lead_id' => $lead->id, 'restored' => false]);
 
     Notification::assertNothingSent();
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// A merged-away lead's own conversation messages again — real incidents
+// 2026-09-16: #421 (merged into #420) and #422 (merged into #423). Blindly
+// restoring (the original same-day fix, above) silently re-created the
+// exact fragmentation the merge had already resolved. This must hold for
+// review instead: no restore, no exception, message attached to the
+// PRIMARY lead, staff notified with full context.
+// ──────────────────────────────────────────────────────────────────────────────
+
+it('holds for review instead of restoring when the trashed lead was merged into a still-active primary — #421/#420 shape (the merged-away number is the one still messaging)', function () {
+    Notification::fake();
+    $admin = User::factory()->create(['role' => UserRole::Admin, 'is_active' => true]);
+
+    $primary = Lead::factory()->create([
+        'name' => 'Pradyumna B Sevekari',
+        'phone' => '+919022065920',
+        'whatsapp_conversation_id' => 'conv_primary_own',
+    ]);
+    $trashed = Lead::factory()->create([
+        'name' => 'Pradyumna Sevekari',
+        'phone' => '919823021628',
+        'whatsapp_conversation_id' => 'conv_trashed_merged',
+        'possible_duplicate_of_lead_id' => $primary->id,
+        'duplicate_flagged_at' => now()->subHours(3),
+    ]);
+    $trashed->delete(); // stands in for MergeLeads::handle()'s own soft-delete
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '919823021628',
+        'message' => 'Hi, are you still there?',
+        'conversation_id' => 'conv_trashed_merged',
+    ], ['Authorization' => 'Bearer test-wa-token'])
+        ->assertOk()
+        ->assertJson(['status' => 'merged_lead_held_for_review', 'lead_id' => $primary->id, 'trashed_lead_id' => $trashed->id]);
+
+    // Never restored.
+    expect(Lead::find($trashed->id))->toBeNull()
+        ->and($trashed->fresh()->trashed())->toBeTrue();
+
+    // Never created a third lead, never crashed.
+    expect(Lead::withTrashed()->count())->toBe(2);
+
+    // The message landed on the PRIMARY's timeline, clearly labeled.
+    $note = $primary->notes()->latest()->first();
+    expect($note)->not->toBeNull()
+        ->and($note->body)->toContain('Hi, are you still there?')
+        ->and($note->body)->toContain('previously-merged lead')
+        ->and($note->body)->toContain('#'.$trashed->id)
+        ->and($note->body)->toContain('Pradyumna Sevekari');
+
+    Notification::assertSentTo(
+        $admin,
+        MergedLeadMessagedNotification::class,
+        function ($n) use ($trashed, $primary, $admin) {
+            $array = $n->toArray($admin);
+
+            return $n->trashedLead->is($trashed) && $n->primary->is($primary)
+                && str_contains($array['message'], 'Pradyumna Sevekari')
+                && str_contains($array['message'], '919823021628')
+                && str_contains($array['message'], 'Pradyumna B Sevekari')
+                && str_contains($array['message'], '+919022065920')
+                && $array['trashed_lead_id'] === $trashed->id
+                && $array['primary_lead_id'] === $primary->id
+                && $array['url'] === route('leads.show', $primary->id);
+        },
+    );
+
+    // Not the restore notification — a different, more specific one.
+    Notification::assertNotSentTo($admin, LeadRestoredByIncomingMessageNotification::class);
+});
+
+it('holds for review the same way regardless of which merged lead the message arrives on — #422/#423 shape', function () {
+    Notification::fake();
+    User::factory()->create(['role' => UserRole::Manager, 'is_active' => true]);
+
+    $primary = Lead::factory()->create(['name' => 'harth full record', 'phone' => '918888423700']);
+    $trashed = Lead::factory()->create([
+        'name' => 'harth 💔 break',
+        'phone' => '918888423729',
+        'whatsapp_conversation_id' => 'conv_harth_merged',
+        'possible_duplicate_of_lead_id' => $primary->id,
+        'duplicate_flagged_at' => now()->subDay(),
+    ]);
+    $trashed->delete();
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '918888423729',
+        'message' => 'yasin here, any update?',
+        'conversation_id' => 'conv_harth_merged',
+    ], ['Authorization' => 'Bearer test-wa-token'])
+        ->assertOk()
+        ->assertJson(['status' => 'merged_lead_held_for_review']);
+
+    expect(Lead::find($trashed->id))->toBeNull()
+        ->and($primary->notes()->where('body', 'like', '%yasin here%')->exists())->toBeTrue();
+
+    Notification::assertSentTimes(MergedLeadMessagedNotification::class, 1);
+});
+
+it('falls back to the ordinary restore behavior when the trashed lead has no possible_duplicate_of_lead_id — a genuinely incidental delete', function () {
+    Notification::fake();
+    User::factory()->create(['role' => UserRole::Admin, 'is_active' => true]);
+
+    $lead = Lead::factory()->create([
+        'phone' => '919999999999',
+        'whatsapp_conversation_id' => 'conv_incidental_delete',
+        'possible_duplicate_of_lead_id' => null,
+    ]);
+    $lead->delete();
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '919999999999',
+        'message' => 'Hello again',
+        'conversation_id' => 'conv_incidental_delete',
+    ], ['Authorization' => 'Bearer test-wa-token'])
+        ->assertOk()
+        ->assertJson(['status' => 'lead_note_added', 'restored' => true]);
+
+    expect(Lead::find($lead->id))->not->toBeNull()
+        ->and($lead->fresh()->trashed())->toBeFalse();
+
+    Notification::assertSentTimes(LeadRestoredByIncomingMessageNotification::class, 1);
+    Notification::assertNotSentTo(User::where('role', UserRole::Admin)->first(), MergedLeadMessagedNotification::class);
+});
+
+it('falls back to the ordinary restore behavior when the flagged duplicate candidate is also trashed', function () {
+    Notification::fake();
+    User::factory()->create(['role' => UserRole::Admin, 'is_active' => true]);
+
+    $alsoTrashedCandidate = Lead::factory()->create();
+    $alsoTrashedCandidate->delete();
+
+    $lead = Lead::factory()->create([
+        'phone' => '919999999999',
+        'whatsapp_conversation_id' => 'conv_candidate_also_trashed',
+        'possible_duplicate_of_lead_id' => $alsoTrashedCandidate->id,
+        'duplicate_flagged_at' => now()->subDay(),
+    ]);
+    $lead->delete();
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '919999999999',
+        'message' => 'Hello again',
+        'conversation_id' => 'conv_candidate_also_trashed',
+    ], ['Authorization' => 'Bearer test-wa-token'])
+        ->assertOk()
+        ->assertJson(['status' => 'lead_note_added', 'restored' => true]);
+
+    expect(Lead::find($lead->id))->not->toBeNull();
+    Notification::assertSentTimes(LeadRestoredByIncomingMessageNotification::class, 1);
+});
+
+it('handles a second message on an already held-for-review conversation without throwing or restoring', function () {
+    Notification::fake();
+    User::factory()->create(['role' => UserRole::Admin, 'is_active' => true]);
+
+    $primary = Lead::factory()->create();
+    $trashed = Lead::factory()->create([
+        'whatsapp_conversation_id' => 'conv_held_twice',
+        'possible_duplicate_of_lead_id' => $primary->id,
+        'duplicate_flagged_at' => now()->subDay(),
+    ]);
+    $trashed->delete();
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => $trashed->phone,
+        'message' => 'First follow-up message',
+        'conversation_id' => 'conv_held_twice',
+    ], ['Authorization' => 'Bearer test-wa-token'])->assertJson(['status' => 'merged_lead_held_for_review']);
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => $trashed->phone,
+        'message' => 'Second follow-up message',
+        'conversation_id' => 'conv_held_twice',
+    ], ['Authorization' => 'Bearer test-wa-token'])
+        ->assertOk()
+        ->assertJson(['status' => 'merged_lead_held_for_review']);
+
+    expect(Lead::find($trashed->id))->toBeNull()
+        ->and(Lead::withTrashed()->count())->toBe(2)
+        ->and($primary->notes()->where('body', 'like', '%First follow-up message%')->exists())->toBeTrue()
+        ->and($primary->notes()->where('body', 'like', '%Second follow-up message%')->exists())->toBeTrue();
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// The lead_whatsapp_conversations mapping table (Task 2) — a message on a
+// conversation that was mapped to a surviving lead at merge time attaches
+// directly, without ever reaching the trashed-lead lookup/held-for-review
+// path at all, even when a trashed lead still physically holds that same
+// conversation_id in its own (now-superseded) column.
+// ──────────────────────────────────────────────────────────────────────────────
+
+it('attaches a message directly to the mapped primary lead via lead_whatsapp_conversations, without touching the trashed-lead path', function () {
+    Notification::fake();
+    User::factory()->create(['role' => UserRole::Admin, 'is_active' => true]);
+
+    $primary = Lead::factory()->create(['whatsapp_conversation_id' => 'primary_own_conv']);
+    // The trashed lead still physically holds the mapped conversation_id in
+    // its own column — exactly the real post-merge state (MergeLeads never
+    // clears it) — to prove the mapping table is checked FIRST and wins.
+    $trashed = Lead::factory()->create(['whatsapp_conversation_id' => 'conv_mapped_elsewhere']);
+    $trashed->delete();
+    LeadWhatsappConversation::create(['lead_id' => $primary->id, 'conversation_id' => 'conv_mapped_elsewhere']);
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '919999999999',
+        'message' => 'Message on a mapped conversation',
+        'conversation_id' => 'conv_mapped_elsewhere',
+    ], ['Authorization' => 'Bearer test-wa-token'])
+        ->assertOk()
+        ->assertJson(['status' => 'lead_note_added', 'lead_id' => $primary->id, 'restored' => false]);
+
+    expect($primary->notes()->where('body', 'Message on a mapped conversation')->exists())->toBeTrue()
+        ->and(Lead::find($trashed->id))->toBeNull(); // never restored
+
+    Notification::assertNothingSent(); // no restore/held-for-review notification — this was already resolved
+});
+
+it('end-to-end: after a real merge of two leads that each had their own conversation, a message on either original conversation_id reaches the survivor directly', function () {
+    Notification::fake();
+    $user = User::factory()->create(['role' => UserRole::Admin, 'is_active' => true]);
+    $this->actingAs($user);
+
+    $primary = Lead::factory()->create(['name' => 'Primary Person', 'phone' => '919022065920', 'whatsapp_conversation_id' => 'conv_primary_real']);
+    $duplicate = Lead::factory()->create(['name' => 'Duplicate Person', 'phone' => '919823021628', 'whatsapp_conversation_id' => 'conv_duplicate_real']);
+
+    (new MergeLeads)->handle($primary, $duplicate, []);
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '919823021628',
+        'message' => 'Following up after the merge',
+        'conversation_id' => 'conv_duplicate_real',
+    ], ['Authorization' => 'Bearer test-wa-token'])
+        ->assertOk()
+        ->assertJson(['status' => 'lead_note_added', 'lead_id' => $primary->id, 'restored' => false]);
+
+    expect($primary->notes()->where('body', 'Following up after the merge')->exists())->toBeTrue()
+        ->and(Lead::find($duplicate->id))->toBeNull()
+        ->and(Lead::withTrashed()->count())->toBe(2); // never restored, never re-created
+
+    // Never went through the held-for-review path either.
+    Notification::assertNotSentTo($user, MergedLeadMessagedNotification::class);
+    Notification::assertNotSentTo($user, LeadRestoredByIncomingMessageNotification::class);
 });

@@ -14,11 +14,13 @@ use App\Http\Controllers\Controller;
 use App\Jobs\ImportWhatsappTicketMedia;
 use App\Models\Customer;
 use App\Models\Lead;
+use App\Models\LeadWhatsappConversation;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Models\VisibilityAuditTouch;
 use App\Models\WadeskMessageLog;
 use App\Notifications\LeadRestoredByIncomingMessageNotification;
+use App\Notifications\MergedLeadMessagedNotification;
 use App\Services\VisibilityAuditFunnelMetrics;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
@@ -249,10 +251,47 @@ class WhatsappWebhookController extends Controller
      * again," so a trashed match is restored rather than left permanently
      * broken; see restoreIfTrashed() for why that's paired with a staff
      * notification instead of a silent auto-fix.
+     *
+     * A trashed match is NOT always an incidental delete, though — a real
+     * follow-on incident the SAME day (#421/#422 again) showed both had
+     * actually been correctly merged away via App\Actions\MergeLeads, after
+     * the duplicate detector (#197) had already flagged and notified staff,
+     * who had already reviewed and merged. Restoring unconditionally
+     * silently undid that legitimate consolidation. See
+     * survivingPrimaryOf()/recordMessageOnMergedAwayLead() for the branch
+     * that now catches this case first — restoreIfTrashed() only ever runs
+     * for a trashed lead with no still-active merge target, i.e. a
+     * genuinely incidental delete, exactly its original, unchanged
+     * behavior for that case.
+     *
+     * A future merge of two leads that each had their own live conversation
+     * no longer needs any of the above at all: App\Actions\MergeLeads now
+     * records the duplicate's conversation_id in lead_whatsapp_conversations
+     * against the surviving primary at merge time, and the very first check
+     * below resolves it directly — the trashed-lead branch only exists for
+     * an already-stranded conversation from before that mapping existed, or
+     * a genuinely incidental delete.
      */
     private function handleUnmatchedNumber(array $data, string $direction, string $senderType): JsonResponse
     {
+        $mappedLead = LeadWhatsappConversation::where('conversation_id', $data['conversation_id'])->first()?->lead;
+
+        if ($mappedLead !== null) {
+            $this->recordLeadMessage($mappedLead, $data, $direction, $senderType);
+
+            return response()->json(['status' => 'lead_note_added', 'lead_id' => $mappedLead->id, 'restored' => false]);
+        }
+
         $lead = Lead::withTrashed()->where('whatsapp_conversation_id', $data['conversation_id'])->first();
+
+        if ($lead !== null && $lead->trashed()) {
+            $primary = $this->survivingPrimaryOf($lead);
+
+            if ($primary !== null) {
+                return $this->recordMessageOnMergedAwayLead($lead, $primary, $data, $direction, $senderType);
+            }
+        }
+
         $restored = $lead !== null && $this->restoreIfTrashed($lead);
 
         if ($lead === null) {
@@ -361,6 +400,86 @@ class WhatsappWebhookController extends Controller
                 ->each(fn (User $user) => $user->notify($notification));
         } catch (Throwable $e) {
             Log::warning('LeadRestoredByIncomingMessageNotification failed for lead '.$lead->id.': '.$e->getMessage());
+        }
+    }
+
+    /**
+     * possible_duplicate_of_lead_id survives both a merge (App\Actions\
+     * MergeLeads never touches it) and a later restore untouched, making it
+     * a reliable existing signal for "this Lead was part of a
+     * duplicate-detector-reviewed pair" — see the 2026-09-16 follow-on
+     * incident write-up on handleUnmatchedNumber() for why this check
+     * exists. Deliberately does not try to be more certain than that
+     * signal actually is: the flagged candidate isn't guaranteed to be the
+     * literal Lead a human chose as merge primary (staff could have merged
+     * the other way, or into a third Lead entirely) — but treating it as
+     * "probably related, hold for review" is safe either way, since the
+     * only two outcomes this check picks between are "restore automatically"
+     * and "attach the message to this Lead and ask a human," never anything
+     * destructive. Returns null (falls through to the original
+     * restoreIfTrashed() behavior) whenever there's no non-trashed
+     * candidate to hold the message against.
+     */
+    private function survivingPrimaryOf(Lead $lead): ?Lead
+    {
+        if ($lead->possible_duplicate_of_lead_id === null) {
+            return null;
+        }
+
+        return Lead::find($lead->possible_duplicate_of_lead_id);
+    }
+
+    /**
+     * The held-for-review branch: a trashed Lead's conversation received a
+     * new message, but it was merged away, not incidentally deleted (see
+     * survivingPrimaryOf()). Never restores $trashedLead and never touches
+     * Lead::create() — both would either re-fragment a resolved duplicate
+     * or hit the exact unique-constraint crash this whole incident is
+     * about, since $trashedLead still physically holds this
+     * conversation_id. The message lands on $primary's own timeline
+     * instead, clearly labeled, so nothing is lost and staff see it
+     * immediately without having to know to look for it; a notification
+     * carries the full context needed to decide whether this should become
+     * a separate Lead again. Deliberately skips scheduleFollowUpIfAiReplied()/
+     * the VisibilityAuditTouch logging recordLeadMessage() would normally
+     * do — attributing those to $primary would assume the review's outcome
+     * before a human has actually made the call.
+     */
+    private function recordMessageOnMergedAwayLead(Lead $trashedLead, Lead $primary, array $data, string $direction, string $senderType): JsonResponse
+    {
+        if (filled($data['message'] ?? null)) {
+            $header = "[WhatsApp on previously-merged lead #{$trashedLead->id} \"{$trashedLead->name}\" ({$trashedLead->phone}), merged into this record on {$trashedLead->deleted_at} — held for review, not auto-restored]";
+
+            $primary->notes()->create([
+                'user_id' => null,
+                'body' => $header."\n".$this->noteBody($data['message'], $direction, $senderType, $data['sender_name'] ?? null),
+            ]);
+        }
+
+        $this->notifyMergedLeadMessaged($trashedLead, $primary);
+
+        return response()->json([
+            'status' => 'merged_lead_held_for_review',
+            'lead_id' => $primary->id,
+            'trashed_lead_id' => $trashedLead->id,
+        ]);
+    }
+
+    /**
+     * Best-effort, same reasoning as flagPossibleDuplicate()/notifyLeadRestored()
+     * above — a notification failure must never break the core webhook flow.
+     */
+    private function notifyMergedLeadMessaged(Lead $trashedLead, Lead $primary): void
+    {
+        try {
+            $notification = new MergedLeadMessagedNotification($trashedLead, $primary);
+
+            User::where('is_active', true)
+                ->whereIn('role', [UserRole::Admin->value, UserRole::Manager->value])
+                ->get()
+                ->each(fn (User $user) => $user->notify($notification));
+        } catch (Throwable $e) {
+            Log::warning('MergedLeadMessagedNotification failed for lead '.$trashedLead->id.': '.$e->getMessage());
         }
     }
 

@@ -5,6 +5,7 @@ namespace App\Actions;
 use App\Models\Activity;
 use App\Models\CallLog;
 use App\Models\Lead;
+use App\Models\LeadWhatsappConversation;
 use App\Models\Meeting;
 use App\Models\Note;
 use App\Models\VisibilityAuditFunnelEvent;
@@ -56,6 +57,24 @@ class MergeLeads
                 $conversationId = $duplicate->whatsapp_conversation_id;
                 $duplicate->update(['whatsapp_conversation_id' => null]);
                 $primary->update(['whatsapp_conversation_id' => $conversationId]);
+            } elseif ($primary->whatsapp_conversation_id !== null && $duplicate->whatsapp_conversation_id !== null) {
+                // Both leads independently had their own live WhatsApp
+                // conversation — the single whatsapp_conversation_id column
+                // can't hold two values, so the duplicate's own conversation
+                // is recorded as an ADDITIONAL one belonging to $primary
+                // instead of being silently stranded on the now-trashed
+                // duplicate (real incidents 2026-09-16: #421->#420 and
+                // #422->#423, each guaranteed to hit a unique-constraint
+                // violation the next time that conversation got a message,
+                // since the duplicate's own column value is untouched by a
+                // soft delete). firstOrCreate() rather than create() so
+                // re-running a backfill (see BackfillMergedLeadWhatsappConversations)
+                // or, in principle, re-merging the same pair twice, can't
+                // throw on the column's own unique constraint.
+                LeadWhatsappConversation::firstOrCreate(
+                    ['conversation_id' => $duplicate->whatsapp_conversation_id],
+                    ['lead_id' => $primary->id],
+                );
             }
 
             Note::where('notable_type', Lead::class)->where('notable_id', $duplicate->id)
