@@ -1022,7 +1022,7 @@ it('end-to-end: after a real merge of two leads that each had their own conversa
     $primary = Lead::factory()->create(['name' => 'Primary Person', 'phone' => '919022065920', 'whatsapp_conversation_id' => 'conv_primary_real']);
     $duplicate = Lead::factory()->create(['name' => 'Duplicate Person', 'phone' => '919823021628', 'whatsapp_conversation_id' => 'conv_duplicate_real']);
 
-    (new MergeLeads)->handle($primary, $duplicate, []);
+    app(MergeLeads::class)->handle($primary, $duplicate, []);
 
     $this->postJson('/api/webhook/whatsapp', [
         'phone' => '919823021628',

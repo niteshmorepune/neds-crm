@@ -16,6 +16,8 @@ use RuntimeException;
 
 class MergeLeads
 {
+    public function __construct(private readonly CarryOverMergeFields $carryOverMergeFields) {}
+
     /**
      * Merge $duplicate into $primary: reassigns every polymorphic record
      * attached to $duplicate (notes, call logs, meetings, activity history)
@@ -76,6 +78,16 @@ class MergeLeads
                     ['lead_id' => $primary->id],
                 );
             }
+
+            // Every other real-business-data field the rep's own whitelist
+            // (MergeLeadsRequest::MERGEABLE_FIELDS) never offered a choice
+            // on -- Meta attribution, the recommendation bundle, UTM,
+            // goal/budget, website/GBP links, a scheduled follow-up,
+            // telecaller assignment. See CarryOverMergeFields' own docblock
+            // for the full "fill if null, never overwrite" rule and the
+            // unique-field sequencing it mirrors from whatsapp_conversation_id
+            // above.
+            $this->carryOverMergeFields->handle($primary, $duplicate);
 
             Note::where('notable_type', Lead::class)->where('notable_id', $duplicate->id)
                 ->update(['notable_id' => $primary->id]);

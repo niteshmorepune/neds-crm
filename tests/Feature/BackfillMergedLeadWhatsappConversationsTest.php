@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Artisan;
  */
 function mergeWithoutMapping(Lead $primary, Lead $duplicate): void
 {
-    (new MergeLeads)->handle($primary, $duplicate, []);
+    app(MergeLeads::class)->handle($primary, $duplicate, []);
     LeadWhatsappConversation::where('conversation_id', $duplicate->whatsapp_conversation_id)->delete();
 }
 
