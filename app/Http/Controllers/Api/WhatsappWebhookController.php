@@ -7,6 +7,7 @@ use App\Enums\LeadSource;
 use App\Enums\LeadStatus;
 use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
+use App\Enums\UserRole;
 use App\Enums\VisibilityAuditTouchChannel;
 use App\Enums\VisibilityAuditTouchType;
 use App\Http\Controllers\Controller;
@@ -14,8 +15,10 @@ use App\Jobs\ImportWhatsappTicketMedia;
 use App\Models\Customer;
 use App\Models\Lead;
 use App\Models\Ticket;
+use App\Models\User;
 use App\Models\VisibilityAuditTouch;
 use App\Models\WadeskMessageLog;
+use App\Notifications\LeadRestoredByIncomingMessageNotification;
 use App\Services\VisibilityAuditFunnelMetrics;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
@@ -235,10 +238,22 @@ class WhatsappWebhookController extends Controller
      * for that case: a name-similarity check against recent Leads, alerting
      * staff rather than silently letting a second, contextless AI auto-reply
      * go unnoticed for hours (see App\Services\DuplicateLeadDetector).
+     *
+     * The initial conversation_id lookup deliberately checks trashed leads
+     * too (real incident 2026-09-16, leads #421/#422): whatsapp_conversation_id
+     * is a unique column that survives a soft delete, so a non-trashed-only
+     * lookup fell through to Lead::create() on every later message once a
+     * lead was deleted, hit that unique constraint, threw, and silently
+     * dropped the message — repeating on every subsequent message, not just
+     * once. A staff delete doesn't mean "this person should never reach us
+     * again," so a trashed match is restored rather than left permanently
+     * broken; see restoreIfTrashed() for why that's paired with a staff
+     * notification instead of a silent auto-fix.
      */
     private function handleUnmatchedNumber(array $data, string $direction, string $senderType): JsonResponse
     {
-        $lead = Lead::where('whatsapp_conversation_id', $data['conversation_id'])->first();
+        $lead = Lead::withTrashed()->where('whatsapp_conversation_id', $data['conversation_id'])->first();
+        $restored = $lead !== null && $this->restoreIfTrashed($lead);
 
         if ($lead === null) {
             $lead = Lead::findOpenByPhone($data['phone']);
@@ -256,7 +271,7 @@ class WhatsappWebhookController extends Controller
         if ($lead) {
             $this->recordLeadMessage($lead, $data, $direction, $senderType);
 
-            return response()->json(['status' => 'lead_note_added', 'lead_id' => $lead->id]);
+            return response()->json(['status' => 'lead_note_added', 'lead_id' => $lead->id, 'restored' => $restored]);
         }
 
         $lead = Lead::create([
@@ -291,6 +306,61 @@ class WhatsappWebhookController extends Controller
             $this->duplicateFlagger->handle($lead);
         } catch (Throwable $e) {
             Log::warning('FlagPossibleDuplicateLead failed for lead '.$lead->id.': '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Restores a soft-deleted Lead so its conversation stops permanently
+     * failing with a unique-constraint violation (see
+     * handleUnmatchedNumber()'s own docblock). Deliberately restores rather
+     * than routing the message elsewhere — the delete could have been a
+     * mistake, a stale cleanup, or genuinely intentional (spam, a merge
+     * duplicate not caught here), and there's no reliable signal on the
+     * Lead itself to tell those apart; restoring keeps the conversation
+     * working either way, and the notification below is what lets staff
+     * correct it (re-delete) if the original delete really was intentional
+     * — same "automate the recoverable part, let a human judge the
+     * ambiguous part" shape as FlagPossibleDuplicateLead. Leaves a
+     * breadcrumb Note on the lead itself (mirrors MergeLeads' own
+     * "leaves a breadcrumb note" convention) in addition to the
+     * notification, so the context survives even if the notification is
+     * missed or its recipient list is empty.
+     */
+    private function restoreIfTrashed(Lead $lead): bool
+    {
+        if (! $lead->trashed()) {
+            return false;
+        }
+
+        $deletedAt = $lead->deleted_at;
+        $lead->restore();
+
+        $lead->notes()->create([
+            'user_id' => null,
+            'body' => "This lead was deleted on {$deletedAt} but the contact just messaged again on WhatsApp — automatically restored.",
+        ]);
+
+        $this->notifyLeadRestored($lead);
+
+        return true;
+    }
+
+    /**
+     * Best-effort, same reasoning as flagPossibleDuplicate() above — a
+     * notification failure must never turn a successful restore back into
+     * a broken conversation.
+     */
+    private function notifyLeadRestored(Lead $lead): void
+    {
+        try {
+            $notification = new LeadRestoredByIncomingMessageNotification($lead);
+
+            User::where('is_active', true)
+                ->whereIn('role', [UserRole::Admin->value, UserRole::Manager->value])
+                ->get()
+                ->each(fn (User $user) => $user->notify($notification));
+        } catch (Throwable $e) {
+            Log::warning('LeadRestoredByIncomingMessageNotification failed for lead '.$lead->id.': '.$e->getMessage());
         }
     }
 

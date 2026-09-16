@@ -14,7 +14,9 @@ use App\Models\Service;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Models\VisibilityAuditTouch;
+use App\Notifications\LeadRestoredByIncomingMessageNotification;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Notification;
 
 beforeEach(function () {
     config(['services.whatsapp_webhook.token' => 'test-wa-token']);
@@ -693,4 +695,100 @@ it('does not log a VisibilityAuditTouch for an inbound reply from a lead outside
     ], ['Authorization' => 'Bearer test-wa-token'])->assertOk();
 
     expect(VisibilityAuditTouch::where('lead_id', $lead->id)->exists())->toBeFalse();
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// A soft-deleted Lead's conversation messages again — real incident
+// 2026-09-16 (leads #421/#422): the old non-trashed-only lookup fell
+// through to Lead::create() on every message after the delete, which threw
+// a unique-constraint violation on whatsapp_conversation_id and silently
+// dropped the message, repeating on every subsequent message forever.
+// ──────────────────────────────────────────────────────────────────────────────
+
+it('restores a soft-deleted lead instead of throwing when its conversation messages again, and adds the note', function () {
+    $lead = Lead::factory()->create([
+        'phone' => '919999999999',
+        'whatsapp_conversation_id' => 'conv_trashed_lead',
+    ]);
+    $lead->delete();
+    expect(Lead::find($lead->id))->toBeNull(); // confirms the default query excludes it, same as the real bug's symptom
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '919999999999',
+        'message' => 'Hi, following up again',
+        'conversation_id' => 'conv_trashed_lead',
+    ], ['Authorization' => 'Bearer test-wa-token'])
+        ->assertOk()
+        ->assertJson(['status' => 'lead_note_added', 'lead_id' => $lead->id, 'restored' => true]);
+
+    $restored = Lead::find($lead->id);
+    expect($restored)->not->toBeNull()
+        ->and($restored->trashed())->toBeFalse()
+        ->and($restored->notes()->count())->toBe(2) // breadcrumb note + the message itself
+        ->and($restored->notes()->pluck('body'))->toContain('Hi, following up again')
+        ->and(Lead::count())->toBe(1); // never created a second lead / never crashed
+});
+
+it('does not throw and does not duplicate the lead on a second message after a restore', function () {
+    $lead = Lead::factory()->create(['phone' => '919999999999', 'whatsapp_conversation_id' => 'conv_trashed_twice']);
+    $lead->delete();
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '919999999999',
+        'message' => 'First message after delete',
+        'conversation_id' => 'conv_trashed_twice',
+    ], ['Authorization' => 'Bearer test-wa-token'])->assertJson(['restored' => true]);
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '919999999999',
+        'message' => 'Second message, already restored',
+        'conversation_id' => 'conv_trashed_twice',
+    ], ['Authorization' => 'Bearer test-wa-token'])
+        ->assertOk()
+        ->assertJson(['status' => 'lead_note_added', 'restored' => false]);
+
+    expect(Lead::count())->toBe(1)
+        ->and(Lead::find($lead->id)->notes()->count())->toBe(3); // breadcrumb + 2 messages
+});
+
+it('notifies active Admin/Manager when a message restores a soft-deleted lead', function () {
+    Notification::fake();
+    $admin = User::factory()->create(['role' => UserRole::Admin, 'is_active' => true]);
+    $manager = User::factory()->create(['role' => UserRole::Manager, 'is_active' => true]);
+    $inactiveAdmin = User::factory()->create(['role' => UserRole::Admin, 'is_active' => false]);
+    $sales = User::factory()->create(['role' => UserRole::Sales, 'is_active' => true]);
+
+    $lead = Lead::factory()->create(['phone' => '919999999999', 'whatsapp_conversation_id' => 'conv_trashed_notify', 'name' => 'Test Restored Lead']);
+    $lead->delete();
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '919999999999',
+        'message' => 'Are you still there?',
+        'conversation_id' => 'conv_trashed_notify',
+    ], ['Authorization' => 'Bearer test-wa-token'])->assertOk();
+
+    Notification::assertSentTo(
+        $admin,
+        LeadRestoredByIncomingMessageNotification::class,
+        fn ($n) => $n->lead->is($lead) && str_contains($n->toArray($admin)['message'], 'Test Restored Lead'),
+    );
+    Notification::assertSentTo($manager, LeadRestoredByIncomingMessageNotification::class);
+    Notification::assertNotSentTo($inactiveAdmin, LeadRestoredByIncomingMessageNotification::class);
+    Notification::assertNotSentTo($sales, LeadRestoredByIncomingMessageNotification::class);
+});
+
+it('does not report restored=true or notify anyone for the ordinary repeat-message case on a non-deleted lead', function () {
+    Notification::fake();
+    User::factory()->create(['role' => UserRole::Admin, 'is_active' => true]);
+    $lead = Lead::factory()->create(['phone' => '919999999999', 'whatsapp_conversation_id' => 'conv_never_deleted']);
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '919999999999',
+        'message' => 'Just a normal follow-up',
+        'conversation_id' => 'conv_never_deleted',
+    ], ['Authorization' => 'Bearer test-wa-token'])
+        ->assertOk()
+        ->assertJson(['status' => 'lead_note_added', 'lead_id' => $lead->id, 'restored' => false]);
+
+    Notification::assertNothingSent();
 });
