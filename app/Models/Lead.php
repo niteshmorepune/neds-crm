@@ -122,6 +122,9 @@ class Lead extends Model
             'recommendation_notified_at' => 'datetime',
             'recommendation_retry_attempted_at' => 'datetime',
             'duplicate_flagged_at' => 'datetime',
+            'notsure_at' => 'datetime',
+            'notsure_owner_notified_at' => 'datetime',
+            'notsure_manager_escalated_at' => 'datetime',
         ];
     }
 

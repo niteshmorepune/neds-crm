@@ -956,6 +956,25 @@ command options (`--lead-days`, `--manager-days`), not an admin-editable
 setting — change the scheduled command in `routes/console.php` to adjust
 them.
 
+**"Not Sure" lead escalation (checked hourly):** a lead that explicitly
+picks **Not Sure – Need Expert Advice** as their goal is a genuine
+hand-raise — the owner/telecaller already gets an immediate bell
+notification the moment it's set (`LeadWantsExpertAdviceNotification`,
+`LeadObserver`), but this adds the missing follow-up: if there's still no
+call, staff-written note, or staff WhatsApp reply **6 hours** later, they
+get a reminder nag; if it's *still* untouched **18 hours after that** (24h
+total — same-day, matching the urgency of an explicit ask), every active
+Admin/Manager gets a bell notification, re-firing daily until it's
+addressed. This is deliberately its own command
+(`app:escalate-notsure-leads`, hourly, not daily) rather than an extension
+of the stagnation check above — much tighter thresholds for a much higher-
+intent signal. If the same lead also trips the generic stagnation
+escalation above on the same day, you only get one manager notification
+about it, not two — this command checks first and skips its own escalation
+when that's already happened. Thresholds are `--owner-hours`/`--manager-hours`
+command options, same non-admin-editable pattern as the stagnation command
+above.
+
 **Possible duplicate lead alert:** a WhatsApp message from a phone number
 the CRM doesn't recognize normally creates a brand-new Lead — but if that
 sometimes means the same customer messaging from a second number (their
