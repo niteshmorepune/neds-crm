@@ -1095,6 +1095,17 @@ untouched **10 days** in (3 more days past the owner's own email), you get a
 bell notification too — the system's safety net for when the owner's own
 daily email hasn't been enough.
 
+**Not Sure lead escalation (checked hourly)** — a lead that explicitly asked
+for expert advice (goal = Not Sure) gets a much tighter version of the same
+safety net, since it's a real hand-raise rather than passive drift: the
+owner/telecaller already got an immediate bell notification the moment the
+lead was tagged, and if there's still no call, note, or WhatsApp reply from
+them **6 hours** later, they get a reminder; if it's *still* untouched
+**24 hours** in, you get a bell notification too, re-firing daily until
+someone logs something against the lead. If the same lead has also gone
+unaddressed long enough to trip the generic stagnation alert above, you only
+get one escalation about it per day, not two.
+
 ## Tip
 Check the **SLA at-risk** tickets and the **Overdue follow-ups** widget on the
 dashboard regularly — both are leading indicators of service and sales health.

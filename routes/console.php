@@ -144,6 +144,15 @@ Schedule::command('app:send-visibility-audit-in-progress-nudges')->everyFifteenM
 // Ticket SLA breach escalation — check hourly during the working day.
 Schedule::command('app:check-ticket-sla')->hourly();
 
+// Follow-up layer for a lead that asked for expert advice (goal = Not
+// Sure): nags the owner/telecaller at 6h of zero staff engagement, escalates
+// to Admin/Manager at +18h (24h total) if still unaddressed, re-firing daily
+// while it stays that way. Hourly, not daily like SendStagnationAlerts —
+// a same-day expectation needs an hourly check to land close to the real
+// threshold. See EscalateNotSureLeads' own docblock for the full design,
+// including why it deliberately does NOT skip Sunday.
+Schedule::command('app:escalate-notsure-leads')->hourly();
+
 // Narrow, first-pass alerting for two known offer-funnel failure shapes
 // (see MonitorOfferFunnelFailures' own docblock) — a spike in
 // SendOfferRecommendationReadyJob's WhatsApp send failures, or any Razorpay

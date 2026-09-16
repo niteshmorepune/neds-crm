@@ -408,6 +408,12 @@ your "follow-ups due" list — same list, no separate place to look.
   lets them know a Sales Expert will follow up — either way you'll see it
   already filled in, or the same bell notification you'd get from tagging
   it yourself, by the time you open the lead.
+- **If nobody follows up on a Not Sure lead:** it's a real hand-raise, so it
+  gets a tighter safety net than the usual weekly stagnation email — if
+  there's still no call, note, or WhatsApp reply from you 6 hours after it
+  went Not Sure, you (and the telecaller, if one's assigned) get a reminder
+  bell notification; if it's *still* untouched 24 hours in, Admin/Manager
+  get notified too. Log anything against the lead and both reminders stop.
 - **Their budget, and the recommendation it produces:** right next to the
   goal picker is a **Budget** picker (Under ₹3,000 / ₹3,000–₹6,000 /
   ₹6,000–₹12,000 / ₹12,000+) — Meta's own ad form asks this alongside the

@@ -51,6 +51,16 @@ class LeadObserver
         $this->notifyNewLead($lead);
         $this->routeMetaLeadFirstTouch($lead);
 
+        // A Meta lead can be created with goal already Not Sure (ImportMetaLead
+        // sets it at Lead::create() time) -- there's no wasChanged() to hook at
+        // creation, so notifyWantsExpertAdvice() never fires for this path (a
+        // pre-existing gap, left as-is here -- see stampNotSureBaseline()'s own
+        // docblock). The baseline still needs stamping regardless, so
+        // EscalateNotSureLeads has a real "since when" to measure from.
+        if ($lead->goal === LeadGoal::NotSure) {
+            $this->stampNotSureBaseline($lead);
+        }
+
         // autoAssign()/autoAssignTelecaller()'s own save() calls above already
         // fire a nested updated() call whenever either finds an assignee,
         // which handles the wadesk.in sync below via the owner_id/
@@ -112,6 +122,7 @@ class LeadObserver
         // already-NotSure lead.
         if ($lead->wasChanged('goal') && $lead->goal === LeadGoal::NotSure) {
             $this->notifyWantsExpertAdvice($lead);
+            $this->stampNotSureBaseline($lead);
         }
     }
 
@@ -317,6 +328,31 @@ class LeadObserver
             ->unique();
 
         User::whereIn('id', $recipients)->get()->each->notify($notification);
+    }
+
+    /**
+     * Baseline + reset for App\Console\Commands\EscalateNotSureLeads, which
+     * measures "hours since this lead asked for expert advice" from
+     * notsure_at, independent of (and never altering) the immediate
+     * one-time notifyWantsExpertAdvice() ping above -- that stays the
+     * first, immediate signal; this only adds the bookkeeping the
+     * follow-up escalation command needs. Resets both guard columns too,
+     * so a lead that goes NotSure -> a different goal -> NotSure again
+     * starts a genuinely fresh escalation cycle rather than inheriting
+     * stale one-shot/cooldown state from an earlier cycle. Written via
+     * forceFill()->saveQuietly() -- same bookkeeping pattern as
+     * owner_reminder_sent_at/manager_escalated_at in EscalateUntouchedLeads,
+     * and goal is (deliberately) not in Lead::$activityExcept, so the real
+     * goal-change activity log entry still gets written by the normal save
+     * that triggered this; this quiet one just adds the extra columns.
+     */
+    private function stampNotSureBaseline(Lead $lead): void
+    {
+        $lead->forceFill([
+            'notsure_at' => now(),
+            'notsure_owner_notified_at' => null,
+            'notsure_manager_escalated_at' => null,
+        ])->saveQuietly();
     }
 
     private function notifyNewLead(Lead $lead): void

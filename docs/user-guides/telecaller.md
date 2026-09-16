@@ -211,6 +211,13 @@ after hours, the assistant asks this same question (a real tappable
 list) and follows the same branching itself, so you may find it's
 already filled in by the time you open the lead.
 
+**If nobody follows up on a Not Sure lead:** it's a real hand-raise, so it
+gets a tighter safety net than the usual weekly stagnation email — if
+there's still no call, note, or WhatsApp reply 6 hours after it went Not
+Sure, you (and the owner, if the lead has one) get a reminder bell
+notification; if it's *still* untouched 24 hours in, Admin/Manager get
+notified too. Log anything against the lead and both reminders stop.
+
 **Their budget, and the recommendation it produces:** next to the goal
 picker is a **Budget** picker (Under ₹3,000 / ₹3,000–₹6,000 /
 ₹6,000–₹12,000 / ₹12,000+) — Meta's ad form asks this too, so it's often
