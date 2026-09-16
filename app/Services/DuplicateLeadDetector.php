@@ -86,15 +86,30 @@ class DuplicateLeadDetector
      * over every non-null `company` value in production (2026-09-16
      * investigation): "enterprises" alone appeared 26 times across
      * otherwise-unrelated companies, "services"/"service" 14,
-     * "solutions"/"solution" 7, "ltd" 9, "pvt" 7, "group" 5, "business" 5 —
-     * exactly the shape of word that would make two unrelated businesses
-     * ("Sunrise Enterprises" / "Moonlight Enterprises") match on the suffix
-     * alone if it weren't stripped before comparison. "traders"/
-     * "industries" weren't in this dataset's top words but are common
-     * enough Indian business-name suffixes to include pre-emptively.
+     * "solutions"/"solution" 7, "ltd" 9, "pvt" 7, "group" 5 — exactly the
+     * shape of word that would make two unrelated businesses ("Sunrise
+     * Enterprises" / "Moonlight Enterprises") match on the suffix alone if
+     * it weren't stripped before comparison. "traders"/"industries" weren't
+     * in this dataset's top words but are common enough Indian
+     * business-name suffixes to include pre-emptively.
+     *
+     * Deliberately does NOT include "business" despite it appearing 5 times
+     * in the same frequency count — a live dry-run (2026-09-16, after the
+     * initial merge) found stripping it cost a real confirmed pair (NSS
+     * Business Group, #104/#332: "business" + "group" both stripped would
+     * leave only the single token "nss," which the significant-token-count
+     * guard in companyNameMatch() then correctly refuses to match on) with
+     * no compensating false-positive fix — unlike "enterprises," which
+     * really did need to come out (see companyNameMatch()'s own docblock
+     * for the Pawar/Vinod false positives that guard was built to fix).
+     * "Business" is also a softer, more descriptive word than a legal-
+     * entity suffix like "Enterprises"/"Ltd"/"Pvt" — worth reconsidering if
+     * a future dry-run finds a real "X Business [Something]" false positive
+     * pair, but not justified by evidence today.
+     *
      * Stripped from BOTH sides before companyNameMatch() runs its
      * comparison — see that method's own docblock for what happens if
-     * stripping empties a side entirely.
+     * stripping leaves too few significant tokens on either side.
      *
      * @var list<string>
      */
@@ -102,7 +117,7 @@ class DuplicateLeadDetector
         'enterprise', 'enterprises',
         'service', 'services',
         'solution', 'solutions',
-        'group', 'traders', 'industries', 'business', 'ltd', 'pvt',
+        'group', 'traders', 'industries', 'ltd', 'pvt',
     ];
 
     /**
@@ -190,24 +205,37 @@ class DuplicateLeadDetector
      * in which argument represents "company" vs "name", so callers never
      * need to try both orderings of the same pair.
      *
-     * Deliberately does NOT require 2+ raw tokens on both sides the way
-     * namesMatch() does for person names. A company name is often a
-     * proper-noun-plus-generic-suffix ("Ayushmaan Enterprises") that
-     * reduces to a single significant token once the suffix is stripped —
-     * requiring 2 tokens post-strip would silently exclude exactly the
-     * real confirmed pairs this was built for (see
-     * DuplicateLeadDetectorTest). The generic-word strip below is what
-     * keeps this safe instead: if stripping empties either side, there is
-     * no real signal left and no match is attempted — a bare "Enterprises"
-     * == "Enterprises" can never fire on its own, regardless of how short
-     * either original string was.
+     * Requires 2+ SIGNIFICANT tokens (post generic-word-strip) on BOTH
+     * sides — the same hard minimum namesMatch() already applies to raw
+     * tokens for person names, applied here to the stripped token count
+     * instead. This was NOT the original design: the first version allowed
+     * a single significant token to match (needed for "Ayushmaan
+     * Enterprises," which strips down to just "ayushmaan"), reasoning that
+     * the generic-word strip alone was enough protection. A live, read-only
+     * dry-run against all 287 non-trashed production leads (2026-09-16,
+     * post-merge) proved that reasoning wrong: of 3 real matches the
+     * company<->name rule produced, only 1 was genuine (the Leisure Pools/
+     * Fulgado Stanley pair, which keeps 2 significant tokens — "leisure
+     * pools" — and is unaffected by this tightening); the other 2 were
+     * false positives from the EXACT single-significant-token shape this
+     * method was built to allow — "Pawar Enterprises" (strips to the
+     * single token "pawar," an extremely common Maharashtra surname)
+     * false-matched an unrelated "Swaraj Pawar," and "Vinod Mehandi Artis"
+     * false-matched an unrelated lead named just "Vinod." There is no
+     * algorithmic way to distinguish a distinctive single word
+     * ("ayushmaan") from a common one ("pawar," "vinod") without a name-
+     * frequency dictionary, so the real 2-false-positive-to-1-true-positive
+     * ratio observed on live data was the deciding evidence — recall on
+     * the Ayushmaan-shaped case is deliberately traded away for precision.
+     * See DuplicateLeadDetectorTest's own "single significant token"
+     * section for the concrete before/after cases.
      */
     public static function companyNameMatch(string $normalizedA, string $normalizedB): bool
     {
         $significantA = self::stripGenericBusinessWords(self::tokens($normalizedA));
         $significantB = self::stripGenericBusinessWords(self::tokens($normalizedB));
 
-        if ($significantA === [] || $significantB === []) {
+        if (count($significantA) < 2 || count($significantB) < 2) {
             return false;
         }
 

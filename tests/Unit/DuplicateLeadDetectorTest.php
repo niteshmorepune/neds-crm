@@ -113,17 +113,14 @@ it('does not match two clearly unrelated full names', function () {
 // catchable by namesMatch() alone — that's the whole point of this rule.
 // ──────────────────────────────────────────────────────────────────────────
 
-it('matches all 5 confirmed real company<->name duplicate pairs after normalization', function (string $company, string $name) {
+it('matches 4 of the 5 confirmed real company<->name duplicate pairs after normalization — the 5th (Ayushmaan Enterprises) is deliberately excluded by the significant-token-count guard below', function (string $company, string $name) {
     $nCompany = DuplicateLeadDetector::normalize($company);
     $nName = DuplicateLeadDetector::normalize($name);
 
     expect(DuplicateLeadDetector::companyNameMatch($nCompany, $nName))
         ->toBeTrue("Expected company '{$company}' to match name '{$name}'");
 })->with([
-    'Lead #59/#89 (Ayushmaan Enterprises — generic suffix stripped down to one distinctive token)' => [
-        'Ayushmaan Enterprises – Water Purifier Ro Sales and Services in Mumbai', 'Ayushmaan Enterprises',
-    ],
-    'Lead #104/#332 (NSS Business Group — exact business name)' => [
+    'Lead #104/#332 (NSS Business Group — exact business name; "business" deliberately stays out of the stoplist so this keeps 2 significant tokens)' => [
         'NSS Business Group', 'NSS BUSINESS GROUP',
     ],
     'Lead #177/#178 (Samarth Mobile Motor Controller — WhatsApp-relayed form data)' => [
@@ -143,10 +140,46 @@ it('companyNameMatch is symmetric — order of the two arguments never changes t
 
     expect(DuplicateLeadDetector::companyNameMatch($nName, $nCompany))->toBeTrue();
 })->with([
-    ['Ayushmaan Enterprises – Water Purifier Ro Sales and Services in Mumbai', 'Ayushmaan Enterprises'],
+    ['NSS Business Group', 'NSS BUSINESS GROUP'],
     ['Jagdamba Electricals & Repairs', 'Jagdamba Electricals and Repairs'],
     ['LEISURE POOLS, Karjat. Maharashtra', 'Leisure Pools 2'],
 ]);
+
+// ──────────────────────────────────────────────────────────────────────────
+// Significant-token-count guard — added AFTER a live, read-only dry-run
+// against all 287 non-trashed production leads (2026-09-16, post-merge)
+// found this was a real, recurring false-positive shape, not a rare
+// hypothetical: 2 of the 3 real matches the rule produced on live data were
+// exactly this ("Pawar Enterprises" false-matching an unrelated "Swaraj
+// Pawar," "Vinod Mehandi Artis" false-matching an unrelated lead named just
+// "Vinod") — both a common Indian name/surname surviving generic-word
+// stripping down to one token, which then subset-matched into an unrelated
+// lead. Only 1 of 3 real matches was genuine (Leisure Pools/Fulgado
+// Stanley, which keeps 2 significant tokens and is unaffected). This is a
+// deliberate recall-for-precision trade, not an oversight — the Ayushmaan
+// Enterprises pair (#59/#89) is the one real confirmed pair this costs.
+// ──────────────────────────────────────────────────────────────────────────
+
+it('does NOT match when stripping generic words leaves only ONE significant token on either side, even a genuinely real pair — Ayushmaan Enterprises, traded away for precision after the dry-run findings above', function () {
+    $company = DuplicateLeadDetector::normalize('Ayushmaan Enterprises – Water Purifier Ro Sales and Services in Mumbai');
+    $name = DuplicateLeadDetector::normalize('Ayushmaan Enterprises');
+
+    expect(DuplicateLeadDetector::companyNameMatch($company, $name))->toBeFalse();
+});
+
+it('does not match a common surname surviving generic-suffix-stripping against an unrelated lead — real production false positive, "Pawar Enterprises" vs "Swaraj Pawar" (#213/#199)', function () {
+    $company = DuplicateLeadDetector::normalize('Pawar Enterprises');
+    $name = DuplicateLeadDetector::normalize('Swaraj Pawar');
+
+    expect(DuplicateLeadDetector::companyNameMatch($company, $name))->toBeFalse();
+});
+
+it('does not match a common first name surviving as the sole candidate token against an unrelated company — real production false positive, "Vinod Mehandi Artis" vs "Vinod" (#171/#152)', function () {
+    $company = DuplicateLeadDetector::normalize('Vinod Mehandi Artis');
+    $name = DuplicateLeadDetector::normalize('Vinod');
+
+    expect(DuplicateLeadDetector::companyNameMatch($company, $name))->toBeFalse();
+});
 
 it('never matches on a shared generic business-suffix word alone — two unrelated companies both just called "X Enterprises"', function () {
     $companyA = DuplicateLeadDetector::normalize('Sunrise Enterprises');
