@@ -522,21 +522,42 @@ lead won't return context, by design.
 ## Integration 14 — wadesk.in's goal-question flow writes back to the CRM's Lead
 
 **What it does:** the same `GET /api/leads/context` lookup above now also
-returns the Lead's `goal`, `website_url`, `gbp_url`, and a precomputed
-`needs_link` flag. When a matched Lead has no goal yet, wadesk.in's
-after-hours assistant sends the lead a WhatsApp interactive list asking
-"What's their biggest goal?" (the same 4 options as the CRM's own Goal
-picker — see `sales.md`/`telecaller.md`). Once the lead taps one, wadesk.in
-calls a new `POST /api/leads/goal-capture` (same Bearer token) to write it
-onto the Lead — and if the goal needs a Website/GBP link, the assistant
-asks for that next and writes it back the same way once given.
+returns the Lead's `goal`, `website_url`, `gbp_url`, `budget_range`, and a
+precomputed `needs_link` flag. When a matched Lead has no goal yet,
+wadesk.in's after-hours assistant sends the lead a WhatsApp interactive
+list asking "What's their biggest goal?" (the same 4 options as the CRM's
+own Goal picker — see `sales.md`/`telecaller.md`). Once the lead taps one,
+wadesk.in calls `POST /api/leads/goal-capture` (same Bearer token, and
+despite the name, a general per-field capture endpoint — see below) to
+write it onto the Lead — and if the goal needs a Website/GBP link, the
+assistant asks for that next and writes it back the same way once given.
+
+**Budget capture (2026-09-17) chains onto the same flow:** once goal (and
+the link, if needed) are answered, if the Lead's `budget_range` is still
+null, the assistant asks one more interactive-list question — the same 4
+bands the CRM's own Budget picker uses (`under_3000`/`3000_6000`/
+`6000_12000`/`12000_plus`) — and writes the answer back via the same
+`goal-capture` endpoint with a `budget_range` field. A Lead that already
+has a goal but no budget (e.g. imported via `ImportMetaLead::
+matchBudgetRange()` failing to parse a free-text answer) skips straight to
+the budget question, never re-asking goal. This closes the gap
+`GenerateLeadRecommendation::handle()` otherwise leaves open forever — it
+needs both `goal` and `budget_range` non-null to resolve a priced
+recommendation, and until this, a lead whose budget was never captured at
+import time had no other automated way to ever provide it. Once both
+fields are set (from either write), this endpoint calls
+`GenerateLeadRecommendation::handle()` itself, the same explicit call the
+telecaller UI's own goal/budget form makes after a manual save — so a
+budget answered over WhatsApp triggers the same first-touch recommendation
+message a goal answer already could.
 
 **Why it exists:** the owner wanted a lead who only ever messages on
 WhatsApp — never gets a call — to still go through the same
-goal-then-link-or-Sales-handoff flow a telecaller would walk them through
-live. Reuses the goal/link fields and `LeadGoal` enum built for the
-telecaller-facing side (see CLAUDE.md's decisions log) rather than
-inventing a parallel set on the wadesk.in side.
+goal-then-link-then-budget-or-Sales-handoff flow a telecaller would walk
+them through live. Reuses the goal/budget/link fields and `LeadGoal`/
+`LeadBudgetRange` enums built for the telecaller-facing side (see
+CLAUDE.md's decisions log) rather than inventing a parallel set on the
+wadesk.in side.
 
 **The "Not Sure" branch is a real hand-off, not just a reply:** the moment
 `goal-capture` sets a Lead's goal to Not Sure — from wadesk.in **or** the
