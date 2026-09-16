@@ -209,7 +209,10 @@ saved — same rule as Stalling on. **This can now also get answered on
 WhatsApp before you ever call** — if a lead messages our Marketing number
 after hours, the assistant asks this same question (a real tappable
 list) and follows the same branching itself, so you may find it's
-already filled in by the time you open the lead.
+already filled in by the time you open the lead. **Once that's done, if
+Budget is still blank it asks that too** (the same 4 bands as the Budget
+picker below), so a lead who only ever messages can still end up with a
+full goal+budget recommendation with nobody having called them.
 
 **If nobody follows up on a Not Sure lead:** it's a real hand-raise, so it
 gets a tighter safety net than the usual weekly stagnation email — if

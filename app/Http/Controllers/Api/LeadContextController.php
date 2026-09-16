@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Actions\GenerateLeadRecommendation;
+use App\Enums\LeadBudgetRange;
 use App\Enums\LeadGoal;
 use App\Enums\OfferKey;
 use App\Http\Controllers\Controller;
@@ -42,6 +44,13 @@ use Illuminate\Validation\Rule;
  * still fires; this new field intentionally points at
  * `recommendationUrl()` instead (the `/offers/recommendation/{token}`
  * page), the equivalent tracked entry point for the other 3 offers.
+ *
+ * budget_range (2026-09-17) powers the after-hours assistant's budget-
+ * capture step, chained onto the same goal-question flow (see
+ * updateGoal() below) once goal (and, when needed, the website/GBP link)
+ * are already answered — GenerateLeadRecommendation::handle() needs BOTH
+ * goal and budget_range non-null to resolve an offer, so a lead stuck with
+ * budget_range still null never reaches a priced recommendation at all.
  */
 class LeadContextController extends Controller
 {
@@ -77,6 +86,7 @@ class LeadContextController extends Controller
             'needs_link' => $lead->goal?->needsWebsiteOrGbp() ?? false,
             'website_url' => $lead->website_url,
             'gbp_url' => $lead->gbp_url,
+            'budget_range' => $lead->budget_range?->value,
             'recommended_offer_name' => $recommendedNonGbpOffer?->shortLabel(),
             'recommended_offer_price' => $recommendedNonGbpOffer?->price(),
             'recommended_offer_url' => $recommendedNonGbpOffer !== null ? $lead->recommendationUrl() : null,
@@ -92,12 +102,30 @@ class LeadContextController extends Controller
      * ImportMetaLead's backfill fields. goal transitioning to NotSure fires
      * LeadWantsExpertAdviceNotification via LeadObserver -- nothing to
      * trigger explicitly here.
+     *
+     * budget_range (2026-09-17) reuses this same endpoint rather than a new
+     * dedicated one -- despite the "goal-capture" name, this was already a
+     * general per-field lead-capture endpoint (goal, website_url, gbp_url
+     * all land here independently), so a 4th field is a natural extension,
+     * not a structural change. Kept the existing route/method name rather
+     * than renaming -- wadesk.in's own CRM_GOAL_CAPTURE_URL env var already
+     * points at it, and a rename would need a coordinated double-sided
+     * deploy for zero functional benefit.
+     *
+     * Whenever this call leaves the lead with both goal and budget_range
+     * set, generates/refreshes its recommendation and, on a genuine Meta
+     * lead, dispatches the matching first-touch message -- the same explicit
+     * call the telecaller UI's own updateGoalCapture() already makes after
+     * a manual save (LeadController::updateGoalCapture()). Safe to call
+     * unconditionally: GenerateLeadRecommendation::handle() is a no-op
+     * whenever either field is still null.
      */
-    public function updateGoal(Request $request): JsonResponse
+    public function updateGoal(Request $request, GenerateLeadRecommendation $generateRecommendation): JsonResponse
     {
         $data = $request->validate([
             'phone' => ['required', 'string'],
             'goal' => ['nullable', Rule::enum(LeadGoal::class)],
+            'budget_range' => ['nullable', Rule::enum(LeadBudgetRange::class)],
             'website_url' => ['nullable', 'url', 'max:2048'],
             'gbp_url' => ['nullable', 'url', 'max:2048'],
         ]);
@@ -109,12 +137,13 @@ class LeadContextController extends Controller
         }
 
         $fill = array_filter(
-            array_intersect_key($data, array_flip(['goal', 'website_url', 'gbp_url'])),
+            array_intersect_key($data, array_flip(['goal', 'budget_range', 'website_url', 'gbp_url'])),
             fn ($value) => $value !== null,
         );
 
         if ($fill !== []) {
             $lead->update($fill);
+            $generateRecommendation->handle($lead->fresh());
         }
 
         return response()->json(['updated' => $fill !== []]);

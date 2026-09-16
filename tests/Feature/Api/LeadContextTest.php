@@ -6,6 +6,7 @@ use App\Enums\LeadSource;
 use App\Enums\LeadStatus;
 use App\Enums\UserRole;
 use App\Enums\VisibilityAuditFunnelEventType;
+use App\Jobs\SendOfferRecommendationReadyJob;
 use App\Models\Lead;
 use App\Models\Service;
 use App\Models\User;
@@ -162,6 +163,17 @@ it('reports needs_link=false and goal=null for a lead with no goal set yet', fun
         ->and($response['needs_link'])->toBeFalse();
 });
 
+it('includes budget_range in the context response, and null when not yet set', function () {
+    Lead::factory()->create(['phone' => '919876543233', 'budget_range' => LeadBudgetRange::ThreeToSix]);
+    Lead::factory()->create(['phone' => '919876543234', 'budget_range' => null]);
+
+    $withBudget = $this->getJson('/api/leads/context?phone=919876543233', ['Authorization' => 'Bearer test-wa-token'])->json();
+    $withoutBudget = $this->getJson('/api/leads/context?phone=919876543234', ['Authorization' => 'Bearer test-wa-token'])->json();
+
+    expect($withBudget['budget_range'])->toBe('3000_6000')
+        ->and($withoutBudget['budget_range'])->toBeNull();
+});
+
 it('includes recommended_offer_name/price/url for a lead recommended into one of the 3 non-GBP offers', function () {
     Lead::factory()->create([
         'phone' => '919876543230',
@@ -288,4 +300,60 @@ it('does not re-notify when goal-capture resends the same NotSure value', functi
     ], ['Authorization' => 'Bearer test-wa-token'])->assertOk();
 
     Notification::assertNotSentTo($owner, LeadWantsExpertAdviceNotification::class);
+});
+
+it('writes a budget-only update to the matched lead via the same goal-capture endpoint', function () {
+    $lead = Lead::factory()->create(['phone' => '919876543226', 'goal' => null, 'budget_range' => null]);
+
+    $this->postJson('/api/leads/goal-capture', [
+        'phone' => '919876543226',
+        'budget_range' => LeadBudgetRange::SixToTwelve->value,
+    ], ['Authorization' => 'Bearer test-wa-token'])
+        ->assertOk()
+        ->assertJson(['updated' => true]);
+
+    expect($lead->fresh()->budget_range)->toBe(LeadBudgetRange::SixToTwelve)
+        ->and($lead->fresh()->goal)->toBeNull();
+});
+
+it('rejects an invalid budget_range value on goal-capture', function () {
+    Lead::factory()->create(['phone' => '919876543227']);
+
+    $this->postJson('/api/leads/goal-capture', [
+        'phone' => '919876543227',
+        'budget_range' => 'not-a-real-band',
+    ], ['Authorization' => 'Bearer test-wa-token'])
+        ->assertJsonValidationErrors('budget_range');
+});
+
+it('generates a recommendation and dispatches the first-touch job once a budget-capture call completes the goal+budget pair on a Meta lead', function () {
+    Queue::fake();
+    Lead::factory()->create([
+        'phone' => '919876543228',
+        'goal' => LeadGoal::GenerateLeads,
+        'budget_range' => null,
+        'meta_leadgen_id' => 'lg_'.uniqid(),
+    ]);
+
+    $this->postJson('/api/leads/goal-capture', [
+        'phone' => '919876543228',
+        'budget_range' => LeadBudgetRange::Under3000->value,
+    ], ['Authorization' => 'Bearer test-wa-token'])->assertOk();
+
+    $lead = Lead::where('phone', '919876543228')->first();
+    expect($lead->recommendation_key)->not->toBeNull()
+        ->and($lead->recommendation_token)->not->toBeNull();
+
+    Queue::assertPushed(SendOfferRecommendationReadyJob::class);
+});
+
+it('does not generate a recommendation from a goal-capture call that leaves budget_range still null', function () {
+    $lead = Lead::factory()->create(['phone' => '919876543229', 'goal' => null, 'budget_range' => null]);
+
+    $this->postJson('/api/leads/goal-capture', [
+        'phone' => '919876543229',
+        'goal' => LeadGoal::GenerateLeads->value,
+    ], ['Authorization' => 'Bearer test-wa-token'])->assertOk();
+
+    expect($lead->fresh()->recommendation_key)->toBeNull();
 });

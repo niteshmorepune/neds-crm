@@ -407,7 +407,10 @@ your "follow-ups due" list — same list, no separate place to look.
   and, depending on their answer, asks for the Website/GBP link itself or
   lets them know a Sales Expert will follow up — either way you'll see it
   already filled in, or the same bell notification you'd get from tagging
-  it yourself, by the time you open the lead.
+  it yourself, by the time you open the lead. **Once that's done, if
+  Budget is still blank it asks that too** (the same 4 bands as the Budget
+  picker below), so a lead who only ever messages can still end up with a
+  full goal+budget recommendation without anyone having to call them first.
 - **If nobody follows up on a Not Sure lead:** it's a real hand-raise, so it
   gets a tighter safety net than the usual weekly stagnation email — if
   there's still no call, note, or WhatsApp reply from you 6 hours after it

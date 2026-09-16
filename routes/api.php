@@ -49,7 +49,9 @@ Route::get('/leads/context', [LeadContextController::class, 'show'])
 // their Website/GBP link") gets an answer from the lead over WhatsApp — the
 // mirror of the CRM-side leads.goal-capture.update route, for when nobody's
 // there to fill it in from the web UI. Same Bearer token, same wadesk.in
-// trust boundary.
+// trust boundary. Despite the name, a general per-field lead-capture
+// endpoint — also accepts budget_range (2026-09-17) via the same partial
+// update shape, chained onto the same WhatsApp flow.
 Route::post('/leads/goal-capture', [LeadContextController::class, 'updateGoal'])
     ->middleware(['throttle:120,1', VerifyWhatsappWebhookToken::class])
     ->name('api.leads.goal-capture');
