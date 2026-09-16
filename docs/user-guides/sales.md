@@ -496,8 +496,14 @@ email, source, service, value, owner, status) — choose which of the two
 leads' values to keep; you don't have to keep everything from the same one.
 All notes, call logs, meetings, and activity history from the other lead
 move onto the survivor, and a note is left recording what was merged in.
-The other lead is then archived (soft-deleted, not gone — recoverable if
-this was a mistake) so it stops cluttering the list.
+Everything else the review screen doesn't ask you to pick — their WhatsApp
+attribution, goal/budget and recommendation, UTM source, a scheduled
+follow-up, telecaller assignment — carries over automatically too,
+whichever lead it came from, but only into a field the surviving record
+doesn't already have a value in; it never overwrites something the
+survivor already has of its own. The other lead is then archived
+(soft-deleted, not gone — recoverable if this was a mistake) so it stops
+cluttering the list.
 
 **Converting a lead:** when it's real business, open the lead and click
 **Convert**. This creates a **Client** and a **Deal** automatically and links

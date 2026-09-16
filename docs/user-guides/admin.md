@@ -992,6 +992,28 @@ real duplicate costs a customer a second, contextless AI auto-reply that
 can go unnoticed for hours — this is deliberately tuned toward flagging
 over staying silent.
 
+**Merging automatically carries over more than the review screen shows
+(2026-09-16):** the Merge Leads review screen only lets a rep pick between
+the two leads' values for 9 fields (name, company, phone, email, source,
+service, value, owner, status). Everything else with real business value —
+Meta attribution (`meta_leadgen_id`), the resolved offer recommendation
+(as one atomic bundle — key, offer, token, and when it was generated), UTM
+source/medium/campaign, goal/budget, a scheduled follow-up, telecaller
+assignment — now carries onto the survivor automatically, but only into a
+field it doesn't already have a value in; it's never overwritten. A real
+investigation found 15 of 38 historical merges had silently dropped at
+least one of these onto the archived duplicate with no way to recover it
+through the UI — a one-off backfill (`app:backfill-merge-field-carryover`,
+re-runnable, not tied to that day's specific findings) corrected 10 of
+them live; the other 5 had the surviving lead already holding its own
+independent value in every affected field, so there was nothing safe to
+fill without overwriting real data. One specific, permanent exception:
+if BOTH leads independently answered goal+budget and each generated their
+own recommendation, only the survivor's own recommendation link keeps
+working — the other lead's own personalized recommendation link is lost
+for good, since (unlike a WhatsApp conversation) there's no way for two
+different recommendation links to both point at the same surviving lead.
+
 **Reassign All (bulk handover):** filter Lead Generation by **Owner**
 (the filter row) and, if you can reassign (Admin/Manager), a panel appears
 showing how many open leads that person has, with a one-click **Reassign

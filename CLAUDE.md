@@ -2014,3 +2014,92 @@ Older entries (2026-06-10 through 2026-08-25) moved to `docs/decisions-log-archi
   to the next natural `app:send-offer-funnel-recovery-nudges` cron tick
   rather than manually swept, same reasoning as the earlier
   AskUserQuestion decision.
+- **2026-09-16 (same day) — Real gap closed: `MergeLeadsRequest::
+  MERGEABLE_FIELDS` (9 rep-pickable fields) never offered a choice on 49 of
+  the `leads` table's other 58 columns, and nothing else carried them over
+  either — a real investigation (same-day, read-only) found 15 of 38
+  historical merges had silently dropped at least one real business-data
+  field (Meta attribution, the offer-recommendation state, UTM, goal/
+  budget, website/GBP links, `next_follow_up_at`, `telecaller_id`) onto the
+  soft-deleted duplicate, unrecoverable through the UI. Two tasks, same
+  session: fix it going forward, then recover what's already affected.
+  **Task 1**: new `App\Actions\CarryOverMergeFields`, called from
+  `MergeLeads::handle()` right alongside the existing `whatsapp_
+  conversation_id` carry-over (2026-09-16, earlier same day). Non-unique
+  fields fill the primary only if currently null — same shape as the
+  existing `alternate_phone` auto-backfill in `LeadMergeController::
+  store()`. `meta_leadgen_id` and the recommendation bundle
+  (`recommendation_key`/`offer_key`/`token`/`generated_at`, moved together
+  as ONE atomic unit, gated on `recommendation_token` alone) reuse the same
+  null-the-duplicate-first-then-set-on-primary sequencing already proven
+  for `whatsapp_conversation_id` — both are unique columns, and a soft
+  delete alone doesn't free a unique slot. Also calls
+  `GenerateLeadRecommendation::handle()` after carry-over (mirrors
+  `LeadController::updateGoalCapture()`'s own pattern) — verified this
+  never double-dispatches the first-touch WhatsApp job when the
+  carried-over bundle is already resolved (recommendation_key already
+  matches the matrix's own resolution for that cell, nothing dirty).
+  **Deliberate, flagged limitation, not an oversight**: unlike
+  `whatsapp_conversation_id`, this does NOT build a "both leads had one ->
+  record a mapping" equivalent for `recommendation_token` — if the primary
+  already has its own non-null token (both leads independently answered
+  goal+budget and each generated their own recommendation — the real
+  #346/#411 case), there's no `LeadWhatsappConversation`-style mapping
+  table a second token could resolve through, so the duplicate's own token
+  is genuinely left unrecovered in that one specific case. `MergeLeads` now
+  requires `CarryOverMergeFields` as a constructor dependency — the 3 test
+  files that previously did `new MergeLeads` were updated to
+  `app(MergeLeads::class)`, matching this codebase's own existing
+  convention (`FlagPossibleDuplicateLead`) for actions with real
+  dependencies.
+  **Task 2**: new `app:backfill-merge-field-carryover`, mirroring
+  `BackfillMergedLeadWhatsappConversations` in shape and care. Deliberately
+  does NOT hardcode the 15 affected merge ids — walks every merge
+  breadcrumb note (the only general record of past merges, regardless of
+  how initiated) and asks `CarryOverMergeFields` itself, read-only,
+  whether that specific pair still has anything to carry over, so this
+  stays a real re-runnable audit tool rather than a script frozen to one
+  day's findings. Skips a self-referential note (`primary_id`/
+  `duplicate_id` parsed to the same Lead — a real, harmless artifact from
+  the 2026-09-16 #285/#420/#421 restore-and-remerge churn, not a distinct
+  pair) and a duplicate that's since been restored (its own fields are
+  live, independent data again). `--dry-run` supported; idempotent by
+  construction — #420/#421 (already corrected by an earlier same-day
+  one-off script) is naturally skipped since the primary already holds
+  every value, no id exclusion needed.
+  **Run for real against production, dry-run first**: dry-run reported 10
+  affected merges, not 15 — reconciled and explained, not a bug: 5 of the
+  original 15 (`#274/#284`, `#320/#321`, `#379/#350`) had the primary
+  ALREADY independently holding its own value in every field the duplicate
+  had (its own UTM source, its own `meta_leadgen_id`, its own goal) — the
+  specific duplicate value in those cases is still permanently gone, but
+  there's nothing safe to fill without violating "never overwrite the
+  primary's own data." The real run matched the dry-run exactly, field for
+  field: `#118`(`utm_campaign`), `#113`(3 UTM fields), `#263`/`#276`
+  (`next_follow_up_at`), `#171`(UTM+`meta_leadgen_id`), `#285`(UTM+
+  `meta_leadgen_id`), `#92`/`#95`(`utm_campaign`), `#287`(`goal`+
+  `telecaller_id`), `#346`(`next_follow_up_at`). Verified `#346`/`#411`
+  field-by-field as the named example: primary `#346`'s `next_follow_up_at`
+  went from null to `2026-09-13 23:34:18` (the real recovery); primary
+  `#346`'s own `recommendation_token` (`c2737882-...`) was correctly left
+  untouched, NOT overwritten by duplicate `#411`'s own token
+  (`39136a1b-...`), which remains genuinely orphaned on the still-trashed
+  `#411` — confirmed live, exactly as predicted, no equivalent recovery
+  path exists for it. Re-ran once more: `Affected 0 merge(s); 35 already
+  had nothing missing` (25 originally-clean + 10 just-fixed) — real,
+  verified idempotency, not just a dry-run claim. Extra safety check
+  beyond what was asked: confirmed none of the 10 backfilled leads had a
+  first-time goal+budget completion (every `recommendation_generated_at`
+  was either still null or pre-dated the backfill), and the `jobs` queue
+  table showed zero `SendOfferRecommendationReadyJob`/
+  `SendVisibilityAuditFirstInviteJob` entries after the run — the backfill
+  did not trigger any surprise WhatsApp sends to stale historical leads,
+  the specific risk flagged during design (recovering old goal/budget data
+  weeks after the fact could otherwise re-fire an automated "recommendation
+  ready" message to a lead nobody's thought about in weeks).
+  22 tests in `MergeLeadsActionTest.php` (8 new) + 9 new in
+  `BackfillMergeFieldCarryoverTest.php`, full regression 980 tests green
+  across `tests/Feature/Leads`/`Api`/`Integration` plus both backfill test
+  files, Pint clean. No migration (pure PHP additions), deployed via the
+  standard `git pull`. `docs/user-guides/sales.md`/`admin.md` updated to
+  describe the auto-carry-over behavior to reps/admins.
