@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Contracts\NextActionSource;
+use App\Models\NextActionSetting;
 use App\Models\User;
 use App\Services\NextAction\AttendanceCheckInSource;
 use App\Services\NextAction\CallFollowUpDueSource;
@@ -113,6 +114,15 @@ class NextActionEngine
 
     public function nextFor(User $user): ?NextAction
     {
+        // Company-wide kill-switch (Admin/Manager-only, see
+        // NextActionSettingController) — checked before any source runs, for
+        // every role with no exception. Deliberately separate from
+        // NextActionSnooze, which only ever defers one specific prompt for
+        // one specific user.
+        if (NextActionSetting::current()->paused) {
+            return null;
+        }
+
         foreach (self::SOURCES as $sourceClass) {
             $prompt = app($sourceClass)->next($user);
 

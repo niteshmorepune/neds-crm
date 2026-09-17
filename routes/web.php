@@ -31,6 +31,7 @@ use App\Http\Controllers\LeadMergeController;
 use App\Http\Controllers\LeaveRequestController;
 use App\Http\Controllers\ManagerActionCenterController;
 use App\Http\Controllers\MyDayController;
+use App\Http\Controllers\NextActionSettingController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OfferCheckoutController;
 use App\Http\Controllers\OfferPageController;
@@ -666,6 +667,17 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
         Route::get('billing-settings', [BillingSettingController::class, 'index'])->name('billing-settings.index');
         Route::patch('billing-settings/sac-default', [BillingSettingController::class, 'updateSacDefault'])->name('billing-settings.sac-default.update');
         Route::patch('billing-settings/invoice-numbering', [BillingSettingController::class, 'updateInvoiceNumbering'])->name('billing-settings.invoice-numbering.update');
+    });
+
+    /*
+     * Notification Settings — Admin/Manager-only company-wide pause switch
+     * for the Next Action pop-up (NextActionEngine::nextFor()). Same
+     * menu.access-middleware-only convention as Billing Settings.
+     */
+    Route::middleware('menu.access:next-action-settings')->group(function () {
+        Route::get('notification-settings', [NextActionSettingController::class, 'index'])->name('next-action-settings.index');
+        Route::post('notification-settings/pause', [NextActionSettingController::class, 'pause'])->name('next-action-settings.pause');
+        Route::post('notification-settings/resume', [NextActionSettingController::class, 'resume'])->name('next-action-settings.resume');
     });
 
     /*
