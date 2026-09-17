@@ -364,3 +364,49 @@ it('rewords the never-called badge to "Call the lead" when nothing has been trie
 
     expect($this->advisor->hintFor($lead)['label'])->toBe('📞 Call the lead — best around 9 AM, 11 AM');
 });
+
+/**
+ * AnalyzeLeadNextAction's cached output (2026-09-18, later) — checked
+ * FIRST, ahead of every rule above, once present. These tests set up a
+ * lead that would OTHERWISE match one of those deterministic rules, to
+ * prove the AI hint genuinely takes priority rather than just happening to
+ * be the only thing that matches.
+ */
+it('prefers a present AI hint over every deterministic rule', function () {
+    $lead = coldCallLeadForNextAction([
+        'status' => LeadStatus::Contacted,
+        'stall_reason' => StallReason::Budget,
+        'goal' => LeadGoal::GenerateLeads, // would otherwise trigger needsLink()
+    ]);
+    backdateLeadCreation($lead, now()->subDays(5));
+    $lead->forceFill([
+        'ai_next_action_hint' => 'Retry calling -- last attempt unanswered',
+        'ai_next_action_generated_at' => now(),
+    ])->saveQuietly();
+
+    $hint = $this->advisor->hintFor($lead);
+
+    expect($hint['label'])->toBe('✨ Retry calling -- last attempt unanswered')
+        ->and($hint['detail'])->toContain('AI-analyzed');
+});
+
+it('falls back to the deterministic chain when there is no AI hint yet', function () {
+    $lead = coldCallLeadForNextAction([
+        'status' => LeadStatus::Contacted,
+        'goal' => LeadGoal::GenerateLeads,
+    ]);
+
+    $hint = $this->advisor->hintFor($lead);
+
+    expect($hint['label'])->toBe('🌐 Ask for Website/GBP link');
+});
+
+it('does not gate the AI hint on lead status the way most deterministic rules do', function () {
+    $lead = coldCallLeadForNextAction(['status' => LeadStatus::Converted]);
+    $lead->forceFill([
+        'ai_next_action_hint' => 'Send the quotation',
+        'ai_next_action_generated_at' => now(),
+    ])->saveQuietly();
+
+    expect($this->advisor->hintFor($lead)['label'])->toBe('✨ Send the quotation');
+});

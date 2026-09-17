@@ -63,17 +63,27 @@ underneath — Converted only ever means the lead became a real Deal, not
 that it's a closed sale, so this tells you at a glance how many of those
 Converted leads have actually been won without opening each one. The list
 itself has a **Next Action** column — the CRM's own read on what to do
-next for that specific lead, ranked most-specific-first: a stalling
-objection to follow up on, a due/overdue commitment (showing the exact
-words a rep — or AI — already noted, like "Confirm office visit time" or
-"Send proposal", not a generic "follow up" message), an upcoming meeting,
+next for that specific lead. Whenever AI has analyzed the lead (marked
+with a ✨), it's read the WHOLE lead — every note, every call attempt with
+its outcome, every meeting, the goal/budget/funnel state — and weighed
+what happened most recently most heavily, so a later missed call
+correctly overrides an earlier commitment instead of just repeating it
+verbatim. It re-checks itself automatically any time something relevant
+changes (a new note or call, a stalling tag, a new follow-up date, and
+so on) — no button to click. Until AI has had a chance to look at a lead
+(brand new, nothing logged yet), the column falls back to a simpler,
+rule-based read, ranked most-specific-first: a stalling objection to
+follow up on, a due/overdue commitment (showing the exact words a rep —
+or AI — already noted, like "Confirm office visit time" or "Send
+proposal", not a generic "follow up" message), an upcoming meeting,
 sending a quotation on a converted deal that has none sent, scheduling a
 meeting on a deal that's reached Proposal/Negotiation with none held yet,
 asking for a Website/GBP link, booking a Sales Expert meeting for a "Not
 Sure" lead, a WhatsApp check-in gone quiet, or the best hour to call if
-nobody's tried yet — falling back to a gloss of the latest note (still on
-the lead's own page too) only once none of those apply. It's a
-suggestion, not an action button yet — use your own judgment.
+nobody's tried yet — falling back further to a gloss of the latest note
+(still on the lead's own page too) only once none of those apply either.
+Either way, it's a suggestion, not an action button — use your own
+judgment.
 
 Two places feed that specific wording (like "Confirm office visit time")
 automatically: logging a call, and adding a plain note. If you mention a

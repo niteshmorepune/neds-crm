@@ -86,6 +86,11 @@ class DetectLeadNoteFollowUpCommitment implements ShouldQueue
         ])->saveQuietly();
 
         $note->author?->notify(new LeadFollowUpAutoSet($lead));
+
+        // saveQuietly() above means LeadObserver never sees this change —
+        // dispatch the fuller re-analysis directly, same as the CallLog
+        // version of this job.
+        $lead->queueNextActionAnalysis();
     }
 
     private function system(): string

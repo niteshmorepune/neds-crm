@@ -19,23 +19,19 @@ use Illuminate\Support\Str;
  * last-note text (often unhelpful at a glance: a raw Meta-import backfill
  * note, a "call not answered" line, or a `[location]` placeholder).
  *
- * The core ranking is deterministic — this renders for every row on every
- * page load, with no per-row API latency/cost, and needs to be as testable
- * as every other rule in this app (owner-confirmed 2026-09-17). Mirrors
- * LeadCallTimingAdvisor's own shape: a plain service, not a NextActionSource
- * (that contract is per-USER — "the one thing to show this person right
- * now" — this is per-LEAD, a column value, not a popup).
- *
- * 2026-09-18: the owner asked for genuinely specific actions ("Call the
- * Lead", "Send the Quotation", "Remind him to visit the office", "Confirm
- * the time to call") rather than generic ones. Two of the new rules below
- * (callLogFollowUpWithInstruction / followUpDue's ai_detected_next_action
- * branch) surface text an AI job already wrote elsewhere in this app
- * (DetectCallFollowUpCommitment / the new DetectLeadNoteFollowUpCommitment)
- * — this class stays a pure reader of already-computed fields, never
- * calling AI itself, so it's still safe to run on every row of every page
- * load. sendQuotation/scheduleMeeting are new purely-structured rules
- * (Deal state), no AI involved at all.
+ * This class stays a pure reader of already-computed fields — it never
+ * calls AI itself, so it's still safe to run on every row of every page
+ * load with no per-row latency/cost. Originally (2026-09-17) that meant a
+ * fully deterministic rule chain. 2026-09-18 (later): the owner reviewed
+ * three real leads where that deterministic chain — each rule looking at
+ * exactly one isolated signal — produced a stale or generic hint despite
+ * the lead's own page telling a much more specific story once read end to
+ * end (e.g. a later failed call attempt should supersede an earlier logged
+ * commitment, which no single-signal rule can know to do). aiHint() now
+ * checks App\Jobs\AnalyzeLeadNextAction's cached, full-context output
+ * FIRST — every rule below this point is now the FALLBACK for a lead that
+ * job hasn't analyzed yet (brand new, no notes/calls, or AI disabled), not
+ * the primary source. Kept exactly as before for that fallback role.
  *
  * Priority-ordered rules, same "first non-null wins" pattern
  * NextActionEngine::SOURCES already uses for a user's whole day, scoped
@@ -58,7 +54,8 @@ class LeadNextActionAdvisor
      */
     public function hintFor(Lead $lead, ?Collection $bestHours = null): array
     {
-        return $this->stallOverdue($lead)
+        return $this->aiHint($lead)
+            ?? $this->stallOverdue($lead)
             ?? $this->callLogFollowUpWithInstruction($lead)
             ?? $this->followUpDue($lead)
             ?? $this->meetingSoon($lead)
@@ -69,6 +66,29 @@ class LeadNextActionAdvisor
             ?? $this->welcomeNoReply($lead)
             ?? $this->neverCalled($lead, $bestHours)
             ?? $this->fallbackNote($lead);
+    }
+
+    /**
+     * App\Jobs\AnalyzeLeadNextAction's cached output — see the class
+     * docblock. Not gated on $lead->status->isOpen() the way most rules
+     * below are: that job itself already skips Lost leads (never writes a
+     * hint for one), and deliberately does NOT skip Converted (a Converted
+     * lead's "send the quotation"/"schedule the meeting" is exactly the
+     * kind of next action it should surface) — trusting its own gate here
+     * rather than re-deriving a narrower one.
+     *
+     * @return ?array{label: string, detail: ?string}
+     */
+    private function aiHint(Lead $lead): ?array
+    {
+        if ($lead->ai_next_action_hint === null) {
+            return null;
+        }
+
+        return [
+            'label' => '✨ '.$lead->ai_next_action_hint,
+            'detail' => 'AI-analyzed from the lead\'s full history '.$lead->ai_next_action_generated_at?->diffForHumans().'.',
+        ];
     }
 
     /**

@@ -60,14 +60,21 @@ Open a lead assigned to you to:
   a note on what was discussed, set a next follow-up date.
 
 The list itself has a **Next Action** column — the CRM's own read on what
-to do next for that specific lead, most-specific-first: a stalling
-objection, a due/overdue commitment shown in the exact words already
-noted (e.g. "Confirm office visit time", not a generic "follow up"), an
-upcoming meeting, ask for a Website/GBP link, book with a Sales Expert, a
-WhatsApp check-in gone quiet, or the best hour to call if nobody's tried
-yet — falling back to a gloss of the latest note (still on the lead's own
-page too) only when none of those apply. It's a suggestion, not a
-button — use your own judgment.
+to do next for that specific lead. A ✨ means AI has read the WHOLE
+lead — every note, every call attempt and its outcome, every meeting — and
+weighed the most recent activity most heavily, so a later missed call
+correctly overrides an earlier commitment instead of repeating it as if
+nothing happened since. It re-checks itself automatically whenever
+something relevant changes — no button to click. Until AI has looked at a
+lead (brand new, nothing logged yet), it falls back to a simpler,
+rule-based read, most-specific-first: a stalling objection, a due/overdue
+commitment shown in the exact words already noted (e.g. "Confirm office
+visit time", not a generic "follow up"), an upcoming meeting, ask for a
+Website/GBP link, book with a Sales Expert, a WhatsApp check-in gone
+quiet, or the best hour to call if nobody's tried yet — falling back
+further to a gloss of the latest note (still on the lead's own page too)
+only when none of those apply either. Either way, it's a suggestion, not
+a button — use your own judgment.
 
 If you mention a concrete promise in a call's notes or a plain note —
 "he'll visit the office Saturday", "call back to confirm the time" — AI

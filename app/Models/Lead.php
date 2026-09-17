@@ -12,9 +12,11 @@ use App\Enums\LeadStatus;
 use App\Enums\LeadUrgency;
 use App\Enums\StallReason;
 use App\Enums\UserRole;
+use App\Jobs\AnalyzeLeadNextAction;
 use App\Models\Concerns\LogsActivity;
 use App\Observers\LeadObserver;
 use App\Services\CallTimingMetrics;
+use App\Support\Ai;
 use App\Support\Phone;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder;
@@ -87,6 +89,7 @@ class Lead extends Model
         'ai_score', 'ai_score_reason', 'ai_scored_at',
         'ai_budget_band', 'ai_urgency', 'ai_service_fit',
         'ai_detected_next_action',
+        'ai_next_action_hint', 'ai_next_action_generated_at',
         'stall_reason',
         'recommendation_key', 'recommendation_offer_key', 'recommendation_token',
         'recommendation_generated_at', 'recommendation_viewed_at',
@@ -108,6 +111,7 @@ class Lead extends Model
             'lost_at' => 'datetime',
             'ai_score' => 'integer',
             'ai_scored_at' => 'datetime',
+            'ai_next_action_generated_at' => 'datetime',
             'ai_budget_band' => LeadBudgetBand::class,
             'ai_urgency' => LeadUrgency::class,
             'owner_reminder_sent_at' => 'datetime',
@@ -175,6 +179,26 @@ class Lead extends Model
     {
         return $this->ai_score !== null
             && $this->ai_score >= config('services.anthropic.hot_lead_threshold', 70);
+    }
+
+    /**
+     * Dispatches AnalyzeLeadNextAction (2026-09-18) — see that job's own
+     * docblock for why it exists (a deterministic rule can't weigh a lead's
+     * whole history the way a human reading the page does) and exactly what
+     * it produces. Centralized here, rather than dispatching the job
+     * directly from each call site, so "what counts as a relevant change"
+     * lives in one place instead of being duplicated wherever it's called:
+     * CallLogController::store(), RecordNotes::addNote() (both branches),
+     * MeetingImport's three creation methods, LeadObserver::updated() (see
+     * its own NEXT_ACTION_TRIGGER_FIELDS constant), and
+     * DetectCallFollowUpCommitment/DetectLeadNoteFollowUpCommitment once
+     * either successfully sets a commitment.
+     */
+    public function queueNextActionAnalysis(): void
+    {
+        if (Ai::enabled()) {
+            AnalyzeLeadNextAction::dispatch($this->id);
+        }
     }
 
     /**

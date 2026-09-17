@@ -157,6 +157,12 @@ class CallLogController extends Controller
             ScoreLead::dispatch($id);
         }
 
+        // Same reasoning for the Next Action column — a fresh call is the
+        // single most common thing that changes what a rep should do next.
+        if ($type === Lead::class) {
+            Lead::find($id)?->queueNextActionAnalysis();
+        }
+
         $this->promoteLeadOnFirstOutreach($type, $id);
 
         if ($request->hasFile('voice_note') && Ai::voiceTranscriptionEnabled()) {

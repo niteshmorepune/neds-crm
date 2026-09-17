@@ -93,6 +93,13 @@ class GenerateLeadRecommendation
         if ($dirty !== []) {
             $lead->forceFill($dirty)->saveQuietly();
 
+            // saveQuietly() above means LeadObserver::updated() never sees
+            // this change (recommendation_offer_key isn't in its trigger
+            // list for exactly that reason) -- a genuinely new/changed
+            // recommendation is still a real reason to re-analyze the
+            // lead's own Next Action, so dispatch it directly here instead.
+            $lead->queueNextActionAnalysis();
+
             OfferFunnelEvent::create([
                 'event_type' => OfferFunnelEventType::RecommendationCreated,
                 'offer_key' => $recommendation->offerKey->value,
