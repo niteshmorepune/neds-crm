@@ -225,8 +225,12 @@ different approved template asking if they're still interested and inviting
 a reply, same idea as the automatic welcome but for re-engaging later. Limited
 to once per 24 hours per lead so it stays a considerate nudge, not a repeat
 blast. **You don't have to remember to click it, either** — if 6 hours pass
-with no reply from the lead, you, or the after-hours assistant, the CRM
-sends this same check-in automatically, once. A **💬 Welcome sent, no
+with no reply from the lead, and nobody's contacted them since (no
+WhatsApp reply from you or the after-hours assistant, no call logged, no
+note added), the CRM sends this same check-in automatically, once. Any
+of those — including a plain phone call — is treated as real contact and
+cancels the automatic send; it only ever fires when the lead has
+genuinely gone unheard-from on every channel. A **💬 Welcome sent, no
 reply** badge shows on the lead's row (and in the Needs Attention strip)
 the moment it's been quiet that long, whether or not the automatic
 check-in has fired yet — worth a phone call in the meantime, since

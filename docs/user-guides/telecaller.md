@@ -253,9 +253,12 @@ window opens up. If one of your leads has gone quiet and that window's
 closed, open the lead and click **📱 Send WhatsApp check-in** to send a
 re-engagement template and try again — limited to once every 24 hours
 per lead. **You don't have to remember, either** — after 6 hours with no
-reply, the CRM sends this same check-in automatically, once, and a
-**💬 Welcome sent, no reply** badge shows on the lead's row (and in the
-Needs Attention strip) so you know to call, not just wait on WhatsApp.
+reply and no other contact since (a call you logged or a note you wrote
+counts too, not just a WhatsApp reply), the CRM sends this same check-in
+automatically, once — so if you've already phoned the lead, it won't
+also fire this. A **💬 Welcome sent, no reply** badge shows on the lead's
+row (and in the Needs Attention strip) so you know to call, not just
+wait on WhatsApp.
 
 ## 5. Daily report
 At the end of each working day, open **Daily Reports** and fill in a brief

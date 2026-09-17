@@ -2176,3 +2176,60 @@ Older entries (2026-06-10 through 2026-08-25) moved to `docs/decisions-log-archi
   through the app's own destroy route. Docs: `accounts.md`/`admin.md`
   extended (their PDFs regenerated; the other 8 unaffected PDFs
   discarded per the established PDF-isn't-byte-stable gotcha).
+- **2026-09-17 (later) — Real gap, reported via a real example (lead
+  Avinash Deshmukh): the automatic "no reply, send a WhatsApp check-in"
+  follow-up still fired even after a telecaller had already phoned the
+  lead.** Owner: "if human contact with the lead is done, then do not
+  send any template to the lead, let the human decide if those templates
+  to be send manually." `SendLeadWelcomeFollowUps` (the every-30-minute
+  cron behind the automatic re-engagement check-in — 2026-09-09 entry
+  above) only ever called `Lead::isAwaitingWelcomeReply()`, which checks
+  the WhatsApp channel alone (an outbound staff reply or an inbound one).
+  Every OTHER automated template in this family — `SendLeadWelcomeMessageJob`,
+  `SendOfferRecommendationReadyJob`, `SendVisibilityAuditFirstInviteJob`,
+  both recovery-nudge jobs — already guards on the broader
+  `Lead::hasStaffEngagementSince()` (a phone call or a plain staff note
+  counts as real engagement too, not just a WhatsApp reply — built
+  2026-09-13 for exactly this class of bug, lead #322), but this one
+  command was never updated to use it. Same bug, same root cause,
+  recurring a third time in this codebase (see [[feedback-gotchas]]).
+  Fixed with one line — `->reject(fn (Lead $lead) =>
+  $lead->hasStaffEngagementSince($lead->welcome_message_sent_at))`
+  chained onto the command's existing candidate filter — checked since
+  `welcome_message_sent_at`, not lead creation, since that's the point
+  this command itself measures "gone quiet" from. Deliberately fixed at
+  this automatic call site only, NOT inside `SendLeadCheckInJob` itself
+  — that job is also dispatched by the staff-facing manual **📱 Send
+  WhatsApp check-in** button, which must stay unconditional so a human
+  can still choose to send it regardless of prior contact, matching the
+  owner's own explicit "let the human decide manually" framing. Audited
+  every other wadesk.in `/api/send-template` call site in the same pass
+  to confirm no other gap existed: the remaining ones
+  (`SendVisibilityAuditInProgressJob`, `SendQuotationWhatsAppJob`,
+  `SendVisibilityAuditReportJob`, `SendVisibilityAuditPaymentConfirmationJob`,
+  `SendWhatsappHandoffMessageJob`) are all transactional sends tied to a
+  concrete paid/staff-triggered event (payment received, quotation sent,
+  deal won), not cold-outreach/recovery nudges, so "has staff already
+  contacted this lead" isn't the right question for them and they were
+  left untouched. Also flagged, not fixed (separate channel, not what was
+  reported): `SendVisibilityAuditFirstInviteEmailJob`/
+  `SendVisibilityAuditRecoveryNudgeEmailJob` still call the older, narrower
+  `hasStaffWhatsappReplySince()` rather than `hasStaffEngagementSince()` —
+  a real inconsistency, tracked in [[backlog]] rather than bundled into
+  this fix. wadesk.in itself needed no change — the scheduling/suppression
+  logic lives entirely on the CRM side; wadesk.in only ever receives the
+  already-decided `/api/send-template` call.
+  3 new Pest tests (`SendLeadWelcomeFollowUpsTest` — skips a lead staff
+  already called, skips a lead staff already left a plain internal note
+  on, still fires when the only engagement predates the welcome message
+  rather than following it), full `tests/Feature/Leads`+`tests/Feature/Integration`
+  suites green (889 passed, no regressions), Pint clean. No migration,
+  no route/view/config change — deployed via a plain SSH `git pull`
+  (PR #204, `24a3076`), verified live: `/login` 200, `schedule:list`
+  still shows `app:send-lead-welcome-followups` on its `*/30 * * * *`
+  cadence, today's production log clean of anything new (routine
+  biometric-bridge noise only). Docs: `sales.md`/`telecaller.md`'s own
+  description of the automatic check-in corrected to say a call or a
+  plain note cancels it too, not just a WhatsApp reply (their PDFs
+  regenerated; the other 8 unaffected PDFs discarded per the established
+  PDF-isn't-byte-stable gotcha).
