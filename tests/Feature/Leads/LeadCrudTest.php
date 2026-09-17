@@ -372,8 +372,12 @@ it('highlights the currently active status tile', function () {
     expect(substr_count($html, 'ring-2 ring-indigo-400'))->toBe(1);
 });
 
-it('shows the most recent note in the Latest Note column, truncated with the full text available on hover', function () {
-    $lead = Lead::factory()->create(['name' => 'Ganesh Auto Parts']);
+it('falls back to a gloss of the most recent note in the Next Action column, truncated with the full text available on hover', function () {
+    // ColdCall: not prospect-initiated, so LeadCallTimingAdvisor's
+    // capture-hour signal can't produce a "Call the lead" recommendation
+    // ahead of this fallback rule (see LeadNextActionAdvisorTest's own
+    // coldCallLeadForNextAction() helper for the same reasoning).
+    $lead = Lead::factory()->create(['name' => 'Ganesh Auto Parts', 'source' => LeadSource::ColdCall]);
     $lead->notes()->create(['user_id' => $this->admin->id, 'body' => 'Called, no answer.']);
     $longNote = str_repeat('Discussed pricing and scope in detail. ', 3);
     $lead->notes()->create(['user_id' => $this->admin->id, 'body' => $longNote]);
@@ -381,15 +385,15 @@ it('shows the most recent note in the Latest Note column, truncated with the ful
     $response = $this->actingAs($this->admin)->get(route('leads.index'));
 
     $response->assertOk()
-        ->assertSee(Str::limit($longNote, 60), false)
+        ->assertSee(Str::limit($longNote, 50), false)
         ->assertDontSee('Called, no answer.')
         ->assertSee($longNote, false);
 });
 
-it('shows a dash in the Latest Note column when a lead has no notes', function () {
-    Lead::factory()->create(['name' => 'No Notes Yet']);
+it('shows "no activity yet" in the Next Action column when a lead has no notes or calls', function () {
+    Lead::factory()->create(['name' => 'No Notes Yet', 'source' => LeadSource::ColdCall]);
 
-    $this->actingAs($this->admin)->get(route('leads.index'))->assertOk()->assertSee('—');
+    $this->actingAs($this->admin)->get(route('leads.index'))->assertOk()->assertSee('No activity yet');
 });
 
 it('filters the leads list to a specific capture month', function () {

@@ -2361,3 +2361,93 @@ Older entries (2026-06-10 through 2026-08-25) moved to `docs/decisions-log-archi
   Note out once picks are validated against real leads) and Phase 3
   (optional AI polish, reuse on VA Recovery/Stalling/My Day) deliberately
   not built yet — see [[backlog]].
+- **2026-09-18 (later) — Next Action column: specific-action upgrade +
+  Latest Note retired, deliberately combining a free structural win with
+  new AI.** Once PR #206 went live, the owner asked for genuinely
+  specific actions ("Call the Lead", "Send the Quotation", "Remind him to
+  visit the office", "Confirm the time to call") instead of generic ones,
+  and — after weighing a deterministic-only vs. AI vs. both approach via
+  AskUserQuestion — said plainly "I think we need AI here to help in
+  this." Mid-build, the owner separately said the list no longer needs
+  its own "Latest Note" column now that Next Action is specific enough
+  (still shown on the lead's own page) — retired here too.
+  **Real discovery before writing any new AI code**: `App\Jobs\
+  DetectCallFollowUpCommitment` (live since 2026-08-31) already reads a
+  logged call's own notes and writes a specific imperative
+  (`CallLog.next_action`, e.g. "Send proposal") whenever a rep leaves both
+  `follow_up_at`/`next_action` blank after a connected call — the Lead
+  Generation list simply never read it. New
+  `LeadNextActionAdvisor::callLogFollowUpWithInstruction()` surfaces that
+  text verbatim (checked before the generic Lead-level `followUpDue()`)
+  — a real, free win requiring zero new AI calls, since the AI work had
+  already happened. Also found and fixed a related, real gap while
+  reading that code path: `RecordNotes`'s own "This was a call" shortcut
+  creates a `CallLog` directly, bypassing `CallLogController::store()`
+  entirely — meaning this exact detection job had NEVER once fired for
+  a call logged that way, since nothing ever dispatched it there. Now
+  dispatched from that shortcut too, mirroring the controller's own
+  guard exactly.
+  **The genuinely new AI piece**: `App\Jobs\
+  DetectLeadNoteFollowUpCommitment` + `App\Notifications\
+  LeadFollowUpAutoSet`, a plain-note counterpart to
+  `DetectCallFollowUpCommitment` — that job is CallLog-specific, so a
+  commitment written into an ordinary Add Note ("he said he'll drop by
+  Saturday") was never read by anything. Mirrors the same grounded,
+  review-not-silent-override contract byte-for-byte (never overrides a
+  rep-set `next_follow_up_at`, silent no-op on AI failure/no-commitment/
+  disabled, notifies the note's own author so they can adjust it) rather
+  than inventing a separate, less-trusted mechanism. Writes to new
+  `leads.ai_detected_next_action` (nullable string), which
+  `LeadNextActionAdvisor::followUpDue()` shows in place of the generic
+  "Follow up now — overdue" text whenever set.
+  **Real bug caught by the first test run, not shipped**: the new
+  `Lead::saving()` guard ("clear `ai_detected_next_action` whenever a
+  human touches `next_follow_up_at`, so stale AI text never lingers
+  attached to a date it didn't generate") fired on `isDirty()` alone —
+  which is true for every attribute on a brand-new model's very first
+  `create()`, since Eloquent has nothing to compare against yet. That
+  meant a lead created with both fields set together — exactly what the
+  AI job's own atomic write looks like — immediately wiped the value it
+  was just given, the instant a test (or, in principle, a future
+  seeder/import) exercised that shape via a normal `save()`. Fixed by
+  also requiring `$lead->exists` — true only once a model has already
+  been persisted, so the guard now only ever fires on a genuine update to
+  an existing lead, never at creation. The AI job's own real writes were
+  never actually at risk (`saveQuietly()` skips this hook, and every
+  other model event, entirely) — this was a test-fixture-shaped gap that
+  would have looked identical in production the day anything else ever
+  created a Lead with both fields pre-set outside the job itself.
+  Two new structured rules, no AI involved: `sendQuotation()` (a
+  converted lead's open Deal — not Won/Lost — with no Quotation that's
+  ever reached Sent/Accepted) and `scheduleMeeting()` (that Deal at
+  Proposal/Negotiation with zero Meetings ever logged against the lead —
+  Deals have no meetings relation of their own in this app, see
+  `Lead::meetings()`). `neverCalled()` reworded from "Try: 9 AM, 11 AM"
+  to "Call the lead — best around 9 AM, 11 AM" / "Try calling again —
+  best around …" per the owner's own phrasing.
+  `LeadController::index()`'s `callLogs` eager-load gained
+  `follow_up_at`/`next_action` columns for the new rule; `latestNote`
+  stays eager-loaded (still the advisor's own final fallback) even though
+  the list no longer renders it as its own column. Removed the "Latest
+  Note" `<th>`/`<td>` from `leads/index.blade.php`, empty-state colspan
+  dropped back to 8/9.
+  **Test fallout from removing the column, fixed not ignored**: two
+  pre-existing `LeadCrudTest` cases asserted directly against the removed
+  "Latest Note" column's own truncation length (60 chars) and dash
+  placeholder — rewritten to assert the Next Action column's fallback
+  behavior instead (50 chars, matching `LeadNextActionAdvisor::
+  fallbackNote()`'s own limit; "— No activity yet" instead of a bare
+  dash), with an explicit `source: ColdCall` on the fixture so
+  `LeadCallTimingAdvisor`'s capture-hour signal can't intermittently
+  produce a "Call the lead" recommendation ahead of the fallback being
+  reached (same isolation convention `LeadNextActionAdvisorTest`'s own
+  `coldCallLeadForNextAction()` helper already uses).
+  New migration (`leads.ai_detected_next_action`), migrated locally. 41
+  new/updated Pest tests across `LeadNextActionAdvisorTest`,
+  `LeadNextActionColumnTest`, `LeadCrudTest`, and a new
+  `LeadNoteFollowUpDetectionTest` (mirrors `CallFollowUpDetectionTest`'s
+  own fixture shapes so the two mechanisms can't silently drift apart in
+  what they promise), full suite green, Pint clean. `sales.md`/
+  `telecaller.md` extended (their PDFs regenerated; the other 8
+  unaffected guides' regenerated-but-unchanged PDFs discarded per the
+  established gotcha).

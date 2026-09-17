@@ -60,13 +60,15 @@ class LeadController extends Controller
         // outreachAttemptSummary()) read the already-loaded relation
         // instead of a fresh per-row query. Cheap at this scale (15/page),
         // same "eager-load, filter in PHP" precedent as
-        // unresponsiveLeadIds() below. callLogs (columns only) feeds the
-        // "best time to call" badge via LeadCallTimingAdvisor below.
-        // meetings feeds LeadNextActionAdvisor's "meeting soon" rule.
+        // unresponsiveLeadIds() below. callLogs' follow_up_at/next_action
+        // feed LeadNextActionAdvisor's callLogFollowUpWithInstruction rule;
+        // latestNote is still needed as that advisor's own final fallback
+        // even though the list no longer renders it as its own column.
+        // meetings feeds the "meeting soon" rule.
         $query = $this->filteredLeads($request, $month)
             ->with([
                 'owner', 'service', 'latestNote', 'notes:id,notable_id,notable_type,user_id,body,created_at',
-                'callLogs:id,callable_id,callable_type,direction,outcome,called_at',
+                'callLogs:id,callable_id,callable_type,direction,outcome,called_at,follow_up_at,next_action',
                 'meetings:id,meetable_id,meetable_type,title,occurred_at',
             ])
             ->withCount('callLogs');
@@ -96,12 +98,13 @@ class LeadController extends Controller
             fn (Lead $lead) => [$lead->id => $timingAdvisor->badgeLabel($timingAdvisor->recommendationFor($lead, $bestHours))]
         );
 
-        // Phase 1 of the 2026-09-17 plan (side-by-side trial, owner-confirmed):
-        // shown ALONGSIDE Latest Note, not replacing it yet. Computed only for
-        // this page's rows (like callBadges above), never all 291+ leads —
-        // deliberately live per request rather than a cached column, since
-        // pagination already caps the real cost and a cache needs no
-        // invalidation surface to keep in sync.
+        // Phase 1 shipped 2026-09-17 alongside "Latest Note"; the owner
+        // retired that column 2026-09-18 (still shown on the lead's own
+        // page) once this one proved specific enough on its own. Computed
+        // only for this page's rows (like callBadges above), never all
+        // 291+ leads — deliberately live per request rather than a cached
+        // column, since pagination already caps the real cost and a cache
+        // needs no invalidation surface to keep in sync.
         $nextActionHints = $leads->getCollection()->mapWithKeys(
             fn (Lead $lead) => [$lead->id => $nextActionAdvisor->hintFor($lead, $bestHours)]
         );
