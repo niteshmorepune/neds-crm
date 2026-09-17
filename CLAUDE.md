@@ -2233,3 +2233,65 @@ Older entries (2026-06-10 through 2026-08-25) moved to `docs/decisions-log-archi
   plain note cancels it too, not just a WhatsApp reply (their PDFs
   regenerated; the other 8 unaffected PDFs discarded per the established
   PDF-isn't-byte-stable gotcha).
+- **2026-09-17 (later still) — Real gap reported live (lead #443,
+  Ashavini Sonawne): a Meta lead's email clearly on the submitted form
+  wasn't captured in the CRM at all; the owner separately flagged company
+  and goal missing on the same lead too.** Root-caused, not guessed:
+  Meta's Lead Ad flow auto-sends a WhatsApp message right after the form
+  submit, which `WhatsappWebhookController::handleUnmatchedNumber()`
+  often lands as the Lead a few seconds BEFORE `ImportMetaLead`'s own
+  webhook runs — that `Lead::create()` call only ever sets name/phone,
+  nothing else. `ImportMetaLead::attachToExistingLead()` then runs
+  moments later with the real, structured Graph API `field_data` (the
+  authoritative source, not a text-parse) and backfills `service_id`/
+  `estimated_value`/`goal`/`budget_range` "only if currently null" —
+  but `email`/`company` were never added to that same whitelist, even
+  though `parseFieldData()` already computed them correctly every time.
+  The real values were silently discarded on every lead that hit this
+  exact race, forever, with the raw text only ever visible buried in a
+  note nobody reliably reads field-by-field. Fixed by adding `email`/
+  `company` to the existing `$fill` array (same "only if currently null"
+  guard, `attachToExistingLead()`'s own signature extended to take the
+  already-parsed `$fields` array it just wasn't being passed before).
+  Deliberately did NOT extend this to `name` — the WhatsApp profile name
+  and the Meta form's typed name can legitimately differ (this exact
+  lead: "Ashavini Sonawne" vs. the form's "Ashvini Kulkarni" — a real
+  maiden/married-name-shaped difference, not obviously a bug), and unlike
+  email/company the existing lead's name is never actually null (always a
+  real value or the "WhatsApp Inquiry" placeholder), so overwriting it
+  needs its own deliberate placeholder-detection decision, not a blind
+  null-check — left alone rather than silently deciding which name wins.
+  **Goal was a separate, unrelated bug on the same lead**: its own answer
+  ("अधिक_leads_प्राप्त_करना") mixes the Latin word "leads" into Devanagari
+  phrasing — a THIRD real ad variant (campaign 120251465805080458),
+  distinct from both previously-handled Hindi forms, confirmed against
+  this lead's own stored note text (not a retyped guess, learning directly
+  from the [[feedback-gotchas]] lesson the last two rounds of this exact
+  mistake taught) — added as a new `matchGoal()` needle.
+  3 new Pest tests (email/company backfill only-if-null + does-not-
+  overwrite, the third Hindi goal variant against lead #443's real text),
+  full `tests/Feature/Leads`+`tests/Feature/Integration` suites green
+  (892 passed, no regressions), Pint clean. No migration — deployed via
+  SSH `git pull` (PR #205, `a61c70e`), verified live (`/login` 200, new
+  needle present in the deployed file, log clean).
+  **Production backfill, not just a code fix**: a read-only audit found
+  50 Meta leads with SOME field null, but narrowing to only leads that
+  actually went through the `attachToExistingLead()` race path (detected
+  via its own unique "Also submitted a Meta Ads form" note prefix — the
+  only leads this bug could possibly have hit) cut that to 7 real
+  candidates; the other 43 were leads whose ad form simply never asked
+  for company at all, a legitimate absence, not this bug. Backfilled via
+  a Reflection-based script that re-fetches each of the 7 leads' real
+  Meta Graph API `field_data` by their own `meta_leadgen_id` (the
+  authoritative source, not a note text-parse) and invokes the actual
+  `parseFieldData()`/`matchGoal()` methods directly — reusing the real,
+  already-fixed logic rather than a second hand-written copy that could
+  drift from it. Dry-run first, then applied: 6 of 7 leads corrected
+  (#235/#246 company, #415/#416/#435 email+company, #443 email+goal — the
+  exact real values matching what was reported); #125 correctly left
+  untouched, since its own real Meta form data confirms company was
+  genuinely never submitted on that ad, not silently dropped. Left a
+  visible `🔧 Backfilled from Meta form data` note on each corrected lead.
+  Re-ran the narrow audit after: 0 remaining (idempotency confirmed live,
+  not just claimed). Lead #443 verified individually, field by field, via
+  tinker. Scratch scripts deleted from the server after.
