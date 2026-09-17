@@ -59,6 +59,17 @@ Open a lead assigned to you to:
 - **Update it** — change its status (New → Contacted → Qualified, etc.), add
   a note on what was discussed, set a next follow-up date.
 
+The list itself has a **Next Action** column — the CRM's own read on what
+to do next for that specific lead (a stalling objection to follow up on,
+an overdue/today's follow-up, a meeting coming up, ask for a Website/GBP
+link, book with a Sales Expert, a WhatsApp check-in gone quiet, or the
+best hour to call if nobody's tried yet), falling back to a gloss of the
+latest note when none of those apply. It's a suggestion, not a button —
+use your own judgment. When adding a note, an optional **Next follow-up**
+field is right there in the Add Note box, so you can set the date in the
+same step as writing what was said — leaving it blank never clears a date
+you'd already set.
+
 **"Call this lead now" popup:** the moment a new lead lands in your queue
 with no call logged yet, a small card appears in the bottom-right corner of
 every page, oldest uncalled lead first. Click **Log the call** to jump

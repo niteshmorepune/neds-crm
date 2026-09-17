@@ -228,6 +228,7 @@
                         <th class="px-4 py-3">Owner</th>
                         <th class="px-4 py-3">Status</th>
                         <th class="px-4 py-3">Latest Note</th>
+                        <th class="px-4 py-3">Next Action</th>
                         <th class="px-4 py-3 text-right">Actions</th>
                     </tr>
                 </thead>
@@ -292,13 +293,21 @@
                                     <span class="text-gray-300">—</span>
                                 @endif
                             </td>
+                            <td class="px-4 py-3 max-w-xs">
+                                @php($hint = $nextActionHints[$lead->id] ?? null)
+                                @if ($hint)
+                                    <span class="text-gray-700" @if ($hint['detail']) title="{{ $hint['detail'] }}" @endif>{{ $hint['label'] }}</span>
+                                @else
+                                    <span class="text-gray-300">—</span>
+                                @endif
+                            </td>
                             <td class="px-4 py-3 text-right">
                                 <a href="{{ route('leads.show', $lead) }}" class="text-gray-500 hover:text-gray-700">View</a>
                             </td>
                         </tr>
                     @empty
-                        @php($colspan = 8)
-                        @can('merge', \App\Models\Lead::class) @php($colspan = 9) @endcan
+                        @php($colspan = 9)
+                        @can('merge', \App\Models\Lead::class) @php($colspan = 10) @endcan
                         <tr><td colspan="{{ $colspan }}" class="px-4 py-10 text-center text-gray-400">No leads found.</td></tr>
                     @endforelse
                 </tbody>

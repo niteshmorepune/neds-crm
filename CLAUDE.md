@@ -2295,3 +2295,69 @@ Older entries (2026-06-10 through 2026-08-25) moved to `docs/decisions-log-archi
   Re-ran the narrow audit after: 0 remaining (idempotency confirmed live,
   not just claimed). Lead #443 verified individually, field by field, via
   tinker. Scratch scripts deleted from the server after.
+- **2026-09-18 — Lead Generation "Next Action" column (Phase 1, side-by-
+  side trial per the agreed [[lead-next-action-column-plan]] memory) +
+  the `next_follow_up_at` habit-gap fix.** Owner reported (screenshot)
+  that the list's **Latest Note** column often shows something unhelpful
+  at a glance (a raw call-outcome line, a Meta-import backfill note, a
+  `[location]` placeholder) and asked for a computed "Next Action" column
+  instead. Confirmed 3 scope decisions via AskUserQuestion before
+  building, all recommended: ship it **alongside** Latest Note first
+  (not a replacement yet), **deterministic only** (no AI polish this
+  round), and **informational text only** (no clickable actions yet).
+  New `App\Services\LeadNextActionAdvisor` — same shape as the existing
+  `LeadCallTimingAdvisor` (a plain service, not a `NextActionSource`,
+  since that contract is per-USER for the popup; this is per-LEAD, a
+  column value) — returns the first-non-null result of an 8-rule
+  priority chain reusing existing signals: stalling objection ≥3 days
+  quiet (mirrors `ObjectionFollowUpDueSource`'s own staleness check,
+  applied to one record instead of a team scan) → `next_follow_up_at`
+  overdue/due today (`Lead::isFollowUpOverdue()`/`isFollowUpDueToday()`
+  directly, not `CallFollowUpDueSource` — that source actually keys off
+  the unrelated `CallLog.follow_up_at`, per-user; the plan's own gap
+  example, lead #339, was specifically about `Lead.next_follow_up_at`) →
+  a meeting within 24h → goal captured but Website/GBP link missing →
+  goal = Not Sure → welcome sent, no reply (`isOverdueForWelcomeReply()`)
+  → never called yet, best hour to call (`LeadCallTimingAdvisor`) →
+  fallback to today's latest-note gloss, always non-null.
+  **Deliberate divergence from the memory plan's own caching proposal**:
+  the plan assumed live computation for 291+ leads per page load was too
+  expensive and proposed a cached `next_action_hint` column + an Observer
+  invalidated on 6+ event types (note added, call logged, stall_reason/
+  goal/next_follow_up_at changed, meeting created). Checked
+  `LeadController::index()` first — it already computes the "best time to
+  call" badge live, per request, for only the CURRENT PAGE's 15 rows
+  (`callBadges`, after pagination slicing), never all 291+ — pagination
+  already caps the real cost. Mirrored that exact pattern
+  (`$nextActionHints`) instead of adding a cache column: simpler, no
+  invalidation surface to keep in sync (a recurring source of stale-cache
+  bugs elsewhere in this app's own history), no migration needed.
+  `meetings:id,meetable_id,meetable_type,title,occurred_at` added to the
+  index query's existing eager-load list for the new meeting-soon rule.
+  **Habit-gap fix**: the plan flagged that `next_follow_up_at` stays null
+  even when a note describes a concrete commitment (lead #339: "we'll
+  connect today at 5pm"), since setting it required a separate trip to
+  the Lead/Deal Edit form. Scoped as a UI-prominence fix only, not date-
+  detection-from-text (explicitly deferred, per the plan). Added an
+  optional **Next follow-up** datetime field directly to `RecordNotes`'
+  Add Note form (`canSetFollowUp()`, gated like `canDraft()`/
+  `canSummarize()` on `canManage` + `Lead|Deal`) — filling it in on
+  `addNote()` updates the record's `next_follow_up_at` in the same
+  action; same parsing convention as `LeadController::payload()`
+  (`Carbon::createFromFormat('Y-m-d\TH:i', ..., display_timezone)->utc()`).
+  Leaving it blank never touches an existing value — same "only writes
+  what's actually filled in" convention already established for
+  stall_reason/goal capture on this app's other incidental-field forms.
+  25 new Pest tests (17 `LeadNextActionAdvisorTest` — all 8 rules +
+  priority ordering + closed-lead exclusion, 2 `LeadNextActionColumnTest`
+  — render, 6 `RecordNotesFollowUpTest` —
+  set/blank-preserves/validation/reset, both Lead and Deal), full suite
+  3727 green (same one pre-existing unrelated
+  `MeetingRequestTest` IST-window flake), Pint clean. No migration, no
+  menu/route change — deploy is `git pull`+view-cache only. Docs:
+  `sales.md`/`telecaller.md` extended (their PDFs regenerated; the other
+  8 unaffected guides' regenerated-but-unchanged PDF bytes discarded per
+  the established PDF-isn't-byte-stable gotcha). Phase 2 (swap Latest
+  Note out once picks are validated against real leads) and Phase 3
+  (optional AI polish, reuse on VA Recovery/Stalling/My Day) deliberately
+  not built yet — see [[backlog]].

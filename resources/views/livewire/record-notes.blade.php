@@ -67,6 +67,11 @@
                 </div>
                 @error('callOutcome') <div class="mt-1 text-xs text-red-600">{{ $message }}</div> @enderror
                 <div class="flex items-center gap-2">
+                    @if ($canSetFollowUp)
+                        <label for="nextFollowUpAt" class="text-sm text-gray-500 select-none">Next follow-up:</label>
+                        <input type="datetime-local" id="nextFollowUpAt" wire:model="nextFollowUpAt"
+                               class="rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
+                    @endif
                     @if ($canDraft)
                         <button type="button" wire:click="draftFollowUp" wire:loading.attr="disabled" wire:target="draftFollowUp"
                                 class="inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">
@@ -77,6 +82,7 @@
                     <x-primary-button wire:click="addNote" type="button">Add note</x-primary-button>
                 </div>
             </div>
+            @error('nextFollowUpAt') <div class="mt-1 text-right text-xs text-red-600">{{ $message }}</div> @enderror
         </div>
     @endif
 
