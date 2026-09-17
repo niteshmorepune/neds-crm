@@ -4,6 +4,8 @@ namespace App\Livewire;
 
 use App\Enums\CallDirection;
 use App\Enums\CallOutcome;
+use App\Jobs\DetectCallFollowUpCommitment;
+use App\Jobs\DetectLeadNoteFollowUpCommitment;
 use App\Jobs\ScoreLead;
 use App\Jobs\SendWhatsappLeadReplyJob;
 use App\Livewire\Concerns\RatesAiDrafts;
@@ -224,7 +226,7 @@ class RecordNotes extends Component
             // controller's Visibility Audit touch logging or
             // superseded-follow-up clearing — a full "Log a Call" is still
             // there for anyone who needs those.
-            CallLog::create([
+            $call = CallLog::create([
                 'user_id' => auth()->id(),
                 'callable_type' => $this->record::class,
                 'callable_id' => $this->record->id,
@@ -234,9 +236,25 @@ class RecordNotes extends Component
                 'called_at' => now(),
             ]);
 
+            // Same guard CallLogController::store() uses for this exact job —
+            // real gap otherwise: this shortcut never went through that
+            // controller, so a promise made in a note-logged-as-a-call was
+            // never read by anything until this was added.
+            if (Ai::enabled()) {
+                DetectCallFollowUpCommitment::dispatch($call->id);
+            }
+
             if ($this->record instanceof Lead) {
                 $this->record->promoteFromNewOnOutreach();
             }
+        } elseif ($this->record instanceof Lead && $this->record->next_follow_up_at === null && Ai::enabled()) {
+            // Plain note, not logged as a call — the counterpart above only
+            // ever reads a CallLog's own notes; this is what actually reads
+            // an ordinary note for the same kind of unstated commitment.
+            // Same "only when blank" guard CallLogController::store() uses
+            // for the CallLog version — never worth dispatching when a rep
+            // has already set their own follow-up.
+            DetectLeadNoteFollowUpCommitment::dispatch($note->id);
         }
 
         if ($this->canSetFollowUp() && filled($this->nextFollowUpAt)) {

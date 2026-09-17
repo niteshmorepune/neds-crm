@@ -2,15 +2,19 @@
 
 use App\Enums\CallDirection;
 use App\Enums\CallOutcome;
+use App\Enums\DealStage;
 use App\Enums\LeadGoal;
 use App\Enums\LeadSource;
 use App\Enums\LeadStatus;
+use App\Enums\QuotationStatus;
 use App\Enums\StallReason;
 use App\Models\Activity;
 use App\Models\CallLog;
+use App\Models\Deal;
 use App\Models\Lead;
 use App\Models\Meeting;
 use App\Models\Note;
+use App\Models\Quotation;
 use App\Models\User;
 use App\Services\LeadNextActionAdvisor;
 use Illuminate\Support\Carbon;
@@ -222,4 +226,141 @@ it('never surfaces a follow-up/stall rule for a closed lead', function () {
     $hint = $this->advisor->hintFor($lead);
 
     expect($hint['label'])->not->toContain('Stalling')->not->toContain('Follow up');
+});
+
+// --- 2026-09-18: specific-action upgrades -------------------------------
+
+it('surfaces a due CallLog next_action verbatim, ahead of the generic overdue message', function () {
+    $lead = coldCallLeadForNextAction(['status' => LeadStatus::Contacted]);
+    CallLog::factory()->create([
+        'callable_type' => Lead::class, 'callable_id' => $lead->id,
+        'direction' => CallDirection::Outgoing, 'outcome' => CallOutcome::Connected,
+        'called_at' => now()->subDay(),
+        'next_action' => 'Confirm office visit time',
+        'follow_up_at' => now()->subHours(2),
+    ]);
+
+    $hint = $this->advisor->hintFor($lead);
+
+    expect($hint['label'])->toBe('📞 Confirm office visit time');
+});
+
+it('ignores a due CallLog follow-up that has no next_action text', function () {
+    $lead = coldCallLeadForNextAction(['status' => LeadStatus::Contacted]);
+    CallLog::factory()->create([
+        'callable_type' => Lead::class, 'callable_id' => $lead->id,
+        'direction' => CallDirection::Outgoing, 'outcome' => CallOutcome::Connected,
+        'called_at' => now()->subDay(),
+        'next_action' => null,
+        'follow_up_at' => now()->subHours(2),
+    ]);
+
+    expect($this->advisor->hintFor($lead)['label'])->not->toStartWith('📞 ');
+});
+
+it('ignores a CallLog next_action that is not yet due', function () {
+    $lead = coldCallLeadForNextAction(['status' => LeadStatus::Contacted]);
+    CallLog::factory()->create([
+        'callable_type' => Lead::class, 'callable_id' => $lead->id,
+        'direction' => CallDirection::Outgoing, 'outcome' => CallOutcome::Connected,
+        'called_at' => now()->subDay(),
+        'next_action' => 'Confirm office visit time',
+        'follow_up_at' => now()->addDay(),
+    ]);
+
+    expect($this->advisor->hintFor($lead)['label'])->not->toBe('📞 Confirm office visit time');
+});
+
+it('shows the AI-detected next action instead of the generic overdue message once set', function () {
+    $lead = coldCallLeadForNextAction([
+        'status' => LeadStatus::New,
+        'next_follow_up_at' => now()->subDay(),
+        'ai_detected_next_action' => 'Confirm office visit time',
+    ]);
+
+    expect($this->advisor->hintFor($lead)['label'])->toBe('🔴 Confirm office visit time');
+});
+
+it('falls back to the generic overdue message when no AI-detected next action is set', function () {
+    $lead = coldCallLeadForNextAction(['status' => LeadStatus::New, 'next_follow_up_at' => now()->subDay()]);
+
+    expect($this->advisor->hintFor($lead)['label'])->toBe('🔴 Follow up now — overdue');
+});
+
+it('clears the stale AI-detected next action once a human sets a new follow-up date on an existing lead', function () {
+    $lead = coldCallLeadForNextAction([
+        'status' => LeadStatus::New,
+        'next_follow_up_at' => now()->subDay(),
+        'ai_detected_next_action' => 'Confirm office visit time',
+    ]);
+
+    $lead->update(['next_follow_up_at' => now()->addDay()]);
+
+    expect($lead->fresh()->ai_detected_next_action)->toBeNull();
+});
+
+it('suggests sending the quotation on a converted lead whose open deal has none sent', function () {
+    $deal = Deal::factory()->create(['stage' => DealStage::Proposal, 'title' => 'GMB + SEO Retainer']);
+    $lead = coldCallLeadForNextAction(['status' => LeadStatus::Converted, 'converted_deal_id' => $deal->id]);
+    Quotation::factory()->create(['deal_id' => $deal->id, 'customer_id' => $deal->customer_id, 'status' => QuotationStatus::Draft]);
+
+    $hint = $this->advisor->hintFor($lead);
+
+    expect($hint['label'])->toBe('📄 Send the quotation');
+});
+
+it('does not suggest a quotation once one has been sent', function () {
+    $deal = Deal::factory()->create(['stage' => DealStage::Proposal]);
+    $lead = coldCallLeadForNextAction(['status' => LeadStatus::Converted, 'converted_deal_id' => $deal->id]);
+    Quotation::factory()->create(['deal_id' => $deal->id, 'customer_id' => $deal->customer_id, 'status' => QuotationStatus::Sent]);
+
+    expect($this->advisor->hintFor($lead)['label'])->not->toBe('📄 Send the quotation');
+});
+
+it('does not suggest a quotation for a Won or Lost deal', function () {
+    $deal = Deal::factory()->create(['stage' => DealStage::Won]);
+    $lead = coldCallLeadForNextAction(['status' => LeadStatus::Converted, 'converted_deal_id' => $deal->id]);
+
+    expect($this->advisor->hintFor($lead)['label'])->not->toBe('📄 Send the quotation');
+});
+
+it('suggests scheduling a meeting on a Proposal/Negotiation deal with none held yet', function () {
+    $deal = Deal::factory()->create(['stage' => DealStage::Negotiation]);
+    $lead = coldCallLeadForNextAction(['status' => LeadStatus::Converted, 'converted_deal_id' => $deal->id]);
+    Quotation::factory()->create(['deal_id' => $deal->id, 'customer_id' => $deal->customer_id, 'status' => QuotationStatus::Sent]);
+
+    expect($this->advisor->hintFor($lead)['label'])->toBe('📅 Schedule a meeting');
+});
+
+it('does not suggest a meeting once one already exists', function () {
+    $deal = Deal::factory()->create(['stage' => DealStage::Negotiation]);
+    $lead = coldCallLeadForNextAction(['status' => LeadStatus::Converted, 'converted_deal_id' => $deal->id]);
+    Quotation::factory()->create(['deal_id' => $deal->id, 'customer_id' => $deal->customer_id, 'status' => QuotationStatus::Sent]);
+    Meeting::factory()->create(['meetable_type' => Lead::class, 'meetable_id' => $lead->id, 'occurred_at' => now()->subDays(2)]);
+
+    expect($this->advisor->hintFor($lead)['label'])->not->toBe('📅 Schedule a meeting');
+});
+
+it('does not suggest a meeting for a deal still at New/Contacted', function () {
+    $deal = Deal::factory()->create(['stage' => DealStage::Contacted]);
+    $lead = coldCallLeadForNextAction(['status' => LeadStatus::Converted, 'converted_deal_id' => $deal->id]);
+
+    expect($this->advisor->hintFor($lead)['label'])->not->toBe('📅 Schedule a meeting');
+});
+
+it('rewords the never-called badge to "Call the lead" when nothing has been tried yet', function () {
+    $rep = User::factory()->create();
+    foreach ([9, 11] as $hour) {
+        for ($i = 1; $i <= 15; $i++) {
+            CallLog::factory()->create([
+                'user_id' => $rep->id,
+                'direction' => CallDirection::Outgoing,
+                'outcome' => CallOutcome::Connected,
+                'called_at' => Carbon::now('Asia/Kolkata')->subDays($i)->setTime($hour, 0, 0)->utc(),
+            ]);
+        }
+    }
+    $lead = coldCallLeadForNextAction();
+
+    expect($this->advisor->hintFor($lead)['label'])->toBe('📞 Call the lead — best around 9 AM, 11 AM');
 });

@@ -227,7 +227,6 @@
                         <th class="px-4 py-3">Est. value</th>
                         <th class="px-4 py-3">Owner</th>
                         <th class="px-4 py-3">Status</th>
-                        <th class="px-4 py-3">Latest Note</th>
                         <th class="px-4 py-3">Next Action</th>
                         <th class="px-4 py-3 text-right">Actions</th>
                     </tr>
@@ -287,13 +286,6 @@
                                 @endif
                             </td>
                             <td class="px-4 py-3 max-w-xs">
-                                @if ($lead->latestNote)
-                                    <span class="text-gray-600" title="{{ $lead->latestNote->body }}">{{ \Illuminate\Support\Str::limit($lead->latestNote->body, 60) }}</span>
-                                @else
-                                    <span class="text-gray-300">—</span>
-                                @endif
-                            </td>
-                            <td class="px-4 py-3 max-w-xs">
                                 @php($hint = $nextActionHints[$lead->id] ?? null)
                                 @if ($hint)
                                     <span class="text-gray-700" @if ($hint['detail']) title="{{ $hint['detail'] }}" @endif>{{ $hint['label'] }}</span>
@@ -306,8 +298,8 @@
                             </td>
                         </tr>
                     @empty
-                        @php($colspan = 9)
-                        @can('merge', \App\Models\Lead::class) @php($colspan = 10) @endcan
+                        @php($colspan = 8)
+                        @can('merge', \App\Models\Lead::class) @php($colspan = 9) @endcan
                         <tr><td colspan="{{ $colspan }}" class="px-4 py-10 text-center text-gray-400">No leads found.</td></tr>
                     @endforelse
                 </tbody>

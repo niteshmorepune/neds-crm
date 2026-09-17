@@ -62,19 +62,28 @@ yours). The **Converted** card also shows a small **"X Won"** line
 underneath — Converted only ever means the lead became a real Deal, not
 that it's a closed sale, so this tells you at a glance how many of those
 Converted leads have actually been won without opening each one. The list
-itself has a **Latest Note** column showing each lead's most recent note
-(hover over a truncated one to read the full text) — no need to open a
-lead just to check what was last said. A **Next Action** column sits right
-next to it — the CRM's own read on what to do next for that specific lead
-(follow up on a stalling objection, an overdue/today's follow-up, a
-meeting coming up, ask for a Website/GBP link, book with a Sales Expert, a
-WhatsApp check-in gone quiet, the best hour to call if nobody's tried yet)
-— falling back to the same latest-note gloss when none of those apply.
-It's a suggestion, not an action button yet — use your own judgment.
-When adding a note on a lead or deal, an optional **Next follow-up** field
-sits right there in the Add Note box — set it in the same step as writing
-"we'll connect at 5pm" instead of a separate trip to Edit. Leaving it
-blank never clears a follow-up date you'd already set.
+itself has a **Next Action** column — the CRM's own read on what to do
+next for that specific lead, ranked most-specific-first: a stalling
+objection to follow up on, a due/overdue commitment (showing the exact
+words a rep — or AI — already noted, like "Confirm office visit time" or
+"Send proposal", not a generic "follow up" message), an upcoming meeting,
+sending a quotation on a converted deal that has none sent, scheduling a
+meeting on a deal that's reached Proposal/Negotiation with none held yet,
+asking for a Website/GBP link, booking a Sales Expert meeting for a "Not
+Sure" lead, a WhatsApp check-in gone quiet, or the best hour to call if
+nobody's tried yet — falling back to a gloss of the latest note (still on
+the lead's own page too) only once none of those apply. It's a
+suggestion, not an action button yet — use your own judgment.
+
+Two places feed that specific wording (like "Confirm office visit time")
+automatically: logging a call, and adding a plain note. If you mention a
+concrete promise — "he'll visit the office Saturday", "call back to
+confirm the time" — AI reads it and sets a follow-up reminder + that exact
+next step for you (you'll get a notification so you can review/adjust it;
+it never overrides a follow-up date you've already set yourself). You can
+also set the **Next follow-up** field right there in the Add Note box
+yourself, in the same step as writing the note — leaving it blank never
+clears a date you'd already set.
 
 **What to work first:** the list sorts by **Priority** by default, not
 newest — an overdue follow-up always comes first, then a follow-up due

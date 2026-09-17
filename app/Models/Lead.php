@@ -86,6 +86,7 @@ class Lead extends Model
     protected array $activityExcept = [
         'ai_score', 'ai_score_reason', 'ai_scored_at',
         'ai_budget_band', 'ai_urgency', 'ai_service_fit',
+        'ai_detected_next_action',
         'stall_reason',
         'recommendation_key', 'recommendation_offer_key', 'recommendation_token',
         'recommendation_generated_at', 'recommendation_viewed_at',
@@ -141,14 +142,30 @@ class Lead extends Model
     protected static function booted(): void
     {
         static::saving(function (Lead $lead) {
-            if (! $lead->isDirty('status')) {
-                return;
+            if ($lead->isDirty('status')) {
+                if ($lead->status === LeadStatus::Lost) {
+                    $lead->lost_at ??= now();
+                } else {
+                    $lead->lost_at = null;
+                }
             }
 
-            if ($lead->status === LeadStatus::Lost) {
-                $lead->lost_at ??= now();
-            } else {
-                $lead->lost_at = null;
+            // ai_detected_next_action is only ever written by
+            // DetectLeadNoteFollowUpCommitment, paired with the SAME
+            // next_follow_up_at value it just set — that job writes via
+            // saveQuietly() (events, and so this hook, never fire for it).
+            // Any OTHER save that touches next_follow_up_at on an EXISTING
+            // lead is a human setting/clearing/correcting the date
+            // themselves, at which point the AI's own text no longer
+            // describes what's actually scheduled and must not linger
+            // attached to a new date it never generated. $lead->exists
+            // excludes the initial create() — every attribute passed to
+            // a brand-new model is "dirty" by definition, so without this
+            // guard, a lead created with both fields set together (exactly
+            // what the AI job's own writes look like) would immediately
+            // wipe the very value it was just given.
+            if ($lead->exists && $lead->isDirty('next_follow_up_at')) {
+                $lead->ai_detected_next_action = null;
             }
         });
     }

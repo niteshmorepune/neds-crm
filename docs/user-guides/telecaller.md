@@ -60,15 +60,23 @@ Open a lead assigned to you to:
   a note on what was discussed, set a next follow-up date.
 
 The list itself has a **Next Action** column — the CRM's own read on what
-to do next for that specific lead (a stalling objection to follow up on,
-an overdue/today's follow-up, a meeting coming up, ask for a Website/GBP
-link, book with a Sales Expert, a WhatsApp check-in gone quiet, or the
-best hour to call if nobody's tried yet), falling back to a gloss of the
-latest note when none of those apply. It's a suggestion, not a button —
-use your own judgment. When adding a note, an optional **Next follow-up**
-field is right there in the Add Note box, so you can set the date in the
-same step as writing what was said — leaving it blank never clears a date
-you'd already set.
+to do next for that specific lead, most-specific-first: a stalling
+objection, a due/overdue commitment shown in the exact words already
+noted (e.g. "Confirm office visit time", not a generic "follow up"), an
+upcoming meeting, ask for a Website/GBP link, book with a Sales Expert, a
+WhatsApp check-in gone quiet, or the best hour to call if nobody's tried
+yet — falling back to a gloss of the latest note (still on the lead's own
+page too) only when none of those apply. It's a suggestion, not a
+button — use your own judgment.
+
+If you mention a concrete promise in a call's notes or a plain note —
+"he'll visit the office Saturday", "call back to confirm the time" — AI
+reads it and sets a follow-up reminder + that exact next step for you
+automatically (you'll get a notification so you can review/adjust it; it
+never overrides a follow-up you've already set yourself). You can also
+set the **Next follow-up** field right there in the Add Note box
+yourself, in the same step as writing what was said — leaving it blank
+never clears a date you'd already set.
 
 **"Call this lead now" popup:** the moment a new lead lands in your queue
 with no call logged yet, a small card appears in the bottom-right corner of
