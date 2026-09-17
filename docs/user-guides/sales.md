@@ -64,7 +64,17 @@ that it's a closed sale, so this tells you at a glance how many of those
 Converted leads have actually been won without opening each one. The list
 itself has a **Latest Note** column showing each lead's most recent note
 (hover over a truncated one to read the full text) — no need to open a
-lead just to check what was last said.
+lead just to check what was last said. A **Next Action** column sits right
+next to it — the CRM's own read on what to do next for that specific lead
+(follow up on a stalling objection, an overdue/today's follow-up, a
+meeting coming up, ask for a Website/GBP link, book with a Sales Expert, a
+WhatsApp check-in gone quiet, the best hour to call if nobody's tried yet)
+— falling back to the same latest-note gloss when none of those apply.
+It's a suggestion, not an action button yet — use your own judgment.
+When adding a note on a lead or deal, an optional **Next follow-up** field
+sits right there in the Add Note box — set it in the same step as writing
+"we'll connect at 5pm" instead of a separate trip to Edit. Leaving it
+blank never clears a follow-up date you'd already set.
 
 **What to work first:** the list sorts by **Priority** by default, not
 newest — an overdue follow-up always comes first, then a follow-up due

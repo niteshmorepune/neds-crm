@@ -17,6 +17,7 @@ use App\Notifications\ProjectUpdatePosted;
 use App\Services\AiAssistant;
 use App\Support\Ai;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 
@@ -57,6 +58,19 @@ class RecordNotes extends Component
     public bool $logAsCall = false;
 
     public ?string $callOutcome = null;
+
+    /**
+     * Real gap found while planning the Lead Generation "Next Action"
+     * column (2026-09-17): a note can describe a concrete commitment
+     * ("we'll connect today at 5pm") with no easy way to also set
+     * Lead/Deal.next_follow_up_at in the same action — a rep would have to
+     * make a separate trip to the Edit form, and in practice mostly didn't.
+     * Optional, and deliberately never CLEARS an existing value when left
+     * blank (same "only writes what's actually filled in" convention as the
+     * goal/stall_reason capture fields on this same form's sibling pages).
+     * datetime-local input format ('Y-m-d\TH:i'), same as leads/_form.blade.php.
+     */
+    public string $nextFollowUpAt = '';
 
     // Edit state
     public ?int $editingNoteId = null;
@@ -103,6 +117,12 @@ class RecordNotes extends Component
     public function canLogAsCall(): bool
     {
         return $this->canManage && ($this->record instanceof Lead || $this->record instanceof Customer);
+    }
+
+    /** Offered on the two models that carry next_follow_up_at (Lead, Deal) — same pair canDraft()/canSummarize() already gate on. */
+    public function canSetFollowUp(): bool
+    {
+        return $this->canManage && ($this->record instanceof Lead || $this->record instanceof Deal);
     }
 
     /**
@@ -178,6 +198,10 @@ class RecordNotes extends Component
             return;
         }
 
+        if ($this->canSetFollowUp() && filled($this->nextFollowUpAt)) {
+            $this->validate(['nextFollowUpAt' => 'date']);
+        }
+
         $sendViaWhatsapp = $this->canReplyViaWhatsapp() && $this->sendViaWhatsapp;
 
         $note = $this->record->notes()->create([
@@ -215,6 +239,12 @@ class RecordNotes extends Component
             }
         }
 
+        if ($this->canSetFollowUp() && filled($this->nextFollowUpAt)) {
+            $this->record->update([
+                'next_follow_up_at' => Carbon::createFromFormat('Y-m-d\TH:i', $this->nextFollowUpAt, config('app.display_timezone', 'Asia/Kolkata'))->utc(),
+            ]);
+        }
+
         // A note is real post-intake signal ScoreLead's prompt now reads —
         // re-score so the score reflects it instead of going stale the
         // moment a rep actually starts talking to this lead.
@@ -230,7 +260,7 @@ class RecordNotes extends Component
             );
         }
 
-        $this->reset(['body', 'draftUsageId', 'draftFeedback', 'sendViaWhatsapp', 'logAsCall', 'callOutcome']);
+        $this->reset(['body', 'draftUsageId', 'draftFeedback', 'sendViaWhatsapp', 'logAsCall', 'callOutcome', 'nextFollowUpAt']);
         $this->visibleToClient = $this->showPortalToggle;
     }
 
@@ -292,6 +322,7 @@ class RecordNotes extends Component
             'canReplyViaWhatsapp' => $this->canReplyViaWhatsapp(),
             'canSummarize' => $this->canSummarize(),
             'canLogAsCall' => $this->canLogAsCall(),
+            'canSetFollowUp' => $this->canSetFollowUp(),
             'callOutcomes' => CallOutcome::cases(),
         ]);
     }

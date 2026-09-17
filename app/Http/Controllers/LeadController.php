@@ -27,6 +27,7 @@ use App\Models\VisibilityAuditPurchase;
 use App\Notifications\VisibilityAuditReadyForGmeet;
 use App\Services\CallTimingMetrics;
 use App\Services\LeadCallTimingAdvisor;
+use App\Services\LeadNextActionAdvisor;
 use App\Services\VisibilityAuditFunnelMetrics;
 use App\Support\Money;
 use App\Support\OfferRecommendationMatrix;
@@ -42,7 +43,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class LeadController extends Controller
 {
-    public function index(Request $request, CallTimingMetrics $callTiming, LeadCallTimingAdvisor $timingAdvisor): View
+    public function index(Request $request, CallTimingMetrics $callTiming, LeadCallTimingAdvisor $timingAdvisor, LeadNextActionAdvisor $nextActionAdvisor): View
     {
         $this->authorize('viewAny', Lead::class);
 
@@ -61,10 +62,12 @@ class LeadController extends Controller
         // same "eager-load, filter in PHP" precedent as
         // unresponsiveLeadIds() below. callLogs (columns only) feeds the
         // "best time to call" badge via LeadCallTimingAdvisor below.
+        // meetings feeds LeadNextActionAdvisor's "meeting soon" rule.
         $query = $this->filteredLeads($request, $month)
             ->with([
                 'owner', 'service', 'latestNote', 'notes:id,notable_id,notable_type,user_id,body,created_at',
                 'callLogs:id,callable_id,callable_type,direction,outcome,called_at',
+                'meetings:id,meetable_id,meetable_type,title,occurred_at',
             ])
             ->withCount('callLogs');
 
@@ -93,9 +96,20 @@ class LeadController extends Controller
             fn (Lead $lead) => [$lead->id => $timingAdvisor->badgeLabel($timingAdvisor->recommendationFor($lead, $bestHours))]
         );
 
+        // Phase 1 of the 2026-09-17 plan (side-by-side trial, owner-confirmed):
+        // shown ALONGSIDE Latest Note, not replacing it yet. Computed only for
+        // this page's rows (like callBadges above), never all 291+ leads —
+        // deliberately live per request rather than a cached column, since
+        // pagination already caps the real cost and a cache needs no
+        // invalidation surface to keep in sync.
+        $nextActionHints = $leads->getCollection()->mapWithKeys(
+            fn (Lead $lead) => [$lead->id => $nextActionAdvisor->hintFor($lead, $bestHours)]
+        );
+
         return view('leads.index', $this->formData() + [
             'leads' => $leads,
             'callBadges' => $callBadges,
+            'nextActionHints' => $nextActionHints,
             'filters' => $request->only(['search', 'source', 'status', 'service_id', 'owner_id', 'telecaller_id', 'deal_stage', 'follow_up_due', 'attention', 'sort']) + ['month' => $month],
             'dealStages' => DealStage::cases(),
             'sort' => $sort,
