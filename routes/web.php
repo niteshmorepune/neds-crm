@@ -517,6 +517,8 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
      */
     Route::middleware('menu.access:expenses')->group(function () {
         Route::resource('expenses', ExpenseController::class)->except('show');
+        Route::post('expenses/{expense}/reimburse', [ExpenseController::class, 'reimburse'])->name('expenses.reimburse');
+        Route::post('expenses/{expense}/unreimburse', [ExpenseController::class, 'unreimburse'])->name('expenses.unreimburse');
     });
 
     /*

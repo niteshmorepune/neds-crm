@@ -19,6 +19,8 @@ class Expense extends Model
         'amount',
         'expense_date',
         'notes',
+        'reimbursed_at',
+        'reimbursed_by',
     ];
 
     protected function casts(): array
@@ -27,11 +29,22 @@ class Expense extends Model
             'category' => ExpenseCategory::class,
             'amount' => 'integer',
             'expense_date' => 'date',
+            'reimbursed_at' => 'date',
         ];
     }
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function reimbursedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reimbursed_by');
+    }
+
+    public function isReimbursed(): bool
+    {
+        return $this->reimbursed_at !== null;
     }
 }

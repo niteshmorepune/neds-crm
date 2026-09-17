@@ -23,6 +23,16 @@ class ExpenseFactory extends Factory
             'amount' => $this->faker->numberBetween(5000, 500000), // paise
             'expense_date' => now()->toDateString(),
             'notes' => null,
+            'reimbursed_at' => null,
+            'reimbursed_by' => null,
         ];
+    }
+
+    public function reimbursed(): static
+    {
+        return $this->state(fn () => [
+            'reimbursed_at' => now()->toDateString(),
+            'reimbursed_by' => User::factory(),
+        ]);
     }
 }

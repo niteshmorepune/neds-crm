@@ -33,6 +33,14 @@
 </div>
 
 <div>
+    <x-input-label for="reimbursed_at" value="Paid back on" />
+    <x-text-input id="reimbursed_at" name="reimbursed_at" type="date" class="mt-1 block w-full"
+        :value="old('reimbursed_at', isset($expense) ? $expense->reimbursed_at?->toDateString() : '')" />
+    <p class="mt-1 text-xs text-gray-400">Leave blank if this hasn't been paid back to {{ isset($expense) ? ($expense->user?->name ?? 'the team member') : 'the team member' }} yet.</p>
+    <x-input-error :messages="$errors->get('reimbursed_at')" class="mt-1" />
+</div>
+
+<div>
     <x-input-label for="notes" value="Notes" />
     <textarea id="notes" name="notes" rows="3"
               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ old('notes', $expense->notes ?? '') }}</textarea>
