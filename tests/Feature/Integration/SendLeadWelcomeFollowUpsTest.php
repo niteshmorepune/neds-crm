@@ -2,8 +2,10 @@
 
 use App\Enums\LeadStatus;
 use App\Jobs\SendLeadCheckInJob;
+use App\Models\CallLog;
 use App\Models\Lead;
 use App\Models\Service;
+use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Queue;
@@ -111,6 +113,58 @@ it('does not misclassify its own welcome-confirmation note as a reply', function
     $lead = Lead::factory()->create();
     backdateWelcome($lead, now()->subHours(7));
     $lead->notes()->create(['user_id' => null, 'body' => '✨ Automated welcome message sent via WhatsApp — asking when\'s a good time to call.']);
+
+    Artisan::call('app:send-lead-welcome-followups');
+
+    Queue::assertPushed(SendLeadCheckInJob::class, fn ($job) => $job->leadId === $lead->id);
+});
+
+it('does not dispatch for a lead staff already called, even with no WhatsApp reply', function () {
+    // Real gap, reported 2026-09-17 (lead Avinash Deshmukh): this command
+    // only ever checked isAwaitingWelcomeReply() (WhatsApp channel only),
+    // so a lead a telecaller had already phoned still got an automatic
+    // "haven't heard from you" WhatsApp template on top of that live call.
+    $lead = Lead::factory()->create();
+    backdateWelcome($lead, now()->subHours(7));
+
+    CallLog::factory()->create([
+        'callable_type' => Lead::class,
+        'callable_id' => $lead->id,
+        'called_at' => now()->subHours(2),
+    ]);
+
+    Artisan::call('app:send-lead-welcome-followups');
+
+    Queue::assertNotPushed(SendLeadCheckInJob::class);
+});
+
+it('does not dispatch for a lead staff already left a plain internal note on', function () {
+    $lead = Lead::factory()->create();
+    backdateWelcome($lead, now()->subHours(7));
+
+    $lead->notes()->create([
+        'user_id' => User::factory()->create()->id,
+        'body' => 'Spoke to the client in person at the office, following up next week.',
+    ]);
+
+    Artisan::call('app:send-lead-welcome-followups');
+
+    Queue::assertNotPushed(SendLeadCheckInJob::class);
+});
+
+it('still dispatches when the only staff engagement predates the welcome message', function () {
+    // hasStaffEngagementSince() is checked from welcome_message_sent_at
+    // onward, not lead creation -- engagement before the welcome went out
+    // doesn't mean the lead has been heard from SINCE it went quiet.
+    $lead = Lead::factory()->create();
+
+    CallLog::factory()->create([
+        'callable_type' => Lead::class,
+        'callable_id' => $lead->id,
+        'called_at' => now()->subHours(10),
+    ]);
+
+    backdateWelcome($lead, now()->subHours(7));
 
     Artisan::call('app:send-lead-welcome-followups');
 
