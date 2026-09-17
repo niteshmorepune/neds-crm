@@ -434,6 +434,20 @@ it('maps a third real ad variant\'s goal answer, which mixes the Latin word "lea
         ->and($lead->notes()->count())->toBe(0);
 });
 
+it('maps a fourth real ad variant\'s goal answer, which mixes "business"/"online" (Latin) into Devanagari phrasing (lead #446, 2026-09-17)', function () {
+    // Confirmed against lead #446's (Babban Verama) own stored form-answer
+    // text, not a retyped ad copy guess.
+    fakeMetaGraphResponse([
+        ['name' => 'इनमेसे_आपके_business_की_सबसे_बड़ी_ज़रूरत_क्या_है?', 'values' => ['अपने_business_को_online_बढ़ाना']],
+    ]);
+
+    ImportMetaLead::dispatchSync('lg-1');
+
+    $lead = Lead::where('meta_leadgen_id', 'lg-1')->first();
+    expect($lead->goal)->toBe(LeadGoal::GrowBusiness)
+        ->and($lead->notes()->count())->toBe(0);
+});
+
 it('parses a second Hindi-language ad variant\'s budget question into the right band, real production text (leads #125 onward, 2026-09-12)', function (string $answer, LeadBudgetRange $expected) {
     fakeMetaGraphResponse([
         ['name' => 'इस_काम_के_लिए_आप_हर_महीने_कितना_खर्च_कर_सकते_हैं?', 'values' => [$answer]],
@@ -541,6 +555,30 @@ it('attaches to an existing open lead with the same phone from a different chann
         ->and($whatsappLead->fresh()->utm_source)->toBe('meta')
         ->and($whatsappLead->fresh()->utm_medium)->toBe('paid_social')
         ->and($whatsappLead->notes()->first()->body)->toContain('Also submitted a Meta Ads form');
+});
+
+it('attaches via alternate_phone when the form-typed number differs from the WhatsApp-relay lead\'s own phone (lead #445/#446, 2026-09-17)', function () {
+    // The WhatsApp relay message arrives under the person's real WhatsApp
+    // number; the Graph webhook reports whatever number they TYPED into
+    // the form instead -- WhatsappWebhookController::extractRelayFormFields()
+    // stores that second number as alternate_phone specifically so this
+    // lookup (Lead::findOpenByPhone(), extended the same day) can find it.
+    $relayLead = Lead::factory()->create([
+        'name' => 'Babban Verama',
+        'phone' => '917408220959',
+        'alternate_phone' => '+919823708625',
+        'source' => LeadSource::Whatsapp,
+    ]);
+    fakeMetaGraphResponse([
+        ['name' => 'full_name', 'values' => ['Babban Verama']],
+        ['name' => 'phone_number', 'values' => ['+919823708625']],
+    ]);
+
+    ImportMetaLead::dispatchSync('lg-1');
+
+    expect(Lead::count())->toBe(1)
+        ->and($relayLead->fresh()->meta_leadgen_id)->toBe('lg-1')
+        ->and($relayLead->fresh()->phone)->toBe('917408220959'); // the real WhatsApp number is untouched
 });
 
 it('does not touch source/utm_* on an already-Meta-Ads-attributed lead matched by phone a second time', function () {

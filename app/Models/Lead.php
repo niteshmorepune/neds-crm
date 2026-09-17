@@ -1010,6 +1010,18 @@ class Lead extends Model
      * submission against an already-Converted/Lost lead reads as a genuine
      * new enquiry, not a duplicate of an old closed one.
      */
+    /**
+     * Also checks alternate_phone (2026-09-17, later) — Customer::findByPhone()
+     * has always checked its own alternate_phone, but this Lead-side twin
+     * never did, a real gap surfaced by lead #445/#446 (Babban Verama):
+     * Meta's own click-to-WhatsApp relay message let the CRM learn a
+     * second, form-typed number for a lead already created under its real
+     * WhatsApp-sending number (see WhatsappWebhookController::
+     * handleUnmatchedNumber()'s own relay-parsing docblock) — without this,
+     * ImportMetaLead::handle()'s own existing race-condition lookup could
+     * never find that already-created lead by its OWN reported phone number,
+     * and would always create a second, duplicate Lead instead.
+     */
     public static function findOpenByPhone(string $rawPhone): ?self
     {
         $digits = Phone::digits($rawPhone);
@@ -1018,10 +1030,15 @@ class Lead extends Model
             return null;
         }
 
+        $last10 = Phone::last10($rawPhone);
+
         return static::whereIn('status', LeadStatus::openValues())
             ->where(fn (Builder $q) => $q->where('phone', $digits)
                 ->orWhere('phone', '+'.$digits)
-                ->orWhere('phone', 'LIKE', '%'.Phone::last10($rawPhone)))
+                ->orWhere('phone', 'LIKE', '%'.$last10)
+                ->orWhere('alternate_phone', $digits)
+                ->orWhere('alternate_phone', '+'.$digits)
+                ->orWhere('alternate_phone', 'LIKE', '%'.$last10))
             ->latest()
             ->first();
     }

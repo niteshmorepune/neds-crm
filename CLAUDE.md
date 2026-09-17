@@ -793,3 +793,102 @@ Older entries (2026-06-10 through 2026-09-13) moved to `docs/decisions-log-archi
   per the established gotcha. Not yet merged or deployed — PR pending
   owner review (this is a new, ongoing per-lead AI cost, unlike a one-off
   backfill).
+- **2026-09-18 — Real incident: Meta's own "click-to-WhatsApp" lead ad
+  delivers ONE person through TWO uncoordinated channels with TWO
+  different phone numbers, creating a permanent duplicate Lead every time
+  — plus the wadesk.in-side goal-question flow re-asking on top of an
+  unrelated automated message. Three CRM fixes + one wadesk.in fix + one
+  production merge.** Owner reported (screenshots): "Babban Verama"
+  appeared twice in Lead Generation (#445 "babbanv932", #446 "Babban
+  Verama"), and separately, after he replied "Yes, call me" to an
+  automated welcome message, wadesk's after-hours assistant answered with
+  an unrelated "what's your biggest goal?" instead of acknowledging the
+  callback. Root-caused against real production data, not guessed:
+  Meta's own WhatsApp-relay message ("Hello! I filled out your form...
+  Full name: X... Phone number: Y...") arrived from the person's REAL
+  WhatsApp number (7408220959) 36 seconds before the separate, structured
+  Graph API Lead Ads webhook arrived reporting the number he'd TYPED into
+  the form instead (9823708625, a different number entirely).
+  `WhatsappWebhookController::handleUnmatchedNumber()` had nothing to
+  read that relay message's text, so it created a Lead named after his
+  WhatsApp username ("babbanv932") — a name too weak for
+  `DuplicateLeadDetector` to ever match against the real "Babban Verama"
+  the Graph webhook created moments later under the other number. Two
+  separate root causes compounded from there: the real Hindi/mixed-script
+  goal answer ("अपने_business_को_online_बढ़ाना") didn't match any
+  `matchGoal()` needle (same class of gap fixed 3 times before — see
+  [[feedback-gotchas]]), so goal stayed null, triggering the generic
+  `SendLeadWelcomeMessageJob` welcome instead of a real recommendation;
+  and wadesk.in's `goal-flow.ts` has no awareness of that welcome having
+  just been sent, so it read his reply to it as a blank-slate opener and
+  fired its own goal question on top.
+  **Fix 1 (CRM)**: `ImportMetaLead::matchGoal()` gained a 4th real Hindi
+  goal-answer needle (`'अपने business को online बढ़ाना'`), confirmed
+  against lead #446's own stored text, not a retyped guess.
+  **Fix 2 (CRM)**: `Lead::findOpenByPhone()` now also checks
+  `alternate_phone` — `Customer::findByPhone()` has always checked its
+  own alternate_phone; the Lead-side twin never did. This is what lets
+  Fix 3 below actually prevent the duplicate, not just detect it after
+  the fact.
+  **Fix 3 (CRM)**: new `WhatsappWebhookController::extractRelayFormFields()`
+  recognizes Meta's fixed "Full name:/Phone number:/Email:/Company name:"
+  relay template (only 1 real occurrence in production so far, but a
+  reliable, low-false-positive-risk pattern to detect) and uses the REAL
+  extracted name/email/company instead of the WhatsApp-profile
+  placeholder, storing the embedded (different) phone as
+  `alternate_phone`. Together with Fix 2, this means the REAL Graph
+  webhook — arriving moments later — now finds and attaches to this SAME
+  lead via `ImportMetaLead::handle()`'s own pre-existing race-condition
+  lookup, instead of creating a second one. `DuplicateLeadDetector` also
+  benefits as a backstop for any case this doesn't fully close, since it
+  now has a real name to match on.
+  **Fix 4 (wadesk.in)**: `goal-flow.ts` gained
+  `isFirstReplyToOurOwnRecentMessage()` — when this is the very first
+  inbound message a conversation has ever received AND wadesk already
+  sent something (any kind) within the last 24 hours, skip the cold-open
+  goal/budget ask for this one turn and let the normal Claude-drafted
+  reply (which sees the full history) respond in context instead; the
+  ask resumes normally on the lead's next message. Deliberately a LOCAL
+  check against wadesk's own `message` table, not a round trip to the
+  CRM's "awaiting welcome reply" signal — that signal is derived from
+  Notes a separate, independent, fire-and-forget push has to land first,
+  a real race this investigation confirmed isn't safe to depend on.
+  **Fix 5 (wadesk.in, found while investigating why lead #445's own goal
+  reply never stuck)**: `handleGoalAnswer()`/`handleBudgetAnswer()` only
+  ever accepted a real WhatsApp interactive-list/button tap
+  (`interactiveReplyId`) — a reply typed as plain text, even one
+  byte-identical to the option's own title ("Grow My Business Online",
+  confirmed against lead #445's real logged reply), was silently
+  discarded with no write-back to the CRM at all. New `resolveOptionId()`
+  falls back to an exact normalized-text match against the option title
+  when there's no tap — deliberately EXACT match, not substring, since
+  the budget options overlap on their numbers ("Under ₹3,000" vs
+  "₹3,000 – ₹6,000") and a loose match there could misfile a reply into
+  the wrong band.
+  **Production data fix**: merged #445 into #446 via the real `MergeLeads`
+  action (not raw SQL) — kept the ACTIVELY-messaging WhatsApp number
+  (7408220959) as the canonical `phone`, the form-typed number as
+  `alternate_phone`, all 10 notes from both threads correctly
+  consolidated in chronological order, and confirmed the
+  `lead_whatsapp_conversations` mapping table correctly routes #445's old
+  conversation to the merged #446 going forward. Set `goal =
+  GrowBusiness` directly on the merged lead afterward (now confirmed
+  twice — the Meta form's own free text and his own WhatsApp reply both
+  say the same thing) — deliberately via a quiet, direct write, NOT
+  `GenerateLeadRecommendation::handle()`, since Neha had already told him
+  on WhatsApp "I'll call you tomorrow after 10am" — an automated
+  recommendation-ready message arriving on top of that live human
+  conversation would be a confusing, unprompted re-engagement (same
+  reasoning as the 2026-09-12 16-lead goal-backfill's own "no messaging"
+  decision).
+  CRM side: 3 new/updated test files (`LeadFindOpenByPhoneTest` new,
+  `WhatsappWebhookTest`/`ImportMetaLeadJobTest` extended), full targeted
+  suite re-verified across every `findOpenByPhone()` call site (~530
+  tests: `WhatsappWebhookTest`, `ImportMetaLeadJobTest`,
+  `DuplicateLeadAlertTest`, `DuplicateLeadDetectorTest`, every
+  offer/VA-funnel/quotation test touching phone-matching), Pint clean.
+  wadesk.in side: `npx tsc --noEmit` clean (this repo has no test suite —
+  same "ships inert until verified live" contract as every prior
+  wadesk.in change). wadesk.in's own deploy needs the owner's usual
+  `git pull && docker compose up -d --build` (no SSH access to that VPS
+  from this session).

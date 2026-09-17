@@ -145,6 +145,47 @@ it('falls back to a generic name when contact_name is missing', function () {
         ->toBe('WhatsApp Inquiry');
 });
 
+it('parses Meta\'s click-to-WhatsApp relay message into a real name/phone/email/company instead of a generic placeholder', function () {
+    // Real production text (lead #445, "babbanv932" — Babban Verama,
+    // 2026-09-17), byte-for-byte.
+    $message = <<<'MSG'
+        Hello! I filled out your form and would like to know more about your business.
+
+        Full name: Babban Verama
+        इस काम के लिए आप हर महीने कितना खर्च कर सकते हैं?: ₹3,000 से कम
+        City: Pune Maharashtra
+        Company name: Aluminum fabrica
+        Phone number: +919823708625
+        इनमेसे आपके business की सबसे बड़ी ज़रूरत क्या है?: अपने business को online बढ़ाना
+        Email: Babbanverma650@gmail.com
+        Inbox URL:
+        MSG;
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '917408220959',
+        'message' => $message,
+        'conversation_id' => 'conv_relay',
+    ], ['Authorization' => 'Bearer test-wa-token'])->assertJson(['status' => 'lead_created']);
+
+    $lead = Lead::where('whatsapp_conversation_id', 'conv_relay')->first();
+    expect($lead->name)->toBe('Babban Verama')
+        ->and($lead->phone)->toBe('917408220959')
+        ->and($lead->alternate_phone)->toBe('+919823708625')
+        ->and($lead->email)->toBe('Babbanverma650@gmail.com')
+        ->and($lead->company)->toBe('Aluminum fabrica');
+});
+
+it('does not misread an ordinary WhatsApp message as the relay template', function () {
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '919999999999',
+        'message' => 'Hi, my Phone number: is not working properly, please help',
+        'conversation_id' => 'conv_not_relay',
+    ], ['Authorization' => 'Bearer test-wa-token']);
+
+    expect(Lead::where('whatsapp_conversation_id', 'conv_not_relay')->first()->name)
+        ->toBe('WhatsApp Inquiry');
+});
+
 it('adds a note to the existing lead on a later message in the same conversation, without creating a second lead', function () {
     $this->postJson('/api/webhook/whatsapp', [
         'phone' => '919999999999',
