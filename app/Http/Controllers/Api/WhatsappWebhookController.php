@@ -22,6 +22,7 @@ use App\Models\WadeskMessageLog;
 use App\Notifications\LeadRestoredByIncomingMessageNotification;
 use App\Notifications\MergedLeadMessagedNotification;
 use App\Services\VisibilityAuditFunnelMetrics;
+use App\Support\Phone;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -313,9 +314,19 @@ class WhatsappWebhookController extends Controller
             return response()->json(['status' => 'lead_note_added', 'lead_id' => $lead->id, 'restored' => $restored]);
         }
 
+        $relayFields = $this->extractRelayFormFields($data['message'] ?? '');
+
+        $relayPhoneDigits = $relayFields !== null ? Phone::digits((string) $relayFields['phone']) : null;
+        $alternatePhone = $relayPhoneDigits !== null && $relayPhoneDigits !== '' && $relayPhoneDigits !== Phone::digits($data['phone'])
+            ? $relayFields['phone']
+            : null;
+
         $lead = Lead::create([
-            'name' => ($data['contact_name'] ?? null) ?: 'WhatsApp Inquiry',
+            'name' => $relayFields['name'] ?? (($data['contact_name'] ?? null) ?: 'WhatsApp Inquiry'),
             'phone' => $data['phone'],
+            'alternate_phone' => $alternatePhone,
+            'email' => $relayFields['email'] ?? null,
+            'company' => $relayFields['company'] ?? null,
             'source' => LeadSource::Whatsapp->value,
             'status' => LeadStatus::New->value,
             'owner_id' => null,
@@ -327,6 +338,66 @@ class WhatsappWebhookController extends Controller
         $this->recordLeadMessage($lead, $data, $direction, $senderType);
 
         return response()->json(['status' => 'lead_created', 'lead_id' => $lead->id]);
+    }
+
+    /**
+     * Meta's own "click-to-WhatsApp" lead ad delivers a lead through TWO
+     * uncoordinated channels: this plain-text WhatsApp message (sent from
+     * the person's REAL WhatsApp number) and, separately, the structured
+     * Lead Ads Graph API webhook handled by ImportMetaLead (keyed to
+     * whatever phone number the person TYPED into the form — often a
+     * different number entirely). Real incident, 2026-09-17 (leads #445/
+     * #446, Babban Verama): the WhatsApp message arrived first and, with
+     * nothing here to read its text, created a lead named after his
+     * WhatsApp username ("babbanv932") — a name too weak for
+     * DuplicateLeadDetector to ever match against the real "Babban Verama"
+     * lead the Graph webhook created 36 seconds later under the OTHER
+     * number, so two permanent records existed for one person; separately,
+     * that name mismatch is also *why* the goal-question flow addressed
+     * him as "babbanv932" instead of by name.
+     *
+     * This message is a fixed, machine-generated template (confirmed
+     * against the real production text, not guessed) — "Full name: X",
+     * "Phone number: Y", "Email: Z", "Company name: W" as literal labelled
+     * lines. When present, using the REAL name/phone/email/company instead
+     * of the WhatsApp-profile placeholder fixes both problems at once: (1)
+     * DuplicateLeadDetector's existing name-matching now has a real name to
+     * work with, and (2) storing the embedded (different) phone as
+     * alternate_phone means ImportMetaLead::handle()'s own existing
+     * race-condition lookup (Lead::findOpenByPhone(), extended the same
+     * day to also check alternate_phone) will find and attach to THIS
+     * lead when the Graph webhook arrives moments later, instead of
+     * creating a second one.
+     *
+     * Returns null (a no-op) for any message that isn't this exact shape —
+     * an ordinary WhatsApp message from an existing customer/lead must
+     * never be misread as this template just because it happens to contain
+     * a line that starts with a common word.
+     *
+     * @return array{name: ?string, phone: ?string, email: ?string, company: ?string}|null
+     */
+    private function extractRelayFormFields(string $message): ?array
+    {
+        if (! str_contains($message, 'Full name:') || ! str_contains($message, 'Phone number:')) {
+            return null;
+        }
+
+        $field = function (string $label) use ($message): ?string {
+            if (! preg_match('/'.preg_quote($label, '/').'\s*(.+)/u', $message, $matches)) {
+                return null;
+            }
+
+            $value = trim($matches[1]);
+
+            return $value !== '' ? $value : null;
+        };
+
+        return [
+            'name' => $field('Full name:'),
+            'phone' => $field('Phone number:'),
+            'email' => $field('Email:'),
+            'company' => $field('Company name:'),
+        ];
     }
 
     /**

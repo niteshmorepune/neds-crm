@@ -459,7 +459,7 @@ class ImportMetaLead implements ShouldQueue
         $needles = [
             [LeadGoal::GenerateLeads, ['generate more leads', 'generate leads', 'लीड्स प्राप्त करना', 'leads प्राप्त करना']],
             [LeadGoal::RankHigher, ['rank higher', 'रैंकिंग पाना']],
-            [LeadGoal::GrowBusiness, ['grow my business', 'grow business', 'ऑनलाइन बढ़ाना']],
+            [LeadGoal::GrowBusiness, ['grow my business', 'grow business', 'ऑनलाइन बढ़ाना', 'अपने business को online बढ़ाना']],
             [LeadGoal::NotSure, ['not sure', 'expert advice', 'पक्का नहीं']],
             // लीड्स प्राप्त करना / ऑनलाइन बढ़ाना confirmed against leads
             // #370/#371 (2026-09-09). रैंकिंग पाना / पक्का नहीं confirmed
@@ -482,6 +482,13 @@ class ImportMetaLead implements ShouldQueue
             // "लीड्स" (all-Devanagari) and the earlier, debunked guess —
             // different ads genuinely produce different real payloads
             // depending on how each advertiser typed their own options.
+            // 'अपने business को online बढ़ाना' added 2026-09-17 (later),
+            // confirmed against lead #446 (Babban Verama)'s own stored
+            // form-answer text — a FOURTH real ad variant, mixing the
+            // Latin word "business"/"online" into Devanagari phrasing this
+            // time, distinct from all three above. Same lesson each time:
+            // only a real lead's own stored bytes are ground truth, never
+            // retyped/pasted ad copy — see [[feedback-gotchas]].
         ];
 
         foreach ($extra as $key => $value) {
