@@ -406,9 +406,22 @@ whichever window you're looking at.
 travel, stationery, internet, fuel, rent, utilities, or other. No approval
 step: **Expenses → New Expense**, pick a category, enter the amount and a
 short description, set the date, and save. The list can be filtered by
-month and/or category, with a **Total** tile that reflects whatever's
-currently filtered — leave both blank to see the running total for
-everything.
+month, category, and/or reimbursement status, with a **Total** tile that
+reflects whatever's currently filtered — leave all three blank to see the
+running total for everything.
+
+**Paying staff back:** a lot of these are paid out of a team member's own
+pocket first and owed back to them. Each row shows either an amber
+**Owed** tag or a green **Paid \<date\>** tag with who confirmed it —
+click **Mark paid back** the moment you've actually handed the money
+over (it stamps today's date and your name); if you need to backdate it
+(e.g. it was settled in cash on the day) or correct a mistake, open
+**Edit** and set the **Paid back on** date directly, or clear it to put
+it back to Owed. The **Owed to staff** total tile shows exactly how much
+is still outstanding for whatever month/category you're looking at, and
+the **Paid back / Owed to staff** dropdown filters the list to just one
+or the other — a quick way to see who still needs to be paid before
+month-end close.
 
 ## 4. Reports
 - **Account** (in the sidebar) → the **outstanding receivables** report: who owes

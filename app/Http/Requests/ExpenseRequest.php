@@ -14,6 +14,18 @@ class ExpenseRequest extends FormRequest
         return true; // policy checked in controller
     }
 
+    /**
+     * A blank "Paid back on" date input submits as an empty string, not
+     * absent — normalize it to null so validatedWithPaise() and the
+     * controller can rely on reimbursed_at being either null or a real date.
+     */
+    protected function prepareForValidation(): void
+    {
+        if ($this->reimbursed_at === '') {
+            $this->merge(['reimbursed_at' => null]);
+        }
+    }
+
     public function rules(): array
     {
         return [
@@ -22,6 +34,7 @@ class ExpenseRequest extends FormRequest
             'amount' => ['required', 'numeric', 'min:0.01'],
             'expense_date' => ['required', 'date'],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'reimbursed_at' => ['nullable', 'date'],
         ];
     }
 
@@ -32,6 +45,10 @@ class ExpenseRequest extends FormRequest
     {
         $data = $this->validated();
         $data['amount'] = Money::toPaise((float) $data['amount']);
+        // validated() omits 'reimbursed_at' entirely when the field is absent
+        // from the request rather than an empty string — guarantee the key
+        // always exists so callers can rely on it being null or a real date.
+        $data['reimbursed_at'] ??= null;
 
         return $data;
     }

@@ -2130,3 +2130,49 @@ Older entries (2026-06-10 through 2026-08-25) moved to `docs/decisions-log-archi
   rather than assuming). Migrated + smoke-tested end-to-end against real
   local MySQL (pause → confirmed `paused=1`/`updated_by` set correctly →
   resume → confirmed `paused=0`), not just Pest.
+- **2026-09-17 (later) — Expense reimbursement tracking: `reimbursed_at`/
+  `reimbursed_by` on `expenses`.** Owner, from a screenshot of the
+  Expenses page: many of these are paid out of a team member's own
+  pocket first and owed back to them, with no way to track that.
+  Confirmed 2 scope decisions via AskUserQuestion: a plain reimbursed
+  toggle + date (not a partial-paid-back amount — these are small
+  one-off expenses, always settled in full in one go, not milestone-
+  billed), and yes to a dedicated "Owed to staff" filter + total,
+  mirroring how Collections already surfaces outstanding money.
+  New nullable `reimbursed_at` (date) / `reimbursed_by` (FK users)
+  columns. One-click **Mark paid back** / **Undo** actions
+  (`ExpenseController::reimburse()`/`unreimburse()`) stamp today's date +
+  the confirming user for the common case; the Edit form also gained a
+  **Paid back on** date field for backdating (e.g. reimbursed in cash on
+  the spot) or correcting a mistake. `ExpenseController::update()`
+  deliberately only touches `reimbursed_by` when `reimbursed_at` is
+  actually changing — editing an unrelated field (e.g. description) must
+  never reset who originally confirmed the reimbursement.
+  **Real bug caught by the first test run, not shipped**: `ExpenseRequest::
+  validated()` omits `reimbursed_at` from the array entirely (not as
+  `null`) whenever the field is absent from the request at all, rather
+  than submitted empty — `$data['reimbursed_at'] !== null` in `store()`
+  then threw "Undefined array key" the moment a request didn't send that
+  field (every pre-existing Expense test, since none of them knew about
+  the new field). Fixed with `$data['reimbursed_at'] ??= null` inside
+  `validatedWithPaise()` so the key is always guaranteed to exist as
+  either `null` or a real date — same fix covers both `store()` and
+  `update()`. 18 new Pest tests
+  (`ExpenseReimbursementTest` — default/create-already-paid/one-click
+  mark+undo/role gating/edit-form backdating/reimbursed_by-preserved-on-
+  unrelated-edit/status-filter+totals), full suite otherwise green (3695
+  passed; the one already-flagged `MeetingRequestTest` IST-window flake
+  plus a newly-observed but pre-existing `DuplicateLeadAlertTest`
+  "exactly the 14-day boundary" flake — same recurring wall-clock-
+  boundary class, confirmed unrelated: that file is Lead-duplicate
+  detection, never touched by this change), Pint clean. One new
+  Tailwind class (`py-0.5`) wasn't in the compiled CSS — swapped for the
+  already-compiled `py-1` rather than triggering a full asset rebuild for
+  one badge's padding. Migrated + smoke-tested end-to-end against real
+  local MySQL via `php artisan serve` + curl: created a real `SMOKETEST`
+  expense, confirmed it showed **Owed**, clicked **Mark paid back**
+  (verified `reimbursed_at`/`reimbursed_by` in the database), confirmed
+  the status filter correctly included/excluded it, then deleted it
+  through the app's own destroy route. Docs: `accounts.md`/`admin.md`
+  extended (their PDFs regenerated; the other 8 unaffected PDFs
+  discarded per the established PDF-isn't-byte-stable gotcha).

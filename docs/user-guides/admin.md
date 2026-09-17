@@ -298,8 +298,18 @@ office spend — tea/refreshments, travel, stationery, internet, fuel, rent,
 utilities, or other. Deliberately no approval workflow, matching how
 Subscriptions/Partners already work: **Expenses → New Expense**, pick a
 category, amount, description, and date, and save. The list filters by
-month and/or category with a running **Total** for whatever's currently
-filtered.
+month, category, and/or reimbursement status, with a running **Total**
+for whatever's currently filtered.
+
+**Tracking what's owed back to staff:** many of these expenses are paid
+out of a team member's own pocket and owed back to them. Each expense
+shows **Owed** or **Paid \<date\>** — click **Mark paid back** for a
+one-click stamp of today's date (or open **Edit** to set/correct the
+exact "Paid back on" date, e.g. for something reimbursed in cash on the
+spot, or to undo a mistaken click). A second total, **Owed to staff**,
+shows how much is still outstanding for the current month/category
+filter, and the **Paid back / Owed to staff** dropdown filters the list
+to just one or the other.
 
 ## 9. Users — add and manage staff
 Public sign-up is disabled, so **you create every staff account**.
