@@ -1026,6 +1026,16 @@ As a manager, what you need to know:
 For full details and troubleshooting, see the
 [Integrations guide](integrations.md).
 
+## Notification Settings — pause the "what to do next" pop-up
+**Notification Settings** in the sidebar (Admin & Config) has a single
+switch: **Pause for everyone** turns off the "what should I do next"
+pop-up (see the Getting Started guide) for the **entire team**, every
+role, until an Admin or Manager clicks **Resume for everyone** — no
+timer or expiry, it stays off until someone turns it back on. Useful for
+an all-hands, a demo, or any stretch where you don't want the pop-up
+interrupting anyone. Separate from the personal **Snooze** button on the
+pop-up itself, which only defers one prompt for one person.
+
 ## Bell notifications
 As a manager, you receive bell notifications for:
 

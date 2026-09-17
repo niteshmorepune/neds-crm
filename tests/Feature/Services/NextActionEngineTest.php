@@ -15,6 +15,7 @@ use App\Models\Deal;
 use App\Models\Invoice;
 use App\Models\Lead;
 use App\Models\Meeting;
+use App\Models\NextActionSetting;
 use App\Models\NextActionSnooze;
 use App\Models\Quotation;
 use App\Models\RoleTarget;
@@ -50,6 +51,27 @@ it('shows the attendance prompt before a role-specific prompt, even when both ar
     expect($action->subjectId)->toBe($sales->id);
     // the lead is still there, just not surfaced yet
     expect(Lead::find($lead->id)->status)->toBe(LeadStatus::New);
+
+    Carbon::setTestNow();
+});
+
+it('returns null for every user, even the attendance prompt, once the company-wide switch is paused', function () {
+    Carbon::setTestNow(Carbon::parse(ENGINE_TEST_DAYTIME, config('app.display_timezone')));
+    $sales = User::factory()->role(UserRole::Sales)->create();
+    Lead::factory()->create(['owner_id' => $sales->id, 'status' => LeadStatus::New]);
+    $admin = User::factory()->role(UserRole::Admin)->create();
+
+    // Confirm each user would normally get a real prompt (attendance for
+    // the never-checked-in sales rep) before proving the switch suppresses it.
+    expect(nextActionEngine()->nextFor($sales)->sourceKey)->toBe('attendance_check_in');
+
+    NextActionSetting::current()->update(['paused' => true]);
+
+    expect(nextActionEngine()->nextFor($sales))->toBeNull();
+    expect(nextActionEngine()->nextFor($admin))->toBeNull();
+
+    NextActionSetting::current()->update(['paused' => false]);
+    expect(nextActionEngine()->nextFor($sales)->sourceKey)->toBe('attendance_check_in');
 
     Carbon::setTestNow();
 });

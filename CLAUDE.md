@@ -2103,3 +2103,30 @@ Older entries (2026-06-10 through 2026-08-25) moved to `docs/decisions-log-archi
   files, Pint clean. No migration (pure PHP additions), deployed via the
   standard `git pull`. `docs/user-guides/sales.md`/`admin.md` updated to
   describe the auto-carry-over behavior to reps/admins.
+- **2026-09-17 — Company-wide pause switch for the Next Action pop-up
+  (`NextActionSetting`), Admin/Manager only.** Owner asked to disable the
+  pop-up "for sometime." Clarified via AskUserQuestion that this is
+  distinct from the pop-up's existing per-prompt Snooze (30m/2h/tomorrow,
+  `NextActionSnooze`) — a plain ON/OFF kill-switch, no duration tiers, only
+  Admin/Manager can flip it, and it pauses the pop-up for **every** user/
+  role company-wide, not just the toggler's own view. Modeled as a
+  singleton settings row (`NextActionSetting::current()`, same
+  `firstOrCreate` pattern as `BillingSetting`/`AiUsageSetting`) rather than
+  a new snooze variant, since "off until someone turns it back on" is a
+  fundamentally different shape than a timed defer.
+  `NextActionEngine::nextFor()` checks `NextActionSetting::current()->paused`
+  first, before any source runs, with no role exception. New
+  `NextActionSettingController` (index/pause/resume — two explicit actions
+  rather than one toggle, so a double-submit can't flip it twice unnoticed)
+  behind `menu.access:next-action-settings`, same no-Policy-class
+  convention as Billing Settings/Festivals; new "Notification Settings"
+  AdminConfig menu item (`roles => [UserRole::Manager]`, Admin implicit).
+  7 new Pest tests (`NextActionSettingsTest` — view/pause/resume access,
+  `updated_by` recorded) + 1 new `NextActionEngineTest` case proving the
+  switch suppresses even the highest-priority source (Attendance) for both
+  a Sales and an Admin user, full suite otherwise green (3686 passed, same
+  one pre-existing unrelated `MeetingRequestTest` IST-window flake), Pint
+  clean, no new Tailwind classes needed (grepped the compiled CSS first
+  rather than assuming). Migrated + smoke-tested end-to-end against real
+  local MySQL (pause → confirmed `paused=1`/`updated_by` set correctly →
+  resume → confirmed `paused=0`), not just Pest.

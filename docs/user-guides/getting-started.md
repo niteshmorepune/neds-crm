@@ -166,6 +166,12 @@ and at the end of the day (past 6pm office-hours close), the same popup
 reminds you to submit your daily report and then **Check out now** — the
 true last step, right from the popup, no need to go to the Dashboard.
 
+An Admin or Manager can pause this popup for **everyone** company-wide
+(for example, during an all-hands or a demo) from **Notification
+Settings** in the sidebar, and resume it the same way — so if the popup
+isn't appearing at all for anyone, check there before assuming something's
+broken. This is separate from your own personal **Snooze** on one prompt.
+
 **Also do your biometric fingerprint punch as usual** — do both, not one or
 the other. The two work together automatically: your CRM check-in/out marks
 you present immediately, and your biometric punch fills in or corrects the
