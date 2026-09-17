@@ -123,7 +123,7 @@ class ImportMetaLead implements ShouldQueue
         $existingLead = filled($fields['phone']) ? Lead::findOpenByPhone($fields['phone']) : null;
 
         if ($existingLead !== null) {
-            $this->attachToExistingLead($existingLead, $campaignLabel, $serviceId, $estimatedValue, $goal, $budgetRange, $extra);
+            $this->attachToExistingLead($existingLead, $campaignLabel, $serviceId, $estimatedValue, $goal, $budgetRange, $fields, $extra);
 
             return;
         }
@@ -172,9 +172,25 @@ class ImportMetaLead implements ShouldQueue
      * utm_campaign are only backfilled when the existing lead doesn't
      * already have them.
      *
+     * email/company are backfilled the same "only if currently null" way
+     * (added 2026-09-17, real gap reported live -- lead #443, Ashavini
+     * Sonawne: the WhatsApp auto-message that creates the lead first only
+     * ever sets name/phone, never email/company, so the real values sitting
+     * right in Meta's own structured form data were silently dropped on
+     * every lead that hit this exact race -- the raw text was only ever
+     * visible buried in a note, never on the Lead record itself).
+     * Deliberately NOT extended to `name` in the same pass -- the WhatsApp
+     * profile name and the Meta form's typed name can legitimately differ
+     * (e.g. a maiden/married name, a nickname), and unlike email/company
+     * the existing lead's name is never actually null (it always gets a
+     * real value or the "WhatsApp Inquiry" placeholder), so this would need
+     * its own deliberate placeholder-detection decision, not a blind
+     * null-check.
+     *
+     * @param  array{name: ?string, email: ?string, phone: ?string, company: ?string}  $fields
      * @param  array<string, string>  $extra
      */
-    private function attachToExistingLead(Lead $lead, ?string $campaignLabel, ?int $serviceId, ?int $estimatedValue, ?LeadGoal $goal, ?LeadBudgetRange $budgetRange, array $extra): void
+    private function attachToExistingLead(Lead $lead, ?string $campaignLabel, ?int $serviceId, ?int $estimatedValue, ?LeadGoal $goal, ?LeadBudgetRange $budgetRange, array $fields, array $extra): void
     {
         if ($lead->meta_leadgen_id === null) {
             $lead->update(['meta_leadgen_id' => $this->leadgenId]);
@@ -189,6 +205,8 @@ class ImportMetaLead implements ShouldQueue
             'estimated_value' => $lead->estimated_value === null ? $estimatedValue : null,
             'goal' => $lead->goal === null ? $goal?->value : null,
             'budget_range' => $lead->budget_range === null ? $budgetRange?->value : null,
+            'email' => $lead->email === null ? $fields['email'] : null,
+            'company' => $lead->company === null ? $fields['company'] : null,
         ], fn ($v) => $v !== null);
 
         if ($fill !== []) {
@@ -439,7 +457,7 @@ class ImportMetaLead implements ShouldQueue
         // Array keys can't be enum instances, so this is a plain list of
         // [enum, phrases] pairs rather than an enum-keyed map.
         $needles = [
-            [LeadGoal::GenerateLeads, ['generate more leads', 'generate leads', 'लीड्स प्राप्त करना']],
+            [LeadGoal::GenerateLeads, ['generate more leads', 'generate leads', 'लीड्स प्राप्त करना', 'leads प्राप्त करना']],
             [LeadGoal::RankHigher, ['rank higher', 'रैंकिंग पाना']],
             [LeadGoal::GrowBusiness, ['grow my business', 'grow business', 'ऑनलाइन बढ़ाना']],
             [LeadGoal::NotSure, ['not sure', 'expert advice', 'पक्का नहीं']],
@@ -455,6 +473,15 @@ class ImportMetaLead implements ShouldQueue
             // (रैंकिंग/बिज़नेस/एक्सपर्ट, not the Latin words) and were
             // replaced here rather than left as dead, wrong guesses —
             // see [[feedback-gotchas]].
+            // 'leads प्राप्त करना' re-added 2026-09-17, this time confirmed
+            // against a real live lead's own stored note text (#443,
+            // Ashavini Sonawne — "अधिक_leads_प्राप्त_करना"), not a retyped
+            // ad copy guess: a THIRD real ad variant (campaign
+            // 120251465805080458) mixes the Latin word "leads" into its
+            // Devanagari phrasing, distinct from both the earlier
+            // "लीड्स" (all-Devanagari) and the earlier, debunked guess —
+            // different ads genuinely produce different real payloads
+            // depending on how each advertiser typed their own options.
         ];
 
         foreach ($extra as $key => $value) {

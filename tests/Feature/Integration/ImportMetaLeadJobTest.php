@@ -419,6 +419,21 @@ it('maps a second Hindi-language ad variant\'s goal question/answer, real produc
     ],
 ]);
 
+it('maps a third real ad variant\'s goal answer, which mixes the Latin word "leads" into Devanagari phrasing (lead #443, 2026-09-17)', function () {
+    // Confirmed against lead #443's (Ashavini Sonawne) own stored note
+    // text, not a retyped ad copy guess -- this ad's real question key
+    // even mixes "business" (Latin) into an otherwise-Devanagari key.
+    fakeMetaGraphResponse([
+        ['name' => 'इनमेसे_आपके_business_की_सबसे_बड़ी_ज़रूरत_क्या_है?', 'values' => ['अधिक_leads_प्राप्त_करना']],
+    ]);
+
+    ImportMetaLead::dispatchSync('lg-1');
+
+    $lead = Lead::where('meta_leadgen_id', 'lg-1')->first();
+    expect($lead->goal)->toBe(LeadGoal::GenerateLeads)
+        ->and($lead->notes()->count())->toBe(0);
+});
+
 it('parses a second Hindi-language ad variant\'s budget question into the right band, real production text (leads #125 onward, 2026-09-12)', function (string $answer, LeadBudgetRange $expected) {
     fakeMetaGraphResponse([
         ['name' => 'इस_काम_के_लिए_आप_हर_महीने_कितना_खर्च_कर_सकते_हैं?', 'values' => [$answer]],
@@ -560,6 +575,45 @@ it('backfills service_id and estimated_value on the matched lead only when it do
 
     expect($withoutService->fresh()->service_id)->toBe($service->id)
         ->and($withoutService->fresh()->estimated_value)->toBe(2500000);
+});
+
+it('backfills email and company on the matched lead only when it does not already have them', function () {
+    // Real gap, reported live 2026-09-17 (lead #443, Ashavini Sonawne):
+    // the WhatsApp auto-message that creates a lead first only ever sets
+    // name/phone -- email/company sat right there in Meta's own
+    // structured form data but were silently dropped forever, since
+    // attachToExistingLead()'s backfill list never included them.
+    $lead = Lead::factory()->create([
+        'phone' => '9876543210', 'source' => LeadSource::Whatsapp,
+        'email' => null, 'company' => null,
+    ]);
+    fakeMetaGraphResponse([
+        ['name' => 'phone_number', 'values' => ['9876543210']],
+        ['name' => 'email', 'values' => ['ashavini@example.com']],
+        ['name' => 'company_name', 'values' => ['Shreenath Tours and Travels']],
+    ]);
+
+    ImportMetaLead::dispatchSync('lg-1');
+
+    expect($lead->fresh()->email)->toBe('ashavini@example.com')
+        ->and($lead->fresh()->company)->toBe('Shreenath Tours and Travels');
+});
+
+it('does not overwrite an existing lead\'s email/company when matched by phone', function () {
+    $lead = Lead::factory()->create([
+        'phone' => '9876543210', 'source' => LeadSource::Whatsapp,
+        'email' => 'already-known@example.com', 'company' => 'Already Known Co',
+    ]);
+    fakeMetaGraphResponse([
+        ['name' => 'phone_number', 'values' => ['9876543210']],
+        ['name' => 'email', 'values' => ['form-submitted@example.com']],
+        ['name' => 'company_name', 'values' => ['Form Submitted Co']],
+    ]);
+
+    ImportMetaLead::dispatchSync('lg-1');
+
+    expect($lead->fresh()->email)->toBe('already-known@example.com')
+        ->and($lead->fresh()->company)->toBe('Already Known Co');
 });
 
 it('does not overwrite an existing lead\'s service_id/estimated_value when matched by phone', function () {
