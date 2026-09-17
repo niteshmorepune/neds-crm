@@ -81,9 +81,12 @@ it('does not re-score when only a non-scoring field changes', function () {
     $lead = Lead::factory()->create();
 
     Queue::fake();
+    // next_follow_up_at is a real trigger for AnalyzeLeadNextAction (2026-09-18,
+    // later) -- see LeadNextActionAnalysisDispatchTest -- so it's no longer
+    // true that NOTHING fires here, only that ScoreLead specifically doesn't.
     $lead->update(['next_follow_up_at' => now()->addDay()]);
 
-    Queue::assertNothingPushed();
+    Queue::assertNotPushed(ScoreLead::class);
 });
 
 it('stores the score, reason, qualification fields and timestamp, and records usage', function () {
@@ -343,9 +346,11 @@ it('does not re-score a lead for an edit to an already-terminal lead', function 
     $lead = Lead::factory()->create(['status' => 'converted']);
 
     Queue::fake();
+    // See the sibling test above -- next_follow_up_at now legitimately
+    // triggers AnalyzeLeadNextAction, so only ScoreLead is asserted here.
     $lead->update(['next_follow_up_at' => now()->addDay()]);
 
-    Queue::assertNothingPushed();
+    Queue::assertNotPushed(ScoreLead::class);
 });
 
 it('does not double-fire when both a scoring field and the terminal status change together', function () {

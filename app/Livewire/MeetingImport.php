@@ -7,6 +7,7 @@ use App\Enums\MeetingSummaryStatus;
 use App\Jobs\SummarizeMeeting;
 use App\Models\Customer;
 use App\Models\GoogleAccountConnection;
+use App\Models\Lead;
 use App\Models\Meeting;
 use App\Models\User;
 use App\Notifications\MeetingInvitation;
@@ -138,6 +139,10 @@ class MeetingImport extends Component
             SummarizeMeeting::dispatch($meeting->id);
         }
 
+        if ($this->record instanceof Lead) {
+            $this->record->queueNextActionAnalysis();
+        }
+
         $this->showManualForm = false;
     }
 
@@ -234,6 +239,10 @@ class MeetingImport extends Component
             $member->notify(new MeetingInvitation($meeting));
         }
 
+        if ($this->record instanceof Lead) {
+            $this->record->queueNextActionAnalysis();
+        }
+
         $this->createdMeetLink = $result['meet_link'];
         $this->showScheduler = false;
     }
@@ -307,6 +316,10 @@ class MeetingImport extends Component
         if (filled($meeting->raw_transcript) && GoogleMeet::summaryEnabled()) {
             $meeting->forceFill(['ai_summary_status' => MeetingSummaryStatus::Pending])->saveQuietly();
             SummarizeMeeting::dispatch($meeting->id);
+        }
+
+        if ($this->record instanceof Lead) {
+            $this->record->queueNextActionAnalysis();
         }
 
         $this->showPicker = false;

@@ -82,6 +82,13 @@ it('never overrides a next_follow_up_at the rep already set themselves', functio
     enableAiForLeadNotes();
     fakeLeadCommitmentClaude();
     $manualDate = now()->addDays(10);
+    // Queue::fake() here only to stop this manual update's own, unrelated
+    // AnalyzeLeadNextAction re-analysis (a real trigger since 2026-09-18,
+    // later — see LeadNextActionAnalysisDispatchTest) from running
+    // synchronously under the sync test queue and polluting the
+    // Http::assertNothingSent() assertion below, which is about
+    // DetectLeadNoteFollowUpCommitment specifically.
+    Queue::fake();
     $this->lead->update(['next_follow_up_at' => $manualDate]);
     $note = leadNoteFrom($this->lead, $this->author, 'He will visit the office Saturday.');
 

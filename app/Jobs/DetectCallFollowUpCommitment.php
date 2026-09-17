@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\CallLog;
+use App\Models\Lead;
 use App\Notifications\CallFollowUpAutoSet;
 use App\Services\AnthropicClient;
 use App\Support\Ai;
@@ -78,6 +79,14 @@ class DetectCallFollowUpCommitment implements ShouldQueue
         ])->saveQuietly();
 
         $call->user?->notify(new CallFollowUpAutoSet($call));
+
+        // A freshly-detected commitment is exactly the kind of change
+        // AnalyzeLeadNextAction should react to -- saveQuietly() above means
+        // LeadObserver never sees it, so dispatch directly (Lead callables
+        // only; a Customer's Next Action isn't this column's concern).
+        if ($call->callable instanceof Lead) {
+            $call->callable->queueNextActionAnalysis();
+        }
     }
 
     private function system(): string

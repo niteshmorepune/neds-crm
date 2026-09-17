@@ -270,6 +270,12 @@ class RecordNotes extends Component
             ScoreLead::dispatch($this->record->id);
         }
 
+        // Same reasoning for the Next Action column — covers both branches
+        // above (logged-as-a-call and a plain note).
+        if ($this->record instanceof Lead) {
+            $this->record->queueNextActionAnalysis();
+        }
+
         // Only on creation, not edits — an edited note re-notifying on every
         // tweak would get spammy for what's usually a wording fix.
         if ($note->visible_to_client && $this->record instanceof Project) {

@@ -687,3 +687,109 @@ Older entries (2026-06-10 through 2026-09-13) moved to `docs/decisions-log-archi
   `telecaller.md` extended (their PDFs regenerated; the other 8
   unaffected guides' regenerated-but-unchanged PDFs discarded per the
   established gotcha).
+- **2026-09-18 (later still) — AI-driven, full-context Next Action
+  (`App\Jobs\AnalyzeLeadNextAction`), replacing the deterministic advisor
+  as the PRIMARY source; the deterministic chain becomes its fallback.**
+  Owner reviewed three real leads (#435 Prem Motors, #372 Rajesh
+  Choudhary, #340 Sagar Shivaji Salgar) the same day the deterministic
+  Next Action column shipped — root cause for all three turned out to be
+  a backfill gap (calls logged via the "This was a call" note shortcut
+  before `DetectCallFollowUpCommitment` was wired to fire from that path;
+  fixed + backfilled separately, not part of this entry). But investigating
+  them surfaced a real, deeper limitation: a rule keyed on "the oldest
+  unresolved commitment" has no way to know a LATER event supersedes it —
+  Sagar's lead had agreed to a Google Meet on 8 Sep, then went unanswered
+  on a follow-up call on 17 Sep, and the deterministic chain kept
+  surfacing the stale Google Meet line with no awareness the situation
+  had moved on. Owner: "AI has to do it more precisely every case and
+  [do a] lead page data analysis and tell the exact next action for the
+  human now." Confirmed via AskUserQuestion: re-analyze a lead on every
+  relevant CHANGE (event-driven), not on a schedule or on-demand-only —
+  the same "cache + observer-driven invalidation" shape the original
+  Next Action plan had proposed and then deliberately skipped (pure live
+  computation was cheap enough for a deterministic rule chain; a genuine
+  full-page AI read is a different cost profile entirely).
+  New `leads.ai_next_action_hint`/`ai_next_action_generated_at` columns
+  (deliberately separate from the existing narrower `ai_detected_next_action`,
+  which stays exactly what it was — `DetectLeadNoteFollowUpCommitment`'s
+  own plain-note-commitment signal). `AnalyzeLeadNextAction` reads a
+  lead's full state (goal/budget/stall/status/next_follow_up_at), its VA/
+  offer funnel stage (reuses `VisibilityAuditFunnelMetrics::funnelStatusFor()`,
+  not re-derived), and a combined, chronologically-ordered timeline of its
+  last 15 notes+calls+meetings, and asks Claude (haiku) for ONE precise
+  imperative next action, explicitly told to weigh the most recent
+  timeline items most heavily. Skips Lost outright; deliberately does
+  NOT skip Converted (unlike `LeadStatus::isOpen()`) since "send the
+  quotation"/"schedule the meeting" are exactly the kind of hint a
+  Converted lead needs. Silent no-op on any AI failure, same contract as
+  every other AI job in this app — never overwrites an existing cached
+  hint with null/garbage.
+  `Lead::queueNextActionAnalysis()` centralizes the "what counts as a
+  relevant change" list in one place rather than duplicating it at every
+  call site: `CallLogController::store()`, `RecordNotes::addNote()` (both
+  the plain-note and logged-as-a-call branches), `MeetingImport`'s three
+  creation methods (manual/external, scheduled Google Meet, imported past
+  event), `LeadObserver::updated()` for stall_reason/goal/budget_range/
+  website_url/gbp_url/next_follow_up_at/status changes, and directly from
+  `GenerateLeadRecommendation::handle()` and both
+  `DetectCallFollowUpCommitment`/`DetectLeadNoteFollowUpCommitment` once
+  either sets a real commitment — the latter three all write via
+  `saveQuietly()`, so `LeadObserver` never sees those changes and each
+  dispatches the re-analysis itself directly.
+  `LeadNextActionAdvisor::hintFor()` now checks the cached AI hint FIRST,
+  ahead of every deterministic rule; that rule chain is unchanged and
+  serves purely as the fallback for a lead the job hasn't analyzed yet
+  (brand new, nothing logged, or AI disabled) — the "no per-row AI cost"
+  constraint that made the original column deterministic-only still holds
+  for this fallback path, since it only ever reads an already-computed
+  cached column, never calls AI itself.
+  **Real gotcha applied proactively, not hit**: the timeline-building code
+  maps Eloquent collections (notes/calls/meetings) into plain arrays for
+  sorting — the same `Collection::map()`-into-plain-arrays shape that has
+  bitten this codebase's `merge()`/`flatMap()` calls before (see
+  [[feedback-gotchas]]) — downgraded to a plain `Support\Collection` via
+  `collect(...->all())` up front so nothing later in the chain can trip
+  over `Eloquent\Collection::merge()`'s own `getKey()` assumption, even
+  though the specific methods used here (`concat()`/`sortBy()`) don't
+  actually call it.
+  **Two pre-existing tests fixed, not the new code**: `LeadScoringTest`'s
+  "does not re-score [for a] non-scoring field change" and "...already-
+  terminal lead" cases both updated `next_follow_up_at` and asserted a
+  blanket `Queue::assertNothingPushed()` — now genuinely wrong, since that
+  field is a real trigger for this job too; narrowed both to
+  `Queue::assertNotPushed(ScoreLead::class)`, which is what they actually
+  meant. Same root issue, one more instance:
+  `LeadNoteFollowUpDetectionTest`'s "never overrides a next_follow_up_at
+  the rep already set" test set a manual date (a trigger) then asserted
+  `Http::assertNothingSent()` about a DIFFERENT job entirely — added a
+  scoped `Queue::fake()` around just that manual update so this job's own
+  incidental (and, under the test suite's `sync` queue driver,
+  synchronous) re-analysis can't pollute an assertion about
+  `DetectLeadNoteFollowUpCommitment` specifically.
+  62 new Pest tests (`LeadNextActionAnalysisTest` — prompt content,
+  Lost-skip/Converted-no-skip, AI-failure/null-reply leaves the cached
+  hint untouched, no model event fired; `LeadNextActionAnalysisDispatchTest`
+  — every real call site fires, irrelevant fields/records don't; 3 new
+  `LeadNextActionAdvisorTest` cases — AI hint outranks every deterministic
+  rule, correct fallback when absent, not status-gated) plus the 2 fixed
+  pre-existing tests, full suite otherwise green across every test file
+  touching any changed class (~886 tests re-verified: `Ai/`, `Leads/`,
+  `GoogleMeet/`, `Integration/`, `GenerateLeadRecommendationTest`, plus a
+  second sweep for `calls.store`/`RecordNotes`/`MeetingImport` usages the
+  first keyword search might have missed) — a full from-scratch
+  `php artisan test` run was deliberately not attempted this session given
+  the documented orphaned-`pest`-process risk on this dev machine (see
+  [[local-dev-env]]), so this targeted sweep is the verification of
+  record. Pint clean. No local Anthropic key configured (see precedent
+  throughout this log), so the live AI call itself is only exercised
+  through the Pest suite's faked HTTP layer, not a real API round-trip;
+  smoke-tested the rest of the path against real local MySQL instead —
+  migrated cleanly, `/leads` renders with no error, and a throwaway
+  `ai_next_action_hint` set directly on a real local lead rendered
+  correctly on the live list (`✨ …` label, "AI-analyzed … ago" tooltip)
+  before being reverted. `sales.md`/`telecaller.md` extended to explain
+  the ✨ marker and the new fallback framing; PDFs regenerated for both,
+  the other 8 unaffected guides' regenerated-but-unchanged PDFs discarded
+  per the established gotcha. Not yet merged or deployed — PR pending
+  owner review (this is a new, ongoing per-lead AI cost, unlike a one-off
+  backfill).

@@ -38,6 +38,23 @@ class LeadObserver
     /** Fields that materially affect the score; an update touching none is ignored. */
     private const SCORING_FIELDS = ['name', 'company', 'email', 'phone', 'source', 'service_id', 'estimated_value'];
 
+    /**
+     * Fields whose change could plausibly change what a rep should do next —
+     * feeds Lead::queueNextActionAnalysis() (see AnalyzeLeadNextAction).
+     * Deliberately excludes recommendation_offer_key -- GenerateLeadRecommendation
+     * writes that via saveQuietly() (no model event at all), so it dispatches
+     * the re-analysis itself, directly, right where it sets that field.
+     * Same reasoning excludes ai_detected_next_action/next_follow_up_at
+     * WHEN set by DetectCallFollowUpCommitment/DetectLeadNoteFollowUpCommitment
+     * (also saveQuietly()) -- both of those jobs dispatch the re-analysis
+     * themselves too. Only a real, event-firing save (a human via a form,
+     * or CallLogController::store()'s plain update() calls) reaches here.
+     */
+    private const NEXT_ACTION_TRIGGER_FIELDS = [
+        'stall_reason', 'goal', 'budget_range', 'website_url', 'gbp_url',
+        'next_follow_up_at', 'status',
+    ];
+
     public function __construct(
         private readonly VisibilityAuditFunnelMetrics $visibilityAuditFunnelMetrics,
         private readonly GenerateLeadRecommendation $generateLeadRecommendation,
@@ -123,6 +140,10 @@ class LeadObserver
         if ($lead->wasChanged('goal') && $lead->goal === LeadGoal::NotSure) {
             $this->notifyWantsExpertAdvice($lead);
             $this->stampNotSureBaseline($lead);
+        }
+
+        if ($lead->wasChanged(self::NEXT_ACTION_TRIGGER_FIELDS)) {
+            $lead->queueNextActionAnalysis();
         }
     }
 
