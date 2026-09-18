@@ -21,6 +21,8 @@ class ClientAssets extends Component
 {
     use WithFileUploads;
 
+    private const ALLOWED_MIMES = 'jpg,jpeg,png,gif,webp,pdf,doc,docx,xls,xlsx,txt,csv,zip';
+
     public Customer $customer;
 
     public bool $canManage = false;
@@ -64,7 +66,7 @@ class ClientAssets extends Component
             'title' => ['required', 'string', 'max:255'],
             'category' => ['required', Rule::enum(ClientAssetCategory::class)],
             'serviceId' => ['nullable', Rule::exists('services', 'id')],
-            'file' => ['required', 'file', 'max:20480'],
+            'file' => ['required', 'file', 'max:20480', 'mimes:'.self::ALLOWED_MIMES],
         ]);
 
         $path = $validated['file']->store('client-assets', 'local');
@@ -97,7 +99,7 @@ class ClientAssets extends Component
         $asset = $this->customer->clientAssets()->findOrFail($this->replacingId);
 
         $validated = $this->validate([
-            'replacementFile' => ['required', 'file', 'max:20480'],
+            'replacementFile' => ['required', 'file', 'max:20480', 'mimes:'.self::ALLOWED_MIMES],
         ]);
 
         $asset->replaceFile($validated['replacementFile'], auth()->id());

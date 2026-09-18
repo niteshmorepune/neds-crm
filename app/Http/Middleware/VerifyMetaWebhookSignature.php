@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -20,15 +21,28 @@ class VerifyMetaWebhookSignature
         $signature = (string) ($request->header('X-Hub-Signature-256') ?? '');
 
         if ($secret === '' || $signature === '' || ! str_starts_with($signature, 'sha256=')) {
+            $this->logFailure($request, 'missing/malformed signature header');
+
             return response()->json(['message' => 'Unauthorized.'], 401);
         }
 
         $expected = 'sha256='.hash_hmac('sha256', $request->getContent(), $secret);
 
         if (! hash_equals($expected, $signature)) {
+            $this->logFailure($request, 'signature mismatch');
+
             return response()->json(['message' => 'Unauthorized.'], 401);
         }
 
         return $next($request);
+    }
+
+    private function logFailure(Request $request, string $reason): void
+    {
+        Log::warning('Meta webhook auth failed', [
+            'reason' => $reason,
+            'path' => $request->path(),
+            'ip' => $request->ip(),
+        ]);
     }
 }

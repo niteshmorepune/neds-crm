@@ -51,10 +51,11 @@ php artisan db:seed --class=AdminUserSeeder
 php artisan db:seed --class=FestivalsSeeder      # optional
 php artisan db:seed --class=DemoDataSeeder       # optional — fake leads/deals/invoices for UI testing
 ```
-`AdminUserSeeder` creates `niranjan.enterprisespune@gmail.com` / `password` —
-change it if this ever points at anything real. **Never re-run
-`DemoDataSeeder` against production** — see the "Do NOT" list in
-`CLAUDE.md`.
+`AdminUserSeeder` creates `niranjan.enterprisespune@gmail.com` with a random
+20-char password printed once in the seed command's own output (never a
+fixed default) — copy it from there, or use "Forgot password?" on `/login`
+afterward for a memorable one. **Never re-run `DemoDataSeeder` against
+production** — see the "Do NOT" list in `CLAUDE.md`.
 
 **Run the app:**
 ```bash

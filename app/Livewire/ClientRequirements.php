@@ -27,6 +27,8 @@ class ClientRequirements extends Component
 {
     use WithFileUploads;
 
+    private const ALLOWED_MIMES = 'jpg,jpeg,png,gif,webp,pdf,doc,docx,xls,xlsx,txt,csv,zip';
+
     public Customer $customer;
 
     public bool $canManage = false;
@@ -112,7 +114,7 @@ class ClientRequirements extends Component
         $requirement = $this->customer->clientRequirements()->findOrFail($this->uploadingId);
 
         $validated = $this->validate([
-            'file' => ['required', 'file', 'max:10240'],
+            'file' => ['required', 'file', 'max:10240', 'mimes:'.self::ALLOWED_MIMES],
             'fileCategory' => ['nullable', Rule::enum(ClientAssetCategory::class)],
         ]);
 

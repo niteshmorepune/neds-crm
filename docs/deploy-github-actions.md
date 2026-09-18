@@ -58,7 +58,7 @@ php artisan migrate --force
 php artisan storage:link
 php artisan db:seed --class=ServicesSeeder
 php artisan db:seed --class=MenuItemsSeeder
-php artisan db:seed --class=AdminUserSeeder   # login + change the password
+php artisan db:seed --class=AdminUserSeeder   # prints a one-time password — copy it from the command output
 php artisan config:cache && php artisan route:cache && php artisan view:cache
 
 # e) Cron (hPanel → Cron Jobs):

@@ -102,7 +102,8 @@ Overview donut renders (Chart.js is loaded from CDN, so it needs outbound HTTPS)
 - [ ] `php artisan db:seed --class=MenuItemsSeeder`  (sidebar)
 - [ ] Create the admin user: `php artisan db:seed --class=AdminUserSeeder`
       (idempotent/production-safe). Seeds `niranjan.enterprisespune@gmail.com`
-      with password `password` — **log in and change it immediately**.
+      with a random one-time password **printed in the command's own
+      output** — copy it from there to log in (or use "Forgot password?").
 - [ ] Do **NOT** run `DemoDataSeeder` in production (it refuses anyway).
 - [ ] Import the customer CSV via Clients → Import.
 
