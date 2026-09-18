@@ -36,16 +36,16 @@ class CreateMonthlyBriefs extends Command
 
     public function handle(): int
     {
-        $monthArg  = $this->option('month');
+        $monthArg = $this->option('month');
         $monthDate = $monthArg
             ? Carbon::createFromFormat('Y-m', $monthArg)->startOfMonth()
             : now()->startOfMonth();
 
         $monthLabel = $monthDate->format('F Y'); // "July 2026"
-        $monthKey   = $monthDate->format('Y-m'); // "2026-07"
+        $monthKey = $monthDate->format('Y-m'); // "2026-07"
 
-        $baseUrl    = rtrim((string) config('services.smdost.base_url'), '/');
-        $serviceKey = (string) config('services.smdost.service_key');
+        $baseUrl = rtrim((string) config('services.smdost.base_url'), '/');
+        $serviceKey = (string) config('services.smdost.service_key_briefs');
 
         if (! $baseUrl || ! $serviceKey) {
             $this->error('SMDOST_API_URL or SMDOST_SERVICE_KEY is not configured.');
@@ -66,7 +66,7 @@ class CreateMonthlyBriefs extends Command
 
         $created = 0;
         $skipped = 0;
-        $failed  = 0;
+        $failed = 0;
 
         foreach ($projects as $project) {
             $customer = $project->customer;
@@ -81,43 +81,45 @@ class CreateMonthlyBriefs extends Command
             if ($alreadyCreated) {
                 $this->line("  Skipping {$customer->name} — brief already exists for {$monthLabel}.");
                 $skipped++;
+
                 continue;
             }
 
             $serviceName = $project->service->name;
-            $slug        = $project->service->slug;
-            $platforms   = self::SERVICE_PLATFORMS[$slug] ?? [];
+            $slug = $project->service->slug;
+            $platforms = self::SERVICE_PLATFORMS[$slug] ?? [];
 
             try {
                 $response = Http::withHeader('X-Service-Key', $serviceKey)
                     ->timeout(15)
                     ->post("{$baseUrl}/api/briefs", [
-                        'clientId'            => $customer->smdost_client_id,
-                        'title'               => "{$project->name} — {$monthLabel}",
-                        'contentGoal'         => "Monthly {$serviceName} content for {$monthLabel}",
+                        'clientId' => $customer->smdost_client_id,
+                        'title' => "{$project->name} — {$monthLabel}",
+                        'contentGoal' => "Monthly {$serviceName} content for {$monthLabel}",
                         'campaignDescription' => 'Auto-generated from NEDS CRM. Review goals and add any special instructions before generating content.',
-                        'scheduledMonth'      => $monthDate->toIso8601String(),
-                        'platforms'           => $platforms,
+                        'scheduledMonth' => $monthDate->toIso8601String(),
+                        'platforms' => $platforms,
                     ]);
 
                 if (! $response->successful()) {
                     $this->warn("  Failed for {$customer->name}: HTTP {$response->status()} — {$response->body()}");
                     $failed++;
+
                     continue;
                 }
 
                 $briefId = $response->json('id');
 
                 Activity::create([
-                    'user_id'      => null,
+                    'user_id' => null,
                     'subject_type' => Customer::class,
-                    'subject_id'   => $customer->id,
-                    'event'        => 'smdost_brief_created',
-                    'changes'      => [
-                        'month'    => $monthKey,
+                    'subject_id' => $customer->id,
+                    'event' => 'smdost_brief_created',
+                    'changes' => [
+                        'month' => $monthKey,
                         'brief_id' => $briefId,
-                        'project'  => $project->name,
-                        'service'  => $serviceName,
+                        'project' => $project->name,
+                        'service' => $serviceName,
                     ],
                 ]);
 
@@ -127,7 +129,7 @@ class CreateMonthlyBriefs extends Command
             } catch (\Throwable $e) {
                 Log::warning('CreateMonthlyBriefs: exception', [
                     'customer_id' => $customer->id,
-                    'error'       => $e->getMessage(),
+                    'error' => $e->getMessage(),
                 ]);
                 $this->warn("  Exception for {$customer->name}: {$e->getMessage()}");
                 $failed++;

@@ -56,7 +56,7 @@ class ImportWhatsappTicketMedia implements ShouldQueue
             return;
         }
 
-        $serviceKey = (string) config('services.wadesk.service_key');
+        $serviceKey = (string) config('services.wadesk.service_key_read');
 
         if ($serviceKey === '') {
             Log::warning('WhatsApp ticket media import skipped: no wadesk service key configured', [

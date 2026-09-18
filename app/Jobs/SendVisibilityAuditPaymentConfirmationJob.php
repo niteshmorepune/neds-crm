@@ -44,7 +44,7 @@ class SendVisibilityAuditPaymentConfirmationJob implements ShouldQueue
     public function handle(): void
     {
         $baseUrl = rtrim((string) config('services.wadesk.base_url'), '/');
-        $serviceKey = (string) config('services.wadesk.service_key');
+        $serviceKey = (string) config('services.wadesk.service_key_messaging');
         $marketingNumber = (string) config('services.wadesk.marketing_number');
         $templateName = (string) config('services.wadesk.visibility_audit_payment_template_name');
 

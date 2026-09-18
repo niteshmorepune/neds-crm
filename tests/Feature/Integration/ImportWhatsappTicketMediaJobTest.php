@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Storage;
 beforeEach(function () {
     config([
         'services.wadesk.base_url' => 'https://wadesk.in',
-        'services.wadesk.service_key' => 'test-wadesk-key',
+        'services.wadesk.service_key_read' => 'test-wadesk-key',
     ]);
     Storage::fake('local');
 });
@@ -61,7 +61,7 @@ it('does nothing when the wadesk fetch fails', function () {
 });
 
 it('does nothing when no wadesk service key is configured', function () {
-    config(['services.wadesk.service_key' => null]);
+    config(['services.wadesk.service_key_read' => null]);
     $ticket = makeWhatsappTicket();
 
     Http::fake();

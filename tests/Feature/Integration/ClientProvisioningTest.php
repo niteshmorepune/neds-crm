@@ -18,7 +18,7 @@ beforeEach(function () {
         'services.drishti.base_url' => 'https://nedsdrishti.test',
         'services.drishti.service_key' => 'drishti-secret',
         'services.smdost.base_url' => 'https://smdost.test',
-        'services.smdost.service_key' => 'smdost-secret',
+        'services.smdost.service_key_provisioning' => 'smdost-secret',
     ]);
 });
 
@@ -323,7 +323,7 @@ it('exits silently when the customer no longer exists', function () {
 it('does not call external apps when service keys are not configured', function () {
     config([
         'services.drishti.service_key' => null,
-        'services.smdost.service_key' => null,
+        'services.smdost.service_key_provisioning' => null,
     ]);
     Http::fake();
 

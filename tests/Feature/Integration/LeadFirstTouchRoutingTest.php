@@ -25,7 +25,7 @@ use Illuminate\Support\Facades\Queue;
 beforeEach(function () {
     config([
         'services.wadesk.base_url' => 'https://wadesk.test',
-        'services.wadesk.service_key' => 'wadesk-secret',
+        'services.wadesk.service_key_messaging' => 'wadesk-secret',
         'services.wadesk.marketing_number' => '919112095202',
     ]);
     $this->gmb = Service::factory()->create(['name' => 'GMB', 'is_active' => true]);

@@ -13,8 +13,8 @@ beforeEach(function () {
     $this->seed([ServicesSeeder::class, MenuItemsSeeder::class]);
 
     config([
-        'services.smdost.base_url'    => 'https://smdost.test',
-        'services.smdost.service_key' => 'test-smdost-key',
+        'services.smdost.base_url' => 'https://smdost.test',
+        'services.smdost.service_key_briefs' => 'test-smdost-key',
     ]);
 });
 
@@ -31,9 +31,9 @@ function socialMediaProject(Customer $customer): Project
 
     return Project::factory()->create([
         'customer_id' => $customer->id,
-        'service_id'  => $service->id,
-        'status'      => ProjectStatus::Active,
-        'name'        => 'Acme Social Media',
+        'service_id' => $service->id,
+        'status' => ProjectStatus::Active,
+        'name' => 'Acme Social Media',
     ]);
 }
 
@@ -43,9 +43,9 @@ function gmbProject(Customer $customer): Project
 
     return Project::factory()->create([
         'customer_id' => $customer->id,
-        'service_id'  => $service->id,
-        'status'      => ProjectStatus::Active,
-        'name'        => 'Acme GMB',
+        'service_id' => $service->id,
+        'status' => ProjectStatus::Active,
+        'name' => 'Acme GMB',
     ]);
 }
 
@@ -60,8 +60,7 @@ it('creates a brief for an active social media project', function () {
     $this->artisan('app:create-monthly-briefs')->assertSuccessful();
 
     Http::assertSentCount(1);
-    Http::assertSent(fn ($req) =>
-        $req->url() === 'https://smdost.test/api/briefs'
+    Http::assertSent(fn ($req) => $req->url() === 'https://smdost.test/api/briefs'
         && $req->header('X-Service-Key')[0] === 'test-smdost-key'
         && $req->data()['clientId'] === 'smdost-123'
         && count($req->data()['platforms']) === 2
@@ -87,8 +86,7 @@ it('creates a brief for an active GMB project with Google Business platform', fu
 
     $this->artisan('app:create-monthly-briefs')->assertSuccessful();
 
-    Http::assertSent(fn ($req) =>
-        count($req->data()['platforms']) === 1
+    Http::assertSent(fn ($req) => count($req->data()['platforms']) === 1
         && $req->data()['platforms'][0]['platform'] === 'Google Business'
     );
 });
@@ -123,7 +121,7 @@ it('skips projects with non-social-media services (SEO, Website Dev, etc.)', fun
     Http::fake();
 
     $customer = Customer::factory()->create(['smdost_client_id' => 'smdost-seo']);
-    $service  = Service::where('slug', 'seo')->first();
+    $service = Service::where('slug', 'seo')->first();
     Project::factory()->create(['customer_id' => $customer->id, 'service_id' => $service->id, 'status' => ProjectStatus::Active]);
 
     $this->artisan('app:create-monthly-briefs')->assertSuccessful();
@@ -135,7 +133,7 @@ it('skips completed projects', function () {
     Http::fake();
 
     $customer = Customer::factory()->create(['smdost_client_id' => 'smdost-done']);
-    $service  = Service::where('slug', 'social-media')->first();
+    $service = Service::where('slug', 'social-media')->first();
     Project::factory()->create(['customer_id' => $customer->id, 'service_id' => $service->id, 'status' => ProjectStatus::Completed]);
 
     $this->artisan('app:create-monthly-briefs')->assertSuccessful();
@@ -147,7 +145,7 @@ it('skips on-hold projects', function () {
     Http::fake();
 
     $customer = Customer::factory()->create(['smdost_client_id' => 'smdost-hold']);
-    $service  = Service::where('slug', 'social-media')->first();
+    $service = Service::where('slug', 'social-media')->first();
     Project::factory()->create(['customer_id' => $customer->id, 'service_id' => $service->id, 'status' => ProjectStatus::OnHold]);
 
     $this->artisan('app:create-monthly-briefs')->assertSuccessful();
@@ -203,8 +201,7 @@ it('accepts --month option to create briefs for a specific month', function () {
 
     $this->artisan('app:create-monthly-briefs', ['--month' => '2026-08'])->assertSuccessful();
 
-    Http::assertSent(fn ($req) =>
-        str_contains($req->data()['title'], 'August 2026')
+    Http::assertSent(fn ($req) => str_contains($req->data()['title'], 'August 2026')
         && str_contains($req->data()['scheduledMonth'], '2026-08')
     );
 

@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\Queue;
 beforeEach(function () {
     config([
         'services.wadesk.base_url' => 'https://wadesk.test',
-        'services.wadesk.service_key' => 'wadesk-secret',
+        'services.wadesk.service_key_messaging' => 'wadesk-secret',
         'services.wadesk.marketing_number' => '919112095202',
         'services.wadesk.visibility_audit_recovery_landing_template_name' => 'va_recovery_landing',
         'services.wadesk.visibility_audit_recovery_checkout_template_name' => 'va_recovery_checkout',

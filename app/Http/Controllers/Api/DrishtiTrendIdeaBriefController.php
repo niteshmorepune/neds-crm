@@ -74,7 +74,7 @@ class DrishtiTrendIdeaBriefController
         }
 
         $baseUrl = rtrim((string) config('services.smdost.base_url'), '/');
-        $serviceKey = (string) config('services.smdost.service_key');
+        $serviceKey = (string) config('services.smdost.service_key_briefs');
 
         if (! $baseUrl || ! $serviceKey) {
             return response()->json(['status' => 'smdost_not_configured'], 500);
