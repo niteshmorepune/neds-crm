@@ -12,7 +12,7 @@ use Illuminate\Support\Str;
 beforeEach(function () {
     config([
         'services.wadesk.base_url' => 'https://wadesk.test',
-        'services.wadesk.service_key' => 'wadesk-secret',
+        'services.wadesk.service_key_messaging' => 'wadesk-secret',
         'services.wadesk.marketing_number' => '919112095202',
         'services.wadesk.offer_recommendation_template_name' => 'offer_recommendation_ready',
     ]);

@@ -36,7 +36,7 @@ class SendWhatsappLeadReplyJob implements ShouldQueue
     public function handle(): void
     {
         $baseUrl = rtrim((string) config('services.wadesk.base_url'), '/');
-        $serviceKey = (string) config('services.wadesk.service_key');
+        $serviceKey = (string) config('services.wadesk.service_key_messaging');
 
         if (! $baseUrl || ! $serviceKey) {
             return;

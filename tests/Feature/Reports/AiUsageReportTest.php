@@ -201,7 +201,7 @@ it('shows the AI usage report page even when Drishti is unreachable', function (
 it('fetches SMDost AI usage totals via the service-key endpoint and converts USD to paise', function () {
     config([
         'services.smdost.base_url' => 'https://socialmediadost.com',
-        'services.smdost.service_key' => 'smdost-secret',
+        'services.smdost.service_key_read' => 'smdost-secret',
         'services.anthropic.usd_to_inr' => 87.0,
     ]);
     Http::fake([
@@ -224,14 +224,14 @@ it('fetches SMDost AI usage totals via the service-key endpoint and converts USD
 });
 
 it('returns null SMDost usage gracefully when unconfigured', function () {
-    config(['services.smdost.base_url' => null, 'services.smdost.service_key' => null]);
+    config(['services.smdost.base_url' => null, 'services.smdost.service_key_read' => null]);
     expect(app(AiUsageMetrics::class)->smdostUsage(now()->startOfMonth(), now()->endOfMonth()))->toBeNull();
 });
 
 it('fetches Wadesk AI usage totals via the service-key endpoint and converts USD to paise', function () {
     config([
         'services.wadesk.base_url' => 'https://wadesk.in',
-        'services.wadesk.service_key' => 'wadesk-secret',
+        'services.wadesk.service_key_read' => 'wadesk-secret',
         'services.anthropic.usd_to_inr' => 87.0,
     ]);
     Http::fake([
@@ -254,13 +254,13 @@ it('fetches Wadesk AI usage totals via the service-key endpoint and converts USD
 });
 
 it('returns null Wadesk usage gracefully when unconfigured', function () {
-    config(['services.wadesk.base_url' => null, 'services.wadesk.service_key' => null]);
+    config(['services.wadesk.base_url' => null, 'services.wadesk.service_key_read' => null]);
     expect(app(AiUsageMetrics::class)->wadeskUsage(now()->startOfMonth(), now()->endOfMonth()))->toBeNull();
 });
 
 it('shows the AI usage report page even when Wadesk is unreachable', function () {
     $manager = User::factory()->role(UserRole::Manager)->create();
-    config(['services.wadesk.base_url' => 'https://wadesk.in', 'services.wadesk.service_key' => 'wadesk-secret']);
+    config(['services.wadesk.base_url' => 'https://wadesk.in', 'services.wadesk.service_key_read' => 'wadesk-secret']);
     Http::fake(['wadesk.in/*' => Http::response('boom', 500)]);
 
     $this->actingAs($manager)

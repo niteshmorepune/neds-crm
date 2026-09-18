@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Queue;
 beforeEach(function () {
     config([
         'services.wadesk.base_url' => 'https://wadesk.test',
-        'services.wadesk.service_key' => 'wadesk-secret',
+        'services.wadesk.service_key_lead_sync' => 'wadesk-secret',
         'services.wadesk.marketing_number' => '919112095202',
     ]);
 });
@@ -173,7 +173,7 @@ it('skips the HTTP call when the marketing number is not configured', function (
 
 it('skips the HTTP call silently when wadesk config is not set', function () {
     Http::fake();
-    config(['services.wadesk.service_key' => null]);
+    config(['services.wadesk.service_key_lead_sync' => null]);
 
     $lead = Lead::factory()->create(['phone' => '919028099919']);
 

@@ -3,12 +3,13 @@
 use App\Models\Activity;
 use App\Models\Customer;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Testing\TestResponse;
 
 beforeEach(function () {
     config([
         'services.drishti.webhook_secret' => 'test-drishti-webhook-secret',
         'services.smdost.base_url' => 'https://smdost.test',
-        'services.smdost.service_key' => 'test-smdost-key',
+        'services.smdost.service_key_briefs' => 'test-smdost-key',
     ]);
 });
 
@@ -17,7 +18,7 @@ beforeEach(function () {
  * scheme as the existing /webhooks/drishti/event route, but this endpoint's
  * body is a flat payload (no event/data wrapper).
  */
-function trendIdeaBriefRequest(array $data, string $secret = 'test-drishti-webhook-secret', ?int $timestamp = null): \Illuminate\Testing\TestResponse
+function trendIdeaBriefRequest(array $data, string $secret = 'test-drishti-webhook-secret', ?int $timestamp = null): TestResponse
 {
     $ts = $timestamp ?? now()->timestamp;
     $body = json_encode($data);

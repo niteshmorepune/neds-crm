@@ -571,7 +571,7 @@ it('dispatches SendQuotationWhatsAppJob alongside the email when a quotation is 
 it('POSTs the quotation-sent template with the public_token as buttonUrlParam', function () {
     config([
         'services.wadesk.base_url' => 'https://wadesk.test',
-        'services.wadesk.service_key' => 'wadesk-secret',
+        'services.wadesk.service_key_messaging' => 'wadesk-secret',
         'services.wadesk.marketing_number' => '919112095202',
         'services.wadesk.quotation_sent_template_name' => 'quotation_sent',
     ]);
@@ -599,7 +599,7 @@ it('POSTs the quotation-sent template with the public_token as buttonUrlParam', 
 it('skips the WhatsApp quotation send when the customer has no phone', function () {
     config([
         'services.wadesk.base_url' => 'https://wadesk.test',
-        'services.wadesk.service_key' => 'wadesk-secret',
+        'services.wadesk.service_key_messaging' => 'wadesk-secret',
         'services.wadesk.marketing_number' => '919112095202',
         'services.wadesk.quotation_sent_template_name' => 'quotation_sent',
     ]);
@@ -625,7 +625,7 @@ it('skips the WhatsApp quotation send entirely when the wadesk config is not set
 it('logs a warning but does not throw when wadesk.in is unreachable for the quotation send', function () {
     config([
         'services.wadesk.base_url' => 'https://wadesk.test',
-        'services.wadesk.service_key' => 'wadesk-secret',
+        'services.wadesk.service_key_messaging' => 'wadesk-secret',
         'services.wadesk.marketing_number' => '919112095202',
         'services.wadesk.quotation_sent_template_name' => 'quotation_sent',
     ]);
@@ -640,7 +640,7 @@ it('logs a warning but does not throw when wadesk.in is unreachable for the quot
 it('no-ops SendQuotationWhatsAppJob for a deleted quotation id', function () {
     config([
         'services.wadesk.base_url' => 'https://wadesk.test',
-        'services.wadesk.service_key' => 'wadesk-secret',
+        'services.wadesk.service_key_messaging' => 'wadesk-secret',
         'services.wadesk.marketing_number' => '919112095202',
         'services.wadesk.quotation_sent_template_name' => 'quotation_sent',
     ]);

@@ -14,7 +14,7 @@ use Livewire\Livewire;
 beforeEach(function () {
     config([
         'services.wadesk.base_url' => 'https://wadesk.test',
-        'services.wadesk.service_key' => 'wadesk-secret',
+        'services.wadesk.service_key_messaging' => 'wadesk-secret',
     ]);
 
     $this->staff = User::factory()->create();
@@ -184,7 +184,7 @@ it('skips the HTTP call when the lead has no whatsapp_conversation_id', function
 
 it('skips the HTTP call silently when wadesk config is not set', function () {
     Http::fake();
-    config(['services.wadesk.service_key' => null]);
+    config(['services.wadesk.service_key_messaging' => null]);
 
     $lead = Lead::factory()->create(['whatsapp_conversation_id' => 'conv_lead_007']);
     $note = Note::factory()->create([

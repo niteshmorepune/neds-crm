@@ -19,7 +19,7 @@ beforeEach(function () {
 
     config([
         'services.wadesk.base_url' => 'https://wadesk.test',
-        'services.wadesk.service_key' => 'wadesk-secret',
+        'services.wadesk.service_key_lead_sync' => 'wadesk-secret',
         'services.wadesk.marketing_number' => '919112095202',
     ]);
 });

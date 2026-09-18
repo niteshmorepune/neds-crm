@@ -14,7 +14,7 @@ beforeEach(function () {
 
     config([
         'services.wadesk.base_url' => 'https://wadesk.test',
-        'services.wadesk.service_key' => 'wadesk-secret',
+        'services.wadesk.service_key_messaging' => 'wadesk-secret',
         'services.wadesk.support_number' => '918007733737',
         'services.wadesk.handoff_template_name' => 'welcome_to_support',
     ]);
@@ -91,7 +91,7 @@ it('skips the HTTP call when the support number is not configured', function () 
 
 it('skips the HTTP call silently when wadesk config is not set', function () {
     Http::fake();
-    config(['services.wadesk.service_key' => null]);
+    config(['services.wadesk.service_key_messaging' => null]);
 
     $customer = Customer::factory()->create(['phone' => '919028099919']);
 

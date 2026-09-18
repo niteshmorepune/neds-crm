@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Log;
 beforeEach(function () {
     config([
         'services.wadesk.base_url' => 'https://wadesk.test',
-        'services.wadesk.service_key' => 'wadesk-secret',
+        'services.wadesk.service_key_lead_sync' => 'wadesk-secret',
     ]);
 });
 
@@ -41,7 +41,7 @@ it('logs a warning but does not throw when the HTTP call itself fails', function
 });
 
 it('is a no-op when wadesk config is not set', function () {
-    config(['services.wadesk.base_url' => null, 'services.wadesk.service_key' => null]);
+    config(['services.wadesk.base_url' => null, 'services.wadesk.service_key_lead_sync' => null]);
     Http::fake();
 
     (new MuteWadeskConversationJob('conv_no_config'))->handle();

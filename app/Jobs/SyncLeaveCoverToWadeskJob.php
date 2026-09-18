@@ -47,7 +47,7 @@ class SyncLeaveCoverToWadeskJob implements ShouldQueue
     public function handle(): void
     {
         $baseUrl = rtrim((string) config('services.wadesk.base_url'), '/');
-        $serviceKey = (string) config('services.wadesk.service_key');
+        $serviceKey = (string) config('services.wadesk.service_key_lead_sync');
         $marketingNumber = (string) config('services.wadesk.marketing_number');
 
         if (! $baseUrl || ! $serviceKey || ! $marketingNumber) {

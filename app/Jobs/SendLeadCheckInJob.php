@@ -38,7 +38,7 @@ class SendLeadCheckInJob implements ShouldQueue
     public function handle(): void
     {
         $baseUrl = rtrim((string) config('services.wadesk.base_url'), '/');
-        $serviceKey = (string) config('services.wadesk.service_key');
+        $serviceKey = (string) config('services.wadesk.service_key_messaging');
         $marketingNumber = (string) config('services.wadesk.marketing_number');
         $templateName = (string) config('services.wadesk.lead_checkin_template_name');
 

@@ -19,7 +19,7 @@ beforeEach(function () {
 
     config([
         'services.wadesk.base_url' => 'https://wadesk.test',
-        'services.wadesk.service_key' => 'wadesk-secret',
+        'services.wadesk.service_key_messaging' => 'wadesk-secret',
     ]);
 
     $this->staff = User::factory()->create();
@@ -127,7 +127,7 @@ it('POSTs the reply body and conversation_id to wadesk.in with the service key',
 
 it('skips the HTTP call silently when wadesk config is not set', function () {
     Http::fake();
-    config(['services.wadesk.service_key' => null]);
+    config(['services.wadesk.service_key_messaging' => null]);
 
     $reply = TicketReply::factory()->create([
         'ticket_id' => $this->whatsappTicket->id,

@@ -74,7 +74,15 @@ return [
     // label + amount, e.g. "GBP Audit (₹120.00)".
     'wadesk' => [
         'base_url' => env('WADESK_API_URL', 'https://wadesk.in'),
-        'service_key' => env('WADESK_SERVICE_KEY'),
+        // Scoped per purpose (wadesk.in's own service-key.ts now checks each
+        // separately, falling back to the legacy WADESK_SERVICE_KEY during
+        // rollout) — a leaked key should only grant what that one purpose
+        // needs. messaging = send/send-template (real financial exposure);
+        // lead_sync = conversations/mute, leads/sync, leads/set-cover (lead
+        // ownership/routing mutation); read = media/ai-usage (read-only).
+        'service_key_messaging' => env('WADESK_SERVICE_KEY_MESSAGING'),
+        'service_key_lead_sync' => env('WADESK_SERVICE_KEY_LEAD_SYNC'),
+        'service_key_read' => env('WADESK_SERVICE_KEY_READ'),
         'support_number' => env('WADESK_SUPPORT_NUMBER'),
         'marketing_number' => env('WADESK_MARKETING_NUMBER'),
         'handoff_template_name' => env('WADESK_HANDOFF_TEMPLATE_NAME'),
@@ -241,9 +249,21 @@ return [
 
     // socialmediadost.com — AI content production studio.
     // The CRM provisions clients here when a deal is won.
+    // service_key: legacy, unscoped — still the ONLY key for the INBOUND
+    // direction (SMDost's own POST /api/webhooks/smdost/brief-approved,
+    // verified by VerifySmdostWebhookToken) and still accepted as a rollout
+    // fallback by SMDost's own inbound scope-check. Do not remove this one —
+    // only the 3 OUTBOUND (CRM→SMDost) call sites below have moved off it.
+    // The 3 below are scoped per purpose — a leaked key should only grant
+    // what that purpose needs. provisioning is kept separate deliberately:
+    // it's exactly the scope the 2026-09-18 botnet incident abused
+    // (POST /api/team minting arbitrary-role users).
     'smdost' => [
         'base_url' => env('SMDOST_API_URL', 'https://socialmediadost.com'),
         'service_key' => env('SMDOST_SERVICE_KEY'),
+        'service_key_provisioning' => env('SMDOST_SERVICE_KEY_PROVISIONING'),
+        'service_key_briefs' => env('SMDOST_SERVICE_KEY_BRIEFS'),
+        'service_key_read' => env('SMDOST_SERVICE_KEY_READ'),
     ],
 
     // eSSL biometric device ADMS push. BIOMETRIC_DEVICE_SERIAL must match the

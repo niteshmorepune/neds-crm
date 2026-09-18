@@ -230,7 +230,7 @@ it('409s when no report file has been uploaded yet, even with a held Gmeet', fun
 it('POSTs the report template with the report_token as buttonUrlParam', function () {
     config([
         'services.wadesk.base_url' => 'https://wadesk.test',
-        'services.wadesk.service_key' => 'wadesk-secret',
+        'services.wadesk.service_key_messaging' => 'wadesk-secret',
         'services.wadesk.marketing_number' => '919112095202',
         'services.wadesk.visibility_audit_report_template_name' => 'va_report',
     ]);
@@ -265,7 +265,7 @@ it('POSTs the report template with the report_token as buttonUrlParam', function
 it('skips the WhatsApp report send when no report file has been uploaded', function () {
     config([
         'services.wadesk.base_url' => 'https://wadesk.test',
-        'services.wadesk.service_key' => 'wadesk-secret',
+        'services.wadesk.service_key_messaging' => 'wadesk-secret',
         'services.wadesk.marketing_number' => '919112095202',
         'services.wadesk.visibility_audit_report_template_name' => 'va_report',
     ]);
@@ -282,7 +282,7 @@ it('skips the WhatsApp report send when no report file has been uploaded', funct
 it('logs a warning but does not throw when wadesk.in is unreachable for the report send', function () {
     config([
         'services.wadesk.base_url' => 'https://wadesk.test',
-        'services.wadesk.service_key' => 'wadesk-secret',
+        'services.wadesk.service_key_messaging' => 'wadesk-secret',
         'services.wadesk.marketing_number' => '919112095202',
         'services.wadesk.visibility_audit_report_template_name' => 'va_report',
     ]);

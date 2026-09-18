@@ -130,7 +130,7 @@ class AiUsageMetrics
      */
     public function smdostUsage(Carbon $from, Carbon $to): ?array
     {
-        return $this->fetchAppUsage('SMDost', 'services.smdost.base_url', 'services.smdost.service_key', $from, $to);
+        return $this->fetchAppUsage('SMDost', 'services.smdost.base_url', 'services.smdost.service_key_read', $from, $to);
     }
 
     /**
@@ -144,7 +144,7 @@ class AiUsageMetrics
      */
     public function wadeskUsage(Carbon $from, Carbon $to): ?array
     {
-        return $this->fetchAppUsage('Wadesk', 'services.wadesk.base_url', 'services.wadesk.service_key', $from, $to);
+        return $this->fetchAppUsage('Wadesk', 'services.wadesk.base_url', 'services.wadesk.service_key_read', $from, $to);
     }
 
     /**

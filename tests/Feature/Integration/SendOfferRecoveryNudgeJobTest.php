@@ -3,9 +3,11 @@
 use App\Enums\OfferFunnelEventType;
 use App\Enums\OfferPurchaseStatus;
 use App\Jobs\SendOfferRecoveryNudgeJob;
+use App\Models\CallLog;
 use App\Models\Lead;
 use App\Models\OfferFunnelEvent;
 use App\Models\OfferPurchase;
+use App\Models\User;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
@@ -13,7 +15,7 @@ use Illuminate\Support\Str;
 beforeEach(function () {
     config([
         'services.wadesk.base_url' => 'https://wadesk.test',
-        'services.wadesk.service_key' => 'wadesk-secret',
+        'services.wadesk.service_key_messaging' => 'wadesk-secret',
         'services.wadesk.marketing_number' => '919112095202',
         'services.wadesk.offer_recommendation_recovery_template_name' => 'offer_recommendation_recovery',
         'services.wadesk.offer_recovery_template_name' => 'offer_recovery',
@@ -116,7 +118,7 @@ it('skips sending when staff already engaged the lead by phone since the event',
 
     $lead = leadWithToken();
     $event = OfferFunnelEvent::create(['event_type' => OfferFunnelEventType::OfferViewed, 'lead_id' => $lead->id]);
-    \App\Models\CallLog::factory()->create([
+    CallLog::factory()->create([
         'callable_type' => Lead::class,
         'callable_id' => $lead->id,
         'called_at' => now(),
@@ -134,7 +136,7 @@ it('skips sending when staff already left a plain note on the lead since the eve
     $lead = leadWithToken();
     $event = OfferFunnelEvent::create(['event_type' => OfferFunnelEventType::OfferViewed, 'lead_id' => $lead->id]);
     $lead->notes()->create([
-        'user_id' => \App\Models\User::factory()->create()->id,
+        'user_id' => User::factory()->create()->id,
         'body' => 'I informed the client that the proposal is ready and scheduled a call at 2 PM.',
     ]);
 

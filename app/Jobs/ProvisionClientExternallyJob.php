@@ -150,7 +150,7 @@ class ProvisionClientExternallyJob implements ShouldQueue
     private function provisionSmdost(Customer $customer, $contact, $service, ?string $drishtiId): ?string
     {
         $baseUrl = rtrim(config('services.smdost.base_url'), '/');
-        $serviceKey = config('services.smdost.service_key');
+        $serviceKey = config('services.smdost.service_key_provisioning');
 
         if (! $baseUrl || ! $serviceKey) {
             return null;

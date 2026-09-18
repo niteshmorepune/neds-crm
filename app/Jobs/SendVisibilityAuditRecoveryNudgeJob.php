@@ -55,7 +55,7 @@ class SendVisibilityAuditRecoveryNudgeJob implements ShouldQueue
             : 'services.wadesk.visibility_audit_recovery_checkout_template_name');
 
         $baseUrl = rtrim((string) config('services.wadesk.base_url'), '/');
-        $serviceKey = (string) config('services.wadesk.service_key');
+        $serviceKey = (string) config('services.wadesk.service_key_messaging');
         $marketingNumber = (string) config('services.wadesk.marketing_number');
 
         if (! $baseUrl || ! $serviceKey || ! $marketingNumber || ! $templateName) {
