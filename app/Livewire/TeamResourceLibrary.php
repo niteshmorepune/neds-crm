@@ -21,6 +21,8 @@ class TeamResourceLibrary extends Component
 {
     use WithFileUploads;
 
+    private const ALLOWED_MIMES = 'jpg,jpeg,png,gif,webp,pdf,doc,docx,xls,xlsx,txt,csv,zip';
+
     public ?int $editingId = null;
 
     public bool $showForm = false;
@@ -70,7 +72,7 @@ class TeamResourceLibrary extends Component
             $this->authorize('create', TeamResource::class);
 
             $validated = $this->validate($this->metadataRules() + [
-                'file' => ['required', 'file', 'max:20480'],
+                'file' => ['required', 'file', 'max:20480', 'mimes:'.self::ALLOWED_MIMES],
             ]);
 
             $path = $this->file->store('team-resources', 'local');
