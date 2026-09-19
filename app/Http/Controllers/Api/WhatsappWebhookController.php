@@ -21,6 +21,7 @@ use App\Models\VisibilityAuditTouch;
 use App\Models\WadeskMessageLog;
 use App\Notifications\LeadRestoredByIncomingMessageNotification;
 use App\Notifications\MergedLeadMessagedNotification;
+use App\Notifications\PossibleClientMessageNotification;
 use App\Services\VisibilityAuditFunnelMetrics;
 use App\Support\Phone;
 use Illuminate\Database\QueryException;
@@ -272,6 +273,17 @@ class WhatsappWebhookController extends Controller
      * below resolves it directly — the trashed-lead branch only exists for
      * an already-stranded conversation from before that mapping existed, or
      * a genuinely incidental delete.
+     *
+     * One more check runs right before Lead::create() below, once every
+     * phone/conversation/lead match above has failed: Customer::
+     * findMentionedInText() — the message text (or a document's filename)
+     * might still plausibly name an existing Client even though the NUMBER
+     * doesn't match anything (real incident 2026-09-19, Exim
+     * Internationals — see that method's own docblock). When it matches,
+     * this returns recordPossibleClientMessage()'s response instead of ever
+     * reaching Lead::create(), so no stray Lead is created at all and
+     * wadesk.in's own goal-question flow (which only fires for a phone the
+     * CRM already recognises as an open Lead) never fires either.
      */
     private function handleUnmatchedNumber(array $data, string $direction, string $senderType): JsonResponse
     {
@@ -312,6 +324,14 @@ class WhatsappWebhookController extends Controller
             $this->recordLeadMessage($lead, $data, $direction, $senderType);
 
             return response()->json(['status' => 'lead_note_added', 'lead_id' => $lead->id, 'restored' => $restored]);
+        }
+
+        $possibleClient = filled($data['message'] ?? null)
+            ? Customer::findMentionedInText($data['message'])
+            : null;
+
+        if ($possibleClient !== null) {
+            return $this->recordPossibleClientMessage($possibleClient, $data, $direction, $senderType);
         }
 
         $relayFields = $this->extractRelayFormFields($data['message'] ?? '');
@@ -571,6 +591,54 @@ class WhatsappWebhookController extends Controller
         ]);
 
         return response()->json(['status' => 'customer_note_added', 'customer_id' => $customer->id]);
+    }
+
+    /**
+     * The phone matches no Customer at all (findCustomer() above already
+     * failed) and no open Lead either — but the message text/filename
+     * plausibly names one anyway (Customer::findMentionedInText(), called
+     * from handleUnmatchedNumber() before Lead::create()). Logged to that
+     * Customer's own timeline instead of becoming a brand-new Lead, with a
+     * header flagging this as an unverified CONTENT match — unlike
+     * recordCustomerMessage() above (a certain phone match), this needs a
+     * human to confirm, so staff are notified the same way as the other
+     * held-for-review branches in this controller
+     * (restoreIfTrashed()/recordMessageOnMergedAwayLead()).
+     */
+    private function recordPossibleClientMessage(Customer $customer, array $data, string $direction, string $senderType): JsonResponse
+    {
+        if (blank($data['message'] ?? null)) {
+            return response()->json(['status' => 'ignored', 'reason' => 'no_message_body']);
+        }
+
+        $header = "[WhatsApp from an unrecognized number ({$data['phone']}) — message text suggests this may be {$customer->company_name}, held here for review rather than filed as a new Lead]";
+
+        $customer->notes()->create([
+            'user_id' => null,
+            'body' => $header."\n".$this->noteBody($data['message'], $direction, $senderType, $data['sender_name'] ?? null),
+        ]);
+
+        $this->notifyPossibleClientMessage($customer, $data['phone']);
+
+        return response()->json(['status' => 'possible_client_message_held', 'customer_id' => $customer->id]);
+    }
+
+    /**
+     * Best-effort, same reasoning as flagPossibleDuplicate()/notifyLeadRestored()
+     * above — a notification failure must never break the core webhook flow.
+     */
+    private function notifyPossibleClientMessage(Customer $customer, string $phone): void
+    {
+        try {
+            $notification = new PossibleClientMessageNotification($customer, $phone);
+
+            User::where('is_active', true)
+                ->whereIn('role', [UserRole::Admin->value, UserRole::Manager->value])
+                ->get()
+                ->each(fn (User $user) => $user->notify($notification));
+        } catch (Throwable $e) {
+            Log::warning('PossibleClientMessageNotification failed for customer '.$customer->id.': '.$e->getMessage());
+        }
     }
 
     /**
