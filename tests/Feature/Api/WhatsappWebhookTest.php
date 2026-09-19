@@ -18,6 +18,7 @@ use App\Models\User;
 use App\Models\VisibilityAuditTouch;
 use App\Notifications\LeadRestoredByIncomingMessageNotification;
 use App\Notifications\MergedLeadMessagedNotification;
+use App\Notifications\PossibleClientMessageNotification;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Notification;
 
@@ -143,6 +144,95 @@ it('falls back to a generic name when contact_name is missing', function () {
 
     expect(Lead::where('whatsapp_conversation_id', 'conv_no_name')->first()->name)
         ->toBe('WhatsApp Inquiry');
+});
+
+it('holds a message on the existing Client\'s timeline instead of creating a Lead, when the phone matches nothing but the message text names an existing Client', function () {
+    // Real incident, 2026-09-19: a contact at Exim Internationals messaged
+    // from a personal number never on file and sent a PDF whose filename
+    // (wadesk.in sends the filename as the message body when there's no
+    // caption) literally named the client.
+    $customer = Customer::factory()->create(['company_name' => 'Exim Internationals', 'phone' => '9820446601']);
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '917744939530',
+        'contact_name' => 'Sohammmmm',
+        'message' => 'Exim_Internationals_Website_Changes_Improvements.pdf',
+        'conversation_id' => 'conv_possible_client',
+    ], ['Authorization' => 'Bearer test-wa-token'])
+        ->assertOk()
+        ->assertJson(['status' => 'possible_client_message_held', 'customer_id' => $customer->id]);
+
+    expect(Lead::where('whatsapp_conversation_id', 'conv_possible_client')->exists())->toBeFalse()
+        ->and(Lead::count())->toBe(0)
+        ->and($customer->notes()->count())->toBe(1)
+        ->and($customer->notes()->first()->body)
+        ->toContain('917744939530')
+        ->toContain('Exim Internationals')
+        ->toContain('Exim_Internationals_Website_Changes_Improvements.pdf');
+});
+
+it('matches a Client name mentioned in ordinary free-text, not just a filename', function () {
+    $customer = Customer::factory()->create(['company_name' => 'Raut Agro Exim Enterprises']);
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '917744939530',
+        'message' => 'Hi, I am calling on behalf of Raut Agro Exim Enterprises regarding our website.',
+        'conversation_id' => 'conv_possible_client_freetext',
+    ], ['Authorization' => 'Bearer test-wa-token'])
+        ->assertJson(['status' => 'possible_client_message_held', 'customer_id' => $customer->id]);
+
+    expect(Lead::count())->toBe(0);
+});
+
+it('does not match on a short/generic Client name — creates a genuine new Lead instead', function () {
+    // A client literally named something this short/common would otherwise
+    // match almost any message — the length floor in
+    // Customer::findMentionedInText() exists specifically for this.
+    Customer::factory()->create(['company_name' => 'SEO']);
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '919999999999',
+        'message' => 'Hi, I need help with SEO for my new business',
+        'conversation_id' => 'conv_short_name_no_match',
+    ], ['Authorization' => 'Bearer test-wa-token'])
+        ->assertJson(['status' => 'lead_created']);
+
+    expect(Lead::where('whatsapp_conversation_id', 'conv_short_name_no_match')->exists())->toBeTrue();
+});
+
+it('does not hold for review when the message text does not mention any existing Client', function () {
+    Customer::factory()->create(['company_name' => 'Exim Internationals']);
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '919999999999',
+        'message' => 'Hi, interested in your services',
+        'conversation_id' => 'conv_no_client_mentioned',
+    ], ['Authorization' => 'Bearer test-wa-token'])
+        ->assertJson(['status' => 'lead_created']);
+});
+
+it('notifies active Admin/Manager when a message is held for a possible existing-Client match', function () {
+    Notification::fake();
+    $admin = User::factory()->create(['role' => UserRole::Admin, 'is_active' => true]);
+    $manager = User::factory()->create(['role' => UserRole::Manager, 'is_active' => true]);
+    $inactiveAdmin = User::factory()->create(['role' => UserRole::Admin, 'is_active' => false]);
+    $sales = User::factory()->create(['role' => UserRole::Sales, 'is_active' => true]);
+    $customer = Customer::factory()->create(['company_name' => 'Exim Internationals']);
+
+    $this->postJson('/api/webhook/whatsapp', [
+        'phone' => '917744939530',
+        'message' => 'Exim_Internationals_Website_Changes_Improvements.pdf',
+        'conversation_id' => 'conv_possible_client_notify',
+    ], ['Authorization' => 'Bearer test-wa-token'])->assertOk();
+
+    Notification::assertSentTo(
+        $admin,
+        PossibleClientMessageNotification::class,
+        fn ($n) => $n->customer->is($customer) && $n->phone === '917744939530',
+    );
+    Notification::assertSentTo($manager, PossibleClientMessageNotification::class);
+    Notification::assertNotSentTo($inactiveAdmin, PossibleClientMessageNotification::class);
+    Notification::assertNotSentTo($sales, PossibleClientMessageNotification::class);
 });
 
 it('parses Meta\'s click-to-WhatsApp relay message into a real name/phone/email/company instead of a generic placeholder', function () {

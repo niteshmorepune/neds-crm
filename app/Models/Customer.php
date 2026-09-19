@@ -139,6 +139,56 @@ class Customer extends Model
         return $customer ?? Contact::where('phone', 'LIKE', '%'.$last10)->first()?->customer;
     }
 
+    /**
+     * Best-effort CONTENT match, not a phone match — used when a WhatsApp
+     * message's number matches no Customer at all (findByPhone() above
+     * already failed), but the message text (or, for a document, its
+     * filename — wadesk.in sends that as the message body when there's no
+     * caption) plausibly names one anyway. Real incident, 2026-09-19: a
+     * contact at Exim Internationals (existing client, active SEO + AMC)
+     * messaged from a personal number never on file and sent a PDF named
+     * "Exim_Internationals_Website_Changes_Improvements.pdf" — with no
+     * content check at all, that got filed as a brand-new Lead and fired
+     * the generic "what's your biggest goal?" qualifying question instead
+     * of routing to the client. See
+     * WhatsappWebhookController::handleUnmatchedNumber().
+     *
+     * Deliberately conservative: requires the FULL, normalized company name
+     * to appear as a substring of the normalized message text — not just
+     * one word of it — and skips names too short to be a meaningful signal
+     * (a client literally named "SEO" would match almost any message).
+     * This is only a "maybe, ask a human" signal, never treated as certain
+     * the way findByPhone() is — the caller logs it to the Customer's
+     * timeline and notifies staff rather than silently attaching the
+     * conversation as if it were a confirmed match.
+     */
+    public static function findMentionedInText(string $text): ?self
+    {
+        $normalizedText = static::normalizeForNameMatch($text);
+
+        if ($normalizedText === '') {
+            return null;
+        }
+
+        return static::query()
+            ->get(['id', 'company_name'])
+            ->first(function (self $customer) use ($normalizedText) {
+                $normalizedName = static::normalizeForNameMatch($customer->company_name);
+
+                return mb_strlen($normalizedName) >= 6 && str_contains($normalizedText, $normalizedName);
+            });
+    }
+
+    /** Lowercase, underscores/hyphens/dots to spaces, collapsed whitespace — just enough to compare a filename-shaped string against a plain company name. */
+    private static function normalizeForNameMatch(string $value): string
+    {
+        $value = mb_strtolower($value);
+        $value = preg_replace('/[_\-.]+/', ' ', $value) ?? $value;
+        $value = preg_replace('/\s+/', ' ', $value) ?? $value;
+
+        return trim($value);
+    }
+
     public function primaryContact(): HasOne
     {
         return $this->hasOne(Contact::class)->where('is_primary', true);
