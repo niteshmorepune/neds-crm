@@ -1368,6 +1368,118 @@ See `CLAUDE.md` for the current spec and the most recent decisions (2026-09-16 o
   local MySQL. `docs/user-guides/manager.md` updated (new Services-tab
   paragraphs), only `manager.pdf` regenerated (rest discarded per the
   established `npm run handouts` gotcha).
+- **2026-08-26 — Two real bugs reported via screenshot, both fixed same
+  session: the active sidebar item could be scrolled off-screen with no
+  way to find it, and the Project Updates grouped views silently stayed
+  scoped to "My Services."** Owner's own words: had to scroll down again
+  every time just to see where they were in the sidebar, since it now has
+  ~30 items across 6 groups; separately, clicking **My Services** (an
+  admin who owns no projects, correctly empty) then **Client-wise**
+  showed **no clients** — not a data bug, both buttons stayed lit purple
+  at once.
+  **Sidebar** (`resources/views/layouts/sidebar.blade.php`): the current
+  page's own link now gets `data-active-menu-item`, and a small script
+  (`@push('scripts')`, runs once on load) calls `scrollIntoView({block:
+  'center'})` on whichever copy is actually laid out (desktop `<aside>`
+  vs. the mobile overlay, checked via `offsetParent !== null`). Separately
+  — and this was a real latent bug of its own, not just the reported
+  complaint — a group the user had manually collapsed could hide the
+  active item entirely with zero visual trace of "where am I"; the
+  group's own `x-data="{ open: ... }"` now checks
+  `$itemsInGroup->contains(...activePatterns())` first and forces `open:
+  true` when the current page lives in that group, overriding (never
+  persisting over) the stored collapse state for just that one page load.
+  Deliberately did NOT force-collapse every OTHER group by default — that
+  would silently override every user's own manually-chosen layout, a
+  bigger behavior change than what was reported or asked for.
+  **Project Updates** (`resources/views/projects/index.blade.php`): the
+  Client-wise/Employee-wise/Service-wise links previously did
+  `'mine' => $mine ?: null`, carrying the current My-Services scope
+  forward — so switching from an empty My-Services view into any grouped
+  view stayed silently scoped to "my own projects" (still empty) instead
+  of resetting to a fresh, full grouped view. `mine` and `group` had never
+  been a deliberately composable combination the UI exposed cleanly (My
+  Services itself has no grouping option shown), so removing the carry-
+  forward — making each button a clean, independent view switch — matches
+  what clicking a different filter button reasonably means, and fixes
+  both the empty-results bug and the two-buttons-lit-at-once confusion in
+  one change (`ProjectController::index()`'s server-side `$mine`/`$group`
+  handling was already correct; this was purely a frontend href bug).
+  **Real Blade gotcha hit a third time, same session it was written
+  down** (see [[feedback-gotchas]]): adding the new group-active `@php`
+  block shifted the sidebar's nesting just enough to tip over a
+  *pre-existing* inline `@php($active = ...)` two lines below it that had
+  apparently been safe at the old nesting depth — caught immediately from
+  the now-documented symptom (`storage/framework/views/*.php` full of
+  literal, uncompiled `@if`/`@foreach` text) rather than chasing the
+  reported "unexpected end of file" location, which pointed nowhere near
+  the real cause.
+  2 new Pest tests (sidebar force-open + scroll-script presence) + 1 new
+  Pest test (group links never carry `mine=1`), full suite 2378 green —
+  same 2 pre-existing unrelated flakes as before, plus one newly-noticed
+  one (`EmployeeActivityTimelineTest`'s "sorts entries most recent first"
+  — a `now()->subHours(3)` fixture that crosses the UTC midnight boundary
+  when run between 00:00–03:00 UTC, same class of bug as the other
+  documented time-window flakes, not caused by this change). Pint clean.
+  No new Tailwind classes, no `npm run build` needed this time.
+- **2026-08-26 (same day) — Two more owner-reported UI fixes: the Clients
+  page toolbar was three stacked rows before any data showed, and the
+  sidebar's own accordion fix from earlier the same day turned out to be
+  incomplete — it force-opened the active page's group but left every
+  OTHER previously-opened group open too, and the scroll-into-view script
+  scrolled the whole page (not just the sidebar) because `<aside>` was
+  never actually an independent scroll container.**
+  **Clients toolbar** (`resources/views/clients/index.blade.php`,
+  `02fc390`): search + Import CSV/Add Client on row 1, all 5 filter
+  selects + sort auto-applying on `onchange` on row 2 (no separate Filter
+  button), a "Clear filters" link that only appears once something other
+  than the default Active-status view is active. Presented 3 layout
+  options via AskUserQuestion (two clean auto-apply rows / one row with a
+  Filters popover / one row with only Status+Owner visible) — owner picked
+  the two-row auto-apply option as least dev work while keeping every
+  filter one click away.
+  **Sidebar accordion, take 2** (`resources/views/layouts/sidebar.blade.php`,
+  `731cd51`): owner's own screenshots showed the actual failure —
+  navigating to Project Updates landed the page scrolled down to the
+  pagination row of a 59-result table, with both "Delivery & Support" AND
+  a leftover "Team & Insights" both expanded in the sidebar. Root cause:
+  `<aside>` only had `min-h-screen`, so on a page taller than the
+  viewport it grew to match its very tall sibling (the main content
+  column) instead of clipping — there was no real internal scroll
+  container, so the scroll-into-view script's target search walked up to
+  the nearest ACTUAL scrollable ancestor, which was the whole `<html>`/
+  `<body>`, and scrolled the entire window. Fixed properly this time:
+  dropped `localStorage` group-open persistence entirely (every
+  navigation in this app is a real full-page load, never an SPA
+  transition, so there's no reason a previous page's manual toggling
+  should carry over) — exactly one group, the one containing the current
+  page, opens on every fresh load, everything else starts collapsed, full
+  stop. Removed the scroll-into-view script outright rather than trying
+  to re-scope it — with an accordion sidebar (~10 items open at once,
+  max), the active item is essentially always visible without scrolling
+  anyway. `<aside>` is now `sticky top-0 h-screen` so it's a genuinely
+  independent scroll column regardless, defense-in-depth against this
+  exact bug class recurring from some future sidebar interaction.
+  **Also split the 15-item Team & Insights group** (owner: "any main menu
+  not having more than 10 menus in it") into **Team & Insights** (8 —
+  Action Center, Approval Center, Project Health, Revenue at Risk, Client
+  Radar, VA Funnel Analytics, Employee 360°, Team Targets — the
+  monitoring/scoring dashboards) and a new **Team Tools** (7 — Team
+  Workload, Manager Calendar, Daily Reports, Best Employee, Partners,
+  Notice Board, Team Nudges — day-to-day team-management utilities). New
+  `App\Enums\MenuGroup::TeamTools` case; `MenuItemsSeeder`'s
+  `updateOrCreate` matches by `key` (unchanged for all 15 rows), so
+  re-seeding only updates the `group` column in place — no orphaned pivot
+  rows, matching the same precedent the 2026-08-12 sidebar-grouping work
+  already established.
+  4 new/rewritten Pest tests (accordion collapses every other group —
+  counts `open: true` occurring exactly twice, once per desktop/mobile
+  copy of the active page's group; the group split renders both new
+  labels), full suite 2380 green (same one pre-existing unrelated
+  `MeetingRequestTest` flake). Pint clean. `npm run build` run (new
+  `md:sticky`/`md:h-screen` utilities), `php artisan db:seed
+  --class=MenuItemsSeeder --force` re-run locally to apply the group
+  split.
 
 ## Decisions log (archived: 2026-09-03 through 2026-09-13)
 

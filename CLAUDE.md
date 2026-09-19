@@ -136,120 +136,8 @@ is the word the team uses.
 
 ## Decisions log
 Record every "we chose X because Y" here — this is the project's memory.
-Older entries (2026-06-10 through 2026-09-13) moved to `docs/decisions-log-archive.md` to keep this file under the context size limit — same format, nothing summarized or dropped. Recent entries continue below.
+Older entries (2026-06-10 through 2026-08-26) moved to `docs/decisions-log-archive.md` to keep this file under the context size limit — same format, nothing summarized or dropped. Recent entries continue below.
 
-- **2026-08-26 — Two real bugs reported via screenshot, both fixed same
-  session: the active sidebar item could be scrolled off-screen with no
-  way to find it, and the Project Updates grouped views silently stayed
-  scoped to "My Services."** Owner's own words: had to scroll down again
-  every time just to see where they were in the sidebar, since it now has
-  ~30 items across 6 groups; separately, clicking **My Services** (an
-  admin who owns no projects, correctly empty) then **Client-wise**
-  showed **no clients** — not a data bug, both buttons stayed lit purple
-  at once.
-  **Sidebar** (`resources/views/layouts/sidebar.blade.php`): the current
-  page's own link now gets `data-active-menu-item`, and a small script
-  (`@push('scripts')`, runs once on load) calls `scrollIntoView({block:
-  'center'})` on whichever copy is actually laid out (desktop `<aside>`
-  vs. the mobile overlay, checked via `offsetParent !== null`). Separately
-  — and this was a real latent bug of its own, not just the reported
-  complaint — a group the user had manually collapsed could hide the
-  active item entirely with zero visual trace of "where am I"; the
-  group's own `x-data="{ open: ... }"` now checks
-  `$itemsInGroup->contains(...activePatterns())` first and forces `open:
-  true` when the current page lives in that group, overriding (never
-  persisting over) the stored collapse state for just that one page load.
-  Deliberately did NOT force-collapse every OTHER group by default — that
-  would silently override every user's own manually-chosen layout, a
-  bigger behavior change than what was reported or asked for.
-  **Project Updates** (`resources/views/projects/index.blade.php`): the
-  Client-wise/Employee-wise/Service-wise links previously did
-  `'mine' => $mine ?: null`, carrying the current My-Services scope
-  forward — so switching from an empty My-Services view into any grouped
-  view stayed silently scoped to "my own projects" (still empty) instead
-  of resetting to a fresh, full grouped view. `mine` and `group` had never
-  been a deliberately composable combination the UI exposed cleanly (My
-  Services itself has no grouping option shown), so removing the carry-
-  forward — making each button a clean, independent view switch — matches
-  what clicking a different filter button reasonably means, and fixes
-  both the empty-results bug and the two-buttons-lit-at-once confusion in
-  one change (`ProjectController::index()`'s server-side `$mine`/`$group`
-  handling was already correct; this was purely a frontend href bug).
-  **Real Blade gotcha hit a third time, same session it was written
-  down** (see [[feedback-gotchas]]): adding the new group-active `@php`
-  block shifted the sidebar's nesting just enough to tip over a
-  *pre-existing* inline `@php($active = ...)` two lines below it that had
-  apparently been safe at the old nesting depth — caught immediately from
-  the now-documented symptom (`storage/framework/views/*.php` full of
-  literal, uncompiled `@if`/`@foreach` text) rather than chasing the
-  reported "unexpected end of file" location, which pointed nowhere near
-  the real cause.
-  2 new Pest tests (sidebar force-open + scroll-script presence) + 1 new
-  Pest test (group links never carry `mine=1`), full suite 2378 green —
-  same 2 pre-existing unrelated flakes as before, plus one newly-noticed
-  one (`EmployeeActivityTimelineTest`'s "sorts entries most recent first"
-  — a `now()->subHours(3)` fixture that crosses the UTC midnight boundary
-  when run between 00:00–03:00 UTC, same class of bug as the other
-  documented time-window flakes, not caused by this change). Pint clean.
-  No new Tailwind classes, no `npm run build` needed this time.
-- **2026-08-26 (same day) — Two more owner-reported UI fixes: the Clients
-  page toolbar was three stacked rows before any data showed, and the
-  sidebar's own accordion fix from earlier the same day turned out to be
-  incomplete — it force-opened the active page's group but left every
-  OTHER previously-opened group open too, and the scroll-into-view script
-  scrolled the whole page (not just the sidebar) because `<aside>` was
-  never actually an independent scroll container.**
-  **Clients toolbar** (`resources/views/clients/index.blade.php`,
-  `02fc390`): search + Import CSV/Add Client on row 1, all 5 filter
-  selects + sort auto-applying on `onchange` on row 2 (no separate Filter
-  button), a "Clear filters" link that only appears once something other
-  than the default Active-status view is active. Presented 3 layout
-  options via AskUserQuestion (two clean auto-apply rows / one row with a
-  Filters popover / one row with only Status+Owner visible) — owner picked
-  the two-row auto-apply option as least dev work while keeping every
-  filter one click away.
-  **Sidebar accordion, take 2** (`resources/views/layouts/sidebar.blade.php`,
-  `731cd51`): owner's own screenshots showed the actual failure —
-  navigating to Project Updates landed the page scrolled down to the
-  pagination row of a 59-result table, with both "Delivery & Support" AND
-  a leftover "Team & Insights" both expanded in the sidebar. Root cause:
-  `<aside>` only had `min-h-screen`, so on a page taller than the
-  viewport it grew to match its very tall sibling (the main content
-  column) instead of clipping — there was no real internal scroll
-  container, so the scroll-into-view script's target search walked up to
-  the nearest ACTUAL scrollable ancestor, which was the whole `<html>`/
-  `<body>`, and scrolled the entire window. Fixed properly this time:
-  dropped `localStorage` group-open persistence entirely (every
-  navigation in this app is a real full-page load, never an SPA
-  transition, so there's no reason a previous page's manual toggling
-  should carry over) — exactly one group, the one containing the current
-  page, opens on every fresh load, everything else starts collapsed, full
-  stop. Removed the scroll-into-view script outright rather than trying
-  to re-scope it — with an accordion sidebar (~10 items open at once,
-  max), the active item is essentially always visible without scrolling
-  anyway. `<aside>` is now `sticky top-0 h-screen` so it's a genuinely
-  independent scroll column regardless, defense-in-depth against this
-  exact bug class recurring from some future sidebar interaction.
-  **Also split the 15-item Team & Insights group** (owner: "any main menu
-  not having more than 10 menus in it") into **Team & Insights** (8 —
-  Action Center, Approval Center, Project Health, Revenue at Risk, Client
-  Radar, VA Funnel Analytics, Employee 360°, Team Targets — the
-  monitoring/scoring dashboards) and a new **Team Tools** (7 — Team
-  Workload, Manager Calendar, Daily Reports, Best Employee, Partners,
-  Notice Board, Team Nudges — day-to-day team-management utilities). New
-  `App\Enums\MenuGroup::TeamTools` case; `MenuItemsSeeder`'s
-  `updateOrCreate` matches by `key` (unchanged for all 15 rows), so
-  re-seeding only updates the `group` column in place — no orphaned pivot
-  rows, matching the same precedent the 2026-08-12 sidebar-grouping work
-  already established.
-  4 new/rewritten Pest tests (accordion collapses every other group —
-  counts `open: true` occurring exactly twice, once per desktop/mobile
-  copy of the active page's group; the group split renders both new
-  labels), full suite 2380 green (same one pre-existing unrelated
-  `MeetingRequestTest` flake). Pint clean. `npm run build` run (new
-  `md:sticky`/`md:h-screen` utilities), `php artisan db:seed
-  --class=MenuItemsSeeder --force` re-run locally to apply the group
-  split.
 - **2026-09-16 (same day) — Real gap closed: `MergeLeadsRequest::
   MERGEABLE_FIELDS` (9 rep-pickable fields) never offered a choice on 49 of
   the `leads` table's other 58 columns, and nothing else carried them over
@@ -892,3 +780,57 @@ Older entries (2026-06-10 through 2026-09-13) moved to `docs/decisions-log-archi
   wadesk.in change). wadesk.in's own deploy needs the owner's usual
   `git pull && docker compose up -d --build` (no SSH access to that VPS
   from this session).
+- **2026-09-19 — Real incident, owner-reported via a wadesk.in inbox
+  screenshot: a contact at Exim Internationals (existing client, active
+  SEO + AMC) messaged the WhatsApp support line from a personal number
+  never on file and sent a PDF named
+  `Exim_Internationals_Website_Changes_Improvements.pdf`. With no way to
+  recognise the number, the CRM filed it as a brand-new Lead (#452) and
+  wadesk.in's own after-hours AI fired the generic "what's your biggest
+  goal right now?" qualifying question at an existing client — owner:
+  "the message from AI is not relevant," then "it is added as lead on
+  the CRM too, which is again not correct."** Root-caused before fixing:
+  wadesk.in's goal-question flow (`maybeRunGoalFlow()`) only ever fires
+  for a phone the CRM already recognises as an open Lead
+  (`getCrmLeadContext()` → `Lead::findOpenByPhone()`) — so the irrelevant
+  AI reply was a downstream SYMPTOM, not the root cause; the Lead getting
+  created in the first place (`WhatsappWebhookController::
+  handleUnmatchedNumber()`) was. Confirmed via AskUserQuestion before
+  building: fix belongs on the CRM side, at Lead-creation time, not as a
+  wadesk.in-side reply suppression that would leave the stray-Lead
+  problem recurring on every future case.
+  **Immediate cleanup** (production, via the app's own UI, not raw SQL):
+  added Sohamm (917744939530) as a new contact under Exim Internationals
+  (client #138), logged a note there explaining the merge, and closed
+  Lead #452 as Lost with a note pointing back to the client — confirmed
+  the AI Next Action job (`AnalyzeLeadNextAction`, 2026-09-18 entry above)
+  correctly re-analyzed the closed lead as "Existing client contact
+  misclassified as lead; close as duplicate/misfile" afterward.
+  **Systemic fix**: new `Customer::findMentionedInText()` — checks the
+  message text (or, for a document, its filename; wadesk.in sends that as
+  the message body when there's no caption) for a FULL, normalized match
+  against an existing Client's company name, called from
+  `handleUnmatchedNumber()` right before `Lead::create()`. Deliberately
+  conservative: requires the whole normalized name as a substring (not
+  just one word), with a minimum length floor, so a short/generic client
+  name (e.g. "SEO") can't match almost anything — this is a "maybe, ask a
+  human" signal, never treated as certain the way the existing
+  phone-based `findByPhone()` check is (2026-09-03 entry, archived). On a
+  match, the message is logged to that Client's own timeline instead
+  (`recordPossibleClientMessage()`) and Admin/Manager are notified
+  (`PossibleClientMessageNotification`) to confirm or correct it. No Lead
+  created on a match means wadesk.in's goal-flow naturally never fires
+  either — one CRM-side fix closes both the stray-Lead problem and the
+  irrelevant-AI-reply problem, no wadesk.in change needed.
+  6 new Pest tests in `WhatsappWebhookTest.php` (filename match, free-text
+  match, short-name-no-match, no-mention-no-match, Admin/Manager
+  notification sent/not-sent by role+active), full `tests/Feature/Clients`
+  + `tests/Feature/Leads` + `tests/Feature/Api` suites re-run: 767 passed,
+  no regressions. Pint clean. No migration. PR #212 merged (`a6db806`) and
+  deployed via the standard SSH `git pull` — no migration needed, config/
+  route/view caches rebuilt, verified live (`/login` redirects to a
+  working dashboard, `git log` on the server matches the merge commit).
+  See [[whatsapp-lead-goal-reask-and-duplicates]] for the 2026-09-18
+  precedent this follows (a different root cause — two phone numbers per
+  Meta lead — but the same "fix wadesk.in's symptom vs. the CRM's root
+  cause" judgment call).
