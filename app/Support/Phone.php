@@ -25,4 +25,31 @@ class Phone
 
         return strlen($digits) >= 10 ? substr($digits, -10) : $digits;
     }
+
+    /**
+     * Digits worth phone-searching a list/search-box query on, or null when
+     * the term doesn't contain enough digits to plausibly be a phone-number
+     * search — avoids a stray digit inside an otherwise-text query (e.g. a
+     * street address in a company name) matching unrelated numbers.
+     */
+    public static function searchDigits(string $search): ?string
+    {
+        $digits = self::digits($search);
+
+        return strlen($digits) >= 4 ? $digits : null;
+    }
+
+    /**
+     * SQL expression stripping common phone-formatting characters (space,
+     * +, -, parentheses) from $column, for a normalized LIKE match against
+     * searchDigits(). Stored phone numbers in this app are inconsistently
+     * formatted (e.g. "+91 98765 43210" vs a plain 10-digit string) — a
+     * plain `LIKE` against the raw column misses most real searches typed
+     * as bare digits. $column is always a hardcoded column name from this
+     * codebase, never user input.
+     */
+    public static function normalizedSql(string $column): string
+    {
+        return "REPLACE(REPLACE(REPLACE(REPLACE(REPLACE({$column}, ' ', ''), '-', ''), '+', ''), '(', ''), ')', '')";
+    }
 }

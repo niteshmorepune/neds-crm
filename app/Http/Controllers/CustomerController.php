@@ -16,6 +16,7 @@ use App\Models\User;
 use App\Services\ClientHealthMetrics;
 use App\Services\CollectionsMetrics;
 use App\Support\Money;
+use App\Support\Phone;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -337,6 +338,11 @@ class CustomerController extends Controller
                     $q->where('company_name', 'like', "%{$search}%")
                         ->orWhere('email', 'like', "%{$search}%")
                         ->orWhere('gstin', 'like', "%{$search}%");
+
+                    if (($digits = Phone::searchDigits($search)) !== null) {
+                        $q->orWhereRaw(Phone::normalizedSql('phone').' LIKE ?', ["%{$digits}%"])
+                            ->orWhereRaw(Phone::normalizedSql('alternate_phone').' LIKE ?', ["%{$digits}%"]);
+                    }
                 });
             })
             ->when($statusFilter !== 'all', fn ($q) => $q->where('status', $statusFilter))
