@@ -838,6 +838,26 @@ least loaded that week.
   lead itself, or **Reassign All** below — see the Sales guide for the
   single-lead action.
 
+## 16a-i. Force Lead Assignment — routing every new lead to one rep
+For a temporary, unconditional override (e.g. one rep covering while others
+are out, or deliberately concentrating leads on one person for a while),
+**Force Lead Assignment** (Admin/Manager, sidebar under Admin & Config) is a
+plain company-wide on/off switch, separate from the campaign/service-scoped
+Lead Assignment Rules above.
+
+- When **on**, it forces the owner of **every new lead, unconditionally** to
+  the rep you choose — ahead of any Lead Assignment Rule and the normal
+  least-loaded round-robin. There's no exception list; it applies regardless
+  of campaign, service, or source.
+- Only affects leads created while it's on — leads already assigned keep
+  their current owner.
+- If the chosen rep is later deactivated or moved off Sales while the switch
+  is still on, it stops applying and new leads fall back to the normal
+  rule/round-robin behavior — it doesn't error or assign to someone
+  ineligible.
+- Turn it back off ("Turn off — resume normal assignment") to return to Lead
+  Assignment Rules + least-loaded round-robin as usual.
+
 ## 16b. Lead Generation productivity — priority sort, Needs Attention, speed-to-lead
 Lead Generation (2026-08-13) got a pass aimed at helping Sales/Telecaller
 close leads faster, and giving you visibility if they don't.

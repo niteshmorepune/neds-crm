@@ -26,6 +26,7 @@ use App\Http\Controllers\HelpController;
 use App\Http\Controllers\IncentiveController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LeadAssignmentRuleController;
+use App\Http\Controllers\LeadAssignmentSettingController;
 use App\Http\Controllers\LeadController;
 use App\Http\Controllers\LeadMergeController;
 use App\Http\Controllers\LeaveRequestController;
@@ -693,6 +694,19 @@ Route::middleware(['auth', 'two-factor'])->group(function () {
         Route::post('lead-assignment-rules', [LeadAssignmentRuleController::class, 'store'])->name('lead-assignment-rules.store');
         Route::put('lead-assignment-rules/{leadAssignmentRule}', [LeadAssignmentRuleController::class, 'update'])->name('lead-assignment-rules.update');
         Route::delete('lead-assignment-rules/{leadAssignmentRule}', [LeadAssignmentRuleController::class, 'destroy'])->name('lead-assignment-rules.destroy');
+    });
+
+    /*
+     * Force Lead Assignment — Admin/Manager-only company-wide switch that
+     * forces every new lead's owner to one chosen Sales rep, unconditionally,
+     * ahead of LeadAssignmentRule matching and the least-loaded round-robin
+     * (see LeadObserver::autoAssign()). Same explicit enable/disable
+     * convention as Notification Settings' pause/resume.
+     */
+    Route::middleware('menu.access:lead-assignment-settings')->group(function () {
+        Route::get('lead-assignment-settings', [LeadAssignmentSettingController::class, 'index'])->name('lead-assignment-settings.index');
+        Route::post('lead-assignment-settings/enable', [LeadAssignmentSettingController::class, 'enable'])->name('lead-assignment-settings.enable');
+        Route::post('lead-assignment-settings/disable', [LeadAssignmentSettingController::class, 'disable'])->name('lead-assignment-settings.disable');
     });
 
     /*

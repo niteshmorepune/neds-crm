@@ -834,3 +834,60 @@ Older entries (2026-06-10 through 2026-08-26) moved to `docs/decisions-log-archi
   precedent this follows (a different root cause — two phone numbers per
   Meta lead — but the same "fix wadesk.in's symptom vs. the CRM's root
   cause" judgment call).
+- **2026-09-23 — Force Lead Assignment: a company-wide on/off switch that
+  routes every new lead to one chosen Sales rep, unconditionally.** Owner
+  asked (2026-09-22) "can I allot all new leads to one Sales person as an
+  admin?" Investigated first: the existing `LeadAssignmentRule` mechanism
+  only matches on exactly one of `utm_campaign`/`service_id`/`va_paid`
+  (XOR) — there's no catch-all rule type, so a plain WhatsApp inbound or
+  manual-entry lead (no campaign, no service tag) always falls through to
+  the least-loaded round-robin regardless of how many rules exist. Gave 3
+  options via AskUserQuestion (a rule per active service — usable today
+  but not a true 100% guarantee; temporarily deactivating other Sales
+  reps — blunt, also kills their login/visibility elsewhere; or a proper
+  toggle, same shape as `NextActionSetting`'s 2026-09-17 pause switch) —
+  owner picked the proper toggle.
+  New `LeadAssignmentSetting` singleton (`current()`, same `firstOrCreate`
+  pattern as `NextActionSetting`/`BillingSetting`) holding `enabled` +
+  `forced_user_id` + `updated_by`. `LeadObserver::autoAssign()` now checks
+  `LeadAssignmentSetting::current()->eligibleForcedUser()` FIRST, ahead of
+  `resolveRuleAssignee()` (the existing campaign/service rule match) and
+  the least-loaded round-robin fallback — when the switch is on, it wins
+  regardless of any matching rule. `eligibleForcedUser()` re-checks the
+  forced target is still an active Sales user at match time, same
+  "re-check, don't trust a stale FK" guard `LeadAssignmentRule::
+  eligibleAssignee()` already uses — a switch left on against a
+  since-deactivated or role-changed rep falls through to the normal
+  rule/round-robin path instead of silently assigning to someone
+  ineligible. Never reassigns a lead that already has an owner (same
+  `owner_id !== null` early-return `autoAssign()` already had).
+  New `LeadAssignmentSettingController` (index/enable/disable — two
+  explicit actions rather than one toggle, so a double-submit can't flip
+  it twice unnoticed, mirroring `NextActionSettingController`'s own
+  pause/resume shape exactly), gated by `menu.access:lead-assignment-
+  settings`, no dedicated Policy class (same no-Policy convention as
+  Billing Settings/Notification Settings/Lead Assignment Rules). New
+  "Force Lead Assignment" AdminConfig menu item (`roles =>
+  [UserRole::Manager]`, Admin implicit), placed right after Lead
+  Assignment Rules. `LeadAssignmentSettingRequest` validates
+  `forced_user_id` is a real, active, Sales-role user (`Rule::exists()`
+  scoped the same way `LeadAssignmentRuleRequest` already validates
+  `assigned_user_id`).
+  12 new Pest tests (`LeadAssignmentSettingsTest` — access control for
+  both Admin and Manager, default-disabled, enable/disable + `updated_by`
+  recorded, rejects a non-Sales/inactive target, forces a lead even when
+  a matching `LeadAssignmentRule` exists — proving priority order — forces
+  a lead with no matching rule at all, falls back correctly once disabled
+  and once the forced target is deactivated, never reassigns an
+  already-owned lead), full `tests/Feature/Leads` suite re-verified (469
+  passed, no regressions) plus the existing `LeadAssignmentRuleTest`/
+  `NextActionSettingsTest`/`MenuAccessTest` suites (28 passed) — the new
+  first-checked branch in `autoAssign()` couldn't have silently changed
+  any of that existing rule-matching behavior, verified rather than
+  assumed. Pint clean. One new migration (`lead_assignment_settings`
+  table), migrated clean against local MySQL. `admin.md` extended with a
+  new "16a-i. Force Lead Assignment" section, same placement pattern as
+  the "16a. Lead Assignment Rules" section it sits beside — `manager.md`
+  deliberately left untouched, since Lead Assignment Rules was never
+  documented there either (checked before assuming a second guide needed
+  updating). Not yet deployed — PR pending owner review.

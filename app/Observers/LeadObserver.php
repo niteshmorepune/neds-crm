@@ -14,6 +14,7 @@ use App\Jobs\SendVisibilityAuditFirstInviteJob;
 use App\Jobs\SyncLeadToWadeskJob;
 use App\Models\Lead;
 use App\Models\LeadAssignmentRule;
+use App\Models\LeadAssignmentSetting;
 use App\Models\User;
 use App\Notifications\LeadWantsExpertAdviceNotification;
 use App\Notifications\NewLeadNotification;
@@ -148,8 +149,9 @@ class LeadObserver
     }
 
     /**
-     * Assign the lead to a rule-matched Sales user if one applies, otherwise
-     * to whichever active Sales user currently owns the fewest open leads —
+     * Assign the lead to the company-wide forced rep if that switch is on,
+     * otherwise a rule-matched Sales user if one applies, otherwise
+     * whichever active Sales user currently owns the fewest open leads —
      * so new leads stop sitting at owner_id=null. Ties on the round-robin
      * fallback break on user id for deterministic behaviour. A normal
      * (non-quiet) save is used deliberately — who a lead got assigned to is
@@ -161,7 +163,9 @@ class LeadObserver
             return;
         }
 
-        $assignee = $this->resolveRuleAssignee($lead) ?? $this->resolveLeastLoadedSales();
+        $assignee = LeadAssignmentSetting::current()->eligibleForcedUser()
+            ?? $this->resolveRuleAssignee($lead)
+            ?? $this->resolveLeastLoadedSales();
 
         if ($assignee === null) {
             return;

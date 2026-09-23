@@ -85,6 +85,7 @@ class MenuItemsSeeder extends Seeder
             ['key' => 'billing-settings', 'label' => 'Billing Settings', 'group' => MenuGroup::AdminConfig,     'route' => 'billing-settings.index', 'icon' => 'calculator', 'roles' => [UserRole::Manager]],
             ['key' => 'next-action-settings', 'label' => 'Notification Settings', 'group' => MenuGroup::AdminConfig, 'route' => 'next-action-settings.index', 'icon' => 'bell', 'roles' => [UserRole::Manager]],
             ['key' => 'lead-assignment-rules', 'label' => 'Lead Assignment Rules', 'group' => MenuGroup::AdminConfig, 'route' => 'lead-assignment-rules.index', 'icon' => 'funnel', 'roles' => [UserRole::Manager]],
+            ['key' => 'lead-assignment-settings', 'label' => 'Force Lead Assignment', 'group' => MenuGroup::AdminConfig, 'route' => 'lead-assignment-settings.index', 'icon' => 'user-plus', 'roles' => [UserRole::Manager]],
             ['key' => 'festivals',        'label' => 'Festivals',        'group' => MenuGroup::AdminConfig,     'route' => 'festivals.index',  'icon' => 'calendar',   'roles' => [UserRole::Manager]],
             ['key' => 'subscriptions',    'label' => 'Subscriptions',    'group' => MenuGroup::AdminConfig,     'route' => 'subscriptions.index', 'icon' => 'credit-card', 'roles' => []], // admin only
             ['key' => 'expenses',         'label' => 'Expenses',         'group' => MenuGroup::Finance,         'route' => 'expenses.index',   'icon' => 'banknotes',  'roles' => [UserRole::Manager, UserRole::Accounts]],
