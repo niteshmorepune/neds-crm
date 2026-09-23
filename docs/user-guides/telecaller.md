@@ -182,6 +182,10 @@ automatically** (added 2026-09-10) — no need to also click Log a call for
 the same conversation. Only a call that's actually answered counts; a
 missed or declined WhatsApp call still shows in wadesk's own chat thread
 but isn't added here.
+**Names stay the same in the CRM and wadesk** (added 2026-09-23). Correct
+a lead's name in either place and the other one updates to match. The
+person's own WhatsApp profile name only fills in a name that's blank; it
+never overwrites one you've corrected.
 
 **Best time to call:** open any lead and you'll see a **📞 Best time to
 call** box above its call history — every attempt already made to that

@@ -532,6 +532,13 @@ class Lead extends Model
     public const WELCOME_FOLLOWUP_WAIT_HOURS = 6;
 
     /**
+     * Name given to a WhatsApp-created Lead when wadesk.in had no profile
+     * name to pass along. Never pushed to wadesk.in as a real name — see
+     * SyncContactNameToWadeskJob.
+     */
+    public const PLACEHOLDER_NAME = 'WhatsApp Inquiry';
+
+    /**
      * True once the automatic Meta Ads welcome message (SendLeadWelcomeMessageJob)
      * has gone out and nobody -- the lead, staff, or the after-hours AI --
      * has said anything back over WhatsApp since. Reuses

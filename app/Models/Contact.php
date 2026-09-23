@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Jobs\SyncContactNameToWadeskJob;
 use App\Models\Concerns\LogsActivity;
 use Illuminate\Auth\Authenticatable as AuthenticatableTrait;
 use Illuminate\Contracts\Auth\Authenticatable;
@@ -44,6 +45,17 @@ class Contact extends Model implements Authenticatable
             'invited_at' => 'datetime',
             'password_set_at' => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        // Two-way contact-name sync with wadesk.in — see
+        // SyncContactNameToWadeskJob.
+        static::updated(function (Contact $contact) {
+            if ($contact->wasChanged('name')) {
+                SyncContactNameToWadeskJob::dispatchFor([$contact->phone], $contact->name);
+            }
+        });
     }
 
     public function customer(): BelongsTo
