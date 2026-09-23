@@ -890,4 +890,38 @@ Older entries (2026-06-10 through 2026-08-26) moved to `docs/decisions-log-archi
   the "16a. Lead Assignment Rules" section it sits beside — `manager.md`
   deliberately left untouched, since Lead Assignment Rules was never
   documented there either (checked before assuming a second guide needed
-  updating). Not yet deployed — PR pending owner review.
+  updating). **Merged + deployed same day** (PR #213, `8b66e1a`): SSH
+  `git pull` + `migrate --force` + `MenuItemsSeeder` re-seed + route/view
+  cache rebuild, verified live (`/login` 200, new route 302s logged-out,
+  table/menu row exist, `LeadAssignmentSetting::current()->enabled`
+  confirmed `false` by default so the deploy itself changed nothing about
+  live lead routing, log clean). Switch is off by default — owner must
+  turn it on with a chosen rep to actually activate it.
+- **2026-09-23 (same day) — closed a real backlog item: the two
+  Visibility Audit EMAIL jobs (`SendVisibilityAuditFirstInviteEmailJob`/
+  `SendVisibilityAuditRecoveryNudgeEmailJob`) still called the narrower
+  `Lead::hasStaffWhatsappReplySince()` instead of the broader
+  `Lead::hasStaffEngagementSince()`, a known inconsistency flagged (but
+  not fixed) in the 2026-09-17 `SendLeadWelcomeFollowUps` entry above.**
+  Every WhatsApp-side sibling job (`SendVisibilityAuditFirstInviteJob`,
+  `SendVisibilityAuditRecoveryNudgeJob`) was already fixed to the broader
+  check back on 2026-09-13 (lead #322 incident) — these two email jobs
+  were the last stragglers, meaning a lead staff had already engaged by
+  phone alone (a logged call, no WhatsApp reply, no note) could still
+  receive a cold automated VA first-invite or recovery-nudge EMAIL on top
+  of a live conversation. One-line fix in each job:
+  `hasStaffWhatsappReplySince()` → `hasStaffEngagementSince()`, same
+  argument (the lead's `created_at` for the first-invite email, the
+  funnel event's `created_at` for the recovery-nudge email) — no other
+  logic changed.
+  2 new Pest tests (one per job, `VisibilityAuditFirstInviteTest`/
+  `VisibilityAuditRecoveryNudgeTest`) — each proves the actual gap by
+  creating a real `CallLog` with no WhatsApp-tagged note at all and
+  asserting the email is still suppressed; the pre-existing "skips when
+  staff replied over WhatsApp" tests would have passed even under the old
+  code, so these are the ones that would have caught the regression.
+  Full `tests/Feature/Integration` suite re-verified (469 passed, no
+  regressions) plus `tests/Feature/GenerateLeadRecommendationTest.php` +
+  `tests/Feature/Ai` (228 passed) since both jobs are reachable from
+  `GenerateLeadRecommendation::handle()`'s own dispatch paths. Pint
+  clean. No migration, no route/config/menu change.

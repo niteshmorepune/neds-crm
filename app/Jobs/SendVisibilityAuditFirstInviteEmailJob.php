@@ -62,8 +62,12 @@ class SendVisibilityAuditFirstInviteEmailJob implements ShouldQueue
 
         // Same "don't interrupt a live human conversation" guard as the
         // WhatsApp sibling job above — see its docblock for the real
-        // 2026-08-28 incident this fixes.
-        if ($lead->hasStaffWhatsappReplySince($lead->created_at)) {
+        // 2026-08-28/lead-#322 incidents this fixes. Was still checking only
+        // the narrower hasStaffWhatsappReplySince() until 2026-09-23, a
+        // leftover from before the WhatsApp job's own 2026-09-13 fix — this
+        // email channel had the exact same gap the whole time, just never
+        // reported against it directly.
+        if ($lead->hasStaffEngagementSince($lead->created_at)) {
             return;
         }
 

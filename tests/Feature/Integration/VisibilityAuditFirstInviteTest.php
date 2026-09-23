@@ -8,6 +8,7 @@ use App\Enums\VisibilityAuditTouchType;
 use App\Jobs\SendVisibilityAuditFirstInviteEmailJob;
 use App\Jobs\SendVisibilityAuditFirstInviteJob;
 use App\Mail\VisibilityAuditFirstInviteEmail;
+use App\Models\CallLog;
 use App\Models\Lead;
 use App\Models\Service;
 use App\Models\User;
@@ -348,6 +349,33 @@ it('skips the first-invite email when staff has already replied to the lead over
         'service_id' => $this->gmb->id,
     ]);
     $lead->notes()->create(['body' => "[Sent via WhatsApp by Kiran Katte]\nAs discuss over call please share Business details"]);
+
+    (new SendVisibilityAuditFirstInviteEmailJob($lead->id))->handle();
+
+    Mail::assertNothingSent();
+    expect($lead->fresh()->visibility_audit_invite_emailed_at)->toBeNull();
+});
+
+it('skips the first-invite email when staff already engaged the lead by phone, not just WhatsApp', function () {
+    // Real gap, found 2026-09-23: this email job kept checking the narrower
+    // Lead::hasStaffWhatsappReplySince() even after the WhatsApp sibling job
+    // above was fixed (2026-09-13, lead #322) to use the broader
+    // hasStaffEngagementSince() — a phone-only conversation still got this
+    // cold email on top. A WhatsApp-reply note alone (the case above) would
+    // have passed even under the old, narrower check — this proves the
+    // actual gap is closed.
+    Mail::fake();
+
+    $lead = Lead::factory()->create([
+        'email' => 'priya@shah.test',
+        'meta_leadgen_id' => 'lg_'.uniqid(),
+        'service_id' => $this->gmb->id,
+    ]);
+    CallLog::factory()->create([
+        'callable_type' => Lead::class,
+        'callable_id' => $lead->id,
+        'called_at' => now(),
+    ]);
 
     (new SendVisibilityAuditFirstInviteEmailJob($lead->id))->handle();
 
