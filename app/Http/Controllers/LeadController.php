@@ -31,6 +31,7 @@ use App\Services\LeadNextActionAdvisor;
 use App\Services\VisibilityAuditFunnelMetrics;
 use App\Support\Money;
 use App\Support\OfferRecommendationMatrix;
+use App\Support\Phone;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
@@ -578,9 +579,16 @@ class LeadController extends Controller
         return Lead::query()
             ->visibleTo($request->user())
             ->when($request->string('search')->trim()->value(), function ($query, $search) {
-                $query->where(fn ($q) => $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('company', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%"));
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('company', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%");
+
+                    if (($digits = Phone::searchDigits($search)) !== null) {
+                        $q->orWhereRaw(Phone::normalizedSql('phone').' LIKE ?', ["%{$digits}%"])
+                            ->orWhereRaw(Phone::normalizedSql('alternate_phone').' LIKE ?', ["%{$digits}%"]);
+                    }
+                });
             })
             ->when($request->filled('source'), fn ($q) => $q->where('source', $request->input('source')))
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->input('status')))

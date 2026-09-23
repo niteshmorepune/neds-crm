@@ -44,6 +44,19 @@ it('does not search sections the user cannot access', function () {
         ->assertDontSee('INV-QUASAR-1');
 });
 
+it('finds a lead and a client by phone number', function () {
+    // Real gap, reported 2026-09-23: neither the global search nor the
+    // dedicated Lead/Client list pages could find a record by mobile
+    // number at all — the Lead section here never checked phone, and the
+    // Client section checked phone but not alternate_phone.
+    $admin = User::factory()->role(UserRole::Admin)->create();
+    Lead::factory()->create(['name' => 'Vega lead', 'phone' => '+91 98765 11111']);
+    Customer::factory()->create(['company_name' => 'Vega Client Co', 'alternate_phone' => '+91 88888 22222']);
+
+    $this->actingAs($admin)->get(route('search', ['q' => '9876511111']))->assertOk()->assertSee('Vega lead');
+    $this->actingAs($admin)->get(route('search', ['q' => '8888822222']))->assertOk()->assertSee('Vega Client Co');
+});
+
 it('shows a sales user only their own or unowned leads, not another rep\'s', function () {
     // Real incident 2026-09-03: Kiran and Mohit (both Sales) could see each
     // other's leads under the old "everyone sees everything" rule — this

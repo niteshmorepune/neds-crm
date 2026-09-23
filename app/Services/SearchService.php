@@ -9,6 +9,7 @@ use App\Models\Lead;
 use App\Models\Project;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Support\Phone;
 use Illuminate\Support\Str;
 
 /**
@@ -34,18 +35,33 @@ class SearchService
         }
 
         $like = '%'.$term.'%';
+        $phoneDigits = Phone::searchDigits($term);
         $sections = [];
 
         if ($this->menu->canAccess($user, 'customer')) {
             $sections[] = $this->section('Clients', Customer::query()->visibleTo($user)
-                ->where(fn ($q) => $q->where('company_name', 'like', $like)->orWhere('email', 'like', $like)->orWhere('phone', 'like', $like))
+                ->where(function ($q) use ($like, $phoneDigits) {
+                    $q->where('company_name', 'like', $like)->orWhere('email', 'like', $like);
+
+                    if ($phoneDigits !== null) {
+                        $q->orWhereRaw(Phone::normalizedSql('phone').' LIKE ?', ["%{$phoneDigits}%"])
+                            ->orWhereRaw(Phone::normalizedSql('alternate_phone').' LIKE ?', ["%{$phoneDigits}%"]);
+                    }
+                })
                 ->limit(self::PER_SECTION)->get()
                 ->map(fn (Customer $c) => ['label' => $c->company_name, 'sub' => $c->email ?? '', 'url' => route('clients.show', $c)]));
         }
 
         if ($this->menu->canAccess($user, 'lead-generation')) {
             $sections[] = $this->section('Leads', Lead::query()->visibleTo($user)
-                ->where(fn ($q) => $q->where('name', 'like', $like)->orWhere('company', 'like', $like)->orWhere('email', 'like', $like))
+                ->where(function ($q) use ($like, $phoneDigits) {
+                    $q->where('name', 'like', $like)->orWhere('company', 'like', $like)->orWhere('email', 'like', $like);
+
+                    if ($phoneDigits !== null) {
+                        $q->orWhereRaw(Phone::normalizedSql('phone').' LIKE ?', ["%{$phoneDigits}%"])
+                            ->orWhereRaw(Phone::normalizedSql('alternate_phone').' LIKE ?', ["%{$phoneDigits}%"]);
+                    }
+                })
                 ->limit(self::PER_SECTION)->get()
                 ->map(fn (Lead $l) => ['label' => $l->name, 'sub' => $l->company ?? '', 'url' => route('leads.show', $l)]));
         }
