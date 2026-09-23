@@ -70,7 +70,12 @@ class SendVisibilityAuditRecoveryNudgeEmailJob implements ShouldQueue
             return;
         }
 
-        if ($lead->hasStaffWhatsappReplySince($event->created_at)) {
+        // Same "don't interrupt a live human conversation" guard as the
+        // WhatsApp sibling job — see its docblock for the real lead-#322
+        // incident this fixes. Was still checking only the narrower
+        // hasStaffWhatsappReplySince() until 2026-09-23, a leftover from
+        // before the WhatsApp job's own 2026-09-13 fix.
+        if ($lead->hasStaffEngagementSince($event->created_at)) {
             return;
         }
 
