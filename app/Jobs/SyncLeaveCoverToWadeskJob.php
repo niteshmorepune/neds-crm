@@ -82,11 +82,21 @@ class SyncLeaveCoverToWadeskJob implements ShouldQueue
             $response = Http::withHeaders(['X-Service-Key' => $serviceKey])
                 ->timeout(15)
                 ->post("{$baseUrl}/api/leads/set-cover", [
-                    'phone' => Phone::digits($lead->phone),
+                    'phone' => Phone::forWhatsapp($lead->phone),
                     'businessNumber' => $marketingNumber,
                     'coveringAgentEmail' => $coveringUser->email,
                     'coverUntil' => $coverUntil->toIso8601String(),
                 ]);
+
+            // wadesk.in answers 401 (not 429) once its 30/min rate limit on
+            // this route is hit — retry a minute later instead of silently
+            // leaving the covering rep without this lead's chat. A genuinely
+            // bad key just burns the remaining tries, same end state as before.
+            if (in_array($response->status(), [401, 429], true) && $this->attempts() < $this->tries) {
+                $this->release($this->backoff);
+
+                return;
+            }
 
             if (! $response->successful()) {
                 Log::warning('SyncLeaveCoverToWadeskJob: wadesk.in returned non-2xx', [

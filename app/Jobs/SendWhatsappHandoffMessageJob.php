@@ -53,7 +53,7 @@ class SendWhatsappHandoffMessageJob implements ShouldQueue
         }
 
         // wadesk.in stores contact phone digits-only, no leading "+".
-        $digits = Phone::digits($customer->phone);
+        $digits = Phone::forWhatsapp($customer->phone);
 
         try {
             $response = Http::withHeaders(['X-Service-Key' => $serviceKey])

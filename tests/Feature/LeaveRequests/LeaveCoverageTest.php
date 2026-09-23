@@ -330,3 +330,61 @@ it('logs a warning but does not throw when wadesk.in is unreachable', function (
     expect(fn () => (new SyncLeaveCoverToWadeskJob($lead->id, $leaveRequest->id))->handle())
         ->not->toThrow(Throwable::class);
 });
+
+// ──────────────────────────────────────────────────────────────────────────
+// wadesk.in rate limit (30/min on set-cover) — real incident 2026-09-23
+// ──────────────────────────────────────────────────────────────────────────
+
+it('staggers cover syncs in batches under wadesk.in\'s per-minute limit', function () {
+    Queue::fake();
+    $this->freezeTime();
+    $rep = User::factory()->role(UserRole::Sales)->create();
+    $peer = User::factory()->role(UserRole::Sales)->create();
+    Lead::factory()->count(LeaveCoverage::WADESK_COVER_SYNCS_PER_MINUTE + 5)->ownedBy($rep->id)->create(['status' => LeadStatus::New]);
+    $leaveRequest = LeaveRequest::factory()->create([
+        'user_id' => $rep->id,
+        'status' => LeaveRequestStatus::Approved,
+        'covering_user_id' => $peer->id,
+    ]);
+
+    app(LeaveCoverage::class)->dispatchSync($leaveRequest);
+
+    $delays = collect(Queue::pushed(SyncLeaveCoverToWadeskJob::class))
+        ->map(fn ($job) => (int) now()->diffInMinutes($job->delay))
+        ->countBy();
+
+    expect($delays->all())->toBe([0 => LeaveCoverage::WADESK_COVER_SYNCS_PER_MINUTE, 1 => 5]);
+});
+
+it('retries a minute later instead of giving up when wadesk.in rate-limits the call (401)', function () {
+    Http::fake(['https://wadesk.test/api/leads/set-cover' => Http::response(['error' => 'Unauthorized'], 401)]);
+    $rep = User::factory()->create();
+    $peer = User::factory()->create();
+    $lead = Lead::factory()->ownedBy($rep->id)->create(['phone' => '919028099919']);
+    $leaveRequest = LeaveRequest::factory()->create([
+        'user_id' => $rep->id,
+        'status' => LeaveRequestStatus::Approved,
+        'covering_user_id' => $peer->id,
+    ]);
+
+    $job = (new SyncLeaveCoverToWadeskJob($lead->id, $leaveRequest->id))->withFakeQueueInteractions();
+    $job->handle();
+
+    $job->assertReleased(60);
+});
+
+it('sends a 10-digit stored phone with the 91 country code', function () {
+    Http::fake(['https://wadesk.test/api/leads/set-cover' => Http::response(['status' => 'covered'], 200)]);
+    $rep = User::factory()->create();
+    $peer = User::factory()->create();
+    $lead = Lead::factory()->ownedBy($rep->id)->create(['phone' => '85298 57994']);
+    $leaveRequest = LeaveRequest::factory()->create([
+        'user_id' => $rep->id,
+        'status' => LeaveRequestStatus::Approved,
+        'covering_user_id' => $peer->id,
+    ]);
+
+    (new SyncLeaveCoverToWadeskJob($lead->id, $leaveRequest->id))->handle();
+
+    Http::assertSent(fn ($request) => $request['phone'] === '918529857994');
+});

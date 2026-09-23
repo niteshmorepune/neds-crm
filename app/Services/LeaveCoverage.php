@@ -24,6 +24,9 @@ use Illuminate\Support\Collection;
  */
 class LeaveCoverage
 {
+    /** Below wadesk.in's 30/min limit on POST /api/leads/set-cover, with headroom. */
+    public const WADESK_COVER_SYNCS_PER_MINUTE = 25;
+
     /**
      * @return Builder<Lead>
      */
@@ -97,8 +100,16 @@ class LeaveCoverage
             return;
         }
 
-        $this->openLeadsQuery($leaveRequest->user)->pluck('id')->each(
-            fn (int $leadId) => SyncLeaveCoverToWadeskJob::dispatch($leadId, $leaveRequest->id)
+        // Staggered in batches, one batch per minute: wadesk.in rate-limits
+        // POST /api/leads/set-cover to 30 calls/minute and answers 401 past
+        // that. Dispatching every lead at once (120+ for a busy rep) had the
+        // queue worker burn through the limit in seconds — real incident
+        // 2026-09-23: Kiran Katte's leave, 90 of ~120 cover syncs rejected
+        // on every 30-minute run, so the covering rep couldn't see most of
+        // her lead chats.
+        $this->openLeadsQuery($leaveRequest->user)->pluck('id')->values()->each(
+            fn (int $leadId, int $index) => SyncLeaveCoverToWadeskJob::dispatch($leadId, $leaveRequest->id)
+                ->delay(now()->addMinutes(intdiv($index, self::WADESK_COVER_SYNCS_PER_MINUTE)))
         );
     }
 }

@@ -1,11 +1,13 @@
 <?php
 
 use App\Enums\LeadStatus;
+use App\Enums\UserRole;
 use App\Jobs\SyncContactNameToWadeskJob;
 use App\Jobs\SyncLeadToWadeskJob;
 use App\Models\Contact;
 use App\Models\Customer;
 use App\Models\Lead;
+use App\Models\User;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -131,7 +133,7 @@ it('does not push when a Lead is created (only a rename counts)', function () {
 
     // A Sales user makes created()'s autoAssign() do its nested save — the
     // real path where every attribute still reads as "changed".
-    App\Models\User::factory()->create(['role' => App\Enums\UserRole::Sales]);
+    User::factory()->create(['role' => UserRole::Sales]);
     $lead = Lead::factory()->create(['name' => 'Brand New', 'phone' => '919876543210', 'owner_id' => null]);
 
     expect($lead->fresh()->owner_id)->not->toBeNull();
@@ -194,4 +196,17 @@ it('stages a placeholder-named Lead in wadesk.in without sending the placeholder
 
     Http::assertSent(fn ($request) => $request->url() === 'https://wadesk.test/api/leads/sync'
         && $request['name'] === null);
+});
+
+it('stages a Lead stored without a country code under its real 91-prefixed wadesk.in number', function () {
+    config(['services.wadesk.marketing_number' => '918888888888']);
+    Http::fake(['https://wadesk.test/api/leads/sync' => Http::response(['conversationId' => 'c1'], 200)]);
+    $lead = Lead::factory()->create(['name' => 'Ten Digit', 'phone' => '8529857994']);
+
+    (new SyncLeadToWadeskJob($lead->id))->handle();
+
+    // Real bug (lead #326): sending the bare 10 digits made wadesk.in create
+    // an empty duplicate contact/chat instead of matching the real one.
+    Http::assertSent(fn ($request) => $request->url() === 'https://wadesk.test/api/leads/sync'
+        && $request['phone'] === '918529857994');
 });

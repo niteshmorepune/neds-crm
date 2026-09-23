@@ -52,7 +52,7 @@ class SendVisibilityAuditReportJob implements ShouldQueue
             return;
         }
 
-        $digits = Phone::digits($purchase->payer_phone);
+        $digits = Phone::forWhatsapp($purchase->payer_phone);
         // reportUrl() lazily generates+persists report_token on first call —
         // ensures the button's dynamic value exists before we send it.
         $purchase->reportUrl();

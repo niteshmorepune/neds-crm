@@ -1062,3 +1062,32 @@ Older entries (2026-06-10 through 2026-08-26) moved to `docs/decisions-log-archi
   Deploy needs `CRM_CONTACT_NAME_URL=https://crm.niranjanenterprises.co.in/api/webhooks/wadesk/contact-name`
   set in wadesk.in's prod `.env` (owner-run, no SSH to that VPS).
   `sales.md`/`telecaller.md` updated, their PDFs regenerated.
+- **2026-09-23 (later still) — Two wadesk.in-bridge bugs found while
+  auditing unassigned wadesk.in chats: 10-digit phones sent without a
+  country code, and leave-cover syncs silently rate-limited.** (1) Lead
+  #326 was stored as `8529857994`; every CRM → wadesk.in call sent
+  `Phone::digits()` as-is, so `/api/leads/sync` created an EMPTY duplicate
+  contact/chat under the 10-digit number, assigned the reps there, and
+  left the real `918529857994` chat unassigned (17 wadesk.in chats have
+  10-digit contacts, 7 are such duplicates). New `Phone::forWhatsapp()`
+  (bare 10 digits or a leading trunk `0` → `91…`, foreign numbers
+  untouched) now used by all 13 jobs that send a phone to wadesk.in.
+  `SyncContactNameToWadeskJob` deliberately keeps `digits()` — wadesk.in
+  matches it on last 10. Read-only production check before fixing: only
+  12 leads are stored 10-digit and NONE had ever been sent an automated
+  WhatsApp message, so no missed sends to recover. (2) Same audit, 14 days
+  of logs: `SyncLeaveCoverToWadeskJob` got 407 × 401 — wadesk.in's
+  `service-key.ts` answers 401 (not 429) past 30 calls/min on
+  `/api/leads/set-cover`, and `LeaveCoverage::dispatchSync()` queued one
+  job per open lead at once (Kiran Katte on leave today, ~120 leads → 90
+  rejected on EVERY 30-minute run, so covering rep Mohit Patil couldn't
+  see most of her chats; Mohit's own 25–26 Sep leave hit it on approval).
+  Fixed by staggering dispatch 25/minute (`WADESK_COVER_SYNCS_PER_MINUTE`)
+  and releasing the job for a 60s retry on 401/429 instead of logging and
+  giving up. Also noted, not a live issue: ~2,240 "Template not found" /
+  "#132000 parameter mismatch" rejections were all on 2026-09-12/13 while
+  the offer templates were awaiting Meta approval — none since.
+  Lead #326's real chat was assigned to Mohit/Rohit by hand in wadesk.in.
+  11 new tests (`PhoneTest`, 3 `LeaveCoverageTest`, 1
+  `WadeskContactNameSyncTest`); Integration/Leads/Api/Clients/Sales/Unit/
+  Billing + offer/funnel suites green; Pint clean. No migration.
