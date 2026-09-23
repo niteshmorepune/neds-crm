@@ -925,3 +925,86 @@ Older entries (2026-06-10 through 2026-08-26) moved to `docs/decisions-log-archi
   `tests/Feature/Ai` (228 passed) since both jobs are reachable from
   `GenerateLeadRecommendation::handle()`'s own dispatch paths. Pint
   clean. No migration, no route/config/menu change.
+- **2026-09-23 (same day) — real gap, reported live: leads and clients
+  were not searchable by mobile number at all, on either the Lead
+  Generation list or the Clients list.** Owner: "the leads are not
+  searchable through mobile number on the lead page or client page."
+  Root cause: `LeadController::filteredLeads()` only ever searched
+  `name`/`company`/`email`, `CustomerController::filteredCustomers()`
+  only ever searched `company_name`/`email`/`gstin` — `phone` was never
+  in either filter at all. The global top-nav search's Lead section had
+  the same gap; its Client section checked `phone` but not
+  `alternate_phone`.
+  **A naive plain `orWhere('phone', 'like', ...)` was NOT enough** — the
+  first attempt at this fix, tested against a realistically-formatted
+  phone (`"+91 98765 43210"`), failed outright: a user searching bare
+  digits (the common case) doesn't substring-match a value stored with
+  spaces/a country-code prefix. Real fix: new `Phone::searchDigits()`/
+  `Phone::normalizedSql()` on the existing `App\Support\Phone` helper —
+  strips space/`+`/`-`/parens from both the stored column (via a SQL
+  `REPLACE()` chain) and the search term before comparing, reusing this
+  app's existing phone-normalization convention (`Phone::digits()`/
+  `last10()`) rather than inventing a new one. Only applies when the
+  search term itself has ≥4 digits, so a stray digit inside an unrelated
+  text search doesn't widen results unexpectedly.
+  9 new/updated Pest tests (`LeadSearchTest`, `ClientSearchTest`,
+  extended `GlobalSearchTest`), full `tests/Feature/Leads`+`Clients`
+  suites re-verified (678 passed, no regressions), Pint clean.
+  Live-tested against real local MySQL before merge (existing fixtures
+  plus a real formatted `SMOKETEST` lead). PR #215 merged (`d1deaed`),
+  deployed via plain SSH `git pull` (no migration) + OPcache touch.
+  **Verified live 3 ways on real production data, via a real
+  authenticated Chrome session (owner was already logged in)**: Lead
+  list (`/leads?search=9421760797` → found "Sanjay Gupta," phone stored
+  as `94217 60797` with a space — the exact real-world formatting
+  mismatch), Client list (`/clients?search=9167547808` → found
+  "Tathastu"), and the global top-nav search (`/search?q=9421760797` →
+  correctly found both the Client "Simran Enterprises" and the Lead
+  "Sanjay Gupta" sharing that number). No production credentials/2FA
+  were available in-session for a fresh login — used the owner's own
+  already-authenticated Chrome session instead once they confirmed it.
+- **2026-09-23 (same day) — closed a backlog item flagged 2026-09-12 but
+  never fixed: `VisibilityAuditFunnelTrackingController::enter()` was
+  hardcoded to always redirect to the GBP offer landing page regardless
+  of a lead's actual resolved recommendation.** A leftover from before
+  the funnel was unified across all 4 offers (Milestone 13). Milestone
+  18's `find-my-recommendation` page already deliberately bypasses this
+  by routing non-GBP leads directly to their own recommendation URL —
+  but `enter()` itself was never fixed, so anything else that links to
+  it (a stale recovery email/WhatsApp link, or a future channel) would
+  still send a non-GBP lead to the wrong offer page.
+  Fixed with a plain read of the lead's already-resolved
+  `recommendation_offer_key` column — deliberately NOT
+  `GenerateLeadRecommendation::handle()`, since that action can dispatch
+  a real first-touch WhatsApp/email send as a side effect the moment a
+  recommendation genuinely changes, which a page VISIT must never
+  trigger. New private `nonGbpRecommendationUrl()` returns null (meaning
+  "use the normal GBP landing page") unless the lead's own already-
+  resolved recommendation points somewhere else. The funnel-tracking
+  event (`LandingViewed`) and AI re-score still fire exactly as before
+  regardless of which page the visitor ends up on — only the final
+  redirect target changes.
+  3 new Pest tests (non-GBP recommendation redirects to its own URL, GBP
+  recommendation still redirects to the GBP page, no-recommendation-yet
+  still redirects to the GBP page — the unchanged default), full
+  `VisibilityAuditFunnelTrackingTest` suite (14 passed) plus a broader
+  regression sweep across `tests/Feature/Integration` +
+  `FindMyRecommendationTest` + `GenerateLeadRecommendationTest` (491
+  passed, no regressions), Pint clean. Live-tested against real local
+  MySQL before merge (a real `SMOKETEST` lead with a non-GBP resolved
+  recommendation). PR #216 merged (`4bdda31`), deployed via plain SSH
+  `git pull` (no migration) + OPcache touch. **Verified live on real
+  production data**: lead #457 (a real resolved `lead_generation_audit`
+  recommendation) — `GET /offers/visibility-audit/enter?lead=457`
+  correctly redirected to `/offers/recommendation/{its own token}`
+  instead of the old hardcoded GBP page; the anonymous/no-lead case
+  confirmed still redirects to the GBP page unchanged. The 2 real
+  `VisibilityAuditFunnelEvent` rows this verification created (not
+  genuine visitor activity) were cleaned up afterward; a resulting
+  `ScoreLead` AI re-score for lead #457 was left alone — a legitimate
+  side effect of hitting a real endpoint, nothing to undo.
+  This closes out the full backlog sweep from this session — PRs #213,
+  #214, #215, and #216 all merged, deployed, and verified live same day.
+  Two items remain deliberately deferred to next session (a Meta lead
+  `name`-backfill decision, and a per-campaign funnel generator design
+  discussion) — owner explicitly said to keep those for next time.
