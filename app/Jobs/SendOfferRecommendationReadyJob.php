@@ -74,7 +74,7 @@ class SendOfferRecommendationReadyJob implements ShouldQueue
             return;
         }
 
-        $digits = Phone::digits($lead->phone);
+        $digits = Phone::forWhatsapp($lead->phone);
 
         try {
             $response = Http::withHeaders(['X-Service-Key' => $serviceKey])

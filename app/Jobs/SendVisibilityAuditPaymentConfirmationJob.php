@@ -59,7 +59,7 @@ class SendVisibilityAuditPaymentConfirmationJob implements ShouldQueue
         }
 
         // wadesk.in stores contact phone digits-only, no leading "+".
-        $digits = Phone::digits($purchase->payer_phone);
+        $digits = Phone::forWhatsapp($purchase->payer_phone);
         $tierSummary = ($purchase->tier?->label() ?? 'Visibility Audit').' ('.Money::format($purchase->amount_paise).')';
 
         try {

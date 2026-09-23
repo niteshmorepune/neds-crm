@@ -77,7 +77,7 @@ class SendVisibilityAuditInProgressJob implements ShouldQueue
             return;
         }
 
-        $digits = Phone::digits($purchase->payer_phone);
+        $digits = Phone::forWhatsapp($purchase->payer_phone);
 
         try {
             $response = Http::withHeaders(['X-Service-Key' => $serviceKey])

@@ -62,7 +62,7 @@ class SendQuotationWhatsAppJob implements ShouldQueue
             return;
         }
 
-        $digits = Phone::digits($phone);
+        $digits = Phone::forWhatsapp($phone);
         $name = $quotation->customer->primaryContact?->name ?: $quotation->customer->company_name;
 
         try {

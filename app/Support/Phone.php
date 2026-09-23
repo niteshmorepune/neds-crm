@@ -16,6 +16,26 @@ class Phone
     }
 
     /**
+     * Digits in the international form wadesk.in and WhatsApp expect: a bare
+     * 10-digit Indian mobile (or one with a leading trunk "0") gets the "91"
+     * country code. Use this — not digits() — for every phone sent to
+     * wadesk.in. Real bug, 2026-09-23: lead #326 was stored as "8529857994";
+     * SyncLeadToWadeskJob sent it as-is, wadesk.in (keyed on "918529857994")
+     * created an empty duplicate contact + chat, assigned the reps there,
+     * and left the lead's real chat unassigned.
+     */
+    public static function forWhatsapp(string $raw): string
+    {
+        $digits = self::digits($raw);
+
+        if (strlen($digits) === 11 && str_starts_with($digits, '0')) {
+            $digits = substr($digits, 1);
+        }
+
+        return strlen($digits) === 10 ? '91'.$digits : $digits;
+    }
+
+    /**
      * Last 10 digits — the matching key used for lookups, since stored
      * numbers inconsistently include/omit a country code prefix.
      */
