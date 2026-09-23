@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\OfferKey;
 use App\Enums\VisibilityAuditFunnelEventType;
 use App\Enums\VisibilityAuditTier;
 use App\Jobs\ScoreLead;
@@ -50,7 +51,9 @@ class VisibilityAuditFunnelTrackingController extends Controller
 
         $this->rescoreIfIdentified($leadId);
 
-        return redirect()->route('offers.visibility-audit', array_filter(['lead' => $leadId]));
+        return redirect()->to(
+            $this->nonGbpRecommendationUrl($leadId) ?? route('offers.visibility-audit', array_filter(['lead' => $leadId]))
+        );
     }
 
     public function checkout(Request $request): RedirectResponse
@@ -78,6 +81,39 @@ class VisibilityAuditFunnelTrackingController extends Controller
         }
 
         return redirect()->away($paymentUrl);
+    }
+
+    /**
+     * Real gap, flagged 2026-09-12 (and left for the funnel unification's
+     * "find-my-recommendation" page to work around, not this controller
+     * itself): a lead whose own resolved recommendation isn't the GBP
+     * offer — e.g. a stale recovery email/WhatsApp link sent before the
+     * funnel was unified across all 4 offers (Milestone 13), or any future
+     * channel that happens to link straight here — still got sent to this
+     * GBP-specific landing page regardless. Returns null (meaning "use the
+     * normal GBP landing page") unless the lead's OWN ALREADY-RESOLVED
+     * recommendation points somewhere else.
+     *
+     * Deliberately a plain read of `recommendation_offer_key`, NOT
+     * GenerateLeadRecommendation::handle() — that action can dispatch a
+     * real first-touch WhatsApp/email send as a side effect the moment a
+     * recommendation genuinely changes, which a page VISIT must never
+     * trigger.
+     */
+    private function nonGbpRecommendationUrl(?int $leadId): ?string
+    {
+        if ($leadId === null) {
+            return null;
+        }
+
+        $lead = Lead::find($leadId);
+        $offerKey = OfferKey::tryFrom((string) $lead?->recommendation_offer_key);
+
+        if ($offerKey === null || $offerKey === OfferKey::GbpAudit) {
+            return null;
+        }
+
+        return $lead->recommendationUrl();
     }
 
     private function resolveLeadId(Request $request): ?int

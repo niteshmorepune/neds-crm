@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\OfferKey;
 use App\Enums\VisibilityAuditFunnelEventType;
 use App\Jobs\ScoreLead;
 use App\Models\Lead;
@@ -24,6 +25,40 @@ it('attributes a landing-page hit to a real lead and carries it forward in the r
 
     $response->assertRedirect(route('offers.visibility-audit', ['lead' => $lead->id]));
     expect(VisibilityAuditFunnelEvent::first()->lead_id)->toBe($lead->id);
+});
+
+it('redirects a lead whose own resolved recommendation is NOT the GBP offer straight to that recommendation, not the GBP landing page', function () {
+    // Real gap, flagged 2026-09-12: a stale recovery email/WhatsApp link
+    // (or any future channel) sent before the funnel was unified across
+    // all 4 offers could still send a lead here even though its own
+    // goal+budget resolved to a different offer entirely.
+    $lead = Lead::factory()->create([
+        'recommendation_offer_key' => OfferKey::LeadGenerationAudit->value,
+        'recommendation_token' => 'test-token-lga',
+    ]);
+
+    $response = $this->get(route('offers.visibility-audit.enter', ['lead' => $lead->id]));
+
+    $response->assertRedirect(route('offers.recommendation', 'test-token-lga'));
+    // Still logs the real landing hit against this lead, even though the
+    // destination changed — the funnel-tracking purpose is unaffected.
+    expect(VisibilityAuditFunnelEvent::first()->lead_id)->toBe($lead->id);
+});
+
+it('still redirects to the GBP landing page when the lead\'s own resolved recommendation IS the GBP offer', function () {
+    $lead = Lead::factory()->create(['recommendation_offer_key' => OfferKey::GbpAudit->value]);
+
+    $response = $this->get(route('offers.visibility-audit.enter', ['lead' => $lead->id]));
+
+    $response->assertRedirect(route('offers.visibility-audit', ['lead' => $lead->id]));
+});
+
+it('redirects to the GBP landing page as before when the lead has no resolved recommendation yet', function () {
+    $lead = Lead::factory()->create(['recommendation_offer_key' => null]);
+
+    $response = $this->get(route('offers.visibility-audit.enter', ['lead' => $lead->id]));
+
+    $response->assertRedirect(route('offers.visibility-audit', ['lead' => $lead->id]));
 });
 
 it('ignores a lead id that does not exist rather than breaking the redirect', function () {
