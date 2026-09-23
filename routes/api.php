@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\RazorpayVisibilityAuditWebhookController;
 use App\Http\Controllers\Api\RazorpayWebhookController;
 use App\Http\Controllers\Api\SmdostWebhookController;
 use App\Http\Controllers\Api\WadeskCallLogController;
+use App\Http\Controllers\Api\WadeskContactNameController;
 use App\Http\Controllers\Api\WadeskMessageStatusController;
 use App\Http\Controllers\Api\WhatsappWebhookController;
 use App\Http\Middleware\VerifyBiometricBridgeToken;
@@ -73,6 +74,14 @@ Route::post('/webhooks/wadesk/message-failed', [WadeskMessageStatusController::c
 Route::post('/webhooks/wadesk/call-log', [WadeskCallLogController::class, 'store'])
     ->middleware(['throttle:120,1', VerifyWhatsappWebhookToken::class])
     ->name('api.webhooks.wadesk.call-log');
+
+// wadesk.in → CRM bridge. Called when a staff member renames a Contact in
+// wadesk.in, so the matching open Lead / Client Contact takes the same name
+// (two-way name sync — see WadeskContactNameController). Same Bearer token,
+// same wadesk.in trust boundary.
+Route::post('/webhooks/wadesk/contact-name', [WadeskContactNameController::class, 'update'])
+    ->middleware(['throttle:120,1', VerifyWhatsappWebhookToken::class])
+    ->name('api.webhooks.wadesk.contact-name');
 
 // socialmediadost.com → CRM bridge. Called when all content in a brief is
 // approved. Creates a draft invoice for the accounts team to price and send.

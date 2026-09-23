@@ -342,7 +342,7 @@ class WhatsappWebhookController extends Controller
             : null;
 
         $lead = Lead::create([
-            'name' => $relayFields['name'] ?? (($data['contact_name'] ?? null) ?: 'WhatsApp Inquiry'),
+            'name' => $relayFields['name'] ?? (($data['contact_name'] ?? null) ?: Lead::PLACEHOLDER_NAME),
             'phone' => $data['phone'],
             'alternate_phone' => $alternatePhone,
             'email' => $relayFields['email'] ?? null,

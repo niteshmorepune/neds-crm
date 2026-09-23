@@ -370,6 +370,12 @@ your "follow-ups due" list — same list, no separate place to look.
   for the same conversation. Only a call that's actually answered counts;
   a missed or declined WhatsApp call still shows in wadesk's own chat
   thread but isn't added here.
+- **Names stay the same in the CRM and wadesk** (added 2026-09-23).
+  Correct a lead's name, or a client contact person's name, in either
+  app and the other one updates to match (matched by phone number). The
+  person's own WhatsApp profile name only fills in a name that's blank;
+  it never overwrites one you've corrected. A client's company name is
+  never changed by this.
 - **Best time to call:** a lead's own page shows a **📞 Best time to call**
   box above its call history — every past attempt made to that specific
   lead (time and outcome), plus a recommended hour band for your next try.

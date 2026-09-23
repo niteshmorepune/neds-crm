@@ -11,6 +11,7 @@ use App\Jobs\SendLeadWelcomeMessageJob;
 use App\Jobs\SendTelegramLeadAlertJob;
 use App\Jobs\SendVisibilityAuditFirstInviteEmailJob;
 use App\Jobs\SendVisibilityAuditFirstInviteJob;
+use App\Jobs\SyncContactNameToWadeskJob;
 use App\Jobs\SyncLeadToWadeskJob;
 use App\Models\Lead;
 use App\Models\LeadAssignmentRule;
@@ -119,6 +120,15 @@ class LeadObserver
         // save and any later manual reassignment of either field).
         if ($lead->wasChanged(['owner_id', 'telecaller_id'])) {
             $this->syncToWadesk($lead);
+        }
+
+        // Two-way contact-name sync with wadesk.in — see
+        // SyncContactNameToWadeskJob. The original-name check skips the
+        // nested save created() makes (autoAssign), where every attribute
+        // still reads as changed because the original isn't synced yet — a
+        // brand-new lead is not a rename.
+        if ($lead->wasChanged('name') && filled($lead->getOriginal('name'))) {
+            SyncContactNameToWadeskJob::dispatchFor([$lead->phone, $lead->alternate_phone], $lead->name);
         }
 
         // Covers the real race condition where Meta's own auto-sent WhatsApp

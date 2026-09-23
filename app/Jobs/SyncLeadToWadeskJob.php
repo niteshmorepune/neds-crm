@@ -68,7 +68,9 @@ class SyncLeadToWadeskJob implements ShouldQueue
                 ->timeout(15)
                 ->post("{$baseUrl}/api/leads/sync", [
                     'phone' => $digits,
-                    'name' => $lead->name,
+                    // Never overwrite a real WhatsApp profile name with the
+                    // placeholder — wadesk.in skips the name when it's null.
+                    'name' => $lead->name === Lead::PLACEHOLDER_NAME ? null : $lead->name,
                     'businessNumber' => $marketingNumber,
                     'agentEmail' => $lead->owner?->email,
                     'telecallerEmail' => $lead->telecaller?->email,

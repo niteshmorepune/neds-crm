@@ -1008,3 +1008,57 @@ Older entries (2026-06-10 through 2026-08-26) moved to `docs/decisions-log-archi
   Two items remain deliberately deferred to next session (a Meta lead
   `name`-backfill decision, and a per-campaign funnel generator design
   discussion) — owner explicitly said to keep those for next time.
+- **2026-09-23 (later) — Two-way contact-name sync between the CRM and
+  wadesk.in; wadesk.in no longer overwrites an edited name.** Team-
+  reported: a Contact renamed in wadesk.in reverted to the original name
+  the moment that person messaged again, and the CRM never saw the edit
+  either, so one person carried two different names across the two apps.
+  Root-caused, three separate gaps: (1) wadesk.in's webhook overwrote
+  `Contact.name` with the WhatsApp profile name on EVERY inbound message/
+  call; (2) the CRM only ever pushed a Lead's name to wadesk.in on create/
+  reassign (`SyncLeadToWadeskJob`), never on a rename; (3) a wadesk.in
+  rename never reached the CRM at all. Confirmed via AskUserQuestion: sync
+  **both ways** (latest edit wins, not CRM-as-master), covering **Leads
+  AND Client contact persons**.
+  **wadesk.in**: new `findOrCreateContact()` in the webhook — profile name
+  only fills a NULL name, never replaces one (both message + call paths);
+  `notifyCrm()`'s `contact_name` now sends the saved name, not the raw
+  profile name. New `POST /api/contacts/sync-name` (`lead-sync` service-key
+  scope, update-only, matches by last 10 digits, explicit NULL-name branch
+  since SQL `name != x` alone skips NULLs; added to `middleware.ts`'s
+  exempt list or the CRM's call would have been bounced to /login). A
+  manual rename in `PATCH /api/contacts/[id]` fires the new fire-and-forget
+  `notifyCrmContactName()` (`CRM_CONTACT_NAME_URL`, passed through
+  `docker-compose.yml` per the per-app env gotcha).
+  **CRM**: new `SyncContactNameToWadeskJob`, dispatched from
+  `LeadObserver::updated()` (phone + alternate_phone) and a new
+  `Contact::booted()` hook. New `WadeskContactNameController` at
+  `POST /api/webhooks/wadesk/contact-name` (same Bearer token as every
+  other wadesk.in bridge) renames every matching OPEN Lead and every Client
+  Contact — never `Customer.company_name` — using `Phone::normalizedSql()`,
+  NOT `Lead::findOpenByPhone()` (its raw LIKE missed a formatted
+  `"+91 98765 43210"` in the first test run). Echo loop closed on both
+  sides: the CRM applies an inbound rename inside
+  `SyncContactNameToWadeskJob::withoutPushing()`, and wadesk.in's sync-name
+  route never notifies back. The "WhatsApp Inquiry" placeholder became
+  `Lead::PLACEHOLDER_NAME` and is never pushed as a name, including by
+  `SyncLeadToWadeskJob` (which previously could overwrite a real wadesk.in
+  profile name with it).
+  **Real bug caught by the local smoke test, not the first test run**:
+  `LeadObserver::created()`'s nested `autoAssign()` save makes EVERY
+  attribute read as `wasChanged()` (original not yet synced — same class as
+  the 2026-09-18 `ai_detected_next_action` `isDirty()` bug), so every new
+  lead queued a bogus "rename" push. Guarded with
+  `filled($lead->getOriginal('name'))`; a regression test that actually
+  exercises the autoAssign path was confirmed to fail without the guard.
+  17 new Pest tests (`WadeskContactNameSyncTest`), Leads/Integration/
+  Clients/Api/Portal/Livewire/Deals suites green (only the known
+  `MeetingRequestTest` IST flake), Pint clean; wadesk.in `tsc --noEmit` +
+  eslint clean (no test suite there). Smoke-tested end to end locally with
+  both apps running: wadesk→CRM rename, CRM rename → real queue worker →
+  wadesk.in contact renamed, an unsigned simulated inbound message from the
+  renamed contact kept the edited name, and a brand-new sender still got
+  its profile name; smoke data removed from both local DBs. No migration.
+  Deploy needs `CRM_CONTACT_NAME_URL=https://crm.niranjanenterprises.co.in/api/webhooks/wadesk/contact-name`
+  set in wadesk.in's prod `.env` (owner-run, no SSH to that VPS).
+  `sales.md`/`telecaller.md` updated, their PDFs regenerated.
