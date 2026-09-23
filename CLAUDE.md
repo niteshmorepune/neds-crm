@@ -1091,3 +1091,25 @@ Older entries (2026-06-10 through 2026-08-26) moved to `docs/decisions-log-archi
   11 new tests (`PhoneTest`, 3 `LeaveCoverageTest`, 1
   `WadeskContactNameSyncTest`); Integration/Leads/Api/Clients/Sales/Unit/
   Billing + offer/funnel suites green; Pint clean. No migration.
+- **2026-09-23 (evening) — Recovery nudges now stop on ANY staff contact
+  since the lead was created, not just contact after the funnel event.**
+  Owner screenshot, lead #473 (Khushal Avhale): staff replied on WhatsApp
+  (office address) and noted an office visit at 11:56–11:57; the Meta
+  form's late goal/budget generated the recommendation at 11:58; the
+  "did you see the personalized recommendation?" nudge still went out at
+  16:01. `SendOfferRecoveryNudgeJob`, `SendVisibilityAuditRecoveryNudgeJob`
+  and `SendVisibilityAuditRecoveryNudgeEmailJob` all checked
+  `hasStaffEngagementSince($event->created_at)`, so contact two minutes
+  BEFORE the event didn't count — contradicting the 2026-09-17 owner rule
+  (human contact → no automated templates). All three now check since
+  `$lead->created_at`, matching the welcome / recommendation-ready /
+  VA-first-invite jobs. Also: the RecommendationCreated-stage nudge now
+  requires `recommendation_notified_at` — the ready message it follows up
+  on is itself held back when staff already engaged, so the nudge was
+  asking about a message the lead never received. Left unchanged (display
+  only, not sends): `OfferFunnelMetrics`/`VisibilityAuditFunnelMetrics`
+  "needs nudge" queue queries still use the since-event window. Separately
+  noted: lead #473's wadesk.in chat had `aiMuted=false` after a human
+  reply — only the Resume AI button sets that, so a manual click, not a
+  bug. 3 new tests (one confirmed failing on the old guard) + 1 fixture
+  fix; Integration/Leads/offer suites green (1169), Pint clean.

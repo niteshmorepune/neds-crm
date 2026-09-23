@@ -94,8 +94,11 @@ class SendVisibilityAuditRecoveryNudgeJob implements ShouldQueue
         // (lead #322, 2026-09-13, the offer-funnel counterpart of this job)
         // showed the original fix only ever caught a WhatsApp reply, not a
         // phone call, so it's now Lead::hasStaffEngagementSince(), which
-        // covers both.
-        if ($lead->hasStaffEngagementSince($event->created_at)) {
+        // covers both. Checked since the lead's creation, not the funnel
+        // event — contact made shortly BEFORE the event still means a human
+        // is handling this lead (lead #473, 2026-09-23; see
+        // SendOfferRecoveryNudgeJob).
+        if ($lead->hasStaffEngagementSince($lead->created_at)) {
             return;
         }
 

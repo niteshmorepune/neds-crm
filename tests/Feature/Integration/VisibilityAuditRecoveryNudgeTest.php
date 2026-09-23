@@ -505,3 +505,21 @@ it('dispatches one nudge job per pending lead across both stages', function () {
     Queue::assertPushed(fn (SendVisibilityAuditRecoveryNudgeEmailJob $job) => $job->leadId === $checkoutLead->id && $job->stage === VisibilityAuditFunnelEventType::PaymentViewed);
     Queue::assertPushed(fn (SendVisibilityAuditRecoveryNudgeEmailJob $job) => $job->leadId === $landingLead->id && $job->stage === VisibilityAuditFunnelEventType::LandingViewed);
 });
+
+it('skips sending when staff engaged the lead shortly before the funnel event (lead #473 shape)', function () {
+    Http::fake();
+    $this->travelTo(now()->subHours(5));
+    $lead = Lead::factory()->create(['phone' => '+91 98765 43210']);
+    $lead->notes()->create(['body' => "[Sent via WhatsApp by Admin]\nOur office location is …"]);
+    $this->travel(2)->minutes();
+    $event = VisibilityAuditFunnelEvent::create([
+        'event_type' => VisibilityAuditFunnelEventType::PaymentViewed,
+        'lead_id' => $lead->id,
+    ]);
+    $this->travelBack();
+
+    (new SendVisibilityAuditRecoveryNudgeJob($lead->id, $event->id, VisibilityAuditFunnelEventType::PaymentViewed))->handle();
+
+    Http::assertNothingSent();
+    expect($event->fresh()->nudged_at)->toBeNull();
+});

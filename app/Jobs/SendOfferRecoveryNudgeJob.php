@@ -82,8 +82,21 @@ class SendOfferRecoveryNudgeJob implements ShouldQueue
         // A call or a plain staff note counts as real engagement too, not
         // just a WhatsApp reply — see Lead::hasStaffEngagementSince()'s own
         // docblock (the lead #322 incident, 2026-09-13, is what this guard
-        // failed to catch).
-        if ($lead->hasStaffEngagementSince($event->created_at)) {
+        // failed to catch). Checked since the lead's CREATION, not since the
+        // funnel event: any human contact at all means a person is handling
+        // this lead and automated templates stop (owner rule, 2026-09-17).
+        // Real incident 2026-09-23, lead #473: staff replied on WhatsApp and
+        // noted an office visit at 11:56–11:57, the recommendation was
+        // generated at 11:58, and this nudge fired at 16:01 because that
+        // contact predated the event by two minutes.
+        if ($lead->hasStaffEngagementSince($lead->created_at)) {
+            return;
+        }
+
+        // "Did you see the recommendation we put together?" only makes sense
+        // if the recommendation-ready message actually went out — it is
+        // itself held back when staff already engaged (same lead #473).
+        if ($this->stage === OfferFunnelEventType::RecommendationCreated && $lead->recommendation_notified_at === null) {
             return;
         }
 
